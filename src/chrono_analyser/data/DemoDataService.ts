@@ -1,42 +1,17 @@
-import { App, requestUrl } from 'obsidian';
+import { App } from 'obsidian';
 import { DataManager } from './DataManager';
 import * as Translator from './translator';
-import { InsightsConfig } from '../ui/ui';
 import { OFCEvent } from '../../types';
 import { StoredEvent } from '../../core/EventStore';
-
-const DEMO_CACHE_KEY = 'ChronoAnalyzerDemoData_v1';
-// CDN cached for better accessibility
-const DEMO_DATA_URL = 'https://fcr-cdn.plugin-fcr.workers.dev/demo/chronoanalyzer-demo.json';
-
-type DemoCalendarSource = {
-  id: string;
-  displayName: string;
-  type: string;
-};
-
-type DemoEvent = {
-  id: string;
-  path: string;
-  title: string;
-  category: string;
-  subCategory: string;
-  startTime: string;
-  endTime: string;
-  dayOffset?: number;
-  type?: 'single' | 'recurring';
-  startRecurOffset?: number;
-  endRecurOffset?: number;
-  daysOfWeek?: ('U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S')[];
-};
-
-type DemoPayload = {
-  schemaVersion: number;
-  dateMode: 'relative';
-  calendarSource: DemoCalendarSource;
-  insightsConfig: InsightsConfig;
-  events: DemoEvent[];
-};
+import { InsightsConfig } from '../ui/ui';
+import {
+  DEMO_CACHE_KEY,
+  DEMO_DATA_URL,
+  DemoCalendarSource,
+  DemoEvent,
+  fetchDemoPayloadText,
+  parseDemoPayload
+} from './demoRemoteAsset';
 
 export interface DemoLoadResult {
   insightsConfig: InsightsConfig;
@@ -57,7 +32,7 @@ export class DemoDataService {
 
   public async loadDemoData(): Promise<DemoLoadResult> {
     const { rawPayload, fromCache } = await this.loadPayloadText();
-    const payload = this.parsePayload(rawPayload);
+    const payload = parseDemoPayload(rawPayload);
 
     this.dataManager.clear();
     let recordCount = 0;
@@ -90,26 +65,9 @@ export class DemoDataService {
       return { rawPayload: cachedPayload, fromCache: true };
     }
 
-    const response = await requestUrl(this.demoDataUrl);
-    const rawPayload = response.text;
-    this.parsePayload(rawPayload);
+    const rawPayload = await fetchDemoPayloadText(this.demoDataUrl);
     this.app.saveLocalStorage(DEMO_CACHE_KEY, rawPayload);
     return { rawPayload, fromCache: false };
-  }
-
-  private parsePayload(rawPayload: string): DemoPayload {
-    const parsed = JSON.parse(rawPayload) as Partial<DemoPayload>;
-    if (
-      parsed.schemaVersion !== 1 ||
-      parsed.dateMode !== 'relative' ||
-      !parsed.calendarSource ||
-      !parsed.insightsConfig ||
-      !Array.isArray(parsed.events)
-    ) {
-      throw new Error('Invalid ChronoAnalyser demo payload.');
-    }
-
-    return parsed as DemoPayload;
   }
 
   private toStoredEvent(demoEvent: DemoEvent, calendarSource: DemoCalendarSource): StoredEvent {

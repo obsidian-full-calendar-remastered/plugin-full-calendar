@@ -25,6 +25,13 @@ const resources: Record<string, { translation: Record<string, unknown> }> = {
   en: { translation: en }
 };
 
+function applyLocaleResource(language: LanguageCode, parsedData: Record<string, unknown>): void {
+  resources[language] = { translation: parsedData };
+  if (i18next.isInitialized) {
+    i18next.addResourceBundle(language, 'translation', parsedData, true, true);
+  }
+}
+
 /**
  * Available language codes
  */
@@ -48,6 +55,48 @@ function getObsidianLanguage(_app: App): string {
   }
 }
 
+function isSupportedLanguage(value: string): value is LanguageCode {
+  return SUPPORTED_LANGUAGES.includes(value as LanguageCode);
+}
+
+function getLocaleCachePath(app: App, pluginId: string, language: LanguageCode) {
+  const localesFolder = normalizePath(`${app.vault.configDir}/plugins/${pluginId}/locales`);
+  const localeFile = normalizePath(`${localesFolder}/${language}.json`);
+  return { localesFolder, localeFile };
+}
+
+async function downloadLocaleData(
+  app: App,
+  pluginId: string,
+  language: LanguageCode
+): Promise<Record<string, unknown>> {
+  const { localesFolder, localeFile } = getLocaleCachePath(app, pluginId, language);
+  const url = `${REMOTE_I18N_ASSET_BASE_URL}/${language}.json`;
+  const response = await requestUrl(url);
+  const localeDataStr = response.text;
+  const parsedData = JSON.parse(localeDataStr) as Record<string, unknown>;
+
+  if (!(await app.vault.adapter.exists(localesFolder))) {
+    await app.vault.adapter.mkdir(localesFolder);
+  }
+  await app.vault.adapter.write(localeFile, localeDataStr);
+  return parsedData;
+}
+
+export async function refreshCurrentI18nLocaleForVersionUpdate(
+  app: App,
+  pluginId: string
+): Promise<boolean> {
+  const detectedLanguage = getObsidianLanguage(app);
+  if (!isSupportedLanguage(detectedLanguage) || detectedLanguage === 'en') {
+    return false;
+  }
+
+  const parsedData = await downloadLocaleData(app, pluginId, detectedLanguage);
+  applyLocaleResource(detectedLanguage, parsedData);
+  return true;
+}
+
 /**
  * Initialize the i18n system
  * @param app Obsidian App instance
@@ -57,10 +106,9 @@ export async function initializeI18n(app: App, pluginId: string): Promise<void> 
   const detectedLanguage = getObsidianLanguage(app);
   let resolvedLanguage = 'en';
 
-  if (SUPPORTED_LANGUAGES.includes(detectedLanguage as LanguageCode) && detectedLanguage !== 'en') {
+  if (isSupportedLanguage(detectedLanguage) && detectedLanguage !== 'en') {
     try {
-      const localesFolder = normalizePath(`${app.vault.configDir}/plugins/${pluginId}/locales`);
-      const localeFile = normalizePath(`${localesFolder}/${detectedLanguage}.json`);
+      const { localeFile } = getLocaleCachePath(app, pluginId, detectedLanguage);
 
       let localeDataStr = '';
 
@@ -68,21 +116,17 @@ export async function initializeI18n(app: App, pluginId: string): Promise<void> 
       if (await app.vault.adapter.exists(localeFile)) {
         localeDataStr = await app.vault.adapter.read(localeFile);
       } else {
-        // If not found, download it once through the docs asset worker.
-        const url = `${REMOTE_I18N_ASSET_BASE_URL}/${detectedLanguage}.json`;
-        const response = await requestUrl(url);
-        localeDataStr = response.text;
-
-        // Ensure locales directory exists before caching the downloaded file
-        if (!(await app.vault.adapter.exists(localesFolder))) {
-          await app.vault.adapter.mkdir(localesFolder);
-        }
-        await app.vault.adapter.write(localeFile, localeDataStr);
+        const parsedData = await downloadLocaleData(app, pluginId, detectedLanguage);
+        applyLocaleResource(detectedLanguage, parsedData);
+        resolvedLanguage = detectedLanguage;
+        localeDataStr = '';
       }
 
-      const parsedData = JSON.parse(localeDataStr) as Record<string, unknown>;
-      resources[detectedLanguage] = { translation: parsedData };
-      resolvedLanguage = detectedLanguage;
+      if (localeDataStr) {
+        const parsedData = JSON.parse(localeDataStr) as Record<string, unknown>;
+        applyLocaleResource(detectedLanguage, parsedData);
+        resolvedLanguage = detectedLanguage;
+      }
     } catch {
       // Fails gracefully back to 'en' if network is down and cache is empty
     }

@@ -28,6 +28,43 @@ function getPayloadCachePath(app: App, pluginId: string, language: NLPSupportedL
   return { payloadFolder, payloadFile };
 }
 
+async function downloadNLPPayload(
+  app: App,
+  pluginId: string,
+  language: NLPSupportedLanguage
+): Promise<NLPPayload> {
+  const { payloadFolder, payloadFile } = getPayloadCachePath(app, pluginId, language);
+  const url = `${REMOTE_NLP_ASSET_BASE_URL}/${language}.json`;
+  const response = await requestUrl(url);
+  const payloadData = response.text;
+  const parsedPayload = JSON.parse(payloadData) as NLPPayload;
+
+  if (!(await app.vault.adapter.exists(payloadFolder))) {
+    await app.vault.adapter.mkdir(payloadFolder);
+  }
+  await app.vault.adapter.write(payloadFile, payloadData);
+  inMemoryPayloadCache.set(language, parsedPayload);
+  return parsedPayload;
+}
+
+export async function refreshCurrentNLPPayloadForVersionUpdate(
+  app: App,
+  pluginId: string
+): Promise<boolean> {
+  const detectedLanguage = getObsidianLanguage(app);
+  if (!isSupportedLanguage(detectedLanguage) || detectedLanguage === 'en') {
+    return false;
+  }
+
+  const { payloadFile } = getPayloadCachePath(app, pluginId, detectedLanguage);
+  if (!(await app.vault.adapter.exists(payloadFile))) {
+    return false;
+  }
+
+  await downloadNLPPayload(app, pluginId, detectedLanguage);
+  return true;
+}
+
 export async function loadNLPPayload(app: App, pluginId: string): Promise<NLPPayload> {
   const detectedLanguage = getObsidianLanguage(app);
   const resolvedLanguage: NLPSupportedLanguage = isSupportedLanguage(detectedLanguage)
@@ -39,7 +76,7 @@ export async function loadNLPPayload(app: App, pluginId: string): Promise<NLPPay
     return cachedInMemory;
   }
 
-  const { payloadFolder, payloadFile } = getPayloadCachePath(app, pluginId, resolvedLanguage);
+  const { payloadFile } = getPayloadCachePath(app, pluginId, resolvedLanguage);
 
   try {
     let payloadData = '';
@@ -47,14 +84,8 @@ export async function loadNLPPayload(app: App, pluginId: string): Promise<NLPPay
     if (await app.vault.adapter.exists(payloadFile)) {
       payloadData = await app.vault.adapter.read(payloadFile);
     } else {
-      const url = `${REMOTE_NLP_ASSET_BASE_URL}/${resolvedLanguage}.json`;
-      const response = await requestUrl(url);
-      payloadData = response.text;
-
-      if (!(await app.vault.adapter.exists(payloadFolder))) {
-        await app.vault.adapter.mkdir(payloadFolder);
-      }
-      await app.vault.adapter.write(payloadFile, payloadData);
+      const downloadedPayload = await downloadNLPPayload(app, pluginId, resolvedLanguage);
+      return downloadedPayload;
     }
 
     const parsedPayload = JSON.parse(payloadData) as NLPPayload;

@@ -28,6 +28,10 @@ export function checkAndShowWhatsNew(plugin: FullCalendarPlugin): void {
     ) {
       new WhatsNewModal(plugin.app, plugin).open();
 
+      const { refreshRemoteAssetsForVersionUpdate } =
+        await import('../../../features/remoteAssets/versionedAssetRefresh');
+      await refreshRemoteAssetsForVersionUpdate(plugin.app, plugin.manifest.id);
+
       // Update the persisted version
       PluginState.getSettings().currentVersion = releaseVersion;
       await PluginState.saveSettings();

@@ -39,7 +39,10 @@ type OutlookConfigProps = {
   config: Partial<OutlookProviderConfig>;
   onConfigChange: (newConfig: Partial<OutlookProviderConfig>) => void;
   context: ProviderConfigContext;
-  onSave: (finalConfig: OutlookProviderConfig | OutlookProviderConfig[]) => void;
+  onSave: (
+    finalConfig: OutlookProviderConfig | OutlookProviderConfig[],
+    accountId?: string
+  ) => void;
   onClose: () => void;
 };
 
@@ -54,9 +57,9 @@ const createOutlookConfigWrapper = (
 
     const handleSave = (
       selectedConfigs: { id: string; name: string; color: string }[],
-      _accountId: string
+      accountId: string
     ) => {
-      forwardOnSave(selectedConfigs as unknown as OutlookProviderConfig[]);
+      forwardOnSave(selectedConfigs as unknown as OutlookProviderConfig[], accountId);
     };
 
     if (!plugin) {

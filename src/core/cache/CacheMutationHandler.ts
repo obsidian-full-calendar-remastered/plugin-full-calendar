@@ -100,7 +100,7 @@ export class CacheMutationHandler {
     if (options?.silent) {
       this.ctx.updateQueue.toAdd.set(optimisticId, optimisticCacheEntry);
     } else {
-      this.ctx.flushUpdateQueue([], [optimisticCacheEntry]);
+      this.ctx.flushUpdateQueue([], [optimisticCacheEntry], [calendarId]);
     }
 
     try {
@@ -138,7 +138,7 @@ export class CacheMutationHandler {
         if (options?.silent) {
           this.ctx.updateQueue.toAdd.delete(optimisticId);
         } else {
-          this.ctx.flushUpdateQueue([optimisticId], []);
+          this.ctx.flushUpdateQueue([optimisticId], [], [calendarId]);
         }
 
         return true;
@@ -154,7 +154,7 @@ export class CacheMutationHandler {
       if (options?.silent) {
         this.ctx.updateQueue.toAdd.delete(optimisticId);
       } else {
-        this.ctx.flushUpdateQueue([optimisticId], []);
+        this.ctx.flushUpdateQueue([optimisticId], [], [calendarId]);
       }
 
       showNotice(t('eventCache.createFailed'));
@@ -192,7 +192,7 @@ export class CacheMutationHandler {
     if (options?.silent) {
       this.ctx.updateQueue.toRemove.add(eventId);
     } else {
-      this.ctx.flushUpdateQueue([eventId], []);
+      this.ctx.flushUpdateQueue([eventId], [], [calendarId]);
     }
 
     if (!handle) {
@@ -243,7 +243,7 @@ export class CacheMutationHandler {
         this.ctx.updateQueue.toRemove.delete(eventId);
         this.ctx.updateQueue.toAdd.set(eventId, cacheEntry);
       } else {
-        this.ctx.flushUpdateQueue([], [cacheEntry]);
+        this.ctx.flushUpdateQueue([], [cacheEntry], [calendarId]);
       }
 
       showNotice(t('eventCache.deleteFailed'));
@@ -321,7 +321,7 @@ export class CacheMutationHandler {
         this.ctx.updateQueue.toRemove.add(eventId);
         this.ctx.updateQueue.toAdd.set(eventId, newCacheEntry);
       } else {
-        this.ctx.flushUpdateQueue([eventId], [newCacheEntry]);
+        this.ctx.flushUpdateQueue([eventId], [newCacheEntry], [calendarId]);
       }
 
       try {
@@ -394,7 +394,7 @@ export class CacheMutationHandler {
           this.ctx.updateQueue.toRemove.delete(eventId);
           this.ctx.updateQueue.toAdd.set(eventId, originalCacheEntry);
         } else {
-          this.ctx.flushUpdateQueue([eventId], [originalCacheEntry]);
+          this.ctx.flushUpdateQueue([eventId], [originalCacheEntry], [calendarId]);
         }
 
         showNotice(t('eventCache.updateFailed'));
@@ -447,9 +447,11 @@ export class CacheMutationHandler {
     instanceDate: string,
     isDone: boolean
   ): Promise<void> {
+    const originalDetails = this.ctx.store.getEventDetails(eventId);
+    const calendarId = originalDetails?.calendarId;
     const recurringManager = await this.ctx.getRecurringEventManager();
     await recurringManager.toggleRecurringInstance(eventId, instanceDate, isDone);
-    this.ctx.flushUpdateQueue([], []);
+    this.ctx.flushUpdateQueue([], [], calendarId ? [calendarId] : []);
   }
 
   async modifyRecurringInstance(
@@ -457,10 +459,12 @@ export class CacheMutationHandler {
     instanceDate: string,
     newEventData: OFCEvent
   ): Promise<void> {
+    const originalDetails = this.ctx.store.getEventDetails(masterEventId);
+    const calendarId = originalDetails?.calendarId;
     const eventForStorage = this.ctx.enhancer.prepareForStorage(newEventData);
     const recurringManager = await this.ctx.getRecurringEventManager();
     await recurringManager.modifyRecurringInstance(masterEventId, instanceDate, eventForStorage);
-    this.ctx.flushUpdateQueue([], []);
+    this.ctx.flushUpdateQueue([], [], calendarId ? [calendarId] : []);
   }
 
   public async scheduleTask(taskId: string, date: Date): Promise<void> {

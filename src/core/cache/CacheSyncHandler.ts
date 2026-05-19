@@ -205,7 +205,7 @@ export class CacheSyncHandler {
       }
     } finally {
       this.ctx.setBulkUpdating(false);
-      this.ctx.flushUpdateQueue([], []); // This processes the .toAdd and .toRemove queues.
+      this.ctx.flushUpdateQueue([], [], [calendarId]); // This processes the .toAdd and .toRemove queues.
       this.ctx.timeEngine.scheduleCacheRebuild();
     }
     return Promise.resolve();
@@ -334,13 +334,21 @@ export class CacheSyncHandler {
       return Promise.resolve();
     }
 
+    const affectedCalendars = new Set<string>();
+    for (const oldEvent of oldEventsInFile) {
+      affectedCalendars.add(oldEvent.calendarId);
+    }
+    for (const newEvent of newEventsWithDetails) {
+      affectedCalendars.add(newEvent.calendarId);
+    }
+
     // 5. Notify the UI with only the delta.
     const cacheEntriesToAdd = eventsToAdd.map(({ event, id, calendarId }) => ({
       event,
       id,
       calendarId
     }));
-    this.ctx.flushUpdateQueue(idsToRemove, cacheEntriesToAdd);
+    this.ctx.flushUpdateQueue(idsToRemove, cacheEntriesToAdd, Array.from(affectedCalendars));
     this.ctx.timeEngine.scheduleCacheRebuild();
     return Promise.resolve();
   }

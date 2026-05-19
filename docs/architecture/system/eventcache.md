@@ -62,6 +62,12 @@ Invariants:
 
 Consumers should subscribe/unsubscribe cleanly and must handle batched updates instead of assuming one-event-at-a-time delivery.
 
+### UI Refresh Invariant (Partial vs. Full Reload)
+
+To avoid timing-sensitive DOM issues in FullCalendar rendering, **never broadcast empty `affectedCalendars` payloads on event updates**.
+- **State mutations & File Syncs**: Every state mutation (add, delete, update) and file synchronization event (`syncFile`) must collect and explicitly pass the affected `calendarId`s.
+- **UI Performance & Stability**: Passing explicit calendar IDs forces `view.ts` to perform a stable, surgical refresh of only the changed event sources. Omitted or empty calendar IDs trigger a destructive full-calendar DOM reload, which is prone to timing conflicts and stale element display.
+
 ## Integration anchors
 
 - `src/core/EventCache.ts`

@@ -924,6 +924,118 @@ describe('editable calendars', () => {
       }
     });
     it.todo('updates when events are the same but locations are different');
+
+    it('should pass correct affectedCalendars on deletion via file sync', async () => {
+      assertCacheContentCounts(cache, {
+        calendars: 1,
+        files: 1,
+        events: 1
+      });
+
+      if (calendar.getEventsInFile) {
+        (calendar.getEventsInFile as jest.Mock).mockResolvedValue([]);
+      }
+
+      const file = oldEvent[1]!.file;
+      if (!(file instanceof TFile)) throw new Error('Expected TFile');
+
+      // Sync file with 0 events (represents a deletion of all events in the file)
+      await cache.syncFile(file, []);
+
+      // Verify counts in cache
+      assertCacheContentCounts(cache, {
+        calendars: 1,
+        files: 0,
+        events: 0
+      });
+
+      // Verify callback was invoked and has correct affectedCalendars
+      expect(callbackMock).toHaveBeenCalledTimes(1);
+      const callbackInvocation = callbackMock.mock.calls[0][0] as {
+        type: 'events';
+        toRemove: string[];
+        toAdd: CacheEntry[];
+        affectedCalendars: string[];
+      };
+      expect(callbackInvocation.type).toBe('events');
+      expect(callbackInvocation.toRemove.length).toBe(1);
+      expect(callbackInvocation.toAdd.length).toBe(0);
+      expect(callbackInvocation.affectedCalendars).toEqual(['test']);
+    });
+  });
+
+  describe('affectedCalendars on cache mutations', () => {
+    const callbackMock = jest.fn<
+      void,
+      [
+        | { type: 'events'; toRemove: string[]; toAdd: CacheEntry[]; affectedCalendars?: string[] }
+        | { type: 'calendar'; calendar: OFCEventSource }
+        | { type: 'resync' }
+      ]
+    >();
+    const event = mockEventResponse();
+    let cache: EventCache;
+
+    beforeEach(async () => {
+      const [c] = makeEditableCache([event]);
+      cache = c;
+      await cache.populate();
+      callbackMock.mockClear();
+      cache.on('update', callbackMock);
+    });
+
+    it('should pass calendarId on deleteEvent', async () => {
+      const sources = cache.getAllEvents();
+      const id = sources[0].events[0].id;
+
+      await cache.deleteEvent(id);
+
+      expect(callbackMock).toHaveBeenCalledTimes(1);
+      const callbackInvocation = callbackMock.mock.calls[0][0];
+      if (callbackInvocation.type !== 'events') {
+        throw new Error('Expected events payload');
+      }
+      expect(callbackInvocation.affectedCalendars).toEqual(['test']);
+    });
+
+    it('should pass calendarId on addEvent', async () => {
+      const newEvent: OFCEvent = {
+        title: 'New Added Event',
+        type: 'single',
+        allDay: true,
+        date: '2026-05-20',
+        endDate: null
+      };
+
+      await cache.addEvent('test', newEvent);
+
+      expect(callbackMock).toHaveBeenCalledTimes(1);
+      const callbackInvocation = callbackMock.mock.calls[0][0];
+      if (callbackInvocation.type !== 'events') {
+        throw new Error('Expected events payload');
+      }
+      expect(callbackInvocation.affectedCalendars).toEqual(['test']);
+    });
+
+    it('should pass calendarId on updateEventWithId', async () => {
+      const sources = cache.getAllEvents();
+      const id = sources[0].events[0].id;
+      const originalEvent = sources[0].events[0].event;
+
+      const updatedEvent: OFCEvent = {
+        ...originalEvent,
+        title: 'Updated Event Title'
+      };
+
+      await cache.updateEventWithId(id, updatedEvent);
+
+      expect(callbackMock).toHaveBeenCalled();
+      const callbackInvocation = callbackMock.mock.calls[0][0];
+      if (callbackInvocation.type !== 'events') {
+        throw new Error('Expected events payload');
+      }
+      expect(callbackInvocation.affectedCalendars).toEqual(['test']);
+    });
   });
 
   describe('Non-blocking remote calendar loading', () => {

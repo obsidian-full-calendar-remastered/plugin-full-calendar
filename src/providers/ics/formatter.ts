@@ -8,26 +8,36 @@ import { DateTime } from 'luxon';
  * @param isAllDay Whether this is an all-day event
  */
 function formatDateTime(dt: DateTime, isAllDay: boolean): ical.Time {
-  const time = new ical.Time({
+  const options = {
     year: dt.year,
     month: dt.month,
     day: dt.day,
     hour: dt.hour,
     minute: dt.minute,
     second: dt.second,
-    isDate: isAllDay
-  });
+    isDate: isAllDay,
+    timezone: !isAllDay && dt.zoneName === 'UTC' ? 'UTC' : undefined
+  };
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+  return new ical.Time(options as unknown as ConstructorParameters<typeof ical.Time>[0]);
+}
 
-  if (!isAllDay) {
-    if (dt.zoneName === 'UTC') {
-      time.timezone = 'Z';
-    } else {
-      // ical.js Time handles timezones via the `zone` property (string identifier) or `timezone` (object).
-      // We use `zone` for the string identifier.
-      time.timezone = dt.zoneName || 'Z';
-    }
+/**
+ * Helper to add a date/time property to a component, setting the tzid parameter
+ * if the event is timed and has an explicit, non-UTC timezone.
+ */
+function addTimeProperty(
+  component: ical.Component,
+  name: string,
+  time: ical.Time,
+  isAllDay: boolean,
+  timezone?: string
+): ical.Property {
+  const prop = component.addPropertyWithValue(name, time);
+  if (!isAllDay && timezone && timezone !== 'UTC') {
+    prop.setParameter('tzid', timezone);
   }
-  return time;
+  return prop;
 }
 
 /**
@@ -90,8 +100,20 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
     }
   }
 
-  vevent.addPropertyWithValue('dtstart', formatDateTime(startDt, event.allDay));
-  vevent.addPropertyWithValue('dtend', formatDateTime(endDt, event.allDay));
+  addTimeProperty(
+    vevent,
+    'dtstart',
+    formatDateTime(startDt, event.allDay),
+    event.allDay,
+    event.timezone
+  );
+  addTimeProperty(
+    vevent,
+    'dtend',
+    formatDateTime(endDt, event.allDay),
+    event.allDay,
+    event.timezone
+  );
 
   // Description
   if (event.description) {
@@ -127,15 +149,15 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
     for (const skipDate of event.skipDates) {
       let exTime: ical.Time;
       if (event.allDay) {
-        const dt = DateTime.fromISO(skipDate);
-        exTime = new ical.Time({ year: dt.year, month: dt.month, day: dt.day, isDate: true });
+        const exDt = DateTime.fromISO(skipDate);
+        exTime = new ical.Time({ year: exDt.year, month: exDt.month, day: exDt.day, isDate: true });
       } else {
         const startTime = (event as unknown as { startTime?: string }).startTime || '00:00';
         const opts = event.timezone ? { zone: event.timezone } : {};
-        const dt = DateTime.fromISO(`${skipDate}T${startTime}`, opts);
-        exTime = formatDateTime(dt, false);
+        const exDt = DateTime.fromISO(`${skipDate}T${startTime}`, opts);
+        exTime = formatDateTime(exDt, false);
       }
-      vevent.addPropertyWithValue('exdate', exTime);
+      addTimeProperty(vevent, 'exdate', exTime, event.allDay, event.timezone);
     }
   }
 
@@ -179,19 +201,21 @@ export function createOverrideVEvent(event: OFCEvent, originalDate: string): ica
   let recurIdTime: ical.Time;
 
   if (isDate) {
-    const dt = DateTime.fromISO(originalDate);
-    recurIdTime = new ical.Time({ year: dt.year, month: dt.month, day: dt.day, isDate: true });
+    const recurIdDt = DateTime.fromISO(originalDate);
+    recurIdTime = new ical.Time({
+      year: recurIdDt.year,
+      month: recurIdDt.month,
+      day: recurIdDt.day,
+      isDate: true
+    });
   } else {
     // Assume DateTime string
-    const dt = DateTime.fromISO(originalDate);
-    recurIdTime = formatDateTime(dt, false);
-    // Important: RECURRENCE-ID must match the timezone of the original DTSTART if it wasn't UTC.
-    // If we don't have that info easily, we might struggle.
-    // But usually standard is to use the same zone or UTC.
-    // Let's hope basic formatting works.
+    const opts = event.timezone ? { zone: event.timezone } : {};
+    const recurIdDt = DateTime.fromISO(originalDate, opts);
+    recurIdTime = formatDateTime(recurIdDt, false);
   }
 
-  vevent.addPropertyWithValue('recurrence-id', recurIdTime);
+  addTimeProperty(vevent, 'recurrence-id', recurIdTime, isDate, event.timezone);
 
   // 3. Ensure SEQUENCE is incremented?
   // Usually the server handles sequence or client should increment.

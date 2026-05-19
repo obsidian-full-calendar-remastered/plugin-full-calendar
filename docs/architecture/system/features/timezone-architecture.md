@@ -28,6 +28,13 @@ This behavior exists to prevent day/weekday drift around DST and timezone bounda
 
 Timezone handling includes normalization of IANA, UTC, and common Windows timezone identifiers during ICS ingestion. Parsing and fallback logic are intentionally defensive to avoid malformed payload breakage.
 
+## ICS timezone serialization on write paths
+
+When exporting events back to ICS files or CalDAV servers (e.g. Nextcloud), the plugin maintains explicit timezone context.
+Due to underlying `ical.js` serialization constraints (where `ical.Time` properties discard timezone names on serialization unless specified as UTC or explicitly set as parameters), the plugin explicitly sets the `tzid` parameter on target properties (such as `DTSTART`, `DTEND`, `EXDATE`, and `RECURRENCE-ID`) when a named non-UTC timezone is set.
+
+This prevents the events from being written with floating timezones, ensuring CalDAV servers and other calendar clients preserve the correct timezone and do not experience shifts on resync.
+
 ## Invariants for contributors
 
 - Never mix local date getters into UTC reconstruction steps for patched recurrence output.

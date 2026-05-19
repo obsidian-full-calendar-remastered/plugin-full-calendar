@@ -57,6 +57,7 @@ If you prefer to maintain your own OAuth Client ID and Secret for privacy or dev
 - **Two-Way Sync**: Changes made in Obsidian (create, edit, delete) are instantly reflected in Google Calendar.
 - **Recurring Events**: Supports exceptions and cancellations. Deleting a single instance in a series creates a proper "cancelled" instance in the Google API.
 - **Timezone Management**: Events are normalized to your **[Display Timezone](../settings/fc_config.md)** while respecting the original source timezone for recurrence rules.
+- **Event Linked Notes**: Keep rich local meeting notes or agendas connected directly to remote Google Calendar events with automated template population. See the **[Event Linked Notes Guide](../features/event-linked-notes.md)** for details.
 - **Mobile Support**: On iOS/Android, the login flow opens a blank tab first to bypass popup blockers. Ensure popups are allowed for Obsidian.
 
 ---

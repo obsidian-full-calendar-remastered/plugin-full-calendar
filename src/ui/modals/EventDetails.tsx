@@ -11,6 +11,7 @@ interface EventDetailsProps {
   location?: { path: string; lineNumber?: number } | null;
   onClose: () => void;
   onOpenNote?: () => void;
+  onCreateLinkedNote?: () => void;
 }
 
 const Icon = ({ name }: { name: string }) => {
@@ -28,7 +29,8 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
   calendarName,
   location,
   onClose,
-  onOpenNote
+  onOpenNote,
+  onCreateLinkedNote
 }) => {
   const [showInstances, setShowInstances] = React.useState(false);
   const [instances, setInstances] = React.useState<Date[]>([]);
@@ -131,16 +133,22 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
         <div className="event-details-row">
           <Icon name="map-pin" />
           <div className="event-details-content">
-            {event.url ? (
-              <a href={event.url} target="_blank" rel="noopener noreferrer" className="event-link">
-                {event.url}
-              </a>
-            ) : (
-              location && (
-                <span className="u-selectable u-clickable-accent" onClick={onOpenNote}>
-                  {location.path}
-                </span>
-              )
+            {event.url && (
+              <div style={{ marginBottom: location && location.path ? '8px' : '0px' }}>
+                <a
+                  href={event.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="event-link"
+                >
+                  {event.url}
+                </a>
+              </div>
+            )}
+            {location && location.path && (
+              <span className="u-selectable u-clickable-accent" onClick={onOpenNote}>
+                {location.path}
+              </span>
             )}
           </div>
         </div>
@@ -170,6 +178,16 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
       <hr className="modal-hr" />
 
       <div className="modal-footer">
+        {onCreateLinkedNote && !location && (
+          <button
+            type="button"
+            className="mod-cta fc-create-linked-note-btn"
+            onClick={onCreateLinkedNote}
+            style={{ marginRight: 'auto' }}
+          >
+            Create Linked Note
+          </button>
+        )}
         <div className="footer-actions-right">
           <button type="button" className="mod-cta" onClick={onClose}>
             Close

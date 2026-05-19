@@ -30,6 +30,7 @@ import FullCalendarPlugin from '../../main';
 import { ConfirmModal } from './ConfirmModal';
 import { openFileForEvent } from '../../utils/eventActions';
 import { t } from '../../features/i18n/i18n';
+import { TFile } from 'obsidian';
 
 export function launchCreateModal(
   plugin: FullCalendarPlugin,
@@ -228,6 +229,30 @@ export function launchEventDetailsModal(plugin: FullCalendarPlugin, eventId: str
   const location = eventDetails.location;
 
   new ReactModal(plugin.app, closeModal => {
+    const provider = PluginState.getProviderRegistry().getInstance(calendarId);
+    const linkedNoteProvider = provider as unknown as {
+      createLinkedNote?: (event: OFCEvent) => Promise<TFile | null>;
+    };
+    const hasCreateLinkedNote =
+      linkedNoteProvider && typeof linkedNoteProvider.createLinkedNote === 'function';
+    const onCreateLinkedNote = hasCreateLinkedNote
+      ? () => {
+          void (async () => {
+            closeModal();
+            try {
+              if (linkedNoteProvider.createLinkedNote) {
+                const file = await linkedNoteProvider.createLinkedNote(event);
+                if (file) {
+                  await plugin.app.workspace.getLeaf().openFile(file);
+                }
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          })();
+        }
+      : undefined;
+
     return Promise.resolve(
       React.createElement(EventDetails, {
         event,
@@ -241,7 +266,8 @@ export function launchEventDetailsModal(plugin: FullCalendarPlugin, eventId: str
                 closeModal();
               })();
             }
-          : undefined
+          : undefined,
+        onCreateLinkedNote
       })
     );
   }).open();

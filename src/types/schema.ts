@@ -75,6 +75,7 @@ export const CommonSchema = z.object({
     .optional(), // Support for background events
   description: z.string().optional(),
   url: z.string().optional(),
+  location: z.string().optional(),
   notify: z
     .object({
       value: z.number().min(0).max(1440)

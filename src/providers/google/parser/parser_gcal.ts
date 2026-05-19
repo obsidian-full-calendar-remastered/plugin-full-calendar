@@ -44,6 +44,8 @@ export interface GoogleEventLike {
     timeZone?: string;
   } | null;
   recurrence?: string[];
+  location?: string;
+  description?: string;
 }
 
 export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
@@ -70,6 +72,8 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
 
   // Title and Category Parsing
   eventData.title = gEvent.summary;
+  eventData.location = gEvent.location;
+  eventData.description = gEvent.description;
 
   // All-Day vs. Timed Events
   if (gEvent.start && gEvent.start.date) {
@@ -170,6 +174,8 @@ export function toGoogleEvent(event: OFCEvent): object {
 
   // 1. Summary (Title)
   gEvent.summary = constructTitle(event.category, event.subCategory, event.title);
+  gEvent.location = event.location;
+  gEvent.description = event.description;
 
   // 2. Recurrence
   const recurrence: string[] = [];

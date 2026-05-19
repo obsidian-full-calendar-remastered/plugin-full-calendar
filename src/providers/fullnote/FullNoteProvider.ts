@@ -1,18 +1,22 @@
 import { PluginState } from '../../core/PluginState';
-import { rrulestr } from 'rrule';
-import { DateTime } from 'luxon';
-import { CachedMetadata, TFile, TFolder, normalizePath } from 'obsidian';
+import { TFile, TFolder, normalizePath } from 'obsidian';
 import * as React from 'react';
 
 import { OFCEvent, EventLocation, validateEvent } from '../../types';
 import FullCalendarPlugin from '../../main';
-import { constructTitle } from '../../features/category/categoryParser';
 import { newFrontmatter, modifyFrontmatterString, replaceFrontmatter } from './frontmatter';
 import { CalendarProvider, CalendarProviderCapabilities, SyncKeyProvider } from '../Provider';
 import { EventHandle, FCReactComponent, ProviderConfigContext } from '../typesProvider';
 import { FullNoteProviderConfig } from './typesLocal';
 import { ObsidianInterface } from '../../ObsidianAdapter';
 import { FullNoteConfigComponent } from './FullNoteConfigComponent';
+import {
+  basenameFromEvent,
+  filenameForEvent,
+  findUniquePath,
+  waitForFileAtPath,
+  waitForMetadataWithTimeout
+} from '../utils/noteUtils';
 
 export type EditableEventResponse = [OFCEvent, EventLocation | null];
 
@@ -39,48 +43,8 @@ const FullNoteDirectorySetting: React.FC<{
   );
 };
 
-// Helper Functions (ported from FullNoteCalendar.ts)
+// Helper Functions
 // =================================================================================================
-
-function sanitizeTitleForFilename(title: string): string {
-  return title
-    .replace(/[\\/:"*?<>|]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-interface TitleSettingsLike {
-  enableAdvancedCategorization?: boolean;
-}
-const basenameFromEvent = (event: OFCEvent, settings: TitleSettingsLike): string => {
-  const fullTitle = settings.enableAdvancedCategorization
-    ? constructTitle(event.category, event.subCategory, event.title)
-    : event.title;
-  const sanitizedTitle = sanitizeTitleForFilename(fullTitle);
-  switch (event.type) {
-    case undefined:
-    case 'single':
-      return `${event.date} ${sanitizedTitle}`;
-    case 'recurring': {
-      if (event.daysOfWeek && event.daysOfWeek.length > 0) {
-        return `(Every ${event.daysOfWeek.join(',')}) ${sanitizedTitle}`;
-      }
-      if (event.month && event.dayOfMonth) {
-        const monthName = DateTime.fromObject({ month: event.month }).toFormat('MMM');
-        return `(Every year on ${monthName} ${event.dayOfMonth}) ${sanitizedTitle}`;
-      }
-      if (event.dayOfMonth) {
-        return `(Every month on the ${event.dayOfMonth}) ${sanitizedTitle}`;
-      }
-      return `(Recurring) ${sanitizedTitle}`;
-    }
-    case 'rrule':
-      return `(${rrulestr(event.rrule).toText()}) ${sanitizedTitle}`;
-  }
-};
-
-const filenameForEvent = (event: OFCEvent, settings: TitleSettingsLike) =>
-  `${basenameFromEvent(event, settings)}.md`;
 
 const areFieldValuesEqual = (a: unknown, b: unknown): boolean => {
   if (a === b) {
@@ -127,51 +91,6 @@ const getChangedFrontmatterFields = (
   return changed;
 };
 
-const SUFFIX_PATTERN = '-_-_-';
-
-const sleep = (ms: number): Promise<void> => new Promise(resolve => window.setTimeout(resolve, ms));
-const METADATA_WAIT_TIMEOUT_MS = 1500;
-
-const waitForFileAtPath = async (
-  app: ObsidianInterface,
-  path: string,
-  attempts = 20,
-  delayMs = 25
-): Promise<TFile | null> => {
-  for (let i = 0; i < attempts; i++) {
-    const file = app.getFileByPath(path);
-    if (file && file.path === path) {
-      return file;
-    }
-    await sleep(delayMs);
-  }
-  return null;
-};
-
-const waitForMetadataWithTimeout = async (
-  app: ObsidianInterface,
-  file: TFile,
-  timeoutMs = METADATA_WAIT_TIMEOUT_MS
-): Promise<CachedMetadata | null> => {
-  const existing = app.getMetadata(file);
-  if (existing) {
-    return existing;
-  }
-
-  try {
-    return await Promise.race([
-      app.waitForMetadata(file),
-      new Promise<null>(resolve => window.setTimeout(() => resolve(null), timeoutMs))
-    ]);
-  } catch (error) {
-    console.warn(
-      `Full Calendar: Failed while waiting for metadata for local note file "${file.path}".`,
-      error
-    );
-    return null;
-  }
-};
-
 type FullNoteConfigProps = {
   plugin: FullCalendarPlugin;
   config: Partial<FullNoteProviderConfig>;
@@ -190,31 +109,6 @@ const FullNoteConfigWrapper: React.FC<FullNoteConfigProps> = props => {
     onSave: handleSave
   });
 };
-
-/**
- * Finds an available file path in the vault. If the desired path already exists,
- * it appends a suffix (e.g., "-_-_1") until an unused path is found.
- * @param app An ObsidianInterface for interacting with the vault.
- * @param directory The directory to create the file in.
- * @param baseFilename The desired filename, without extension or suffix.
- * @returns A promise that resolves to the first available, unique file path.
- */
-function findUniquePath(app: ObsidianInterface, directory: string, baseFilename: string): string {
-  let path = normalizePath(`${directory}/${baseFilename}.md`);
-  if (!app.getAbstractFileByPath(path)) {
-    return path;
-  }
-
-  let i = 1;
-  while (true) {
-    const suffix = `${SUFFIX_PATTERN}${i}`;
-    path = normalizePath(`${directory}/${baseFilename}${suffix}.md`);
-    if (!app.getAbstractFileByPath(path)) {
-      return path;
-    }
-    i++;
-  }
-}
 
 // Provider Implementation
 // =================================================================================================

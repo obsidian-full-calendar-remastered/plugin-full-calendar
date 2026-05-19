@@ -179,6 +179,8 @@ export interface FullCalendarSettings {
   authorizedTokens?: Record<string, { pluginId: string; reason: string; grantedAt: number }>;
 
   currentVersion: string | null;
+  linkedNotesDirectory: string;
+  linkedNoteTemplate: string;
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
@@ -252,7 +254,10 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
 
   enableDefaultReminder: true,
   defaultReminderMinutes: 10,
-  currentVersion: null
+  currentVersion: null,
+  linkedNotesDirectory: '',
+  linkedNoteTemplate:
+    '# {{title}}\n\n**Date**: {{date}}\n**Time**: {{timeString}}\n**Location**: {{location}}\n**Calendar**: {{calendarName}}\n\n## Description\n{{description}}\n\n## Notes\n- '
 };
 
 // Utility functions for workspace management

@@ -13,6 +13,7 @@
 | Never miss an event | [Reminders and Notifications](reminders.md) | Default and per-event notification behavior |
 | Use in your native language | [Internationalization (i18n)](i18n.md) | Multi-language support and automatic translation |
 | Glance at next event | [Status Bar Integration](statusbar.md) | Quick countdown to your next meeting in the Obsidian status bar |
+| Take local notes for remote events | [Event Linked Notes](event-linked-notes.md) | Link rich local notes to external events with automatic templating |
 
 ## Feature Directory
 
@@ -22,6 +23,7 @@
 - Alerting: [Reminders and Notifications](reminders.md)
 - Global: [Internationalization (i18n)](i18n.md)
 - UI: [Status Bar Integration](statusbar.md)
+- Note Integration: [Event Linked Notes](event-linked-notes.md)
 
 ## Related Sections
 
@@ -32,4 +34,4 @@
 
 ---
 
-[NLP](nlp.md) · [Interactions](interactions.md) · [Milestones](milestones.md) · [Reminders](reminders.md) · [i18n](i18n.md) · [Status Bar](statusbar.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)
+[NLP](nlp.md) · [Interactions](interactions.md) · [Milestones](milestones.md) · [Reminders](reminders.md) · [i18n](i18n.md) · [Status Bar](statusbar.md) · [Linked Notes](event-linked-notes.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)

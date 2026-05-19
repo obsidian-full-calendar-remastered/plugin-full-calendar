@@ -261,6 +261,14 @@
       "clickToCreateEvent": {
         "label": "Haz clic en un día en la vista mensual para crear evento",
         "description": "Desactiva para abrir la vista diaria al hacer clic."
+      },
+      "linkedNotesDirectory": {
+        "label": "Linked notes directory",
+        "description": "Choose the folder path where event linked notes will be created."
+      },
+      "linkedNoteTemplate": {
+        "label": "Linked note template",
+        "description": "Define the template used for creating new linked notes. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
       }
     },
     "reminders": {

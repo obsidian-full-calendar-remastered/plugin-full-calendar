@@ -1,0 +1,187 @@
+/**
+ * @file noteUtils.test.ts
+ * @brief Tests for note and file utilities.
+ */
+
+import {
+  sanitizeTitleForFilename,
+  basenameFromEvent,
+  filenameForEvent,
+  serializeFrontmatter,
+  findUniquePath,
+  waitForFileAtPath,
+  waitForMetadataWithTimeout
+} from './noteUtils';
+import { OFCEvent } from '../../types';
+import { ObsidianInterface } from '../../ObsidianAdapter';
+import { TFile, CachedMetadata } from 'obsidian';
+
+describe('noteUtils', () => {
+  describe('sanitizeTitleForFilename', () => {
+    it('should strip out OS reserved characters', () => {
+      const dirtyTitle = 'Meeting / Discussion: "Q4 Planning" <Secrets> | & ?';
+      const clean = sanitizeTitleForFilename(dirtyTitle);
+      expect(clean).toBe('Meeting Discussion Q4 Planning Secrets &');
+    });
+
+    it('should collapse multiple spaces', () => {
+      const spacedTitle = 'Hello    World';
+      expect(sanitizeTitleForFilename(spacedTitle)).toBe('Hello World');
+    });
+  });
+
+  describe('basenameFromEvent', () => {
+    it('should generate expected basename for single events', () => {
+      const event: OFCEvent = {
+        title: 'Single Event',
+        type: 'single',
+        date: '2026-05-20',
+        endDate: null,
+        allDay: true
+      };
+      expect(basenameFromEvent(event, {})).toBe('2026-05-20 Single Event');
+    });
+
+    it('should generate expected basename for day-of-week recurring events', () => {
+      const event: OFCEvent = {
+        title: 'Weekly Standup',
+        type: 'recurring',
+        daysOfWeek: ['M', 'W'],
+        endDate: null,
+        skipDates: [],
+        allDay: false,
+        startTime: '09:00',
+        endTime: null
+      };
+      expect(basenameFromEvent(event, {})).toBe('(Every M,W) Weekly Standup');
+    });
+
+    it('should generate expected basename for monthly recurring events', () => {
+      const event: OFCEvent = {
+        title: 'Rent Payment',
+        type: 'recurring',
+        dayOfMonth: 1,
+        endDate: null,
+        skipDates: [],
+        allDay: true
+      };
+      expect(basenameFromEvent(event, {})).toBe('(Every month on the 1) Rent Payment');
+    });
+
+    it('should generate expected basename for yearly recurring events', () => {
+      const event: OFCEvent = {
+        title: 'Birthday',
+        type: 'recurring',
+        month: 5,
+        dayOfMonth: 20,
+        endDate: null,
+        skipDates: [],
+        allDay: true
+      };
+      expect(basenameFromEvent(event, {})).toBe('(Every year on May 20) Birthday');
+    });
+  });
+
+  describe('filenameForEvent', () => {
+    it('should append .md extension', () => {
+      const event: OFCEvent = {
+        title: 'Event',
+        type: 'single',
+        date: '2026-05-20',
+        endDate: null,
+        allDay: true
+      };
+      expect(filenameForEvent(event, {})).toBe('2026-05-20 Event.md');
+    });
+  });
+
+  describe('serializeFrontmatter', () => {
+    it('should serialize simple key value pairs and skip null/undefined values', () => {
+      const fields = {
+        'fc-event-uid': '12345',
+        'fc-calendar-id': 'cal-1',
+        empty: null,
+        missing: undefined,
+        active: true
+      };
+      const yaml = serializeFrontmatter(fields);
+      expect(yaml).toBe('fc-event-uid: 12345\nfc-calendar-id: cal-1\nactive: true');
+    });
+  });
+
+  describe('findUniquePath', () => {
+    it('should return base path if no file exists', () => {
+      const mockApp = {
+        getAbstractFileByPath: jest.fn().mockReturnValue(null)
+      } as unknown as ObsidianInterface;
+
+      const path = findUniquePath(mockApp, 'Folder', 'Note');
+      expect(path).toBe('Folder/Note.md');
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockApp.getAbstractFileByPath).toHaveBeenCalledWith('Folder/Note.md');
+    });
+
+    it('should append sequential suffix if collision occurs', () => {
+      const mockApp = {
+        getAbstractFileByPath: jest.fn().mockImplementation((path: string) => {
+          if (path === 'Folder/Note.md' || path === 'Folder/Note-_-_-1.md') {
+            return {}; // Suffix collisions
+          }
+          return null; // Unique path found
+        })
+      } as unknown as ObsidianInterface;
+
+      const path = findUniquePath(mockApp, 'Folder', 'Note');
+      expect(path).toBe('Folder/Note-_-_-2.md');
+    });
+  });
+
+  describe('waitForFileAtPath', () => {
+    it('should return file once it is found by getFileByPath', async () => {
+      // eslint-disable-next-line obsidianmd/no-tfile-tfolder-cast
+      const mockFile = { path: 'Folder/File.md' } as unknown as TFile;
+      const mockApp = {
+        getFileByPath: jest.fn().mockReturnValue(mockFile)
+      } as unknown as ObsidianInterface;
+
+      const file = await waitForFileAtPath(mockApp, 'Folder/File.md', 5, 2);
+      expect(file).toBe(mockFile);
+    });
+
+    it('should return null if file is never found', async () => {
+      const mockApp = {
+        getFileByPath: jest.fn().mockReturnValue(null)
+      } as unknown as ObsidianInterface;
+
+      const file = await waitForFileAtPath(mockApp, 'Folder/File.md', 3, 2);
+      expect(file).toBeNull();
+    });
+  });
+
+  describe('waitForMetadataWithTimeout', () => {
+    it('should return metadata immediately if it exists in cache', async () => {
+      const mockMeta = { frontmatter: {} } as CachedMetadata;
+      // eslint-disable-next-line obsidianmd/no-tfile-tfolder-cast
+      const mockFile = {} as unknown as TFile;
+      const mockApp = {
+        getMetadata: jest.fn().mockReturnValue(mockMeta)
+      } as unknown as ObsidianInterface;
+
+      const meta = await waitForMetadataWithTimeout(mockApp, mockFile);
+      expect(meta).toBe(mockMeta);
+    });
+
+    it('should wait for metadata promise and return it', async () => {
+      const mockMeta = { frontmatter: {} } as CachedMetadata;
+      // eslint-disable-next-line obsidianmd/no-tfile-tfolder-cast
+      const mockFile = {} as unknown as TFile;
+      const mockApp = {
+        getMetadata: jest.fn().mockReturnValue(null),
+        waitForMetadata: jest.fn().mockResolvedValue(mockMeta)
+      } as unknown as ObsidianInterface;
+
+      const meta = await waitForMetadataWithTimeout(mockApp, mockFile);
+      expect(meta).toBe(mockMeta);
+    });
+  });
+});

@@ -14,6 +14,7 @@
 | Workspaces | View-level filtering and setting overrides for presentation segmentation. | `ViewEnhancer`, settings |
 | Category | Parsing, normalization, and bulk categorization workflows. | `EventEnhancer`, settings, UI controls |
 | NLP (FCR Command) | Universal orchestrator: NL event creation, view navigation, settings, cache, sync. | `smartCalendar`, `InternalAPI`, `PluginState`, `EventCache`, `ProviderRegistry` |
+| Event Linked Notes | Linking local markdown notes to remote events via reactive indexing. | `LinkedNoteIndex`, `TemplateEngine`, `noteUtils`, UI / Providers |
 
 ## Architecture rule
 
@@ -29,4 +30,5 @@ Feature modules may transform, filter, and react, but they must not replace core
 - [Reminders Architecture](reminders-architecture.md)
 - [Milestones Architecture](milestones-architecture.md)
 - [NLP Engine Architecture](nlp-architecture.md)
+- [Event Linked Notes Architecture](event-linked-notes.md)
 - [ActivityWatch Architecture](../../activitywatch/index.md)

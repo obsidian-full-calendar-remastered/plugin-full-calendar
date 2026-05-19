@@ -11,8 +11,13 @@ import { GoogleProviderConfig } from './typesGCal';
 
 import { GoogleConfigComponent } from './ui/GoogleConfigComponent';
 import * as React from 'react';
-import { ObsidianInterface } from '../../ObsidianAdapter';
+import { ObsidianInterface, ObsidianIO } from '../../ObsidianAdapter';
 import { GoogleAuthManager } from './auth/GoogleAuthManager';
+import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
+import { TemplateEngine } from '../../features/templates/TemplateEngine';
+import { serializeFrontmatter, findUniquePath, sanitizeTitleForFilename } from '../utils/noteUtils';
+import { TFile } from 'obsidian';
+import { showNotice } from '../../utils/showNotice';
 
 // Settings row component for Google Provider
 const GoogleNameSetting: React.FC<{ source: Partial<import('../../types').CalendarInfo> }> = ({
@@ -81,6 +86,7 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
   private plugin: FullCalendarPlugin;
   private source: GoogleProviderConfig;
   private authManager: GoogleAuthManager;
+  private linkedNoteIndex: LinkedNoteIndex;
 
   // Instance properties remain
   readonly type = 'google';
@@ -92,6 +98,15 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
     this.plugin = plugin;
     this.source = source;
     this.authManager = new GoogleAuthManager(plugin);
+    this.linkedNoteIndex = new LinkedNoteIndex(plugin.app, source.id);
+  }
+
+  initialize(): void {
+    this.linkedNoteIndex.initialize();
+  }
+
+  teardown(): void {
+    this.linkedNoteIndex.destroy();
   }
 
   getCapabilities(): CalendarProviderCapabilities {
@@ -196,7 +211,11 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
           const validated = validateEvent(rawEvent);
           if (!validated) return null;
 
-          return [validated, null];
+          const linkedFile = this.linkedNoteIndex.getFileForEvent(validated.uid || '');
+          const location = linkedFile
+            ? { file: { path: linkedFile.path }, lineNumber: undefined }
+            : null;
+          return [validated, location];
         }
       );
       return tuples.filter((e): e is [OFCEvent, EventLocation | null] => e !== null);
@@ -398,5 +417,32 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
     // This method's existence signals to the adapter that this is a remote-style provider.
     // The actual fetching is always done in getEvents.
     return Promise.resolve();
+  }
+
+  async createLinkedNote(event: OFCEvent): Promise<TFile | null> {
+    const settings = PluginState.getSettings();
+    const directory = settings.linkedNotesDirectory;
+    if (!directory) {
+      showNotice('Please configure a Linked Notes Directory in settings first.');
+      return null;
+    }
+
+    const template = settings.linkedNoteTemplate;
+    const bodyContent = TemplateEngine.render(template, event, this.source.name);
+
+    const frontmatter = {
+      'fc-event-uid': event.uid,
+      'fc-calendar-id': this.source.id
+    };
+
+    const yaml = serializeFrontmatter(frontmatter);
+    const fileContent = `---\n${yaml}\n---\n${bodyContent}`;
+
+    const baseFilename = sanitizeTitleForFilename(event.title || 'Untitled Linked Note');
+    const appAdapter = new ObsidianIO(this.plugin.app);
+    const uniquePath = findUniquePath(appAdapter, directory, baseFilename);
+
+    const file = await appAdapter.create(uniquePath, fileContent);
+    return file;
   }
 }

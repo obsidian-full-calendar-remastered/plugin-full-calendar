@@ -39,6 +39,7 @@ import {
   tasksToCalendarTasks
 } from './taskPayloadAdapter';
 import { TasksDateTarget, TasksDisplayFormat } from '../../types/settings';
+import { TasksQueryFilter } from './TasksQueryFilter';
 
 export { extractTimeFromTitle } from './taskPayloadAdapter';
 
@@ -635,23 +636,41 @@ export class TasksPluginProvider implements CalendarProvider<TasksProviderConfig
       .filter((e): e is [OFCEvent, EventLocation | null] => e !== null);
   }
 
+  public filterTasksByGlobalQuery(tasks: CalendarTask[]): CalendarTask[] {
+    const globalQuery = (
+      this.plugin.app as unknown as {
+        plugins?: {
+          plugins?: Record<string, { settings?: { globalQuery?: string } }>;
+        };
+      }
+    ).plugins?.plugins?.['obsidian-tasks-plugin']?.settings?.globalQuery;
+
+    if (!globalQuery) {
+      return tasks;
+    }
+    const filter = new TasksQueryFilter(globalQuery);
+    return filter.filter(tasks);
+  }
+
   public async getUndatedTasks(): Promise<ParsedUndatedTask[]> {
     await this._ensureTasksCacheIsWarm();
-    return (
-      this.allTasks
-        .filter(t => !this.hasBacklogTargetDate(t) && !t.isDone)
-        // Map to the format expected by the backlog view.
-        .map(t => ({
-          title: t.title,
-          isDone: t.isDone,
-          location: {
-            path: t.filePath,
-            // FIX: The task ID used by the backlog MUST match the canonical 0-indexed ID.
-            // Our internal lineNumber is 1-based, so subtract 1 to get the 0-based index for the ID.
-            lineNumber: t.lineNumber - 1
-          }
-        }))
-    );
+    let tasks = this.allTasks.filter(t => !this.hasBacklogTargetDate(t) && !t.isDone);
+
+    const settings = PluginState.getSettings();
+    if (settings.tasksIntegration.includeGlobalQueryInBacklog) {
+      tasks = this.filterTasksByGlobalQuery(tasks);
+    }
+
+    return tasks.map(t => ({
+      title: t.title,
+      isDone: t.isDone,
+      location: {
+        path: t.filePath,
+        // FIX: The task ID used by the backlog MUST match the canonical 0-indexed ID.
+        // Our internal lineNumber is 1-based, so subtract 1 to get the 0-based index for the ID.
+        lineNumber: t.lineNumber - 1
+      }
+    }));
   }
 
   public getEventsInFile(file: TFile): Promise<EditableEventResponse[]> {

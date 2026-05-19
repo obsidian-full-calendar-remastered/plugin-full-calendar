@@ -74,11 +74,44 @@ The provider enforces a strict mapping policy to maintain data integrity:
 Backlog filtering is split by responsibility:
 
 - **Provider-level filter** (`TasksPluginProvider.getUndatedTasks()`): decides which tasks are backlog candidates using `backlogDateTarget` and completion state.
+- **Global Query Filter** (`TasksQueryFilter`): If the setting `includeGlobalQueryInBacklog` is enabled, the provider fetches the global query string defined in Obsidian Tasks (`app.plugins.plugins['obsidian-tasks-plugin']?.settings?.globalQuery`) and filters backlog tasks accordingly.
 - **View-level filter** (`TasksBacklogView`): applies client-side fuzzy filtering over candidate tasks by title and file path.
 
 View-layer boundary reference: [Views Architecture](../views/architecture.md).
 
 The view-level fuzzy filter is intentionally non-destructive: it does not mutate provider state and only narrows visible rows in the panel.
+
+### Global Query Filtering Architecture (`TasksQueryFilter`)
+
+Adhering strictly to **SOLID** and **DRY** principles, the parsing and evaluation of Obsidian Tasks global query statements are encapsulated in the dedicated `TasksQueryFilter` class.
+
+- **Single Responsibility Principle (SRP)**: `TasksQueryFilter` handles exclusively query parsing, operator mapping, and evaluation. It is fully decoupled from the UI and main `TasksPluginProvider` lifecycle.
+- **Open/Closed Principle (OCP)**: Adding new fields or operators only requires updating internal `TasksQueryFilter` mapping dictionaries without modifying the core cache subscription registry.
+- **DRY (Don't Repeat Yourself)**: Operator normalization (`include`/`includes`, `is`/`are`) and tag cleaning (removing `#` symbols) are unified under reusable matchers.
+
+#### Supported Field & Operator Matrix
+
+| Field | Description | Supported Operators | Normalization / Cleaning |
+|---|---|---|---|
+| `path` | Full filepath matching | `includes`, `does not include`, `is`, `is not`, `regex matches`, `regex does not match` | Evaluated against file's absolute path |
+| `folder` | Parent folder matching | `includes`, `does not include`, `is`, `is not`, `regex matches`, `regex does not match` | Extracted as the substring of `filePath` up to the final slash |
+| `description` | Task title matching | `includes`, `does not include`, `is`, `is not`, `regex matches`, `regex does not match` | Matcher uses the parsed, metadata-stripped task title |
+| `tag` / `tags` | Multi-tag list matching | `includes`, `does not include`, `is`, `is not`, `regex matches`, `regex does not match` | Extracts `#tag` markers from both title and raw markdown line; matches are case-insensitive and ignore the leading `#` |
+| `priority` | Priority level matching | `is`, `is not` | Maps emoji markers (`🔺` for `highest`, `⏫` for `high`, `🔼` for `medium`, `🔽` for `low`, `⏬` for `lowest`, none for `none`) to standard priority string keys |
+
+#### Rule Execution Flow
+
+```mermaid
+graph TD
+    A[Start: getUndatedTasks] --> B{Global Query Enabled?}
+    B -- No --> C[Return All Undated, Incomplete Tasks]
+    B -- Yes --> D[Fetch globalQuery from Obsidian Tasks Plugin Settings]
+    D --> E[Parse Query Line-by-Line]
+    E --> F[Filter out comments/empty lines/display rules]
+    F --> G[Initialize TasksQueryFilter with remaining rules]
+    G --> H[Evaluate matchesAll task against Rules - logical AND]
+    H --> I[Return Filtered Backlog Tasks]
+```
 
 ---
 

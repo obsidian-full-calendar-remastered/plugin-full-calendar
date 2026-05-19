@@ -19,12 +19,33 @@ The integration revolves around two surfaces: the **Backlog** (where unscheduled
 
 4.  **Execute**: Mark tasks as complete directly on the calendar; the checkbox state syncs back to your note instantly.
 
-## Backlog Filtering
+## Backlog Filtering & Global Queries
 
-The Tasks Backlog supports two filters that work together:
+The Tasks Backlog supports multiple filters that work together seamlessly to help you manage even the largest backlogs:
 
 - **Missing Date** dropdown: selects which missing Tasks date marker defines backlog membership (`⏳`, `🛫`, or `📅`).
 - **Fuzzy Search** input: filters visible backlog rows by task title, file name, or full file path.
+- **Global Query Filter** (Toggle): When **"Include global query in the backlog"** is enabled in settings, Full Calendar will retrieve the global query string defined in your Obsidian Tasks plugin settings and apply all its filter rules to the backlog in real-time. This is extremely powerful for excluding archive files, private areas, templates, or only matching specific folders/tags automatically.
+
+### Supported Global Query Syntax
+
+Full Calendar implements a lightweight, on-the-fly execution engine for Obsidian Tasks queries, supporting:
+
+*   **Positive & Negative Path/Folder matches**:
+    *   `path does not include 05 - Someday`
+    *   `path includes Work`
+    *   `folder includes Projects`
+*   **Tag filtering (with or without `#`)**:
+    *   `tags include wellness` (or `tags include #wellness`)
+    *   `tags do not include archive`
+*   **Priority filters**:
+    *   `priority is high`
+    *   `priority is not none`
+*   **Regular Expression evaluation**:
+    *   `description regex matches /wellness/i`
+    *   `path regex does not match /archive/i`
+*   **Logical AND combination**: Each line in your global query acts as an additional constraint; all lines must match for a task to be shown.
+*   **Comment & Ignored lines**: Lines starting with `#` and search layout instructions (like `limit`, `explain`, `sort by`, `group by`) are automatically ignored.
 
 ### Fuzzy Search behavior
 
@@ -120,6 +141,7 @@ Once you add a **Tasks** source in **[Calendar Settings](../settings/sources.md)
 *   **Calendar Display Date**: Choose which date determines the task's position on the grid.
 *   **Auto-Open Edit Modal**: If enabled, dropping a task from the backlog will immediately open the Tasks plugin's native edit modal for further refinement.
 *   **Task Time Format**: Choose how Full Calendar writes time back to task lines. Default is **Day Planner Format**.
+*   **Include global query in the backlog**: If enabled, applies the Obsidian Tasks global query filters to the backlog view to hide unwanted tasks.
 
 ## Advanced Settings
 

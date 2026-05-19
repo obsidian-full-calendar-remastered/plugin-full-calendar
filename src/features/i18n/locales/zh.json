@@ -739,6 +739,10 @@
         "start": "开始日期",
         "due": "截止日期"
       },
+      "includeGlobalQueryInBacklog": {
+        "label": "在待办事项中包含全局查询",
+        "description": "将 Obsidian Tasks 全局查询过滤器应用于待办事项视图。"
+      },
       "calendarDisplayDateTarget": {
         "label": "日历显示日期字段",
         "description": "选择日历用于显示 Tasks 事件的 Tasks 日期标记。没有回退到其他日期标记的选项。重启 Obsidian 或重新加载插件以使此更改完全生效。"

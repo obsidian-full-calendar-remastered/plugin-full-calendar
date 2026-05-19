@@ -34,7 +34,13 @@ type MockPlugin = {
     vault: { getMarkdownFiles: jest.Mock };
     workspace: { trigger: jest.Mock; on: jest.Mock };
     plugins?: {
-      plugins?: Record<string, { apiV1?: { editTaskLineModal: jest.Mock } }>;
+      plugins?: Record<
+        string,
+        {
+          apiV1?: { editTaskLineModal: jest.Mock };
+          settings?: { globalQuery?: string };
+        }
+      >;
     };
   };
   registerEvent: jest.Mock;
@@ -600,6 +606,265 @@ describe('TasksPluginProvider', () => {
       expect(() => {
         new TasksPluginProvider(config, mockPlugin as unknown as FullCalendarPlugin);
       }).toThrow('TasksPluginProvider requires an Obsidian app interface.');
+    });
+  });
+
+  describe('global query filtering', () => {
+    let tasksPluginSettings: { globalQuery: string };
+
+    beforeEach(() => {
+      const settingsObj = { globalQuery: '' };
+      tasksPluginSettings = settingsObj;
+      mockPlugin.app.plugins = {
+        plugins: {
+          'obsidian-tasks-plugin': {
+            settings: settingsObj
+          }
+        }
+      };
+    });
+
+    it('filters backlog tasks by path (positive and negative)', async () => {
+      mockPlugin.settings.tasksIntegration.includeGlobalQueryInBacklog = true;
+      tasksPluginSettings.globalQuery = 'path does not include Someday\npath includes Work';
+
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Work/ProjectA.md',
+                  description: 'Task 1',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Task 1',
+                  isDone: false
+                },
+                {
+                  path: 'Someday/ProjectB.md',
+                  description: 'Task 2',
+                  taskLocation: { lineNumber: 1 },
+                  originalMarkdown: '- [ ] Task 2',
+                  isDone: false
+                },
+                {
+                  path: 'Archive/ProjectC.md',
+                  description: 'Task 3',
+                  taskLocation: { lineNumber: 2 },
+                  originalMarkdown: '- [ ] Task 3',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      const tasks = await provider.getUndatedTasks();
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].title).toBe('Task 1');
+    });
+
+    it('filters backlog tasks by folder', async () => {
+      mockPlugin.settings.tasksIntegration.includeGlobalQueryInBacklog = true;
+      tasksPluginSettings.globalQuery = 'folder includes Projects';
+
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Projects/ProjectA/task1.md',
+                  description: 'Task 1',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Task 1',
+                  isDone: false
+                },
+                {
+                  path: 'Archive/task2.md',
+                  description: 'Task 2',
+                  taskLocation: { lineNumber: 1 },
+                  originalMarkdown: '- [ ] Task 2',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      const tasks = await provider.getUndatedTasks();
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].title).toBe('Task 1');
+    });
+
+    it('filters backlog tasks by tags (with or without # prefix)', async () => {
+      mockPlugin.settings.tasksIntegration.includeGlobalQueryInBacklog = true;
+      tasksPluginSettings.globalQuery = 'tags include #wellness\ntags do not include #work';
+
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Daily.md',
+                  description: 'Task 1 #wellness',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Task 1 #wellness',
+                  isDone: false
+                },
+                {
+                  path: 'Daily.md',
+                  description: 'Task 2 #wellness #work',
+                  taskLocation: { lineNumber: 1 },
+                  originalMarkdown: '- [ ] Task 2 #wellness #work',
+                  isDone: false
+                },
+                {
+                  path: 'Daily.md',
+                  description: 'Task 3',
+                  taskLocation: { lineNumber: 2 },
+                  originalMarkdown: '- [ ] Task 3',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      const tasks = await provider.getUndatedTasks();
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].title).toBe('Task 1 #wellness');
+    });
+
+    it('filters backlog tasks by priority matches', async () => {
+      mockPlugin.settings.tasksIntegration.includeGlobalQueryInBacklog = true;
+      tasksPluginSettings.globalQuery = 'priority is high';
+
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Daily.md',
+                  description: 'Task 1 ⏫',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Task 1 ⏫',
+                  isDone: false
+                },
+                {
+                  path: 'Daily.md',
+                  description: 'Task 2 🔽',
+                  taskLocation: { lineNumber: 1 },
+                  originalMarkdown: '- [ ] Task 2 🔽',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      const tasks = await provider.getUndatedTasks();
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].title).toBe('Task 1');
+    });
+
+    it('filters backlog tasks with regex matching', async () => {
+      mockPlugin.settings.tasksIntegration.includeGlobalQueryInBacklog = true;
+      tasksPluginSettings.globalQuery = 'description regex matches /wellness/i';
+
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Daily.md',
+                  description: 'Wellness - Task 1',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Wellness - Task 1',
+                  isDone: false
+                },
+                {
+                  path: 'Daily.md',
+                  description: 'Regular Task 2',
+                  taskLocation: { lineNumber: 1 },
+                  originalMarkdown: '- [ ] Regular Task 2',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      const tasks = await provider.getUndatedTasks();
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].title).toBe('Wellness - Task 1');
+    });
+
+    it('ignores display-only or comment rules and still returns tasks', async () => {
+      mockPlugin.settings.tasksIntegration.includeGlobalQueryInBacklog = true;
+      tasksPluginSettings.globalQuery = '# This is a comment\nlimit 5\nexplain';
+
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Daily.md',
+                  description: 'Task 1',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Task 1',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      const tasks = await provider.getUndatedTasks();
+      expect(tasks).toHaveLength(1);
+    });
+
+    it('returns all backlog tasks when includeGlobalQueryInBacklog is disabled', async () => {
+      mockPlugin.settings.tasksIntegration.includeGlobalQueryInBacklog = false;
+      tasksPluginSettings.globalQuery = 'path does not include Someday';
+
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Someday/ProjectB.md',
+                  description: 'Task 1',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Task 1',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      const tasks = await provider.getUndatedTasks();
+      expect(tasks).toHaveLength(1);
     });
   });
 });

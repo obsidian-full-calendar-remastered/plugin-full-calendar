@@ -743,6 +743,10 @@
         "label": "Tasks-Bearbeitungsfenster nach Backlog-Drop öffnen",
         "description": "Öffnet das Obsidian Tasks-Bearbeitungsfenster sofort nach dem Ziehen einer Aufgabe aus dem Backlog in den Kalender."
       },
+      "includeGlobalQueryInBacklog": {
+        "label": "Globale Abfrage im Backlog berücksichtigen",
+        "description": "Wenden Sie die Filter der globalen Abfrage von Obsidian Tasks auf die Backlog-Ansicht an."
+      },
       "calendarDisplayDateTarget": {
         "label": "Kalender-Anzeigedatum-Feld",
         "description": "Wählen Sie, welchen Tasks-Datumsmarker Full Calendar zur Anzeige von Tasks-Ereignissen verwendet. Es gibt kein Fallback auf andere Datumsmarker. Starten Sie Obsidian neu oder laden Sie das Plugin neu, damit diese Änderung vollständig wirksam wird."

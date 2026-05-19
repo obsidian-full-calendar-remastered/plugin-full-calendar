@@ -743,6 +743,10 @@
         "label": "Abrir modal de edición de Tasks tras soltar en backlog",
         "description": "Abre el modal de edición de Tasks de Obsidian inmediatamente después de arrastrar una tarea del backlog al calendario."
       },
+      "includeGlobalQueryInBacklog": {
+        "label": "Incluir consulta global en el backlog",
+        "description": "Aplicar los filtros de la consulta global de Obsidian Tasks a la vista de backlog."
+      },
       "calendarDisplayDateTarget": {
         "label": "Campo de fecha de visualización del calendario",
         "description": "Elige qué marcador de fecha de Tasks utiliza Full Calendar para mostrar los eventos de Tasks. No hay alternativa a otros marcadores de fecha. Reinicia Obsidian o recarga el plugin para que este cambio surta efecto."

@@ -751,6 +751,10 @@
         "label": "Open Tasks edit modal after backlog drop",
         "description": "Open the Obsidian Tasks edit modal immediately after dragging a task from the backlog onto the calendar."
       },
+      "includeGlobalQueryInBacklog": {
+        "label": "Include global query in the backlog",
+        "description": "Apply the Obsidian Tasks global query filters to the backlog view."
+      },
       "taskDisplayFormat": {
         "label": "Task time format",
         "description": "Choose how Full Calendar writes time into Tasks lines.",

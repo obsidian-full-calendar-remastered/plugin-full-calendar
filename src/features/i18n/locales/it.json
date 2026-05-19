@@ -743,6 +743,10 @@
         "label": "Apri la finestra di modifica Tasks dopo rilascio backlog",
         "description": "Apre immediatamente la finestra di modifica Tasks di Obsidian dopo aver trascinato un'attività dal backlog sul calendario."
       },
+      "includeGlobalQueryInBacklog": {
+        "label": "Includi query globale nel backlog",
+        "description": "Applica i filtri della query globale di Obsidian Tasks alla vista backlog."
+      },
       "calendarDisplayDateTarget": {
         "label": "Campo data di visualizzazione calendario",
         "description": "Scegli quale marcatore di data di Tasks Full Calendar utilizza per visualizzare gli eventi Tasks. Nessun fallback su altri marcatori di data. Riavvia Obsidian o ricarica il plugin affinché questa modifica abbia effetto."

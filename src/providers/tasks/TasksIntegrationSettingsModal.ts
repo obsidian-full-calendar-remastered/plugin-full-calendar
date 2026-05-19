@@ -63,6 +63,18 @@ export class TasksIntegrationSettingsModal extends Modal {
       });
 
     new Setting(this.contentEl)
+      .setName(t('settings.tasksIntegration.includeGlobalQueryInBacklog.label'))
+      .setDesc(t('settings.tasksIntegration.includeGlobalQueryInBacklog.description'))
+      .addToggle(toggle => {
+        toggle.setValue(settings.includeGlobalQueryInBacklog ?? false).onChange(async value => {
+          settings.includeGlobalQueryInBacklog = value;
+          await PluginState.saveSettings();
+          PluginState.getProviderRegistry().refreshBacklogViews();
+          this.onChange();
+        });
+      });
+
+    new Setting(this.contentEl)
       .setName(t('settings.tasksIntegration.taskDisplayFormat.label'))
       .setDesc(t('settings.tasksIntegration.taskDisplayFormat.description'))
       .addDropdown(dropdown => {

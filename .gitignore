@@ -30,6 +30,9 @@ docs/**/.*
 exported*
 .DS_Store
 *.lnk
+css_report.txt
+lint_report.txt
+
 
 # Local vault configuration (private)
 .vault-config.json

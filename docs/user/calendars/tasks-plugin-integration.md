@@ -135,6 +135,9 @@ The integration includes several automatic behaviors to keep your calendar clean
 
 ## Integration Settings
 
+!!! warning "Reloading the Plugin / Restarting Obsidian"
+    When you add a **Tasks** calendar source for the first time, you may need to reload the Full Calendar plugin (or restart Obsidian) for the backlog sidebar command (`Full Calendar: Open tasks backlog`), ribbon icon, and settings section to register and appear in the UI.
+
 Once you add a **Tasks** source in **[Calendar Settings](../settings/sources.md)**, a new **Integrations → Tasks** section appears:
 
 *   **Backlog Filter Date**: Choose which missing date makes a task "unscheduled" (e.g., show tasks missing a `⏳`).

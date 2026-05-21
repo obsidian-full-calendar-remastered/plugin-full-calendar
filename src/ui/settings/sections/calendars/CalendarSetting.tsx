@@ -84,7 +84,13 @@ export class CalendarSettings
 
   constructor(props: CalendarSettingsProps) {
     super(props);
-    this.state = { sources: props.sources };
+    this.state = { sources: [...props.sources] };
+  }
+
+  componentDidUpdate(prevProps: CalendarSettingsProps) {
+    if (prevProps.sources !== this.props.sources) {
+      this.setState({ sources: [...this.props.sources] });
+    }
   }
 
   componentWillUnmount() {
@@ -121,18 +127,14 @@ export class CalendarSettings
       this.debounceTimer = null;
       // Re-read current state at flush time to capture any
       // additional edits that occurred during the debounce window
-      this.props.submit(this.state.sources);
+      this.props.submit(sources);
     }, CalendarSettings.DEBOUNCE_MS);
   }
 
   addSource = (source: CalendarInfo) => {
-    this.setState(
-      state => {
-        const newSources = [...state.sources, source];
-        return { sources: newSources };
-      },
-      () => this.saveImmediate(this.state.sources)
-    );
+    const exists = this.state.sources.some(s => s.id === source.id);
+    const newSources = exists ? this.state.sources : [...this.state.sources, source];
+    this.setState({ sources: newSources }, () => this.saveImmediate(newSources));
   };
 
   getUsedDirectories = () => {
@@ -142,14 +144,9 @@ export class CalendarSettings
   };
 
   updateSourceName = (index: number, name: string) => {
-    this.setState(
-      state => {
-        const newSources = [...state.sources];
-        newSources[index] = { ...newSources[index], name };
-        return { sources: newSources };
-      },
-      () => this.saveDebounced(this.state.sources)
-    );
+    const newSources = [...this.state.sources];
+    newSources[index] = { ...newSources[index], name };
+    this.setState({ sources: newSources }, () => this.saveDebounced(newSources));
   };
 
   render() {
@@ -161,26 +158,20 @@ export class CalendarSettings
             setting={s}
             plugin={this.props.plugin}
             onNameChange={(name: string) => this.updateSourceName(idx, name)}
-            onColorChange={(color: string) =>
-              this.setState(
-                state => ({
-                  sources: [
-                    ...state.sources.slice(0, idx),
-                    { ...state.sources[idx], color },
-                    ...state.sources.slice(idx + 1)
-                  ]
-                }),
-                () => this.saveDebounced(this.state.sources)
-              )
-            }
+            onColorChange={(color: string) => {
+              const newSources = [
+                ...this.state.sources.slice(0, idx),
+                { ...this.state.sources[idx], color },
+                ...this.state.sources.slice(idx + 1)
+              ];
+              this.setState({ sources: newSources }, () => this.saveDebounced(newSources));
+            }}
             deleteCalendar={() => {
-              // Validate: prevent removing the last dailynote if there's only one
-              this.setState(
-                state => ({
-                  sources: [...state.sources.slice(0, idx), ...state.sources.slice(idx + 1)]
-                }),
-                () => this.saveImmediate(this.state.sources)
-              );
+              const newSources = [
+                ...this.state.sources.slice(0, idx),
+                ...this.state.sources.slice(idx + 1)
+              ];
+              this.setState({ sources: newSources }, () => this.saveImmediate(newSources));
             }}
           />
         ))}

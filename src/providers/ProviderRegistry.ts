@@ -174,7 +174,7 @@ export class ProviderRegistry {
   }
 
   public getAllSources(): CalendarInfo[] {
-    return this.sources;
+    return [...this.sources];
   }
 
   public getConfig(id: string): Record<string, unknown> | undefined {

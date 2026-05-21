@@ -225,14 +225,14 @@ async function fetchCalendarObjectsViaPropfindFallback(
   return fetchCalendarObjectsByRefs(collectionUrl, refs, authHeader);
 }
 
-// --- Direct REPORT + GET implementation (standards-compliant) ---
-async function fetchCalendarObjects(
+async function fetchCalendarObjectsForComponent(
   collectionUrl: string,
   start: Date,
   end: Date,
-  username?: string,
-  password?: string
-) {
+  componentName: 'VEVENT' | 'VTODO',
+  authHeader?: string,
+  allowFallback = true
+): Promise<{ icsList: { ics: string; etag?: string }[]; fellBack: boolean }> {
   const reportBody = `<?xml version="1.0" encoding="utf-8"?>
 <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
   <d:prop>
@@ -241,14 +241,12 @@ async function fetchCalendarObjects(
   </d:prop>
   <c:filter>
     <c:comp-filter name="VCALENDAR">
-      <c:comp-filter name="VEVENT">
+      <c:comp-filter name="${componentName}">
         <c:time-range start="${ymdhmsZ(start)}" end="${ymdhmsZ(end)}"/>
       </c:comp-filter>
     </c:comp-filter>
   </c:filter>
 </c:calendar-query>`;
-
-  const authHeader = createBasicAuthHeader(username, password);
 
   const reportHeaders: Record<string, string> = {
     Depth: '1',
@@ -259,8 +257,6 @@ async function fetchCalendarObjects(
     reportHeaders['Authorization'] = authHeader;
   }
 
-  // STEP 1: Send the REPORT to get the list of event URLs and data
-
   const reportRes = await obsidianFetch(canonCollection(collectionUrl), {
     method: 'REPORT',
     headers: reportHeaders,
@@ -270,13 +266,14 @@ async function fetchCalendarObjects(
   const xml = await reportRes.text();
 
   if (reportRes.status < 200 || reportRes.status >= 300) {
-    if (shouldUseCompatibilityFetch(reportRes.status)) {
+    if (allowFallback && shouldUseCompatibilityFetch(reportRes.status)) {
       console.warn(
-        `[CalDAVProvider] REPORT ${reportRes.status}; attempting compatibility fallback.`
+        `[CalDAVProvider] REPORT for ${componentName} ${reportRes.status}; attempting compatibility fallback.`
       );
-      return fetchCalendarObjectsViaPropfindFallback(collectionUrl, authHeader);
+      const list = await fetchCalendarObjectsViaPropfindFallback(collectionUrl, authHeader);
+      return { icsList: list, fellBack: true };
     }
-    console.error('[CalDAVProvider] REPORT request failed', reportRes.status, xml.slice(0, 800));
+    console.error(`[CalDAVProvider] REPORT request failed`, reportRes.status, xml.slice(0, 800));
     throw new Error(`REPORT ${reportRes.status}`);
   }
 
@@ -286,14 +283,10 @@ async function fetchCalendarObjects(
   const doc = ensureXmlDocument(xml, 'CalDAV REPORT');
   const icsList: { ics: string; etag?: string }[] = [];
 
-  // Robustly find calendar-data elements regardless of namespace prefix
-  // We use getElementsByTagNameNS('*', 'response') to find all response elements regardless of namespace
   const responses = doc.getElementsByTagNameNS('*', 'response');
   const allResponses = Array.from(responses);
 
   for (const response of allResponses) {
-    // Find calendar-data within this response
-    // We use wildcard namespace to find propstat and prop elements
     const propstats = response.getElementsByTagNameNS('*', 'propstat');
 
     for (let i = 0; i < propstats.length; i++) {
@@ -306,13 +299,11 @@ async function fetchCalendarObjects(
       if (!prop) continue;
 
       // Try to find calendar-data
-      // 1. Try standard namespace
       let calendarData = prop.getElementsByTagNameNS(
         'urn:ietf:params:xml:ns:caldav',
         'calendar-data'
       )[0];
 
-      // 2. Try wildcard namespace if specific one fails
       if (!calendarData) {
         const candidates = prop.getElementsByTagNameNS('*', 'calendar-data');
         if (candidates.length > 0) {
@@ -325,7 +316,6 @@ async function fetchCalendarObjects(
           calendarData.textContent || '',
           'CalDAV REPORT returned empty calendar-data payload.'
         );
-        // Try to find etag
         let etag = prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent;
         if (!etag) {
           const candidates = prop.getElementsByTagNameNS('*', 'getetag');
@@ -344,11 +334,9 @@ async function fetchCalendarObjects(
   if (icsList.length === 0) {
     const eventHrefs: string[] = [];
 
-    // Parse hrefs using DOMParser
     for (const response of allResponses) {
       let hrefEl = response.getElementsByTagNameNS('DAV:', 'href')[0];
       if (!hrefEl) {
-        // Fallback to wildcard
         const candidates = response.getElementsByTagNameNS('*', 'href');
         if (candidates.length > 0) {
           hrefEl = candidates[0];
@@ -361,17 +349,80 @@ async function fetchCalendarObjects(
     }
 
     if (eventHrefs.length === 0) {
-      return [];
+      return { icsList: [], fellBack: false };
     }
 
-    return fetchCalendarObjectsByRefs(
+    const list = await fetchCalendarObjectsByRefs(
       collectionUrl,
       eventHrefs.map(href => ({ href })),
       authHeader
     );
+    return { icsList: list, fellBack: false };
   }
 
-  return icsList;
+  return { icsList, fellBack: false };
+}
+
+// --- Direct REPORT + GET implementation (standards-compliant) ---
+async function fetchCalendarObjects(
+  collectionUrl: string,
+  start: Date,
+  end: Date,
+  username?: string,
+  password?: string
+): Promise<{ ics: string; etag?: string }[]> {
+  const authHeader = createBasicAuthHeader(username, password);
+
+  // 1. Fetch VEVENT components (allow fallback)
+  const { icsList: veventList, fellBack } = await fetchCalendarObjectsForComponent(
+    collectionUrl,
+    start,
+    end,
+    'VEVENT',
+    authHeader,
+    true
+  );
+
+  // If compatibility fallback was triggered, we already have all resource files (VEVENT & VTODO)
+  // from the collection, so we can return them directly!
+  if (fellBack) {
+    return veventList;
+  }
+
+  // 2. Fetch VTODO components, catching errors gracefully to maintain calendar-only compatibility.
+  // We disable fallback here because if VEVENT didn't need it, VTODO doesn't need it.
+  let vtodoList: { ics: string; etag?: string }[] = [];
+  try {
+    const res = await fetchCalendarObjectsForComponent(
+      collectionUrl,
+      start,
+      end,
+      'VTODO',
+      authHeader,
+      false
+    );
+    vtodoList = res.icsList;
+  } catch (err) {
+    console.warn(
+      '[CalDAVProvider] Failed to fetch VTODO components (possibly calendar-only collection). Skipping VTODO.',
+      err
+    );
+  }
+
+  // 3. Combine and deduplicate by 'ics' content payload
+  const combined = [...veventList, ...vtodoList];
+  const seenIcs = new Set<string>();
+  const deduplicated: { ics: string; etag?: string }[] = [];
+
+  for (const item of combined) {
+    const trimmed = item.ics.trim();
+    if (!seenIcs.has(trimmed)) {
+      seenIcs.add(trimmed);
+      deduplicated.push(item);
+    }
+  }
+
+  return deduplicated;
 }
 
 // --- Read-only settings row ---

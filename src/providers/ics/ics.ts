@@ -205,6 +205,237 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
   };
 }
 
+function todoToOFC(todo: ical.Component): OFCEvent | null {
+  const summary = String(todo.getFirstPropertyValue('summary') || '');
+  const uid = String(todo.getFirstPropertyValue('uid') || '');
+
+  const dtstartProp = todo.getFirstProperty('dtstart');
+  const dtstart: ical.Time | null = dtstartProp ? dtstartProp.getFirstValue() : null;
+
+  const dueProp = todo.getFirstProperty('due');
+  const due: ical.Time | null = dueProp ? dueProp.getFirstValue() : null;
+
+  // Find a baseline ical.Time for the date field
+  let baseTime: ical.Time | null = dtstart || due;
+  let hasValidBaseTime = false;
+
+  let startDate: DateTime | null = null;
+  if (baseTime) {
+    startDate = parseTimezoneAwareString(baseTime);
+    if (startDate.isValid) {
+      hasValidBaseTime = true;
+    }
+  }
+
+  if (!hasValidBaseTime) {
+    // Try dtstamp or created
+    const dtstampProp = todo.getFirstProperty('dtstamp');
+    const dtstamp: ical.Time | null = dtstampProp ? dtstampProp.getFirstValue() : null;
+    if (dtstamp) {
+      startDate = parseTimezoneAwareString(dtstamp);
+      if (startDate.isValid) {
+        baseTime = dtstamp;
+        hasValidBaseTime = true;
+      }
+    }
+  }
+
+  if (!hasValidBaseTime) {
+    const createdProp = todo.getFirstProperty('created');
+    const created: ical.Time | null = createdProp ? createdProp.getFirstValue() : null;
+    if (created) {
+      startDate = parseTimezoneAwareString(created);
+      if (startDate.isValid) {
+        baseTime = created;
+        hasValidBaseTime = true;
+      }
+    }
+  }
+
+  if (!hasValidBaseTime || !startDate) {
+    // Absolute fallback: current local date
+    startDate = DateTime.now();
+    baseTime = new ical.Time({
+      year: startDate.year,
+      month: startDate.month,
+      day: startDate.day,
+      isDate: true
+    });
+  }
+
+  const isAllDay = baseTime ? baseTime.isDate : true;
+  const timezone = isAllDay ? undefined : startDate.zoneName || undefined;
+
+  const description = String(todo.getFirstPropertyValue('description') || '');
+  const location = String(todo.getFirstPropertyValue('location') || '');
+  const url = String(todo.getFirstPropertyValue('url') || '');
+
+  // Handle completed status
+  const status = todo.getFirstPropertyValue('status');
+  const completedProp = todo.getFirstProperty('completed');
+  let completedValue: string | false = false;
+
+  if (completedProp) {
+    const completedTime: ical.Time = completedProp.getFirstValue();
+    const completedLuxon = parseTimezoneAwareString(completedTime);
+    if (completedLuxon.isValid) {
+      completedValue = completedLuxon.toISO() || completedLuxon.toISODate() || '';
+    } else {
+      completedValue = (completedTime as unknown as { toString(): string }).toString();
+    }
+  } else if (status === 'COMPLETED') {
+    completedValue = DateTime.now().toISO() || '';
+  }
+
+  // Check if recurring
+  const rruleProp = todo.getFirstProperty('rrule');
+  const rruleVal = rruleProp ? String(rruleProp.getFirstValue()) : null;
+  const rruleStr = rruleVal ? String(rruleVal) : '';
+
+  if (rruleStr) {
+    const rrule = rrulestr(rruleStr);
+    const exdates = todo
+      .getAllProperties('exdate')
+      .map(exdateProp => {
+        const exdate: ical.Time = exdateProp.getFirstValue();
+        const exdateLuxon = parseTimezoneAwareString(exdate);
+        if (!exdateLuxon.isValid) {
+          console.warn(`Full Calendar ICS Parser: Skipping invalid EXDATE for task "${summary}"`);
+          return null;
+        }
+        return exdateLuxon.toISODate();
+      })
+      .filter((d): d is string => d !== null);
+
+    const startDateISO = getLuxonDate(startDate);
+    let endDateISO: string | null = null;
+    if (due) {
+      const dueLuxon = parseTimezoneAwareString(due);
+      if (dueLuxon.isValid) {
+        endDateISO = getLuxonDate(dueLuxon);
+      }
+    }
+
+    if (!startDateISO) {
+      console.warn(
+        `Full Calendar ICS Parser: Could not convert start date to ISO for task "${summary}"`
+      );
+      return null;
+    }
+
+    const recurringTiming = (() => {
+      if (!startDate) {
+        return null;
+      }
+      if (isAllDay) {
+        return { allDay: true } as const;
+      }
+      const startTime = getLuxonTime(startDate);
+      let endTime = startTime;
+      if (due) {
+        const dueLuxon = parseTimezoneAwareString(due);
+        if (dueLuxon.isValid) {
+          endTime = getLuxonTime(dueLuxon);
+        }
+      }
+      if (!startTime || !endTime) {
+        return null;
+      }
+      return { allDay: false, startTime, endTime } as const;
+    })();
+
+    if (!recurringTiming) {
+      console.warn(`Full Calendar ICS Parser: Missing start or end time for task "${summary}"`);
+      return null;
+    }
+
+    return {
+      type: 'rrule',
+      uid,
+      title: summary,
+      id: `ics::${uid}::${startDateISO}::recurring`,
+      rrule: rrule.toString(),
+      skipDates: exdates,
+      startDate: startDateISO,
+      endDate: endDateISO && startDateISO !== endDateISO ? endDateISO : null,
+      timezone,
+      ...recurringTiming,
+      isTask: true,
+      description,
+      url:
+        url ||
+        (location && typeof location === 'string' && location.startsWith('http')
+          ? location
+          : undefined)
+    };
+  }
+
+  // Single task
+  const date = getLuxonDate(startDate);
+  if (!date) {
+    console.warn(
+      `Full Calendar ICS Parser: Could not convert start date to ISO for task "${summary}"`
+    );
+    return null;
+  }
+
+  let finalEndDate: string | null = null;
+  if (due) {
+    const dueLuxon = parseTimezoneAwareString(due);
+    if (dueLuxon.isValid) {
+      if (due.isDate) {
+        const inclusiveEndDate = dueLuxon.minus({ days: 1 });
+        finalEndDate = getLuxonDate(inclusiveEndDate);
+      } else {
+        finalEndDate = getLuxonDate(dueLuxon);
+      }
+    }
+  }
+
+  const singleTiming = (() => {
+    if (!startDate) {
+      return null;
+    }
+    if (isAllDay) {
+      return { allDay: true } as const;
+    }
+    const startTime = getLuxonTime(startDate);
+    let endTime = startTime;
+    if (due) {
+      const dueLuxon = parseTimezoneAwareString(due);
+      if (dueLuxon.isValid) {
+        endTime = getLuxonTime(dueLuxon);
+      }
+    }
+    if (!startTime || !endTime) {
+      return null;
+    }
+    return { allDay: false, startTime, endTime } as const;
+  })();
+
+  if (!singleTiming) {
+    console.warn(`Full Calendar ICS Parser: Missing start or end time for task "${summary}"`);
+    return null;
+  }
+
+  return {
+    type: 'single',
+    uid,
+    title: summary,
+    date: date,
+    endDate: date !== finalEndDate ? finalEndDate || null : null,
+    timezone,
+    ...singleTiming,
+    completed: completedValue,
+    description,
+    url:
+      url ||
+      (location && typeof location === 'string' && location.startsWith('http')
+        ? location
+        : undefined)
+  };
+}
+
 /**
  * Pre-processes ICS text to normalize date formats.
  * Converts YYYYMMDD and YYYYMMDDTHHMMSSZ formats to ensure proper parsing.
@@ -313,5 +544,50 @@ export function getEventsFromICS(text: string): OFCEvent[] {
 
   const allEvents = Object.values(baseEvents).concat(recurrenceExceptions.map(e => e[1]));
 
-  return allEvents.map(validateEvent).flatMap(e => (e ? [e] : []));
+  const vtodos = component.getAllSubcomponents('vtodo');
+
+  const baseTodos = Object.fromEntries(
+    vtodos
+      .filter(todo => !todo.getFirstProperty('recurrence-id'))
+      .map(todo => {
+        try {
+          const parsed = todoToOFC(todo);
+          return parsed ? [parsed.uid || '', parsed] : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter((pair): pair is [string, OFCEvent] => pair !== null)
+  );
+
+  const recurrenceExceptionsTodos = vtodos
+    .filter(todo => !!todo.getFirstProperty('recurrence-id'))
+    .map(todo => {
+      try {
+        return todoToOFC(todo);
+      } catch {
+        return null;
+      }
+    })
+    .filter((e): e is OFCEvent => e !== null);
+
+  for (const todoExc of recurrenceExceptionsTodos) {
+    const uid = todoExc.uid || '';
+    const baseTodo = baseTodos[uid];
+    if (!baseTodo) {
+      continue;
+    }
+    if (baseTodo.type !== 'rrule' || todoExc.type !== 'single') {
+      continue;
+    }
+    if (todoExc.date) {
+      baseTodo.skipDates.push(todoExc.date);
+    }
+  }
+
+  const allTodos = Object.values(baseTodos).concat(recurrenceExceptionsTodos);
+
+  const allEventsAndTodos = allEvents.concat(allTodos);
+
+  return allEventsAndTodos.map(validateEvent).flatMap(e => (e ? [e] : []));
 }

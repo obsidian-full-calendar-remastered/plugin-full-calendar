@@ -84,11 +84,15 @@ END:VCALENDAR
       .mockResolvedValueOnce({
         status: 207,
         text: () => Promise.resolve(mockReportResponse)
-      } as Response); // Second call: REPORT
+      } as Response) // Second call: REPORT for VEVENT
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(`<d:multistatus xmlns:d="DAV:"></d:multistatus>`)
+      } as Response); // Third call: REPORT for VTODO
 
     const events = await provider.getEvents();
 
-    expect(mockObsidianFetch).toHaveBeenCalledTimes(2);
+    expect(mockObsidianFetch).toHaveBeenCalledTimes(3);
 
     // Verify PROPFIND
     expect(mockObsidianFetch).toHaveBeenNthCalledWith(
@@ -102,7 +106,7 @@ END:VCALENDAR
       })
     );
 
-    // Verify REPORT
+    // Verify REPORT for VEVENT
     expect(mockObsidianFetch).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('https://example.com/caldav/user/calendar/events/'),
@@ -111,7 +115,20 @@ END:VCALENDAR
         headers: expect.objectContaining({
           Depth: '1'
         }) as Record<string, unknown>,
-        body: expect.stringContaining('<c:calendar-data/>') as string
+        body: expect.stringContaining('<c:comp-filter name="VEVENT">') as string
+      })
+    );
+
+    // Verify REPORT for VTODO
+    expect(mockObsidianFetch).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('https://example.com/caldav/user/calendar/events/'),
+      expect.objectContaining({
+        method: 'REPORT',
+        headers: expect.objectContaining({
+          Depth: '1'
+        }) as Record<string, unknown>,
+        body: expect.stringContaining('<c:comp-filter name="VTODO">') as string
       })
     );
 
@@ -257,6 +274,10 @@ END:VCALENDAR
       .mockResolvedValueOnce({
         status: 207,
         text: () => Promise.resolve(mockReportResponse)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(`<d:multistatus xmlns:d="DAV:"></d:multistatus>`)
       } as Response);
 
     const events = await provider.getEvents();

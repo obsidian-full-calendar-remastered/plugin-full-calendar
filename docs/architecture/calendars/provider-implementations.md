@@ -29,7 +29,14 @@ Timezone and recurrence edge handling rationale is documented in [RRULE Timezone
 
 ### CalDAV Provider (protocol patch behavior)
 
-Uses direct REPORT/GET flow with robust XML namespace handling and fallback retrieval paths when calendar-data is not returned inline. This is intentionally defensive due to server variability.
+Uses direct `REPORT`/`GET` flow with robust XML namespace handling and fallback retrieval paths when calendar-data is not returned inline. This is intentionally defensive due to server variability.
+
+#### VTODO & VEVENT Dual-REPORT Architecture
+- **Dual-REPORT Strategy:** Under the CalDAV RFC 4791 specification, time-range queries cannot filter for both `VEVENT` and `VTODO` components using a logical `OR` condition within a single `calendar-query` report, because sibling `comp-filter` elements are logically ANDed. To query both component types efficiently and standard-compliantly, the provider executes two sequential `REPORT` queries: one for `VEVENT` and one for `VTODO`.
+- **Fallback Avoidance:** If a server does not support standard `REPORT` queries and triggers a compatibility `PROPFIND` fallback (which fetches all files in the collection), the provider flags `fellBack = true` and skips the second `VTODO` `REPORT` query entirely, as the fallback has already fetched all objects (both events and tasks) in a single request.
+- **Content Deduplication:** All retrieved calendar objects are combined and deduplicated based on their raw ICS payload content to eliminate any overlaps.
+- **VTODO Parser/Formatter Mappings:** The ICS parser handles `VTODO` components by mapping them to `OFCEvent` structures (interpreting completion time or `COMPLETED` status, and mapping `due` as the end date). The ICS formatter serializes tasks into standard-compliant `VTODO` elements using `DUE` and `COMPLETED` properties.
+
 
 ### Google Provider
 

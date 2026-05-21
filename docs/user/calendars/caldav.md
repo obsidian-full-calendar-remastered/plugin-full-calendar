@@ -15,10 +15,9 @@ Calendars are automatically re-fetched from their source at most every five minu
 ## Two-Way Sync and Timezone Behavior
 
 - **Two-Way Sync:** CalDAV calendars now support full two-way synchronization. Changes made in Obsidian are pushed to the server, and remote changes are pulled in periodically.
-- **Timezones:** Events are parsed with their source timezone and converted to your Display Timezone for viewing.
+- **Task Support (VTODO):** CalDAV calendars support synchronizing tasks (`VTODO` components) in addition to events (`VEVENT`). Completed tasks are synchronized with their completion timestamps, while pending/active tasks are managed with the `NEEDS-ACTION` status. Time-based, all-day, and recurring tasks are fully supported.
+- **Timezones:** Events and tasks are parsed with their source timezone and converted to your Display Timezone for viewing.
 - **Cancellations:** Cancellations/exceptions present on the server are respected.
-
-
 
 ---
 

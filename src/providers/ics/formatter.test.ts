@@ -126,4 +126,45 @@ describe('ICS Formatter timezone serialization', () => {
     expect(ics).toContain('RECURRENCE-ID;VALUE=DATE:20260520\r\n');
     expect(ics).not.toContain('TZID');
   });
+
+  it('should serialize a completed task with status COMPLETED and completed datetime', () => {
+    const task = {
+      type: 'single',
+      title: 'Completed Task',
+      date: '2026-05-20',
+      startTime: '10:00',
+      endTime: '11:00',
+      allDay: false,
+      timezone: 'Europe/Amsterdam',
+      completed: '2026-05-20T10:30:00Z',
+      endDate: null
+    } as OFCEvent;
+
+    const ics = eventToIcs(task);
+    expect(ics).toContain('BEGIN:VTODO');
+    expect(ics).toContain('STATUS:COMPLETED');
+    expect(ics).toContain('COMPLETED:20260520T103000Z');
+    expect(ics).toContain('DTSTART;TZID=Europe/Amsterdam:20260520T100000');
+    expect(ics).toContain('DUE;TZID=Europe/Amsterdam:20260520T110000');
+    expect(ics).toContain('END:VTODO');
+  });
+
+  it('should serialize a pending/actionable task with status NEEDS-ACTION', () => {
+    const task = {
+      type: 'single',
+      title: 'Pending Task',
+      date: '2026-05-20',
+      allDay: true,
+      completed: false,
+      endDate: null
+    } as OFCEvent;
+
+    const ics = eventToIcs(task);
+    expect(ics).toContain('BEGIN:VTODO');
+    expect(ics).toContain('STATUS:NEEDS-ACTION');
+    expect(ics).not.toContain('COMPLETED');
+    expect(ics).toContain('DTSTART;VALUE=DATE:20260520');
+    expect(ics).toContain('DUE;VALUE=DATE:20260521');
+    expect(ics).toContain('END:VTODO');
+  });
 });

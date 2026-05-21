@@ -1,6 +1,7 @@
 import { OFCEvent } from '../../types';
 import ical from 'ical.js';
 import { DateTime } from 'luxon';
+import { isTask } from '../../types/tasks';
 
 /**
  * Formats a Luxon DateTime into an iCal DATE-TIME string (YYYYMMDDTHHMMSSZ or local).
@@ -165,6 +166,154 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
 }
 
 /**
+ * Helper to generate the VTODO component structure.
+ */
+function createVTodoComponent(event: OFCEvent, isOverride = false): ical.Component {
+  const vtodo = new ical.Component('vtodo');
+
+  // UID
+  if (event.uid) {
+    vtodo.addPropertyWithValue('uid', event.uid);
+  } else {
+    vtodo.addPropertyWithValue('uid', window.crypto.randomUUID());
+  }
+
+  // Summary (Title)
+  vtodo.addPropertyWithValue('summary', event.title);
+
+  // DTSTAMP (Required by RFC 5545)
+  vtodo.addPropertyWithValue('dtstamp', ical.Time.now());
+
+  // START Date/Time extraction based on event type
+  let datePart: string;
+  if (event.type === 'single') {
+    datePart = event.date;
+  } else if (event.type === 'rrule') {
+    datePart = event.startDate;
+  } else {
+    // 'recurring' type
+    datePart = event.startRecur || DateTime.now().toISODate();
+  }
+
+  // DTSTART & DUE
+  let startDt: DateTime;
+  let dueDt: DateTime;
+
+  if (event.allDay) {
+    startDt = DateTime.fromISO(datePart);
+    if (event.type === 'single' && event.endDate) {
+      dueDt = DateTime.fromISO(event.endDate).plus({ days: 1 });
+    } else {
+      dueDt = startDt.plus({ days: 1 });
+    }
+  } else {
+    // Not all day
+    const startTime = (event as unknown as { startTime?: string }).startTime || '00:00';
+    const endTime = (event as unknown as { endTime?: string }).endTime || '00:00';
+    const opts = event.timezone ? { zone: event.timezone } : {};
+
+    startDt = DateTime.fromISO(`${datePart}T${startTime}`, opts);
+
+    if (event.type === 'single' && event.endDate) {
+      dueDt = DateTime.fromISO(`${event.endDate}T${endTime}`, opts);
+    } else {
+      dueDt = DateTime.fromISO(`${datePart}T${endTime}`, opts);
+      if (dueDt < startDt) {
+        dueDt = dueDt.plus({ days: 1 });
+      }
+    }
+  }
+
+  addTimeProperty(
+    vtodo,
+    'dtstart',
+    formatDateTime(startDt, event.allDay),
+    event.allDay,
+    event.timezone
+  );
+  addTimeProperty(vtodo, 'due', formatDateTime(dueDt, event.allDay), event.allDay, event.timezone);
+
+  // Description
+  if (event.description) {
+    vtodo.addPropertyWithValue('description', event.description);
+  }
+
+  // Location/URL mapping:
+  if (event.url) {
+    vtodo.addPropertyWithValue('url', event.url);
+  } else if (
+    event.location &&
+    typeof event.location === 'string' &&
+    event.location.startsWith('http')
+  ) {
+    vtodo.addPropertyWithValue('url', event.location);
+  }
+  if (event.location) {
+    vtodo.addPropertyWithValue('location', event.location);
+  }
+
+  // Completed status
+  if (event.type === 'single' && event.completed) {
+    vtodo.addPropertyWithValue('status', 'COMPLETED');
+    try {
+      const completedDt = DateTime.fromISO(event.completed).toUTC();
+      if (completedDt.isValid) {
+        addTimeProperty(vtodo, 'completed', formatDateTime(completedDt, false), false, 'UTC');
+      }
+    } catch (e) {
+      console.error('Failed to parse completed date', e);
+    }
+  } else if (event.type === 'single' && event.completed === false) {
+    vtodo.addPropertyWithValue('status', 'NEEDS-ACTION');
+  } else {
+    vtodo.addPropertyWithValue('status', 'NEEDS-ACTION');
+  }
+
+  // Recurrence (RRULE) - Only for master events, not overrides usually
+  if (!isOverride && event.type === 'rrule' && event.rrule) {
+    try {
+      const ruleStr = event.rrule.replace(/^RRULE:/i, '');
+      const recur = (ical.Recur as unknown as { fromString?: (s: string) => unknown }).fromString
+        ? (ical.Recur as unknown as { fromString: (s: string) => unknown }).fromString(ruleStr)
+        : null;
+      if (recur) {
+        vtodo.addPropertyWithValue('rrule', recur);
+      } else {
+        const prop = new ical.Property('rrule');
+        prop.setValue(ruleStr);
+        vtodo.addProperty(prop);
+      }
+    } catch (e) {
+      console.error('Failed to add RRULE', e);
+    }
+  }
+
+  // EXDATE - Only for master events
+  if (
+    !isOverride &&
+    (event.type === 'rrule' || event.type === 'recurring') &&
+    event.skipDates &&
+    event.skipDates.length > 0
+  ) {
+    for (const skipDate of event.skipDates) {
+      let exTime: ical.Time;
+      if (event.allDay) {
+        const exDt = DateTime.fromISO(skipDate);
+        exTime = new ical.Time({ year: exDt.year, month: exDt.month, day: exDt.day, isDate: true });
+      } else {
+        const startTime = (event as unknown as { startTime?: string }).startTime || '00:00';
+        const opts = event.timezone ? { zone: event.timezone } : {};
+        const exDt = DateTime.fromISO(`${skipDate}T${startTime}`, opts);
+        exTime = formatDateTime(exDt, false);
+      }
+      addTimeProperty(vtodo, 'exdate', exTime, event.allDay, event.timezone);
+    }
+  }
+
+  return vtodo;
+}
+
+/**
  * Converts an OFCEvent to an ICS string.
  */
 export function eventToIcs(event: OFCEvent): string {
@@ -172,31 +321,24 @@ export function eventToIcs(event: OFCEvent): string {
   component.addPropertyWithValue('version', '2.0');
   component.addPropertyWithValue('prodid', '-//Obsidian Full Calendar Plugin//NONSGML v1.0//EN');
 
-  const vevent = createVEventComponent(event);
-  component.addSubcomponent(vevent);
+  const sub = isTask(event) ? createVTodoComponent(event) : createVEventComponent(event);
+  component.addSubcomponent(sub);
 
   return (component as unknown as { toString(): string }).toString();
 }
 
 /**
- * Creates a VEVENT component for an instance override.
+ * Creates a VEVENT or VTODO component for an instance override.
  * @param event The new event data for the specific instance.
  * @param originalDate The original start date/time of the instance being modified (ISO string).
  */
 export function createOverrideVEvent(event: OFCEvent, originalDate: string): ical.Component {
-  // 1. Create the base VEVENT with new data
-  const vevent = createVEventComponent(event, true);
+  // 1. Create the base VEVENT or VTODO with new data
+  const sub = isTask(event)
+    ? createVTodoComponent(event, true)
+    : createVEventComponent(event, true);
 
   // 2. Add RECURRENCE-ID
-  // The originalDate argument should be ISO. We need to parse it to ical.Time.
-  // Assuming originalDate came from the event's original start time.
-
-  // We need to know if the original was all-day or not to format RECURRENCE-ID correctly.
-  // Usually overrides match the type of the original, but can change.
-  // RECURRENCE-ID should match the PATTERN of the master event's DTSTART (Date or DateTime).
-  // For now, let's infer from the passed date string or event.allDay.
-
-  // If originalDate is just YYYY-MM-DD, treat as Date.
   const isDate = originalDate.length === 10;
   let recurIdTime: ical.Time;
 
@@ -215,11 +357,7 @@ export function createOverrideVEvent(event: OFCEvent, originalDate: string): ica
     recurIdTime = formatDateTime(recurIdDt, false);
   }
 
-  addTimeProperty(vevent, 'recurrence-id', recurIdTime, isDate, event.timezone);
+  addTimeProperty(sub, 'recurrence-id', recurIdTime, isDate, event.timezone);
 
-  // 3. Ensure SEQUENCE is incremented?
-  // Usually the server handles sequence or client should increment.
-  // We'll leave it for now.
-
-  return vevent;
+  return sub;
 }

@@ -58,7 +58,7 @@ export function replaceFrontmatter(page: string, newFrontmatter: string): string
   if (!newFrontmatter || newFrontmatter.trim() === '') {
     return contents;
   }
-  return `---\n${newFrontmatter.trim()}\n---${contents}`;
+  return `---\n${newFrontmatter.trim()}\n---\n${contents}`;
 }
 
 type PrintableAtom =

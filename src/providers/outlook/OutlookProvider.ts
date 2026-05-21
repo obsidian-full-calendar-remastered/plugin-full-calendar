@@ -11,6 +11,9 @@ import { OutlookConfigComponent } from './ui/OutlookConfigComponent';
 import { OutlookAuthManager } from './auth/OutlookAuthManager';
 import { makeAuthenticatedRequest, OutlookApiError } from './auth/request';
 import { fromOutlookEvent, OutlookEventLike, toOutlookEvent } from './parser/parser_outlook';
+import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
+import { TFile } from 'obsidian';
+import { createLinkedNoteForProvider } from '../../features/linked-notes/linkedNotes';
 
 const OutlookNameSetting: React.FC<{ source: Partial<import('../../types').CalendarInfo> }> = ({
   source
@@ -85,6 +88,7 @@ export class OutlookProvider implements CalendarProvider<OutlookProviderConfig>,
   private plugin: FullCalendarPlugin;
   private source: OutlookProviderConfig;
   private authManager: OutlookAuthManager;
+  public readonly linkedNoteIndex: LinkedNoteIndex;
 
   readonly type = 'outlook';
   readonly displayName = 'Outlook Calendar';
@@ -95,6 +99,25 @@ export class OutlookProvider implements CalendarProvider<OutlookProviderConfig>,
     this.plugin = plugin;
     this.source = source;
     this.authManager = new OutlookAuthManager(plugin);
+    this.linkedNoteIndex = new LinkedNoteIndex(plugin.app, source.id);
+  }
+
+  initialize(): void {
+    this.linkedNoteIndex.initialize();
+  }
+
+  teardown(): void {
+    this.linkedNoteIndex.destroy();
+  }
+
+  async createLinkedNote(event: OFCEvent): Promise<TFile | null> {
+    return createLinkedNoteForProvider({
+      app: this.plugin.app,
+      event,
+      calendarId: this.source.id,
+      calendarName: this.source.name,
+      linkedNoteIndex: this.linkedNoteIndex
+    });
   }
 
   getCapabilities(): CalendarProviderCapabilities {
@@ -155,7 +178,11 @@ export class OutlookProvider implements CalendarProvider<OutlookProviderConfig>,
           if (!parsed) return null;
           const validated = validateEvent(parsed);
           if (!validated) return null;
-          return [validated, null] as [OFCEvent, EventLocation | null];
+          const linkedFile = this.linkedNoteIndex.getFileForEvent(validated.uid || '');
+          const location = linkedFile
+            ? { file: { path: linkedFile.path }, lineNumber: undefined }
+            : null;
+          return [validated, location] as [OFCEvent, EventLocation | null];
         })
         .filter((item): item is [OFCEvent, EventLocation | null] => item !== null);
 

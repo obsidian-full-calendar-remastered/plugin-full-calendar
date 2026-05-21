@@ -15,6 +15,7 @@ import {
 import { OFCEvent } from '../../types';
 import { ObsidianInterface } from '../../ObsidianAdapter';
 import { TFile, CachedMetadata } from 'obsidian';
+import { replaceFrontmatter } from '../fullnote/frontmatter';
 
 describe('noteUtils', () => {
   describe('sanitizeTitleForFilename', () => {
@@ -182,6 +183,29 @@ describe('noteUtils', () => {
 
       const meta = await waitForMetadataWithTimeout(mockApp, mockFile);
       expect(meta).toBe(mockMeta);
+    });
+  });
+
+  describe('replaceFrontmatter formatting', () => {
+    it('should add a newline after the closing separator when contents have no leading newline', () => {
+      const page = '# Heading\nContent goes here';
+      const yaml = 'key: value';
+      const result = replaceFrontmatter(page, yaml);
+      expect(result).toBe('---\nkey: value\n---\n# Heading\nContent goes here');
+    });
+
+    it('should behave nicely when contents already start with a newline', () => {
+      const page = '\n# Heading\nContent goes here';
+      const yaml = 'key: value';
+      const result = replaceFrontmatter(page, yaml);
+      expect(result).toBe('---\nkey: value\n---\n\n# Heading\nContent goes here');
+    });
+
+    it('should handle empty contents without error', () => {
+      const page = '';
+      const yaml = 'key: value';
+      const result = replaceFrontmatter(page, yaml);
+      expect(result).toBe('---\nkey: value\n---\n');
     });
   });
 });

@@ -50,3 +50,98 @@ describe('OutlookProvider Configuration Wrapper', () => {
     expect(onSaveMock).toHaveBeenCalledWith(selectedConfigs, accountId);
   });
 });
+
+import { PluginState } from '../../core/PluginState';
+import { OFCEvent } from '../../types';
+
+jest.mock('../../core/PluginState');
+jest.mock('../../utils/showNotice');
+
+interface MockVault {
+  getAbstractFileByPath: jest.Mock;
+  create: jest.Mock;
+}
+
+interface MockMetadataCache {
+  getFileCache: jest.Mock;
+  on: jest.Mock;
+  offref: jest.Mock;
+}
+
+interface MockApp {
+  vault: MockVault;
+  metadataCache: MockMetadataCache;
+}
+
+interface MockCreatedFile {
+  path: string;
+  content: string;
+}
+
+describe('OutlookProvider createLinkedNote', () => {
+  let mockPlugin: { app: MockApp };
+  let mockApp: MockApp;
+  let provider: OutlookProvider;
+  const mockEvent: OFCEvent = {
+    title: 'Outlook Linked Note Event',
+    type: 'single',
+    date: '2026-05-21',
+    endDate: null,
+    allDay: true,
+    uid: 'outlook-uid-123',
+    description: 'Meeting agenda details',
+    location: 'Teams Meeting Room'
+  };
+
+  beforeEach(() => {
+    mockApp = {
+      vault: {
+        getAbstractFileByPath: jest.fn().mockReturnValue(null),
+        create: jest.fn().mockImplementation((path: string, content: string): MockCreatedFile => {
+          return { path, content };
+        })
+      },
+      metadataCache: {
+        getFileCache: jest.fn(),
+        on: jest.fn(),
+        offref: jest.fn()
+      }
+    };
+    mockPlugin = { app: mockApp };
+    provider = new OutlookProvider(
+      {
+        id: 'outlook_1',
+        name: 'My Outlook Calendar',
+        calendarId: 'primary',
+        microsoftAccountId: 'ms-acc-123'
+      },
+      mockPlugin as unknown as FullCalendarPlugin
+    );
+  });
+
+  it('should fall back to DEFAULT_TEMPLATE when linkedNoteTemplate setting is blank', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      linkedNotesDirectory: 'Calendar/Notes',
+      linkedNoteTemplate: ''
+    });
+
+    const file = (await provider.createLinkedNote(mockEvent)) as MockCreatedFile | null;
+    expect(file).toBeDefined();
+    expect(file!.path).toBe('Calendar/Notes/Outlook Linked Note Event.md');
+    expect(file!.content).toContain('# Outlook Linked Note Event');
+    expect(file!.content).toContain('**Calendar**: My Outlook Calendar');
+    expect(file!.content).toContain('fc-event-uid: outlook-uid-123');
+  });
+
+  it('should use custom template when linkedNoteTemplate setting is provided', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      linkedNotesDirectory: 'Calendar/Notes',
+      linkedNoteTemplate: 'Teams: {{title}}'
+    });
+
+    const file = (await provider.createLinkedNote(mockEvent)) as MockCreatedFile | null;
+    expect(file).toBeDefined();
+    expect(file!.path).toBe('Calendar/Notes/Outlook Linked Note Event.md');
+    expect(file!.content).toContain('Teams: Outlook Linked Note Event');
+  });
+});

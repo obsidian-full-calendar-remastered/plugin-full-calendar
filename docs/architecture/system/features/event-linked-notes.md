@@ -9,8 +9,9 @@
 |---|---|---|
 | `LinkedNoteIndex` | Reactive index matching remote event UIDs to Obsidian file paths. | Listens to Obsidian vault events; decoupled from EventStore. |
 | `TemplateEngine` | Renders a clean markdown body from event fields using a custom layout. | Pure functional renderer; no file system or vault side effects. |
+| `createLinkedNoteForProvider` | Centralized helper that orchestrates note creation for any remote provider. | Combines `TemplateEngine`, `noteUtils`, and `frontmatter` utilities in a single DRY entry point. |
 | `noteUtils` | General file-handling, title sanitization, and YAML serialization. | Shared file utility layer; DRY wrapper around Obsidian API. |
-| `GoogleProvider` / Remote Providers | Queries the index to return note-linking context during event reads/writes. | Consults `LinkedNoteIndex` without leaking mapping into core registry. |
+| Remote Providers | Delegate to `createLinkedNoteForProvider` for note creation; query `LinkedNoteIndex` during event reads. | Zero manual frontmatter construction in providers. |
 
 ---
 
@@ -38,6 +39,17 @@ Rather than executing expensive, repetitive full-vault scans on every calendar l
 * It leverages Obsidian's native `MetadataCache` to index remote event UIDs from file frontmatter.
 * It registers event listeners on `vault.on("create")`, `vault.on("modify")`, `vault.on("delete")`, and `metadataCache.on("changed")` to keep the cache perfectly synchronized in real-time as users add, delete, or modify their notes.
 
+### 4️⃣ Centralized Note Creation (SOLID: DRY)
+All remote providers delegate to a single centralized helper `createLinkedNoteForProvider()` in `src/features/linked-notes/linkedNotes.ts`. This function:
+1. Checks if a linked note already exists via `LinkedNoteIndex`.
+2. Reads the linked notes directory and template from `PluginState.getSettings()`.
+3. Renders the note body via `TemplateEngine`.
+4. Constructs minimal frontmatter using `serializeFrontmatter()`.
+5. Applies frontmatter using `replaceFrontmatter()` from the FullNote provider utilities.
+6. Writes the file via `ObsidianIO`.
+
+No provider implements its own frontmatter construction, template rendering, or file creation logic.
+
 ---
 
 ## Data Flow
@@ -45,6 +57,7 @@ Rather than executing expensive, repetitive full-vault scans on every calendar l
 ```mermaid
 sequenceDiagram
     participant UI as EventDetails UI (Modal)
+    participant LN as linkedNotes.ts (Centralized)
     participant GP as GoogleProvider / Remote Provider
     participant LNI as LinkedNoteIndex
     participant TE as TemplateEngine
@@ -56,13 +69,15 @@ sequenceDiagram
     GP-->>UI: returns event details containing note path
 
     Note over UI,V: Write Path (Creation)
-    UI->>GP: onCreateLinkedNote(event)
-    GP->>TE: render(template, event, calendarName)
-    TE-->>GP: returns rendered markdown body
-    GP->>V: createNoteFile(path, frontmatter, body)
+    UI->>LN: openOrCreateLinkedNote(plugin, calId, event)
+    LN->>GP: provider.createLinkedNote(event)
+    GP->>LN: createLinkedNoteForProvider({app, event, calendarId, ...})
+    LN->>TE: TemplateEngine.render(template, event, calendarName)
+    TE-->>LN: returns rendered markdown body
+    LN->>V: ObsidianIO.create(path, frontmatter + body)
     V-->>LNI: trigger vault "create" / "changed" event
     LNI->>LNI: Re-index new note UID mapping reactively
-    GP-->>UI: opens newly created Obsidian note
+    LN-->>UI: opens newly created Obsidian note
 ```
 
 ---
@@ -73,13 +88,17 @@ sequenceDiagram
 * **Keep frontmatter minimal**: Only add parameters crucial for identity matching (`fc-event-uid`, `fc-calendar-id`) to the YAML frontmatter. Put all other variables in the note body.
 * **Always sanitize inputs**: Always pipe event titles through `sanitizeTitleForFilename` to strip OS-reserved characters before attempting a file write.
 * **Locale-independent tests**: When asserting date or time strings in the template test suite, always calculate the expected outcome dynamically using Luxon's local formatter to prevent timezone/locale mismatches on test machines.
+* **Never duplicate logic in providers**: All note creation must go through `createLinkedNoteForProvider`. Providers must not construct frontmatter, render templates, or create files independently.
 
 ---
 
 ## Integration Anchors
 
-* `src/features/templates/TemplateEngine.ts` - Note body templating engine
+* `src/features/linked-notes/linkedNotes.ts` - Centralized note creation helper and open/create orchestrator
+* `src/features/linked-notes/TemplateEngine.ts` - Note body templating engine
 * `src/providers/utils/noteUtils.ts` - Shared note/file path & serialization utilities
 * `src/providers/utils/LinkedNoteIndex.ts` - Reactive frontmatter-driven indexer
-* `src/providers/google/GoogleProvider.ts` - Provider integration anchor
-* `src/ui/event_modal.ts` / `src/ui/EventDetails.tsx` - Event details view & button interaction
+* `src/providers/fullnote/frontmatter.ts` - Frontmatter parsing and serialization
+* `src/utils/eventActions.ts` - Re-exports `openOrCreateLinkedNote` for UI access
+* `src/ui/modals/event_modal.ts` - Event modal with "Open Note" button integration
+* `src/ui/settings/sections/renderCalendars.ts` - Linked note settings UI (directory picker + template editor)

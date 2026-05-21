@@ -93,7 +93,9 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     },
     apiTokens: (raw as Partial<FullCalendarSettings>).apiTokens || {},
     authorizedTokens: (raw as Partial<FullCalendarSettings>).authorizedTokens || {},
-    currentVersion: raw.currentVersion ?? null
+    currentVersion: raw.currentVersion ?? null,
+    linkedNotesDirectory: raw.linkedNotesDirectory ?? DEFAULT_SETTINGS.linkedNotesDirectory,
+    linkedNoteTemplate: raw.linkedNoteTemplate ?? DEFAULT_SETTINGS.linkedNoteTemplate
   } as FullCalendarSettings & { calendarSources: (CalendarInfo | GoogleSourceWithAuth)[] } & {
     googleAuth?: LegacyGoogleAuth;
   };

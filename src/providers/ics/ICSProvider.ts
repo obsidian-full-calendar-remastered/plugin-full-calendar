@@ -10,6 +10,8 @@ import { ICSProviderConfig } from './typesICS';
 import { ICSConfigComponent } from './ui/ICSConfigComponent';
 import FullCalendarPlugin from '../../main';
 import { ObsidianInterface } from '../../ObsidianAdapter';
+import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
+import { createLinkedNoteForProvider } from '../../features/linked-notes/linkedNotes';
 
 const WEBCAL = 'webcal';
 
@@ -66,6 +68,7 @@ export class ICSProvider implements CalendarProvider<ICSProviderConfig>, SyncKey
 
   private plugin: FullCalendarPlugin;
   private source: ICSProviderConfig;
+  public readonly linkedNoteIndex: LinkedNoteIndex;
 
   readonly type = 'ical';
   readonly loadPriority = 100;
@@ -85,6 +88,25 @@ export class ICSProvider implements CalendarProvider<ICSProviderConfig>, SyncKey
   constructor(source: ICSProviderConfig, plugin: FullCalendarPlugin, _app?: ObsidianInterface) {
     this.plugin = plugin;
     this.source = source;
+    this.linkedNoteIndex = new LinkedNoteIndex(plugin.app, source.id);
+  }
+
+  initialize(): void {
+    this.linkedNoteIndex.initialize();
+  }
+
+  teardown(): void {
+    this.linkedNoteIndex.destroy();
+  }
+
+  async createLinkedNote(event: OFCEvent): Promise<TFile | null> {
+    return createLinkedNoteForProvider({
+      app: this.plugin.app,
+      event,
+      calendarId: this.source.id,
+      calendarName: this.displayName,
+      linkedNoteIndex: this.linkedNoteIndex
+    });
   }
 
   getCapabilities(): CalendarProviderCapabilities {
@@ -130,7 +152,13 @@ export class ICSProvider implements CalendarProvider<ICSProviderConfig>, SyncKey
       if (file instanceof TFile) {
         try {
           const content = await this.plugin.app.vault.read(file);
-          return getEventsFromICS(content).map(event => [event, null]);
+          return getEventsFromICS(content).map(event => {
+            const linkedFile = this.linkedNoteIndex.getFileForEvent(event.uid || '');
+            const location = linkedFile
+              ? { file: { path: linkedFile.path }, lineNumber: undefined }
+              : null;
+            return [event, location];
+          });
         } catch (e) {
           console.error(`Error reading local ICS file ${url}`, e);
           return [];
@@ -154,7 +182,13 @@ export class ICSProvider implements CalendarProvider<ICSProviderConfig>, SyncKey
       if (!displayTimezone) return [];
 
       // Remove timezone conversion logic; just return raw events
-      return getEventsFromICS(response).map(event => [event, null]);
+      return getEventsFromICS(response).map(event => {
+        const linkedFile = this.linkedNoteIndex.getFileForEvent(event.uid || '');
+        const location = linkedFile
+          ? { file: { path: linkedFile.path }, lineNumber: undefined }
+          : null;
+        return [event, location];
+      });
     } catch (e) {
       console.error(`Error fetching ICS calendar from ${remoteUrl}`, e);
       return [];

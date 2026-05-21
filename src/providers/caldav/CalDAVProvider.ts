@@ -10,6 +10,9 @@ import { CalDAVConfigComponent } from './CalDAVConfigComponent';
 import * as React from 'react';
 import { obsidianFetch } from './obsidian-fetch_caldav';
 import { createBasicAuthHeader } from './auth_caldav';
+import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
+import { TFile } from 'obsidian';
+import { createLinkedNoteForProvider } from '../../features/linked-notes/linkedNotes';
 
 import { fetchCalendarInfo } from './helper_caldav';
 
@@ -486,15 +489,37 @@ export class CalDAVProvider implements CalendarProvider<CalDAVProviderConfig>, S
     return CalDAVConfigWrapper;
   }
 
+  private plugin: FullCalendarPlugin;
   private source: CalDAVProviderConfig;
+  public readonly linkedNoteIndex: LinkedNoteIndex;
 
   readonly type = 'caldav';
   readonly displayName = 'CalDAV';
   readonly isRemote = true;
   readonly loadPriority = 110;
 
-  constructor(source: CalDAVProviderConfig, _plugin: FullCalendarPlugin) {
+  constructor(source: CalDAVProviderConfig, plugin: FullCalendarPlugin) {
+    this.plugin = plugin;
     this.source = source;
+    this.linkedNoteIndex = new LinkedNoteIndex(plugin.app, source.id);
+  }
+
+  initialize(): void {
+    this.linkedNoteIndex.initialize();
+  }
+
+  teardown(): void {
+    this.linkedNoteIndex.destroy();
+  }
+
+  async createLinkedNote(event: OFCEvent): Promise<TFile | null> {
+    return createLinkedNoteForProvider({
+      app: this.plugin.app,
+      event,
+      calendarId: this.source.id,
+      calendarName: this.source.name,
+      linkedNoteIndex: this.linkedNoteIndex
+    });
   }
 
   getCapabilities(): CalendarProviderCapabilities {
@@ -566,7 +591,13 @@ export class CalDAVProvider implements CalendarProvider<CalDAVProviderConfig>, S
         console.warn(`[CalDAVProvider] Skipped ${parseFailures} malformed ICS payload(s).`);
       }
 
-      return parsedEvents.map(ev => [ev, null]);
+      return parsedEvents.map(ev => {
+        const linkedFile = this.linkedNoteIndex.getFileForEvent(ev.uid || '');
+        const location = linkedFile
+          ? { file: { path: linkedFile.path }, lineNumber: undefined }
+          : null;
+        return [ev, location];
+      });
     } catch (err) {
       console.error('[CalDAVProvider] Failed to fetch events.', err);
       const errorMessage = err instanceof Error ? err.message : String(err);

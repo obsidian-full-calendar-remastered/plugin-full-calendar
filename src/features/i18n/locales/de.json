@@ -197,7 +197,9 @@
     },
     "chronoAnalyserDemoLoaded": "ChronoAnalyser demo loaded.",
     "chronoAnalyserDemoLoadedFromCache": "ChronoAnalyser demo loaded from cache.",
-    "chronoAnalyserDemoLoadFailed": "Could not load the ChronoAnalyser demo. Falling back to live data."
+    "chronoAnalyserDemoLoadFailed": "Could not load the ChronoAnalyser demo. Falling back to live data.",
+    "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
+    "failedToCreateLinkedNote": "Failed to create linked note."
   },
   "eventCache": {
     "calendarNotFound": "Ereignis kann nicht hinzugefügt werden: Kalender mit der ID {{calendarId}} nicht gefunden.",
@@ -264,11 +266,13 @@
       },
       "linkedNotesDirectory": {
         "label": "Linked notes directory",
-        "description": "Choose the folder path where event linked notes will be created."
+        "description": "Choose the folder path where event linked notes will be created.",
+        "vaultRoot": "/ (Vault Root)"
       },
       "linkedNoteTemplate": {
         "label": "Linked note template",
-        "description": "Define the template used for creating new linked notes. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
+        "description": "Define the template used for creating new linked notes. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
+        "placeholder": "Enter note Markdown template..."
       }
     },
     "reminders": {
@@ -626,6 +630,10 @@
         "bases": "Bases-Kalender",
         "taskNotes": "TaskNote-Integration",
         "outlook": "Outlook calendar"
+      },
+      "linkedNotes": {
+        "title": "Linked Note Settings",
+        "description": "Configure settings for creating local Obsidian notes linked to remote calendar events."
       }
     },
     "categorization": {
@@ -1364,5 +1372,8 @@
       "unknown": "Unknown error"
     },
     "loading": "Loading..."
+  },
+  "linkedNotes": {
+    "untitledNote": "Untitled Linked Note"
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import { PluginState } from '../../../core/PluginState';
-import { Setting } from 'obsidian';
+import { Setting, TFolder } from 'obsidian';
 import * as ReactDOM from 'react-dom/client';
 import React, { createElement, RefObject } from 'react';
 import FullCalendarPlugin from '../../../main';
@@ -20,6 +20,52 @@ export function renderCalendarManagement(
   plugin: FullCalendarPlugin,
   calendarSettingsRef: RefObject<CalendarSettingsRef>
 ): void {
+  new Setting(containerEl)
+    .setName(t('settings.calendars.linkedNotes.title'))
+    .setHeading()
+    .setDesc(t('settings.calendars.linkedNotes.description'));
+
+  new Setting(containerEl)
+    .setName(t('settings.general.linkedNotesDirectory.label'))
+    .setDesc(t('settings.general.linkedNotesDirectory.description'))
+    .addDropdown(dropdown => {
+      const folders = plugin.app.vault
+        .getAllLoadedFiles()
+        .filter((f): f is TFolder => f instanceof TFolder)
+        .map(f => f.path);
+
+      dropdown.addOption('', t('settings.general.linkedNotesDirectory.vaultRoot'));
+      folders
+        .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+        .forEach(dir => {
+          dropdown.addOption(dir, dir);
+        });
+
+      dropdown.setValue(PluginState.getSettings().linkedNotesDirectory || '');
+      dropdown.onChange(async value => {
+        PluginState.getSettings().linkedNotesDirectory = value;
+        await PluginState.saveSettings();
+      });
+    });
+
+  new Setting(containerEl)
+    .setName(t('settings.general.linkedNoteTemplate.label'))
+    .setDesc(t('settings.general.linkedNoteTemplate.description'))
+    .addTextArea(text => {
+      text
+        .setPlaceholder(t('settings.general.linkedNoteTemplate.placeholder'))
+        .setValue(PluginState.getSettings().linkedNoteTemplate || '')
+        .onChange(async value => {
+          PluginState.getSettings().linkedNoteTemplate = value;
+          await PluginState.saveSettings();
+        });
+      text.inputEl.rows = 8;
+      text.inputEl.cols = 50;
+      text.inputEl.setCssProps({ width: '100%' });
+    });
+
+  containerEl.createEl('hr', { cls: 'settings-view-new-divider' });
+
   new Setting(containerEl)
     .setName(t('settings.calendars.title'))
     .setHeading()

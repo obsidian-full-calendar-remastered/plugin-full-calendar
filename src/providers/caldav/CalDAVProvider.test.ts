@@ -8,6 +8,10 @@ import { importCalendars } from './import_caldav';
 import { CalDAVProviderConfig } from './typesCalDAV';
 import FullCalendarPlugin from '../../main';
 import { OFCEvent } from '../../types';
+import { PluginState } from '../../core/PluginState';
+
+jest.mock('../../core/PluginState');
+jest.mock('../../utils/showNotice');
 
 // Mock obsidianFetch
 jest.mock('./obsidian-fetch_caldav', () => ({
@@ -568,6 +572,96 @@ END:VCALENDAR
         method: 'DELETE'
       })
     );
+  });
+
+  describe('createLinkedNote', () => {
+    interface MockCalDAVVault {
+      getAbstractFileByPath: jest.Mock;
+      create: jest.Mock;
+    }
+
+    interface MockCalDAVMetadataCache {
+      getFileCache: jest.Mock;
+      on: jest.Mock;
+      offref: jest.Mock;
+    }
+
+    interface MockCalDAVApp {
+      vault: MockCalDAVVault;
+      metadataCache: MockCalDAVMetadataCache;
+    }
+
+    interface MockCalDAVCreatedFile {
+      path: string;
+      content: string;
+    }
+
+    let mockCalDAVApp: MockCalDAVApp;
+    let mockPluginWithApp: { app: MockCalDAVApp };
+    let caldavProvider: CalDAVProvider;
+    const mockEvent: OFCEvent = {
+      title: 'CalDAV Linked Note Event',
+      type: 'single',
+      date: '2026-05-21',
+      endDate: null,
+      allDay: true,
+      uid: 'caldav-uid-999',
+      description: 'Event details here',
+      location: 'Conference Room B'
+    };
+
+    beforeEach(() => {
+      mockCalDAVApp = {
+        vault: {
+          getAbstractFileByPath: jest.fn().mockReturnValue(null),
+          create: jest
+            .fn()
+            .mockImplementation((path: string, content: string): MockCalDAVCreatedFile => {
+              return { path, content };
+            })
+        },
+        metadataCache: {
+          getFileCache: jest.fn(),
+          on: jest.fn(),
+          offref: jest.fn()
+        }
+      };
+      mockPluginWithApp = { app: mockCalDAVApp };
+      caldavProvider = new CalDAVProvider(
+        mockConfig,
+        mockPluginWithApp as unknown as FullCalendarPlugin
+      );
+    });
+
+    it('should fall back to DEFAULT_TEMPLATE when linkedNoteTemplate setting is blank', async () => {
+      PluginState.getSettings = jest.fn().mockReturnValue({
+        linkedNotesDirectory: 'Calendar/Notes',
+        linkedNoteTemplate: ''
+      });
+
+      const file = (await caldavProvider.createLinkedNote(
+        mockEvent
+      )) as MockCalDAVCreatedFile | null;
+      expect(file).toBeDefined();
+      expect(file!.path).toBe('Calendar/Notes/CalDAV Linked Note Event.md');
+      expect(file!.content).toContain('# CalDAV Linked Note Event');
+      expect(file!.content).toContain('**Calendar**: Test Calendar');
+      expect(file!.content).toContain('fc-event-uid: caldav-uid-999');
+    });
+
+    it('should use custom template when linkedNoteTemplate setting is provided', async () => {
+      PluginState.getSettings = jest.fn().mockReturnValue({
+        linkedNotesDirectory: 'Calendar/Notes',
+        linkedNoteTemplate: 'My Template: {{title}}'
+      });
+
+      const file = (await caldavProvider.createLinkedNote(
+        mockEvent
+      )) as MockCalDAVCreatedFile | null;
+      expect(file).toBeDefined();
+      expect(file!.path).toBe('Calendar/Notes/CalDAV Linked Note Event.md');
+      expect(file!.content).toContain('My Template: CalDAV Linked Note Event');
+    });
   });
 });
 

@@ -11,13 +11,11 @@ import { GoogleProviderConfig } from './typesGCal';
 
 import { GoogleConfigComponent } from './ui/GoogleConfigComponent';
 import * as React from 'react';
-import { ObsidianInterface, ObsidianIO } from '../../ObsidianAdapter';
+import { ObsidianInterface } from '../../ObsidianAdapter';
 import { GoogleAuthManager } from './auth/GoogleAuthManager';
 import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
-import { TemplateEngine } from '../../features/templates/TemplateEngine';
-import { serializeFrontmatter, findUniquePath, sanitizeTitleForFilename } from '../utils/noteUtils';
 import { TFile } from 'obsidian';
-import { showNotice } from '../../utils/showNotice';
+import { createLinkedNoteForProvider } from '../../features/linked-notes/linkedNotes';
 
 // Settings row component for Google Provider
 const GoogleNameSetting: React.FC<{ source: Partial<import('../../types').CalendarInfo> }> = ({
@@ -86,7 +84,7 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
   private plugin: FullCalendarPlugin;
   private source: GoogleProviderConfig;
   private authManager: GoogleAuthManager;
-  private linkedNoteIndex: LinkedNoteIndex;
+  public readonly linkedNoteIndex: LinkedNoteIndex;
 
   // Instance properties remain
   readonly type = 'google';
@@ -420,29 +418,12 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
   }
 
   async createLinkedNote(event: OFCEvent): Promise<TFile | null> {
-    const settings = PluginState.getSettings();
-    const directory = settings.linkedNotesDirectory;
-    if (!directory) {
-      showNotice('Please configure a Linked Notes Directory in settings first.');
-      return null;
-    }
-
-    const template = settings.linkedNoteTemplate;
-    const bodyContent = TemplateEngine.render(template, event, this.source.name);
-
-    const frontmatter = {
-      'fc-event-uid': event.uid,
-      'fc-calendar-id': this.source.id
-    };
-
-    const yaml = serializeFrontmatter(frontmatter);
-    const fileContent = `---\n${yaml}\n---\n${bodyContent}`;
-
-    const baseFilename = sanitizeTitleForFilename(event.title || 'Untitled Linked Note');
-    const appAdapter = new ObsidianIO(this.plugin.app);
-    const uniquePath = findUniquePath(appAdapter, directory, baseFilename);
-
-    const file = await appAdapter.create(uniquePath, fileContent);
-    return file;
+    return createLinkedNoteForProvider({
+      app: this.plugin.app,
+      event,
+      calendarId: this.source.id,
+      calendarName: this.source.name,
+      linkedNoteIndex: this.linkedNoteIndex
+    });
   }
 }

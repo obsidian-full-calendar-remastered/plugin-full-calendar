@@ -55,3 +55,5 @@ export async function openFileForEvent(
     leaf.view.editor.setCursor({ line: lineNumber, ch: 0 });
   }
 }
+
+export { openOrCreateLinkedNote } from '../features/linked-notes/linkedNotes';

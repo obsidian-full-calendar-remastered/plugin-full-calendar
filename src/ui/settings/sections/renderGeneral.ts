@@ -111,33 +111,4 @@ export function renderGeneralSettings(
         await PluginState.saveSettings();
       });
     });
-
-  new Setting(containerEl)
-    .setName(t('settings.general.linkedNotesDirectory.label'))
-    .setDesc(t('settings.general.linkedNotesDirectory.description'))
-    .addText(text => {
-      text
-        .setPlaceholder('E.g. Calendar/notes')
-        .setValue(PluginState.getSettings().linkedNotesDirectory || '')
-        .onChange(async value => {
-          PluginState.getSettings().linkedNotesDirectory = value.trim();
-          await PluginState.saveSettings();
-        });
-    });
-
-  new Setting(containerEl)
-    .setName(t('settings.general.linkedNoteTemplate.label'))
-    .setDesc(t('settings.general.linkedNoteTemplate.description'))
-    .addTextArea(text => {
-      text
-        .setPlaceholder('Enter note Markdown template...')
-        .setValue(PluginState.getSettings().linkedNoteTemplate || '')
-        .onChange(async value => {
-          PluginState.getSettings().linkedNoteTemplate = value;
-          await PluginState.saveSettings();
-        });
-      text.inputEl.rows = 8;
-      text.inputEl.cols = 50;
-      text.inputEl.setCssProps({ width: '100%' });
-    });
 }

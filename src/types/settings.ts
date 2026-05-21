@@ -132,6 +132,11 @@ export interface MicrosoftAccount {
   expiryDate: number | null;
 }
 
+export interface FcrReminderCompanionSettings {
+  enabled: boolean;
+  apiUrl: string;
+}
+
 export interface FullCalendarSettings {
   calendarSources: CalendarInfo[];
   defaultCalendar: number;
@@ -176,6 +181,7 @@ export interface FullCalendarSettings {
   activityWatch: ActivityWatchSettings;
   tasksIntegration: TasksIntegrationSettings;
   milestones: MilestonesSettings;
+  fcrReminderCompanion: FcrReminderCompanionSettings;
   apiTokens?: Record<string, ApiTokenRecord>;
   authorizedTokens?: Record<string, { pluginId: string; reason: string; grantedAt: number }>;
 
@@ -250,6 +256,10 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   milestones: {
     counters: {},
     unlockedAt: {}
+  },
+  fcrReminderCompanion: {
+    enabled: false,
+    apiUrl: 'http://127.0.0.1:45677'
   },
   apiTokens: {},
   authorizedTokens: {},

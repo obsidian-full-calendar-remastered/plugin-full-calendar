@@ -87,6 +87,10 @@ export function migrateAndSanitizeSettings(settings: unknown): {
       ...DEFAULT_SETTINGS.tasksIntegration,
       ...((raw as Partial<FullCalendarSettings>).tasksIntegration || {})
     },
+    fcrReminderCompanion: {
+      ...DEFAULT_SETTINGS.fcrReminderCompanion,
+      ...((raw as Partial<FullCalendarSettings>).fcrReminderCompanion || {})
+    },
     apiTokens: (raw as Partial<FullCalendarSettings>).apiTokens || {},
     authorizedTokens: (raw as Partial<FullCalendarSettings>).authorizedTokens || {},
     currentVersion: raw.currentVersion ?? null

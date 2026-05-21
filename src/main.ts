@@ -15,6 +15,7 @@ import { showNotice } from './utils/showNotice';
 
 import { PluginState } from './core/PluginState';
 import { NotificationManager } from './features/notifications/NotificationManager';
+import { FcrReminderManager } from './features/fcr_reminder/FcrReminderManager';
 import { StatusBarManager } from './features/statusbar/StatusBarManager';
 import { LazySettingsTab } from './ui/settings/LazySettingsTab';
 import { ensureCalendarIds, migrateAndSanitizeSettings } from './ui/settings/utilsSettings';
@@ -42,10 +43,15 @@ export default class FullCalendarPlugin extends Plugin {
 
   #notificationManager!: NotificationManager;
   #statusBarManager!: StatusBarManager;
+  #fcrReminderManager!: FcrReminderManager;
 
   #isMobile: boolean = false;
   #settingsTab?: LazySettingsTab;
   api!: PublicAPI;
+
+  get fcrReminderManager(): FcrReminderManager {
+    return this.#fcrReminderManager;
+  }
 
   // Keep a snapshot of the last saved settings to detect changes reliable
   #loadedSettings: string = '';
@@ -147,6 +153,8 @@ export default class FullCalendarPlugin extends Plugin {
     this.#notificationManager.update(PluginState.getSettings());
     this.#statusBarManager = new StatusBarManager(this);
     this.#statusBarManager.update(PluginState.getSettings());
+    this.#fcrReminderManager = new FcrReminderManager(this);
+    this.#fcrReminderManager.update(PluginState.getSettings());
     type WorkspaceEvents = Workspace & {
       on: Workspace['on'] &
         ((
@@ -170,6 +178,12 @@ export default class FullCalendarPlugin extends Plugin {
       workspaceEvents.on(
         'full-calendar:settings-updated',
         this.#statusBarManager.update.bind(this.#statusBarManager)
+      )
+    );
+    this.registerEvent(
+      workspaceEvents.on(
+        'full-calendar:settings-updated',
+        this.#fcrReminderManager.update.bind(this.#fcrReminderManager)
       )
     );
     this.registerEvent(
@@ -334,6 +348,9 @@ export default class FullCalendarPlugin extends Plugin {
     }
     if (this.#statusBarManager) {
       this.#statusBarManager.unload();
+    }
+    if (this.#fcrReminderManager) {
+      this.#fcrReminderManager.unload();
     }
     PluginState.getProviderRegistry().stopListening();
     PluginState.getCache().stopListening();

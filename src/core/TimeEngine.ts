@@ -128,6 +128,10 @@ export class TimeEngine {
     return { current, upcoming, recentlyFinished: [] };
   }
 
+  public getOccurrenceCache(): EnrichedOFCEvent[] {
+    return this.occurrenceCache;
+  }
+
   private rebuildOccurrenceCache(): Promise<void> {
     if (this.isBuildingCache) return Promise.resolve();
     this.isBuildingCache = true;

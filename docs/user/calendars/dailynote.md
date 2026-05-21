@@ -1,6 +1,6 @@
 # Daily Note Calendar
 
-Store events in-line in Daily Notes. Each event is a list item and event metadata is stored as [Dataview inline fields](https://blacksmithgu.github.io/obsidian-dataview/data-annotation/).
+Store events in-line in Daily Notes. Each event is a list item. Timed events can be written either with [Dataview inline fields](https://blacksmithgu.github.io/obsidian-dataview/data-annotation/) or in a strict DayPlanner-style prefix, depending on the format selected when you add the Daily Note calendar source.
 
 [Tasks](../events/tasks.md) are supported with [checkboxes](https://help.obsidian.md/How+to/Format+your+notes) so you can easily track your to-dos for the day.
 
@@ -16,11 +16,23 @@ You must be using one of the supported daily notes plugins in order to create a 
 
 ## Configuring the Daily Notes calendar
 
-Add a new calendar with the "Daily note" type, and select which heading from your daily note template that events should be placed under.
+Add a new calendar with the "Daily note" type, then choose:
+
+- which heading from your daily note template events should be placed under
+- which write format timed events should use
 
 If your template does not have any headings, then you can enter free-form text to specify the heading that events will be placed under.
 
 If a heading does not exist in a daily note, it will be appended to the end of the file before adding any events to it.
+
+Timed events support two write formats:
+
+- Default: `- Learning - Reading - Grocery Run [uid:: 2]  [timezone:: Europe/Budapest]  [startTime:: 02:30]  [endTime:: 03:30]`
+- DayPlanner Format: `- 02:30 - 03:30 Learning - Reading - Grocery Run [uid:: 2]  [timezone:: Europe/Budapest]`
+
+The default format remains the inline-field layout.
+
+The chosen format applies to new event creation and later edits written through that Daily Note source. If you want a different write format later, remove the Daily Note source and add it again with the other option. This does not change your existing notes by itself.
 
 Note that only one daily note calendar can be active at a time.
 
@@ -34,6 +46,7 @@ Note that only one daily note calendar can be active at a time.
 - Multi-day single events (with an `endDate`) are not supported in Daily Notes.
 - Duplicate titles on the same day are not allowed. The editor will warn if another item under the heading already has the same visible title for that date.
 - Only one Daily Note calendar source is supported at a time in settings.
+- Parsing remains backward-compatible across both timed-event formats. Full Calendar first prefers inline `[startTime::]` and `[endTime::]` fields, then falls back to the strict `HH:mm - HH:mm Title` DayPlanner prefix if those fields are absent.
 
 ---
 

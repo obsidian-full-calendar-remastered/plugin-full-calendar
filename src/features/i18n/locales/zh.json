@@ -553,6 +553,14 @@
         "heading": {
           "label": "标题",
           "description": "日记中存储事件的标题。"
+        },
+        "format": {
+          "label": "Format",
+          "description": "Choose how timed events are written in daily notes.",
+          "options": {
+            "default": "Default",
+            "dayPlanner": "DayPlanner Format"
+          }
         }
       },
       "ics": {

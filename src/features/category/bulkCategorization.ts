@@ -173,7 +173,7 @@ export async function bulkUpdateCategories(
             subCategory: undefined
           };
 
-          const newLine = modifyListItem(line, eventWithNewCategory, PluginState.getSettings());
+          const newLine = modifyListItem(line, eventWithNewCategory, source);
           if (newLine) {
             lines[lineNumber] = newLine;
             modified = true;
@@ -268,7 +268,7 @@ export async function bulkRemoveCategories(plugin: FullCalendarPlugin): Promise<
             title: cleanTitle,
             category: undefined
           };
-          const newLine = modifyListItem(line, eventWithoutCategory, PluginState.getSettings());
+          const newLine = modifyListItem(line, eventWithoutCategory, source);
 
           if (newLine && newLine !== line) {
             lines[lineNumber] = newLine;

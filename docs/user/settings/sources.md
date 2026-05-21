@@ -12,7 +12,7 @@ Access these settings in **Full Calendar Settings → Calendar Sources**.
 ### Local Vault Sources
 
 *   **Full Note Calendar**: Point this to a folder in your vault. Every `.md` file in this folder with appropriate frontmatter becomes an event. See: [Full Note Calendar Guide](../calendars/local.md).
-*   **Daily Note Calendar**: Link to your Daily Notes folder. The plugin will parse events directly from your daily notes using the configured format. See: [Daily Note Calendar Guide](../calendars/dailynote.md).
+*   **Daily Note Calendar**: Link to your Daily Notes folder. When adding the source, choose the heading to write under and the timed-event write format (`Default` or `DayPlanner Format`). Parsing supports both formats automatically. See: [Daily Note Calendar Guide](../calendars/dailynote.md).
 
 ### Remote Cloud Sources
 

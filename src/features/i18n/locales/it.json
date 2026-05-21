@@ -553,6 +553,14 @@
         "heading": {
           "label": "Intestazione",
           "description": "Intestazione sotto cui salvare gli eventi nella nota giornaliera."
+        },
+        "format": {
+          "label": "Format",
+          "description": "Choose how timed events are written in daily notes.",
+          "options": {
+            "default": "Default",
+            "dayPlanner": "DayPlanner Format"
+          }
         }
       },
       "ics": {

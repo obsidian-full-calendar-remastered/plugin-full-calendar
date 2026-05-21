@@ -553,6 +553,14 @@
         "heading": {
           "label": "Encabezado",
           "description": "Encabezado para almacenar eventos en la nota diaria."
+        },
+        "format": {
+          "label": "Format",
+          "description": "Choose how timed events are written in daily notes.",
+          "options": {
+            "default": "Default",
+            "dayPlanner": "DayPlanner Format"
+          }
         }
       },
       "ics": {

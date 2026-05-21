@@ -553,6 +553,14 @@
         "heading": {
           "label": "Überschrift",
           "description": "Überschrift zum Speichern von Ereignissen in der Tagesnotiz."
+        },
+        "format": {
+          "label": "Format",
+          "description": "Choose how timed events are written in daily notes.",
+          "options": {
+            "default": "Default",
+            "dayPlanner": "DayPlanner Format"
+          }
         }
       },
       "ics": {

@@ -505,6 +505,110 @@ describe('DailyNoteProvider workflow', () => {
     expect(firstId).toBe('2026-04-07::Wellness - Sleep - Night');
     expect(provider.getCanonicalTitle(first)).toBe('Wellness - Sleep - Night');
   });
+
+  it('creates timed events in day planner format when configured', async () => {
+    const app = createMockApp();
+
+    const provider = new DailyNoteProvider(
+      { id: 'dailynote_1', heading: 'Calendar', format: 'dayPlanner' },
+      makePlugin(),
+      app
+    );
+
+    const event: OFCEvent = {
+      title: 'Learning - Reading - Grocery Run',
+      type: 'single',
+      allDay: false,
+      date: '2026-05-12',
+      startTime: '02:30',
+      endTime: '03:30',
+      endDate: null,
+      timezone: 'Europe/Budapest'
+    };
+
+    const [createdEvent, location] = await provider.createEvent(event);
+
+    expect(createdEvent.uid).toBe('1');
+    expect(location.file.path).toBe('Daily/2026-05-12.md');
+    expect(contentsByPath.get(location.file.path)).toContain(
+      '-  02:30 - 03:30 Learning - Reading - Grocery Run [timezone:: Europe/Budapest]  [uid:: 1]'
+    );
+    expect(contentsByPath.get(location.file.path)).not.toContain('[startTime::');
+    expect(contentsByPath.get(location.file.path)).not.toContain('[endTime::');
+  });
+
+  it('parses existing day planner lines regardless of provider format setting', async () => {
+    const file = makeFile('Daily/2026-05-13.md');
+    dailyNotesByPath.set(file.path, file);
+    contentsByPath.set(
+      file.path,
+      [
+        '## Calendar',
+        '- 02:30 - 03:30 Learning - Reading - Grocery Run [uid:: 2]  [timezone:: Europe/Budapest]'
+      ].join('\n')
+    );
+
+    const sections = [
+      {
+        position: {
+          end: { line: 1, col: 92, offset: 106 }
+        }
+      }
+    ] as NonNullable<CachedMetadata['sections']>;
+    const sectionsWithLast = sections as NonNullable<CachedMetadata['sections']> & {
+      last: () => NonNullable<CachedMetadata['sections']>[number];
+    };
+    sectionsWithLast.last = () => sections[sections.length - 1];
+
+    const metadata = {
+      headings: [
+        {
+          heading: 'Calendar',
+          level: 2,
+          position: {
+            start: { line: 0, col: 0, offset: 0 },
+            end: { line: 0, col: 11, offset: 11 }
+          }
+        }
+      ],
+      listItems: [
+        {
+          position: {
+            start: { line: 1, col: 0, offset: 12 },
+            end: { line: 1, col: 92, offset: 106 }
+          }
+        }
+      ],
+      sections: sectionsWithLast
+    } as CachedMetadata;
+
+    const app: ObsidianInterface = {
+      ...createMockApp(),
+      getMetadata: (_file: TFile) => metadata,
+      waitForMetadata: (_file: TFile) => Promise.resolve(metadata)
+    };
+
+    const provider = new DailyNoteProvider(
+      { id: 'dailynote_1', heading: 'Calendar' },
+      makePlugin(),
+      app
+    );
+
+    const events = await provider.getEventsInFile(file);
+
+    expect(events).toHaveLength(1);
+    expect(events[0][0]).toEqual(
+      expect.objectContaining({
+        title: 'Learning - Reading - Grocery Run',
+        startTime: '02:30',
+        endTime: '03:30',
+        uid: '2',
+        timezone: 'Europe/Budapest',
+        date: '2026-05-13',
+        allDay: false
+      })
+    );
+  });
 });
 type MomentFactory = typeof import('moment');
 const moment = obsidianMoment as unknown as MomentFactory;

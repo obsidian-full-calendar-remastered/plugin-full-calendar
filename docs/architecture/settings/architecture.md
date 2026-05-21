@@ -45,6 +45,7 @@ The `CalendarSettings` component flushes any pending debounced save in its `comp
 ### Validation
 
 - **Dailynote limit (max 1)**: Enforced at add-time in the `addCalendarButton` handler (`SettingsTab.tsx`), not at save-time. The user is shown a notice and the add is rejected before the source enters state.
+- **Dailynote format choice**: The Daily Note source captures its timed-event write format at add-time as source config (`default` or `dayPlanner`). The selected value controls future writes for that provider instance, while parsing remains format-agnostic and does not use a separate read-mode switch.
 
 ## Integration Settings Visibility Contract
 

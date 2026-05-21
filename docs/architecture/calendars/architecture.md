@@ -26,6 +26,7 @@
 
 Important implementation-specific behavior is documented in the implementation deep dive page, including:
 
+- Daily Note provider source-level timed-event write format (`default` vs `dayPlanner`) with format-agnostic read fallback.
 - ICS hybrid behavior (remote URL and local file support in one read-only provider).
 - CalDAV defensive REPORT/GET retrieval and XML namespace fallback handling.
 - [Tasks provider](tasks-integration.md) surgical markdown updates and custom completion scheduling semantics.

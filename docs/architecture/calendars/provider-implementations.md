@@ -21,6 +21,19 @@ Creates one-note-per-event records, supports full CRUD, and uses robust filename
 
 Parses list items under configured heading and performs line-targeted updates. Implements a persistent locally-allocated `uid` mechanism (`[uid:: N]`) instead of legacy deduplication matching, enabling deterministic title edits and O(1) hinted line lookups during sync updates.
 
+Timed-event serialization is source-configured and provider-owned:
+
+- `default`: writes inline Dataview time fields such as `[startTime:: 02:30]` and `[endTime:: 03:30]`
+- `dayPlanner`: writes a strict prefixed title form: `HH:mm - HH:mm Title`
+
+Read behavior must stay format-agnostic:
+
+- First prefer inline `startTime` and `endTime` fields when present.
+- Only if those fields are absent, fall back to strict `HH:mm - HH:mm Title` parsing.
+- Do not couple read behavior to the provider's configured write format.
+
+This split allows forward writes to follow the selected provider format while preserving compatibility with older daily-note lines and mixed historical data.
+
 ### ICS Provider (non-standard hybrid)
 
 Single provider supports both remote URLs (`http`, `https`, `webcal`) and local vault `.ics` files. It is intentionally read-only and normalizes remote/local acquisition into one contract surface.

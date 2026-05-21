@@ -561,6 +561,14 @@
         "heading": {
           "label": "Heading",
           "description": "Heading to store events under in the daily note."
+        },
+        "format": {
+          "label": "Format",
+          "description": "Choose how timed events are written in daily notes.",
+          "options": {
+            "default": "Default",
+            "dayPlanner": "DayPlanner Format"
+          }
         }
       },
       "ics": {

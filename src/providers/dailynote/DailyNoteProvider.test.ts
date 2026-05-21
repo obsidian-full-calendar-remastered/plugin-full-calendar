@@ -30,6 +30,38 @@ describe('DailyNoteCalendar', () => {
       expect(result).not.toBeNull();
       expect(result?.title).toBe('Work - Deploy to production');
     });
+
+    it('should parse day planner format when inline time fields are absent', () => {
+      const line = '- 02:30 - 03:30 Work - Review PR [uid:: 2]  [timezone:: Europe/Budapest]';
+      const result = getInlineEventFromLine(line, MOCK_GLOBALS);
+      expect(result).not.toBeNull();
+      expect(result).toEqual(
+        expect.objectContaining({
+          title: 'Work - Review PR',
+          startTime: '02:30',
+          endTime: '03:30',
+          uid: '2',
+          timezone: 'Europe/Budapest',
+          allDay: false
+        })
+      );
+    });
+
+    it('should prioritize inline start and end time fields over day planner title parsing', () => {
+      const line =
+        '- 02:30 - 03:30 Work - Review PR [startTime:: 09:00]  [endTime:: 10:00]  [uid:: 2]';
+      const result = getInlineEventFromLine(line, MOCK_GLOBALS);
+      expect(result).not.toBeNull();
+      expect(result).toEqual(
+        expect.objectContaining({
+          title: '02:30 - 03:30 Work - Review PR',
+          startTime: '09:00',
+          endTime: '10:00',
+          uid: '2',
+          allDay: false
+        })
+      );
+    });
   });
 
   describe('enhanceEvent (logic layer)', () => {

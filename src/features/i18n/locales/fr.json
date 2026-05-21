@@ -553,6 +553,14 @@
         "heading": {
           "label": "En-tête",
           "description": "En-tête sous lequel stocker les événements dans la note quotidienne."
+        },
+        "format": {
+          "label": "Format",
+          "description": "Choose how timed events are written in daily notes.",
+          "options": {
+            "default": "Default",
+            "dayPlanner": "DayPlanner Format"
+          }
         }
       },
       "ics": {

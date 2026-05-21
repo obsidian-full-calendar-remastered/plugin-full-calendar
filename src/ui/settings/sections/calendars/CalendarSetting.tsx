@@ -87,6 +87,18 @@ export class CalendarSettings
     this.state = { sources: [...props.sources] };
   }
 
+  private instancesListener = (): void => {
+    this.setState({ sources: [...PluginState.getProviderRegistry().getAllSources()] });
+  };
+
+  componentDidMount() {
+    (
+      this.props.plugin.app.workspace as unknown as {
+        on: (name: string, cb: () => void) => void;
+      }
+    ).on('full-calendar:instances-initialized', this.instancesListener);
+  }
+
   componentDidUpdate(prevProps: CalendarSettingsProps) {
     if (prevProps.sources !== this.props.sources) {
       this.setState({ sources: [...this.props.sources] });
@@ -94,6 +106,12 @@ export class CalendarSettings
   }
 
   componentWillUnmount() {
+    (
+      this.props.plugin.app.workspace as unknown as {
+        off: (name: string, cb: () => void) => void;
+      }
+    ).off('full-calendar:instances-initialized', this.instancesListener);
+
     // Flush any pending debounced save before unmount to prevent data loss
     if (this.debounceTimer !== null) {
       window.clearTimeout(this.debounceTimer);

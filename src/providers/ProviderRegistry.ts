@@ -270,9 +270,9 @@ export class ProviderRegistry {
     }
     this.providerRetryTimers.clear();
     this.providerRetryAttempts.clear();
-    this.teardownAllInstances();
-    this.instances.clear();
+
     const sources = PluginState.getSettings().calendarSources;
+    const newInstances = new Map<string, CalendarProvider<unknown>>();
 
     for (const source of sources) {
       const settingsId = source.id;
@@ -287,17 +287,24 @@ export class ProviderRegistry {
         const app = new ObsidianIO(this.plugin.app);
         // Provider constructor accepts loosely typed config; pass source directly
         const instance = new ProviderClass(source, this.plugin, app);
-        this.instances.set(settingsId, instance);
-
-        // Call initialize() if provider supports it
-        if (instance.initialize) {
-          instance.initialize();
-        }
-        // else: Provider does not require initialization
-      } else {
-        // Warning is already logged in getProviderForType
+        newInstances.set(settingsId, instance);
       }
     }
+
+    // Safely teardown old instances and swap to the new ones in one synchronous block
+    // after all asynchronous dynamic imports and instantiations have successfully completed.
+    this.teardownAllInstances();
+    this.instances.clear();
+    for (const [key, val] of newInstances.entries()) {
+      this.instances.set(key, val);
+      // Call initialize() if provider supports it
+      if (val.initialize) {
+        val.initialize();
+      }
+    }
+
+    // Trigger workspace event to notify settings and other subscribers that instances are fully initialized
+    this.plugin.app.workspace.trigger('full-calendar:instances-initialized');
   }
 
   // Methods from IdentifierManager, adapted
@@ -548,6 +555,7 @@ export class ProviderRegistry {
       });
 
       await Promise.allSettled(remotePromises);
+      this.cache?.resync();
     })();
   }
 

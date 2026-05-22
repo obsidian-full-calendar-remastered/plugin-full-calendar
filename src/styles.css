@@ -573,3 +573,197 @@
   border-radius: 8px;
   border: 1px solid var(--background-modifier-border);
 }
+
+/* Live Preview Event Decorations styling */
+
+.fc-lp-inline-event-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--background-secondary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-left: 4px solid var(--calendar-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin: 4px 0;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.fc-lp-inline-event-wrapper:hover {
+  background-color: var(--background-secondary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.fc-lp-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.fc-lp-inline-event-time {
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.fc-lp-inline-event-title {
+  font-size: 0.95em;
+  font-weight: 600;
+  color: var(--text-normal);
+  flex-grow: 1;
+}
+
+.fc-lp-inline-event-title.is-completed {
+  text-decoration: line-through;
+  color: var(--text-faint);
+  opacity: 0.75;
+}
+
+.fc-lp-category-pill {
+  font-size: 0.75em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-muted);
+}
+
+.fc-lp-inline-event-controls {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.fc-lp-inline-event-wrapper:hover .fc-lp-inline-event-controls {
+  opacity: 1;
+}
+
+.fc-lp-icon-button {
+  background: none;
+  border: none;
+  padding: 4px;
+  margin: 0;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.fc-lp-icon-button:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+
+.fc-lp-icon-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Premium Frontmatter Header Card */
+
+.fc-lp-header-card {
+  margin: 16px 0 24px 0;
+  background: linear-gradient(135deg, var(--background-secondary), var(--background-secondary-alt));
+  border: 1px solid var(--background-modifier-border);
+  border-left: 6px solid var(--calendar-color);
+  border-radius: 10px;
+  padding: 20px;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  font-family: inherit;
+  transition: box-shadow 0.2s ease;
+}
+
+.fc-lp-header-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+}
+
+.fc-lp-header-card-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fc-lp-header-card-cal-label {
+  font-size: 0.8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.fc-lp-header-card-title {
+  margin: 0 0 16px 0;
+  font-size: 1.8em;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-normal);
+}
+
+.fc-lp-header-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fc-lp-header-card-datetime {
+  font-size: 0.95em;
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.fc-lp-header-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.fc-lp-header-card-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 6px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.fc-lp-header-card:hover .fc-lp-header-card-controls {
+  opacity: 1;
+}
+
+.fc-lp-header-card-controls .fc-lp-icon-button {
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.fc-lp-header-card-controls .fc-lp-icon-button:hover {
+  background-color: var(--background-secondary);
+}
+
+.fc-lp-header-card-controls .fc-lp-icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+

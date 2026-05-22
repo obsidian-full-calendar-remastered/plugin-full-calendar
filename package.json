@@ -35,6 +35,8 @@
     },
     "license": "GNU General Public License",
     "devDependencies": {
+        "@codemirror/state": "^6.6.0",
+        "@codemirror/view": "^6.43.0",
         "@eslint/compat": "^2.1.0",
         "@eslint/css": "^1.2.0",
         "@eslint/eslintrc": "^3.3.5",

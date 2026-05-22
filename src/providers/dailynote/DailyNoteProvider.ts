@@ -31,6 +31,8 @@ import {
 import { EventHandle, FCReactComponent, ProviderConfigContext } from '../typesProvider';
 import { DailyNoteProviderConfig, getDailyNoteEventFormat } from './typesDaily';
 import { DailyNoteConfigComponent } from './DailyNoteConfigComponent';
+import { DailyNoteDecorator } from './codemirror/DailyNoteDecorator';
+import { LivePreviewDecorator } from '../../features/livepreview/LivePreviewDecorator';
 
 type MomentFactory = typeof import('moment');
 const moment = obsidianMoment as unknown as MomentFactory;
@@ -444,6 +446,15 @@ export class DailyNoteProvider
     source: Partial<import('../../types').CalendarInfo>;
   }> {
     return DailyNoteHeadingSetting;
+  }
+
+  #editorDecorator: DailyNoteDecorator | null = null;
+
+  getEditorDecorator(): LivePreviewDecorator {
+    if (!this.#editorDecorator) {
+      this.#editorDecorator = new DailyNoteDecorator();
+    }
+    return this.#editorDecorator;
   }
 
   createInstanceOverride(

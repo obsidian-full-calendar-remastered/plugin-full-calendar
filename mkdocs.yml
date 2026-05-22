@@ -146,6 +146,7 @@ nav:
                 - Reminders and Notifications: user/features/reminders.md
                 - Status Bar Integration: user/features/statusbar.md
                 - Internationalization: user/features/i18n.md
+                - Live Preview Decorators: user/features/live-preview.md
           - Chrono Analyser: 
                 - user/chrono_analyser/index.md
                 - Introduction: user/chrono_analyser/introduction.md
@@ -175,6 +176,7 @@ nav:
                 - Extending the Plugin: architecture/system/extending.md
                 - Testing and Validation: architecture/system/testing.md
                 - Backward Compatibility: architecture/system/backward-compatibility.md
+                - Live Preview System: architecture/system/live-preview.md
           - Provider Architecture:
                 - architecture/calendars/architecture.md
                 - Outlook Provider: architecture/calendars/outlook.md

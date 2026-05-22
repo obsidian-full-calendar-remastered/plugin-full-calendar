@@ -17,6 +17,8 @@ import {
   waitForFileAtPath,
   waitForMetadataWithTimeout
 } from '../utils/noteUtils';
+import { FrontmatterCardDecorator } from './codemirror/FrontmatterCardDecorator';
+import { LivePreviewDecorator } from '../../features/livepreview/LivePreviewDecorator';
 
 export type EditableEventResponse = [OFCEvent, EventLocation | null];
 
@@ -302,5 +304,14 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
     source: Partial<import('../../types').CalendarInfo>;
   }> {
     return FullNoteDirectorySetting;
+  }
+
+  #editorDecorator: FrontmatterCardDecorator | null = null;
+
+  getEditorDecorator(): LivePreviewDecorator {
+    if (!this.#editorDecorator) {
+      this.#editorDecorator = new FrontmatterCardDecorator();
+    }
+    return this.#editorDecorator;
   }
 }

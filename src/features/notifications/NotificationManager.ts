@@ -61,34 +61,86 @@ export class NotificationManager {
     }
   }
 
-  private checkAndNotify(occurrence: EnrichedOFCEvent, now: DateTime) {
+  public getTriggerTime(occurrence: EnrichedOFCEvent): DateTime | null {
     const { event, start } = occurrence;
     const { enableDefaultReminder, defaultReminderMinutes } = PluginState.getSettings();
-    const recencyCutoff = { minutes: 5 }; // Don't notify if the trigger point was more than 5 mins ago (e.g. at startup)
 
     // 1. Check Custom Reminder (High Priority)
-    let customDefined = false;
     if (event.notify && typeof event.notify.value === 'number') {
-      customDefined = true;
-      const customTriggered = start.minus({ minutes: event.notify.value });
-      const isDue = now >= customTriggered;
-      const isTooLate = customTriggered.plus(recencyCutoff) < now;
-
-      if (isDue && !isTooLate) {
-        this.tryTrigger(occurrence, 'custom', customTriggered);
-      }
+      return start.minus({ minutes: event.notify.value });
     }
 
     // 2. Check Default Reminder (Only if no custom reminder is set)
-    if (!customDefined && enableDefaultReminder) {
-      const defaultTriggerTime = start.minus({ minutes: defaultReminderMinutes });
-      const isDue = now >= defaultTriggerTime;
-      // Avoid triggering for events way in the past if we just started up
-      const isTooLate = defaultTriggerTime.plus(recencyCutoff) < now;
+    if (enableDefaultReminder) {
+      return start.minus({ minutes: defaultReminderMinutes });
+    }
 
-      if (isDue && !isTooLate) {
-        this.tryTrigger(occurrence, 'default', defaultTriggerTime);
+    return null;
+  }
+
+  public getUpcomingRemindersPayload(): Record<string, unknown>[] {
+    const occurrences = PluginState.getCache().getOccurrenceCache();
+    if (!occurrences) {
+      return [];
+    }
+
+    const now = DateTime.now();
+    const lookahead24h = now.plus({ hours: 24 });
+    const payload = [];
+
+    for (const occurrence of occurrences) {
+      const { event, start } = occurrence;
+
+      const triggerTime = this.getTriggerTime(occurrence);
+      if (!triggerTime) continue;
+
+      // Skip reminders that are more than 24 hours into the future (based on their reminder time)
+      if (triggerTime > lookahead24h) continue;
+
+      const trigger_at_epoch = Math.floor(triggerTime.toMillis() / 1000);
+
+      // Filter for trigger epochs in the future
+      if (trigger_at_epoch <= Math.floor(Date.now() / 1000)) {
+        continue;
       }
+
+      // Map identifier: append start timestamp to ensure uniqueness and stability for recurring instances
+      const isRecurring = event.type === 'recurring' || event.type === 'rrule';
+      const finalId = isRecurring ? `${occurrence.id}-${start.toMillis()}` : occurrence.id;
+
+      // Map Vault Deep Link
+      const vaultName = encodeURIComponent(this.plugin.app.vault.getName());
+      const filePath = occurrence.location ? encodeURIComponent(occurrence.location.file.path) : '';
+      const action_url = filePath
+        ? `obsidian://open?vault=${vaultName}&file=${filePath}`
+        : `obsidian://open?vault=${vaultName}`;
+
+      payload.push({
+        id: finalId,
+        title: event.title.slice(0, 64),
+        body: (event.description || '').slice(0, 256),
+        trigger_at_epoch,
+        action_url
+      });
+    }
+
+    return payload;
+  }
+
+  private checkAndNotify(occurrence: EnrichedOFCEvent, now: DateTime) {
+    const triggerTime = this.getTriggerTime(occurrence);
+    if (!triggerTime) return;
+
+    const recencyCutoff = { minutes: 5 };
+    const isDue = now >= triggerTime;
+    const isTooLate = triggerTime.plus(recencyCutoff) < now;
+
+    if (isDue && !isTooLate) {
+      const type =
+        occurrence.event.notify && typeof occurrence.event.notify.value === 'number'
+          ? 'custom'
+          : 'default';
+      this.tryTrigger(occurrence, type, triggerTime);
     }
   }
 
@@ -102,6 +154,13 @@ export class NotificationManager {
     const key = `${sessionId}::${type}::${triggerTime.toISO()}`;
 
     if (this.notifiedEvents.has(key)) return;
+
+    // Check if FCR reminder companion is enabled
+    const companionSettings = PluginState.getSettings().fcrReminderCompanion;
+    if (companionSettings && companionSettings.enabled) {
+      // Toast notification in obsidian won't happen rather it will be taken over by FCR reminder
+      return;
+    }
 
     this.triggerNotification(event, sessionId, type);
     this.notifiedEvents.add(key);

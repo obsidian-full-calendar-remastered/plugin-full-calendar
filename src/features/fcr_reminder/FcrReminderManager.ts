@@ -1,5 +1,4 @@
 import { PluginState } from '../../core/PluginState';
-import { DateTime } from 'luxon';
 import { FullCalendarSettings } from '../../types/settings';
 import FullCalendarPlugin from '../../main';
 import { requestUrl } from 'obsidian';
@@ -136,60 +135,7 @@ export class FcrReminderManager {
     }
 
     try {
-      const occurrences = PluginState.getCache().getOccurrenceCache();
-      if (!occurrences) {
-        return;
-      }
-
-      const now = DateTime.now();
-      const lookahead24h = now.plus({ hours: 24 });
-      const { enableDefaultReminder, defaultReminderMinutes } = this.getSettings();
-
-      // Filter and map occurrences for the next 24 hours
-      const payload = [];
-
-      for (const occurrence of occurrences) {
-        const { event, start } = occurrence;
-
-        // Skip events beyond next 24 hours
-        if (start > lookahead24h) continue;
-
-        // Calculate trigger epoch
-        let triggerTime = start;
-        if (event.notify && typeof event.notify.value === 'number') {
-          triggerTime = start.minus({ minutes: event.notify.value });
-        } else if (enableDefaultReminder) {
-          triggerTime = start.minus({ minutes: defaultReminderMinutes });
-        }
-
-        const trigger_at_epoch = Math.floor(triggerTime.toMillis() / 1000);
-
-        // Filter for trigger epochs in the future
-        if (trigger_at_epoch <= Math.floor(Date.now() / 1000)) {
-          continue;
-        }
-
-        // Map identifier: append start timestamp to ensure uniqueness and stability for recurring instances
-        const isRecurring = event.type === 'recurring' || event.type === 'rrule';
-        const finalId = isRecurring ? `${occurrence.id}-${start.toMillis()}` : occurrence.id;
-
-        // Map Vault Deep Link
-        const vaultName = encodeURIComponent(this.plugin.app.vault.getName());
-        const filePath = occurrence.location
-          ? encodeURIComponent(occurrence.location.file.path)
-          : '';
-        const action_url = filePath
-          ? `obsidian://open?vault=${vaultName}&file=${filePath}`
-          : `obsidian://open?vault=${vaultName}`;
-
-        payload.push({
-          id: finalId,
-          title: event.title.slice(0, 64),
-          body: (event.description || '').slice(0, 256),
-          trigger_at_epoch,
-          action_url
-        });
-      }
+      const payload = this.plugin.notificationManager.getUpcomingRemindersPayload();
 
       // Execute Sync POST
       const apiUrl = companionSettings.apiUrl || 'http://127.0.0.1:45677';

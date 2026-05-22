@@ -28,6 +28,7 @@ Feature modules may transform, filter, and react, but they must not replace core
 
 - [Timezone Architecture](timezone-architecture.md)
 - [Reminders Architecture](reminders-architecture.md)
+- [FCR Reminder Companion Architecture](fcr-reminder-architecture.md)
 - [Milestones Architecture](milestones-architecture.md)
 - [NLP Engine Architecture](nlp-architecture.md)
 - [Event Linked Notes Architecture](event-linked-notes.md)

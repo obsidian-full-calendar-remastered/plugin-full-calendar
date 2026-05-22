@@ -53,6 +53,10 @@ export default class FullCalendarPlugin extends Plugin {
     return this.#fcrReminderManager;
   }
 
+  get notificationManager(): NotificationManager {
+    return this.#notificationManager;
+  }
+
   // Keep a snapshot of the last saved settings to detect changes reliable
   #loadedSettings: string = '';
 

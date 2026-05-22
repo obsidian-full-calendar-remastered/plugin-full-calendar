@@ -597,6 +597,37 @@ text_property: "[[example]]"
     expect(calendar.isFileRelevant(fileInSimilarPath)).toBe(false);
   });
 
+  it('serializes notify as structured frontmatter instead of object stringification', async () => {
+    const app = MockAppBuilder.make().folder(new MockAppBuilder(dirName)).done();
+    const obsidian = makeApp(app);
+    (obsidian.create as jest.Mock).mockReturnValue({
+      path: `${dirName}/2026-05-21 Notify Event.md`
+    });
+
+    const calendar = new FullNoteProvider(
+      { directory: dirName, id: 'local_1' },
+      makePlugin(),
+      obsidian
+    );
+
+    await calendar.createEvent(
+      parseEvent({
+        title: 'Notify Event',
+        date: '2026-05-21',
+        allDay: false,
+        startTime: '11:30',
+        endTime: '13:30',
+        notify: { value: 30 }
+      })
+    );
+
+    const mockCreate = (obsidian as unknown as MockObsidian).create;
+    const [, content] = mockCreate.mock.calls[0] as [string, string];
+
+    expect(content).toContain('notify: {"value":30}');
+    expect(content).not.toContain('[object Object]');
+  });
+
   it('creates a recurring event with repeatOn', async () => {
     const obsidian = makeApp(MockAppBuilder.make().done());
     const calendar = new FullNoteProvider(

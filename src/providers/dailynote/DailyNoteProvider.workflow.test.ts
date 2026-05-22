@@ -206,6 +206,34 @@ describe('DailyNoteProvider workflow', () => {
     expect(afterDelete).not.toContain('Daily workflow event');
   });
 
+  it('serializes notify inline attributes as scalar values', async () => {
+    const app = createMockApp();
+
+    const provider = new DailyNoteProvider(
+      { id: 'dailynote_1', heading: 'Calendar' },
+      makePlugin(),
+      app
+    );
+
+    const event: OFCEvent = {
+      title: 'Daily notify event',
+      type: 'single',
+      allDay: false,
+      date: '2026-03-30',
+      startTime: '11:30',
+      endTime: '13:30',
+      endDate: null,
+      timezone: 'Europe/Budapest',
+      notify: { value: 30 }
+    };
+
+    const [, location] = await provider.createEvent(event);
+    const contents = contentsByPath.get(location.file.path) || '';
+
+    expect(contents).toContain('[notify:: 30]');
+    expect(contents).not.toContain('[notify:: [object Object]]');
+  });
+
   it('add, rename, move date, and delete workflow stays intact', async () => {
     const app = createMockApp();
 

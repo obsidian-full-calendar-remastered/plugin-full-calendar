@@ -80,6 +80,21 @@ const getHeadingPosition = (
   return { start: startingPos.end, end: endingPos?.start || endOfDoc };
 };
 
+const serializeInlineAttributeValue = (value: unknown): string => {
+  if (typeof value === 'object' && value !== null && 'value' in value) {
+    const nestedValue = (value as { value: unknown }).value;
+    if (
+      typeof nestedValue === 'string' ||
+      typeof nestedValue === 'number' ||
+      typeof nestedValue === 'boolean'
+    ) {
+      return String(nestedValue);
+    }
+  }
+
+  return String(value);
+};
+
 export const getListsUnderHeading = (
   headingText: string,
   metadata: CachedMetadata
@@ -98,7 +113,7 @@ export const getListsUnderHeading = (
 
 const generateInlineAttributes = (attrs: Record<string, unknown>): string => {
   return Object.entries(attrs)
-    .map(([k, v]) => `[${k}:: ${String(v)}]`)
+    .map(([k, v]) => `[${k}:: ${serializeInlineAttributeValue(v)}]`)
     .join('  ');
 };
 

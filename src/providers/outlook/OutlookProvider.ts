@@ -110,13 +110,14 @@ export class OutlookProvider implements CalendarProvider<OutlookProviderConfig>,
     this.linkedNoteIndex.destroy();
   }
 
-  async createLinkedNote(event: OFCEvent): Promise<TFile | null> {
+  async createLinkedNote(event: OFCEvent, instanceDate?: string): Promise<TFile | null> {
     return createLinkedNoteForProvider({
       app: this.plugin.app,
       event,
       calendarId: this.source.id,
       calendarName: this.source.name,
-      linkedNoteIndex: this.linkedNoteIndex
+      linkedNoteIndex: this.linkedNoteIndex,
+      instanceDate
     });
   }
 

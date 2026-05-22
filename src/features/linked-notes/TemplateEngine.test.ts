@@ -78,4 +78,21 @@ describe('TemplateEngine', () => {
 
     expect(result).toBe('Title: Minimal Event, Desc: , Loc: , URL: , Cal: Test Cal');
   });
+
+  it('should format and inject instanceDate if provided', () => {
+    const recurringEvent: OFCEvent = {
+      title: 'Weekly Standup',
+      type: 'recurring',
+      startRecur: '2026-05-01',
+      endRecur: '2026-06-01',
+      endDate: null,
+      skipDates: [],
+      allDay: true
+    };
+    const template = 'Date: {{date}}';
+    const result = TemplateEngine.render(template, recurringEvent, 'Test Cal', '2026-05-22');
+
+    const expectedDate = DateTime.fromISO('2026-05-22').toLocaleString(DateTime.DATE_HUGE);
+    expect(result).toBe(`Date: ${expectedDate}`);
+  });
 });

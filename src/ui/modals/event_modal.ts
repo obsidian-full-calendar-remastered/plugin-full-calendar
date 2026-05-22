@@ -22,14 +22,16 @@ import { showNotice } from '../../utils/showNotice';
 import { PluginState } from '../../core/PluginState';
 import * as React from 'react';
 import ReactModal from '../ReactModal';
+import { TFile } from 'obsidian';
 
 import { OFCEvent } from '../../types';
 import { EditEvent } from './EditEvent';
 import { EventDetails } from './EventDetails';
 import FullCalendarPlugin from '../../main';
 import { ConfirmModal } from './ConfirmModal';
-import { openFileForEvent, openOrCreateLinkedNote } from '../../utils/eventActions';
+import { openOrCreateLinkedNote } from '../../utils/eventActions';
 import { t } from '../../features/i18n/i18n';
+import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
 
 export function launchCreateModal(
   plugin: FullCalendarPlugin,
@@ -101,7 +103,11 @@ export function launchCreateModal(
  * including handling inherited properties from recurring parent events and category selection.
  * Integrates with the plugin's cache and settings, and supports error handling and user confirmations.
  */
-export function launchEditModal(plugin: FullCalendarPlugin, eventId: string) {
+export function launchEditModal(
+  plugin: FullCalendarPlugin,
+  eventId: string,
+  instanceDate?: string
+) {
   const eventToEdit = PluginState.getCache().getEventById(eventId);
   if (!eventToEdit) {
     throw new Error("Cannot edit event that doesn't exist.");
@@ -111,6 +117,20 @@ export function launchEditModal(plugin: FullCalendarPlugin, eventId: string) {
     throw new Error(`Cannot edit event with ID ${eventId} that doesn't exist in the store.`);
   }
   const calId = eventDetails.calendarId; // This is the RUNTIME ID.
+
+  let location = eventDetails.location;
+  const provider = PluginState.getProviderRegistry().getInstance(calId);
+  if (provider && 'linkedNoteIndex' in provider && provider.linkedNoteIndex) {
+    const linkedFile = (provider.linkedNoteIndex as LinkedNoteIndex).getFileForEvent(
+      eventToEdit.uid || '',
+      instanceDate
+    );
+    if (linkedFile) {
+      location = { path: linkedFile.path, lineNumber: undefined };
+    } else if (instanceDate) {
+      location = null;
+    }
+  }
 
   const calendars = PluginState.getProviderRegistry()
     .getAllSources()
@@ -188,11 +208,14 @@ export function launchEditModal(plugin: FullCalendarPlugin, eventId: string) {
           closeModal();
         },
         open: async () => {
-          const details = PluginState.getCache().store.getEventDetails(eventId);
-          if (details && details.location) {
-            await openFileForEvent(PluginState.getCache(), plugin.app, eventId);
+          if (location) {
+            const file = plugin.app.vault.getAbstractFileByPath(location.path);
+            if (file instanceof TFile) {
+              const leaf = plugin.app.workspace.getLeaf(true);
+              await leaf.openFile(file);
+            }
           } else {
-            await openOrCreateLinkedNote(plugin, calId, eventToEdit, true);
+            await openOrCreateLinkedNote(plugin, calId, eventToEdit, true, instanceDate);
           }
           closeModal();
         },
@@ -214,7 +237,11 @@ export function launchEditModal(plugin: FullCalendarPlugin, eventId: string) {
   }).open();
 }
 
-export function launchEventDetailsModal(plugin: FullCalendarPlugin, eventId: string) {
+export function launchEventDetailsModal(
+  plugin: FullCalendarPlugin,
+  eventId: string,
+  instanceDate?: string
+) {
   const event = PluginState.getCache().getEventById(eventId);
   if (!event) {
     showNotice(t('modals.editEvent.errors.eventNotFound'));
@@ -230,12 +257,24 @@ export function launchEventDetailsModal(plugin: FullCalendarPlugin, eventId: str
   const calendar = PluginState.getProviderRegistry().getSource(calendarId);
   const calendarName =
     calendar && calendar.name ? calendar.name : t('modals.editEvent.misc.unknownCalendar');
-  const location = eventDetails.location;
+
+  let location = eventDetails.location;
+  const provider = PluginState.getProviderRegistry().getInstance(calendarId);
+  if (provider && 'linkedNoteIndex' in provider && provider.linkedNoteIndex) {
+    const linkedFile = (provider.linkedNoteIndex as LinkedNoteIndex).getFileForEvent(
+      event.uid || '',
+      instanceDate
+    );
+    if (linkedFile) {
+      location = { path: linkedFile.path, lineNumber: undefined };
+    } else if (instanceDate) {
+      location = null;
+    }
+  }
 
   new ReactModal(plugin.app, closeModal => {
-    const provider = PluginState.getProviderRegistry().getInstance(calendarId);
     const linkedNoteProvider = provider as unknown as {
-      createLinkedNote?: (event: OFCEvent) => Promise<unknown>;
+      createLinkedNote?: (event: OFCEvent, instanceDate?: string) => Promise<unknown>;
     };
     const hasCreateLinkedNote =
       linkedNoteProvider && typeof linkedNoteProvider.createLinkedNote === 'function';
@@ -243,7 +282,7 @@ export function launchEventDetailsModal(plugin: FullCalendarPlugin, eventId: str
       ? () => {
           void (async () => {
             closeModal();
-            await openOrCreateLinkedNote(plugin, calendarId, event, false);
+            await openOrCreateLinkedNote(plugin, calendarId, event, false, instanceDate);
           })();
         }
       : undefined;
@@ -257,7 +296,11 @@ export function launchEventDetailsModal(plugin: FullCalendarPlugin, eventId: str
         onOpenNote: location
           ? () => {
               void (async () => {
-                await openFileForEvent(PluginState.getCache(), plugin.app, eventId);
+                const file = plugin.app.vault.getAbstractFileByPath(location.path);
+                if (file instanceof TFile) {
+                  const leaf = plugin.app.workspace.getLeaf(true);
+                  await leaf.openFile(file);
+                }
                 closeModal();
               })();
             }

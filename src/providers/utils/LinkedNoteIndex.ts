@@ -12,7 +12,14 @@ export class LinkedNoteIndex {
     this.calendarId = calendarId;
   }
 
-  public getFileForEvent(eventUid: string): TFile | null {
+  public getFileForEvent(eventUid: string, recurrenceId?: string): TFile | null {
+    if (recurrenceId) {
+      const instanceKey = `${eventUid}::${recurrenceId.trim()}`;
+      const instanceFile = this.index.get(instanceKey);
+      if (instanceFile) {
+        return instanceFile;
+      }
+    }
     return this.index.get(eventUid) || null;
   }
 
@@ -54,11 +61,27 @@ export class LinkedNoteIndex {
 
     const calId = frontmatter['fc-calendar-id'] as unknown;
     const eventUid = frontmatter['fc-event-uid'] as unknown;
+    const recurrenceId = frontmatter['fc-event-recurrence-id'] as unknown;
 
     if (calId === this.calendarId && typeof eventUid === 'string' && eventUid.trim() !== '') {
-      const prevFile = this.index.get(eventUid);
-      if (prevFile?.path !== file.path) {
-        this.index.set(eventUid, file);
+      const recurrenceSuffix =
+        typeof recurrenceId === 'string' && recurrenceId.trim() !== ''
+          ? `::${recurrenceId.trim()}`
+          : '';
+      const key = `${eventUid}${recurrenceSuffix}`;
+
+      // Clean up any stale mappings in the index map that point to the same file path but have a different key
+      let removedOld = false;
+      for (const [k, indexedFile] of this.index.entries()) {
+        if (indexedFile.path === file.path && k !== key) {
+          this.index.delete(k);
+          removedOld = true;
+        }
+      }
+
+      const prevFile = this.index.get(key);
+      if (prevFile?.path !== file.path || removedOld) {
+        this.index.set(key, file);
         if (triggerReload) {
           this.triggerReload();
         }
@@ -73,9 +96,9 @@ export class LinkedNoteIndex {
 
   private removePathFromIndex(path: string, triggerReload = true): boolean {
     let removed = false;
-    for (const [uid, indexedFile] of this.index.entries()) {
+    for (const [key, indexedFile] of this.index.entries()) {
       if (indexedFile.path === path) {
-        this.index.delete(uid);
+        this.index.delete(key);
         removed = true;
       }
     }

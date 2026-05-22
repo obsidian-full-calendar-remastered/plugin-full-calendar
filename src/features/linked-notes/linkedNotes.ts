@@ -22,15 +22,17 @@ export async function createLinkedNoteForProvider({
   event,
   calendarId,
   calendarName,
-  linkedNoteIndex
+  linkedNoteIndex,
+  instanceDate
 }: {
   app: App;
   event: OFCEvent;
   calendarId: string;
   calendarName: string;
   linkedNoteIndex: LinkedNoteIndex;
+  instanceDate?: string;
 }): Promise<TFile | null> {
-  const existingFile = linkedNoteIndex.getFileForEvent(event.uid || '');
+  const existingFile = linkedNoteIndex.getFileForEvent(event.uid || '', instanceDate);
   if (existingFile) {
     return existingFile;
   }
@@ -43,18 +45,24 @@ export async function createLinkedNoteForProvider({
   }
 
   const template = settings.linkedNoteTemplate || TemplateEngine.DEFAULT_TEMPLATE;
-  const bodyContent = TemplateEngine.render(template, event, calendarName);
+  const bodyContent = TemplateEngine.render(template, event, calendarName, instanceDate);
 
-  const frontmatter = {
+  const frontmatter: Record<string, unknown> = {
     'fc-event-uid': event.uid,
     'fc-calendar-id': calendarId
   };
+  if (instanceDate) {
+    frontmatter['fc-event-recurrence-id'] = instanceDate;
+  }
 
   const yaml = serializeFrontmatter(frontmatter);
   // Smart reuse of FullNote's replaceFrontmatter utility
   const fileContent = replaceFrontmatter(bodyContent, yaml);
 
-  const baseFilename = sanitizeTitleForFilename(event.title || t('linkedNotes.untitledNote'));
+  let baseFilename = sanitizeTitleForFilename(event.title || t('linkedNotes.untitledNote'));
+  if (instanceDate) {
+    baseFilename = `${baseFilename} ${instanceDate}`;
+  }
   const appAdapter = new ObsidianIO(app);
   const uniquePath = findUniquePath(appAdapter, directory, baseFilename);
 
@@ -69,12 +77,13 @@ export async function openOrCreateLinkedNote(
   plugin: FullCalendarPlugin,
   calendarId: string,
   event: OFCEvent,
-  openInNewLeaf: boolean
+  openInNewLeaf: boolean,
+  instanceDate?: string
 ): Promise<void> {
   const provider = PluginState.getProviderRegistry().getInstance(calendarId);
   const linkedNoteProvider = provider as unknown as {
     linkedNoteIndex?: LinkedNoteIndex;
-    createLinkedNote?: (event: OFCEvent) => Promise<TFile | null>;
+    createLinkedNote?: (event: OFCEvent, instanceDate?: string) => Promise<TFile | null>;
   };
   if (!linkedNoteProvider) {
     showNotice(t('notices.cannotOpenRemote'));
@@ -90,7 +99,10 @@ export async function openOrCreateLinkedNote(
 
   // 2. Check if note already exists
   if (linkedNoteProvider.linkedNoteIndex) {
-    const existingFile = linkedNoteProvider.linkedNoteIndex.getFileForEvent(event.uid || '');
+    const existingFile = linkedNoteProvider.linkedNoteIndex.getFileForEvent(
+      event.uid || '',
+      instanceDate
+    );
     if (existingFile) {
       const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);
       await leaf.openFile(existingFile);
@@ -101,7 +113,7 @@ export async function openOrCreateLinkedNote(
   // 3. Otherwise create a new note
   if (typeof linkedNoteProvider.createLinkedNote === 'function') {
     try {
-      const file = await linkedNoteProvider.createLinkedNote(event);
+      const file = await linkedNoteProvider.createLinkedNote(event, instanceDate);
       if (file) {
         const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);
         await leaf.openFile(file);

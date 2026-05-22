@@ -15,6 +15,21 @@ When you click on a remote calendar event in Obsidian, the event details modal o
 
 ---
 
+## Handling Recurring Events
+
+For recurring remote calendar events (such as daily or weekly standups), the plugin creates and manages **instance-specific linked notes** by default. Clicking or editing a specific calendar occurrence of a recurring series will open or create a note dedicated to *that specific instance date* rather than a single shared note for the entire series.
+
+* **Collision-Free Filenames**: Newly generated notes automatically append the occurrence date directly to the filename to avoid vault conflicts in your notes folder (e.g., `Weekly Sync 2026-05-20.md`).
+* **Instance Frontmatter Identity**: The note's YAML frontmatter includes an additional field `fc-event-recurrence-id` specifying the exact date of that occurrence:
+  ```yaml
+  fc-event-uid: 0q5u45oijpqnkljsndpfoiash98
+  fc-calendar-id: google-calendar-work
+  fc-event-recurrence-id: "2026-05-20"
+  ```
+* **Smart Template Substitution**: The `{{date}}` placeholder in your note body template automatically resolves to the specific instance's date (e.g. `Wednesday, May 20, 2026`) instead of the series start date.
+
+---
+
 ## Configuration Settings
 
 Go to [Settings → Calendars](../settings/sources.md) to set up the default behavior. The Linked Note Settings section appears at the top of the Calendars tab.

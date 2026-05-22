@@ -175,6 +175,80 @@ describe('LinkedNoteIndex', () => {
     expect(mockRegistry.reloadProviderNow).toHaveBeenCalledWith(calendarId);
   });
 
+  it('should support compound key mapping for recurring event instances', () => {
+    const fileMaster = createMockFile('events/master.md');
+    const fileInstance = createMockFile('events/instance.md');
+
+    mockVault.getMarkdownFiles.mockReturnValue([fileMaster, fileInstance]);
+
+    mockMetadataCache.getFileCache.mockImplementation((file: TFile) => {
+      if (file.path === 'events/master.md') {
+        return {
+          frontmatter: {
+            'fc-calendar-id': calendarId,
+            'fc-event-uid': 'uid-recur'
+          }
+        };
+      }
+      if (file.path === 'events/instance.md') {
+        return {
+          frontmatter: {
+            'fc-calendar-id': calendarId,
+            'fc-event-uid': 'uid-recur',
+            'fc-event-recurrence-id': '2026-05-20'
+          }
+        };
+      }
+      return null;
+    });
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    // specific instance query should match the instance-specific file
+    expect(index.getFileForEvent('uid-recur', '2026-05-20')).toBe(fileInstance);
+    // query for a different instance should fall back to the master note
+    expect(index.getFileForEvent('uid-recur', '2026-05-21')).toBe(fileMaster);
+    // query with no instance should match the master note
+    expect(index.getFileForEvent('uid-recur')).toBe(fileMaster);
+  });
+
+  it('should scrub stale mappings pointing to the same path but a different key during reactive updates', () => {
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    const file = createMockFile('events/note.md');
+
+    // First, file is mapped to master key 'uid-stale'
+    mockMetadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        'fc-calendar-id': calendarId,
+        'fc-event-uid': 'uid-stale'
+      }
+    });
+
+    const changedCallbacks = registeredEvents['changed'] || [];
+    changedCallbacks[0](file);
+
+    expect(index.getFileForEvent('uid-stale')).toBe(file);
+
+    // Second, file frontmatter is edited reactively to have recurrence ID
+    mockMetadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        'fc-calendar-id': calendarId,
+        'fc-event-uid': 'uid-stale',
+        'fc-event-recurrence-id': '2026-05-20'
+      }
+    });
+
+    changedCallbacks[0](file);
+
+    // Compound key should map to the file
+    expect(index.getFileForEvent('uid-stale', '2026-05-20')).toBe(file);
+    // Old master key should be scrubbed!
+    expect(index.getFileForEvent('uid-stale')).toBeNull();
+  });
+
   it('should unregister all listeners during teardown', () => {
     const index = new LinkedNoteIndex(mockApp, calendarId);
     index.initialize();

@@ -7,7 +7,7 @@
 
 | Component | Responsibility | Coupling |
 |---|---|---|
-| `LinkedNoteIndex` | Reactive index matching remote event UIDs to Obsidian file paths. | Listens to Obsidian vault events; decoupled from [EventStore](../event-storage.md#eventstore-model). |
+| `LinkedNoteIndex` | Reactive index matching remote event UIDs and recurrence IDs to Obsidian file paths. Supports compound key mapping (`eventUid::recurrenceId`) for instance-level note lookup. | Listens to Obsidian vault events; decoupled from [EventStore](../event-storage.md#eventstore-model). |
 | `TemplateEngine` | Renders a clean markdown body from event fields using a custom layout. | Pure functional renderer; no file system or vault side effects. |
 | `createLinkedNoteForProvider` | Centralized helper that orchestrates note creation for any remote provider. | Combines `TemplateEngine`, `noteUtils`, and `frontmatter` utilities in a single DRY entry point. |
 | `noteUtils` | General file-handling, title sanitization, and YAML serialization. | Shared file utility layer; DRY wrapper around Obsidian API. |
@@ -50,6 +50,13 @@ All remote providers delegate to a single centralized helper `createLinkedNoteFo
 
 No provider implements its own frontmatter construction, template rendering, or file creation logic.
 
+### 5️⃣ Recurring Event Instance Support (Unique Instance Identity)
+To resolve note collisions for recurring remote events (daily or weekly meetings), the linking model supports instance-level mapping:
+* **Compound Key Indexing**: `LinkedNoteIndex` computes compound keys using `${eventUid}::${recurrenceId}` when the YAML frontmatter includes `fc-event-recurrence-id`.
+* **Fallback Strategy**: When querying notes, `LinkedNoteIndex.getFileForEvent(uid, recurrenceId)` prioritizes matching compound keys first, falling back to the master series note (`uid`) only if no instance note exists.
+* **Reactive Cache Scrubbing**: During reactive updates, if a note's frontmatter is modified to add or change the recurrence ID, `LinkedNoteIndex` automatically purges the old orphan key pointing to that same file path.
+* **Instance-Aware Filenames & Templating**: File names for newly created notes automatically append the occurrence date (e.g., `Weekly Sync 2026-05-20.md`) to avoid vault conflicts, and the `TemplateEngine` uses the instance date to format the `{{date}}` placeholder in the note body.
+
 ---
 
 ## Data Flow
@@ -64,15 +71,15 @@ sequenceDiagram
     participant V as Obsidian Vault
 
     Note over GP,LNI: Read Path
-    GP->>LNI: getNotePathForEvent(uid, calId)
+    GP->>LNI: getFileForEvent(uid, recurrenceId)
     LNI-->>GP: returns local file path (if exists)
     GP-->>UI: returns event details containing note path
 
     Note over UI,V: Write Path (Creation)
-    UI->>LN: openOrCreateLinkedNote(plugin, calId, event)
-    LN->>GP: provider.createLinkedNote(event)
-    GP->>LN: createLinkedNoteForProvider({app, event, calendarId, ...})
-    LN->>TE: TemplateEngine.render(template, event, calendarName)
+    UI->>LN: openOrCreateLinkedNote(plugin, calId, event, openInNewLeaf, instanceDate)
+    LN->>GP: provider.createLinkedNote(event, instanceDate)
+    GP->>LN: createLinkedNoteForProvider({app, event, calendarId, ..., instanceDate})
+    LN->>TE: TemplateEngine.render(template, event, calendarName, instanceDate)
     TE-->>LN: returns rendered markdown body
     LN->>V: ObsidianIO.create(path, frontmatter + body)
     V-->>LNI: trigger vault "create" / "changed" event

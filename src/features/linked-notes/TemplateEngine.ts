@@ -17,7 +17,12 @@ export class TemplateEngine {
 - `;
   }
 
-  static render(template: string, event: OFCEvent, calendarName = ''): string {
+  static render(
+    template: string,
+    event: OFCEvent,
+    calendarName = '',
+    instanceDate?: string
+  ): string {
     const formatDate = (dateStr: string | null | undefined) => {
       if (!dateStr) return '';
       return DateTime.fromISO(dateStr).toLocaleString(DateTime.DATE_HUGE);
@@ -29,13 +34,14 @@ export class TemplateEngine {
     };
 
     const dateVal =
-      event.type === 'single'
+      instanceDate ||
+      (event.type === 'single'
         ? event.date
         : event.type === 'recurring' && event.startRecur
           ? event.startRecur
           : event.type === 'rrule'
             ? event.startDate
-            : '';
+            : '');
 
     const dateString = formatDate(dateVal);
 

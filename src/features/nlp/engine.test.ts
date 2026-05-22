@@ -373,6 +373,132 @@ describe('NLP engine', () => {
     });
   });
 
+  describe('relative duration and abbreviation enhancements', () => {
+    it('handles "some event for last 8 hours"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('some event for last 8 hours', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-07');
+      expect(result.hours).toBe(2);
+      expect(result.minutes).toBe(0);
+      expect(result.endHours).toBe(10);
+      expect(result.endMinutes).toBe(0);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('duration_last_hrs');
+    });
+
+    it('handles "some event for the last 8 hours"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('some event for the last 8 hours', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-07');
+      expect(result.hours).toBe(2);
+      expect(result.minutes).toBe(0);
+      expect(result.endHours).toBe(10);
+      expect(result.endMinutes).toBe(0);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('duration_last_hrs');
+    });
+
+    it('handles "some event for last 8 hrs"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('some event for last 8 hrs', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-07');
+      expect(result.hours).toBe(2);
+      expect(result.minutes).toBe(0);
+      expect(result.endHours).toBe(10);
+      expect(result.endMinutes).toBe(0);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('duration_last_hrs');
+    });
+
+    it('handles "some event for next 8 hours"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('some event for next 8 hours', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-07');
+      expect(result.hours).toBe(10);
+      expect(result.minutes).toBe(0);
+      expect(result.endHours).toBe(18);
+      expect(result.endMinutes).toBe(0);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('duration_next_hrs');
+    });
+
+    it('handles "some event for the next 8 hours"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('some event for the next 8 hours', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-07');
+      expect(result.hours).toBe(10);
+      expect(result.minutes).toBe(0);
+      expect(result.endHours).toBe(18);
+      expect(result.endMinutes).toBe(0);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('duration_next_hrs');
+    });
+
+    it('handles "some event for next 8 hrs"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('some event for next 8 hrs', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-07');
+      expect(result.hours).toBe(10);
+      expect(result.minutes).toBe(0);
+      expect(result.endHours).toBe(18);
+      expect(result.endMinutes).toBe(0);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('duration_next_hrs');
+    });
+
+    it('handles "some event in 8 hours"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('some event in 8 hours', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-07');
+      expect(result.hours).toBe(18);
+      expect(result.minutes).toBe(0);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('in_hours');
+    });
+
+    it('handles "some event in 8 hrs"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('some event in 8 hrs', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-07');
+      expect(result.hours).toBe(18);
+      expect(result.minutes).toBe(0);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('in_hours');
+    });
+
+    it('handles "some event in 30 mins"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('some event in 30 mins', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-07');
+      expect(result.hours).toBe(10);
+      expect(result.minutes).toBe(30);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('in_minutes');
+    });
+
+    it('handles day boundary crossings when subtracting hours (last 8 hours from 04:00)', () => {
+      const now = new Date('2026-05-07T04:00:00');
+      const result = processNaturalLanguage('some event for last 8 hours', payloadEn, now);
+
+      expect(result.date).toBe('2026-05-06');
+      expect(result.hours).toBe(20);
+      expect(result.minutes).toBe(0);
+      expect(result.endHours).toBe(4);
+      expect(result.endMinutes).toBe(0);
+      expect(result.title).toBe('some event');
+      expect(result.matchedRules).toContain('duration_last_hrs');
+    });
+  });
+
   describe('relative navigation', () => {
     it('handles "next week"', () => {
       const now = new Date('2026-05-07T10:00:00');

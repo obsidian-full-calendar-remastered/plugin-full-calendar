@@ -111,6 +111,30 @@
       "actions": ["SET_NEXT_OCCURRING_DAY($1)"]
     },
     {
+      "name": "duration_last_hrs",
+      "regex": "\\bfor\\s+(?:the\\s+)?last\\s+(\\d+)\\s+(?:hours?|hrs?)\\b",
+      "flags": "i",
+      "actions": ["SUBTRACT_HOURS($1)", "ADD_DURATION($1,0)"]
+    },
+    {
+      "name": "duration_last_mins",
+      "regex": "\\bfor\\s+(?:the\\s+)?last\\s+(\\d+)\\s+(?:minutes?|mins?)\\b",
+      "flags": "i",
+      "actions": ["SUBTRACT_MINUTES($1)", "ADD_DURATION(0,$1)"]
+    },
+    {
+      "name": "duration_next_hrs",
+      "regex": "\\bfor\\s+(?:the\\s+)?next\\s+(\\d+)\\s+(?:hours?|hrs?)\\b",
+      "flags": "i",
+      "actions": ["ADD_DURATION($1,0)"]
+    },
+    {
+      "name": "duration_next_mins",
+      "regex": "\\bfor\\s+(?:the\\s+)?next\\s+(\\d+)\\s+(?:minutes?|mins?)\\b",
+      "flags": "i",
+      "actions": ["ADD_DURATION(0,$1)"]
+    },
+    {
       "name": "duration_hrs",
       "regex": "\\bfor\\s+(\\d+)\\s+(?:hrs?|hours?)\\b",
       "flags": "i",
@@ -118,7 +142,7 @@
     },
     {
       "name": "duration_mins",
-      "regex": "\\bfor\\s+(\\d+)\\s+mins?\\b",
+      "regex": "\\bfor\\s+(\\d+)\\s+(?:minutes?|mins?)\\b",
       "flags": "i",
       "actions": ["ADD_DURATION(0,$1)"]
     },
@@ -136,13 +160,13 @@
     },
     {
       "name": "in_minutes",
-      "regex": "\\bin\\s+(\\d+)\\s+minutes?\\b",
+      "regex": "\\bin\\s+(\\d+)\\s+(?:minutes?|mins?)\\b",
       "flags": "i",
       "actions": ["ADD_MINUTES($1)"]
     },
     {
       "name": "in_hours",
-      "regex": "\\bin\\s+(\\d+)\\s+hours?\\b",
+      "regex": "\\bin\\s+(\\d+)\\s+(?:hours?|hrs?)\\b",
       "flags": "i",
       "actions": ["ADD_HOURS($1)"]
     },

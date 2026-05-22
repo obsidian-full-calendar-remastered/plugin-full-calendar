@@ -277,6 +277,11 @@ function executeCommand(command: string, captures: string[], context: NLPExecuti
       context.date.setHours(context.date.getHours() + hours);
       return;
     }
+    case 'SUBTRACT_HOURS': {
+      const hours = toNumber(rawArgs[0], 0);
+      context.date.setHours(context.date.getHours() - hours);
+      return;
+    }
     case 'SET_INTENT': {
       const intent = (rawArgs[0] ?? 'CREATE_EVENT') as NLPIntent;
       context.intent = intent;
@@ -294,6 +299,11 @@ function executeCommand(command: string, captures: string[], context: NLPExecuti
     case 'ADD_MINUTES': {
       const minutes = toNumber(rawArgs[0], 0);
       context.date.setMinutes(context.date.getMinutes() + minutes);
+      return;
+    }
+    case 'SUBTRACT_MINUTES': {
+      const minutes = toNumber(rawArgs[0], 0);
+      context.date.setMinutes(context.date.getMinutes() - minutes);
       return;
     }
     case 'ADD_WEEKS': {

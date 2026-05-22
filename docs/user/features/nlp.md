@@ -25,8 +25,10 @@ The **FCR Command** is your single point of control for Full Calendar Remastered
 |---|---|
 | `Team standup tomorrow at 9 am` | Creates "Team standup" tomorrow at 9:00 AM |
 | `next tuesday at 4:30 pm Sprint review` | Creates "Sprint review" next Tuesday at 4:30 PM |
-| `in 3 hours Deploy release` | Creates "Deploy release" 3 hours from now |
-| `in 30 minutes Break` | Creates "Break" 30 minutes from now |
+| `in 3 hours Deploy release` / `in 3 hrs ...` | Creates "Deploy release" 3 hours from now |
+| `in 30 minutes Break` / `in 30 mins ...` | Creates "Break" 30 minutes from now |
+| `some event for last 8 hours` / `... last 8 hrs` | Creates "some event" starting 8 hours ago and ending now |
+| `some event for next 8 hours` / `... next 8 hrs` | Creates "some event" starting now and ending 8 hours from now |
 | `day after tomorrow Workshop` | Creates "Workshop" two days from now |
 | `Matthews 2 in daily1` | Creates "Matthews 2" in the "daily1" calendar (smart match) |
 | `Meeting in Work calendar` | Creates "Meeting" in the "Work" calendar (explicit match) |
@@ -135,6 +137,8 @@ Both modes prefill TaskNotes with parsed NLP text so you can quickly confirm and
 |---|---|
 | `for 1 hr` / `for 7 hrs` | Sets event duration to 1 or 7 hours |
 | `for 30 mins` / `for 5 min` | Sets event duration to 30 or 5 minutes |
+| `for last 8 hours` / `for last 8 hrs` | Sets start time to 8 hours ago, and end time to now |
+| `for next 8 hours` / `for next 8 hrs` | Sets start time to now, and end time to 8 hours from now |
 
 ---
 

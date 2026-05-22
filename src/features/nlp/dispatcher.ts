@@ -63,7 +63,11 @@ export function hasExplicitTime(action: NLPActionObject): boolean {
     'time_noon',
     'time_midnight',
     'in_hours',
-    'in_minutes'
+    'in_minutes',
+    'duration_last_hrs',
+    'duration_last_mins',
+    'duration_next_hrs',
+    'duration_next_mins'
   ];
   return action.matchedRules.some(rule => timeRules.includes(rule));
 }

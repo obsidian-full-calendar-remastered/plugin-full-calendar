@@ -383,12 +383,7 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
   if (due) {
     const dueLuxon = parseTimezoneAwareString(due);
     if (dueLuxon.isValid) {
-      if (due.isDate) {
-        const inclusiveEndDate = dueLuxon.minus({ days: 1 });
-        finalEndDate = getLuxonDate(inclusiveEndDate);
-      } else {
-        finalEndDate = getLuxonDate(dueLuxon);
-      }
+      finalEndDate = getLuxonDate(dueLuxon);
     }
   }
 

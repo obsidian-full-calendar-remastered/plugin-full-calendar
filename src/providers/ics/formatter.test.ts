@@ -164,7 +164,7 @@ describe('ICS Formatter timezone serialization', () => {
     expect(ics).toContain('STATUS:NEEDS-ACTION');
     expect(ics).not.toContain('COMPLETED');
     expect(ics).toContain('DTSTART;VALUE=DATE:20260520');
-    expect(ics).toContain('DUE;VALUE=DATE:20260521');
+    expect(ics).toContain('DUE;VALUE=DATE:20260520');
     expect(ics).toContain('END:VTODO');
   });
 });

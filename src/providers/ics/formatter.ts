@@ -202,9 +202,9 @@ function createVTodoComponent(event: OFCEvent, isOverride = false): ical.Compone
   if (event.allDay) {
     startDt = DateTime.fromISO(datePart);
     if (event.type === 'single' && event.endDate) {
-      dueDt = DateTime.fromISO(event.endDate).plus({ days: 1 });
+      dueDt = DateTime.fromISO(event.endDate);
     } else {
-      dueDt = startDt.plus({ days: 1 });
+      dueDt = startDt;
     }
   } else {
     // Not all day

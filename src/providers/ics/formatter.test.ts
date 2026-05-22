@@ -167,4 +167,47 @@ describe('ICS Formatter timezone serialization', () => {
     expect(ics).toContain('DUE;VALUE=DATE:20260520');
     expect(ics).toContain('END:VTODO');
   });
+
+  it('should serialize a timed task with a floating timezone (no timezone specified) as VTODO without TZID or Z', () => {
+    const task = {
+      type: 'single',
+      title: 'Floating Task',
+      date: '2026-05-20',
+      startTime: '10:00',
+      endTime: '11:00',
+      allDay: false,
+      completed: false,
+      endDate: null
+    } as OFCEvent;
+
+    const ics = eventToIcs(task);
+    expect(ics).toContain('BEGIN:VTODO');
+    expect(ics).toContain('DTSTART:20260520T100000\r\n');
+    expect(ics).toContain('DUE:20260520T110000\r\n');
+    expect(ics).not.toContain('TZID');
+    expect(ics).not.toContain('Z\r\n');
+    expect(ics).toContain('END:VTODO');
+  });
+
+  it('should serialize VTODO overrides with the correct RECURRENCE-ID TZID parameter', () => {
+    const task = {
+      type: 'single',
+      title: 'Overridden Task Instance',
+      date: '2026-05-20',
+      startTime: '10:00',
+      endTime: '11:00',
+      allDay: false,
+      timezone: 'Europe/Amsterdam',
+      completed: false,
+      endDate: null
+    } as OFCEvent;
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const overrideComponent = createOverrideVEvent(task, '2026-05-20T10:00:00');
+    const ics = (overrideComponent as unknown as { toString(): string }).toString();
+
+    expect(ics).toContain('BEGIN:VTODO');
+    expect(ics).toContain('RECURRENCE-ID;TZID=Europe/Amsterdam:20260520T100000');
+    expect(ics).toContain('END:VTODO');
+  });
 });

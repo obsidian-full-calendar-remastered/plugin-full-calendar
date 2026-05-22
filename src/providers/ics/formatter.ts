@@ -9,35 +9,56 @@ import { isTask } from '../../types/tasks';
  * @param isAllDay Whether this is an all-day event
  */
 function formatDateTime(dt: DateTime, isAllDay: boolean): ical.Time {
-  const options = {
+  const data: {
+    year: number;
+    month: number;
+    day: number;
+    hour: number;
+    minute: number;
+    second: number;
+    isDate: boolean;
+    timezone?: string;
+  } = {
     year: dt.year,
     month: dt.month,
     day: dt.day,
-    hour: dt.hour,
-    minute: dt.minute,
-    second: dt.second,
-    isDate: isAllDay,
-    timezone: !isAllDay && dt.zoneName === 'UTC' ? 'UTC' : undefined
+    hour: isAllDay ? 0 : dt.hour,
+    minute: isAllDay ? 0 : dt.minute,
+    second: isAllDay ? 0 : dt.second,
+    isDate: isAllDay
   };
+
+  if (!isAllDay && dt.zoneName === 'UTC') {
+    data.timezone = 'Z';
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-  return new ical.Time(options as unknown as ConstructorParameters<typeof ical.Time>[0]);
+  return new ical.Time(data as unknown as ConstructorParameters<typeof ical.Time>[0]);
 }
 
 /**
- * Helper to add a date/time property to a component, setting the tzid parameter
- * if the event is timed and has an explicit, non-UTC timezone.
+ * Helper to add a date/time property to a component, setting VALUE=DATE for
+ * all-day events (handled automatically by ical.Time), or setting the TZID parameter
+ * for timed non-UTC events.
  */
 function addTimeProperty(
   component: ical.Component,
   name: string,
-  time: ical.Time,
+  dt: DateTime,
   isAllDay: boolean,
   timezone?: string
 ): ical.Property {
-  const prop = component.addPropertyWithValue(name, time);
-  if (!isAllDay && timezone && timezone !== 'UTC') {
-    prop.setParameter('tzid', timezone);
+  const prop = new ical.Property(name);
+  const time = formatDateTime(dt, isAllDay);
+
+  if (!isAllDay && timezone) {
+    if (timezone !== 'UTC' && timezone !== 'Z') {
+      prop.setParameter('TZID', timezone);
+    }
   }
+
+  prop.setValue(time);
+  component.addProperty(prop);
   return prop;
 }
 
@@ -101,20 +122,8 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
     }
   }
 
-  addTimeProperty(
-    vevent,
-    'dtstart',
-    formatDateTime(startDt, event.allDay),
-    event.allDay,
-    event.timezone
-  );
-  addTimeProperty(
-    vevent,
-    'dtend',
-    formatDateTime(endDt, event.allDay),
-    event.allDay,
-    event.timezone
-  );
+  addTimeProperty(vevent, 'dtstart', startDt, event.allDay, event.timezone);
+  addTimeProperty(vevent, 'dtend', endDt, event.allDay, event.timezone);
 
   // Description
   if (event.description) {
@@ -148,17 +157,15 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
     event.skipDates.length > 0
   ) {
     for (const skipDate of event.skipDates) {
-      let exTime: ical.Time;
+      let exDt: DateTime;
       if (event.allDay) {
-        const exDt = DateTime.fromISO(skipDate);
-        exTime = new ical.Time({ year: exDt.year, month: exDt.month, day: exDt.day, isDate: true });
+        exDt = DateTime.fromISO(skipDate);
       } else {
         const startTime = (event as unknown as { startTime?: string }).startTime || '00:00';
         const opts = event.timezone ? { zone: event.timezone } : {};
-        const exDt = DateTime.fromISO(`${skipDate}T${startTime}`, opts);
-        exTime = formatDateTime(exDt, false);
+        exDt = DateTime.fromISO(`${skipDate}T${startTime}`, opts);
       }
-      addTimeProperty(vevent, 'exdate', exTime, event.allDay, event.timezone);
+      addTimeProperty(vevent, 'exdate', exDt, event.allDay, event.timezone);
     }
   }
 
@@ -224,14 +231,8 @@ function createVTodoComponent(event: OFCEvent, isOverride = false): ical.Compone
     }
   }
 
-  addTimeProperty(
-    vtodo,
-    'dtstart',
-    formatDateTime(startDt, event.allDay),
-    event.allDay,
-    event.timezone
-  );
-  addTimeProperty(vtodo, 'due', formatDateTime(dueDt, event.allDay), event.allDay, event.timezone);
+  addTimeProperty(vtodo, 'dtstart', startDt, event.allDay, event.timezone);
+  addTimeProperty(vtodo, 'due', dueDt, event.allDay, event.timezone);
 
   // Description
   if (event.description) {
@@ -258,7 +259,7 @@ function createVTodoComponent(event: OFCEvent, isOverride = false): ical.Compone
     try {
       const completedDt = DateTime.fromISO(event.completed).toUTC();
       if (completedDt.isValid) {
-        addTimeProperty(vtodo, 'completed', formatDateTime(completedDt, false), false, 'UTC');
+        addTimeProperty(vtodo, 'completed', completedDt, false, 'UTC');
       }
     } catch (e) {
       console.error('Failed to parse completed date', e);
@@ -296,17 +297,15 @@ function createVTodoComponent(event: OFCEvent, isOverride = false): ical.Compone
     event.skipDates.length > 0
   ) {
     for (const skipDate of event.skipDates) {
-      let exTime: ical.Time;
+      let exDt: DateTime;
       if (event.allDay) {
-        const exDt = DateTime.fromISO(skipDate);
-        exTime = new ical.Time({ year: exDt.year, month: exDt.month, day: exDt.day, isDate: true });
+        exDt = DateTime.fromISO(skipDate);
       } else {
         const startTime = (event as unknown as { startTime?: string }).startTime || '00:00';
         const opts = event.timezone ? { zone: event.timezone } : {};
-        const exDt = DateTime.fromISO(`${skipDate}T${startTime}`, opts);
-        exTime = formatDateTime(exDt, false);
+        exDt = DateTime.fromISO(`${skipDate}T${startTime}`, opts);
       }
-      addTimeProperty(vtodo, 'exdate', exTime, event.allDay, event.timezone);
+      addTimeProperty(vtodo, 'exdate', exDt, event.allDay, event.timezone);
     }
   }
 
@@ -340,24 +339,17 @@ export function createOverrideVEvent(event: OFCEvent, originalDate: string): ica
 
   // 2. Add RECURRENCE-ID
   const isDate = originalDate.length === 10;
-  let recurIdTime: ical.Time;
+  let recurIdDt: DateTime;
 
   if (isDate) {
-    const recurIdDt = DateTime.fromISO(originalDate);
-    recurIdTime = new ical.Time({
-      year: recurIdDt.year,
-      month: recurIdDt.month,
-      day: recurIdDt.day,
-      isDate: true
-    });
+    recurIdDt = DateTime.fromISO(originalDate);
   } else {
     // Assume DateTime string
     const opts = event.timezone ? { zone: event.timezone } : {};
-    const recurIdDt = DateTime.fromISO(originalDate, opts);
-    recurIdTime = formatDateTime(recurIdDt, false);
+    recurIdDt = DateTime.fromISO(originalDate, opts);
   }
 
-  addTimeProperty(sub, 'recurrence-id', recurIdTime, isDate, event.timezone);
+  addTimeProperty(sub, 'recurrence-id', recurIdDt, isDate, event.timezone);
 
   return sub;
 }

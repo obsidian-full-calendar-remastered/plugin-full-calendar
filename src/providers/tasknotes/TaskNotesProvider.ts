@@ -340,7 +340,7 @@ export class TaskNotesProvider
     if (normalizedEnd) {
       const minutes = this.computeMinutes(normalizedStart, normalizedEnd);
       if (minutes && minutes > 0) {
-        durationToken = ` for ${minutes}m`;
+        durationToken = ` ${minutes}m`;
       }
     }
 

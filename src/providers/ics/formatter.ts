@@ -8,7 +8,7 @@ import { isTask } from '../../types/tasks';
  * @param dt The DateTime to format
  * @param isAllDay Whether this is an all-day event
  */
-function formatDateTime(dt: DateTime, isAllDay: boolean): ical.Time {
+function formatDateTime(dt: DateTime, isAllDay: boolean, timezone?: string): ical.Time {
   const data: {
     year: number;
     month: number;
@@ -25,15 +25,14 @@ function formatDateTime(dt: DateTime, isAllDay: boolean): ical.Time {
     hour: isAllDay ? 0 : dt.hour,
     minute: isAllDay ? 0 : dt.minute,
     second: isAllDay ? 0 : dt.second,
-    isDate: isAllDay
+    isDate: isAllDay,
   };
 
-  if (!isAllDay && dt.zoneName === 'UTC') {
+  if (!isAllDay && (timezone === 'UTC' || timezone === 'Z')) {
     data.timezone = 'Z';
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-  return new ical.Time(data as unknown as ConstructorParameters<typeof ical.Time>[0]);
+  return new ical.Time(data);
 }
 
 /**
@@ -49,7 +48,7 @@ function addTimeProperty(
   timezone?: string
 ): ical.Property {
   const prop = new ical.Property(name);
-  const time = formatDateTime(dt, isAllDay);
+  const time = formatDateTime(dt, isAllDay, timezone);
 
   if (!isAllDay && timezone) {
     if (timezone !== 'UTC' && timezone !== 'Z') {
@@ -317,6 +316,7 @@ function createVTodoComponent(event: OFCEvent, isOverride = false): ical.Compone
  */
 export function eventToIcs(event: OFCEvent): string {
   const component = new ical.Component('vcalendar');
+
   component.addPropertyWithValue('version', '2.0');
   component.addPropertyWithValue('prodid', '-//Obsidian Full Calendar Plugin//NONSGML v1.0//EN');
 
@@ -329,7 +329,7 @@ export function eventToIcs(event: OFCEvent): string {
 /**
  * Creates a VEVENT or VTODO component for an instance override.
  * @param event The new event data for the specific instance.
- * @param originalDate The original start date/time of the instance being modified (ISO string).
+ * @param originalDate The original start date/time of the instance being modified.
  */
 export function createOverrideVEvent(event: OFCEvent, originalDate: string): ical.Component {
   // 1. Create the base VEVENT or VTODO with new data

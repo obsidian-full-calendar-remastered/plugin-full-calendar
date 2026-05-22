@@ -576,16 +576,26 @@
 
 /* Live Preview Event Decorations styling */
 
+/* Override CodeMirror/Obsidian list indent styles to allow full event pill alignment without double checkboxes/bullets */
+.cm-line.fc-lp-line-override {
+  padding-left: 0 !important;
+  text-indent: 0 !important;
+  margin-left: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  min-height: 0 !important;
+}
+
 .fc-lp-inline-event-wrapper {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   background-color: var(--background-secondary-alt);
   border: 1px solid var(--background-modifier-border);
   border-left: 4px solid var(--calendar-color);
   border-radius: 6px;
-  padding: 6px 12px;
-  margin: 4px 0;
+  padding: 4px 10px;
+  margin: 0 !important;
   width: 100%;
   box-sizing: border-box;
   font-family: inherit;
@@ -613,6 +623,7 @@
   font-weight: 500;
   color: var(--text-muted);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .fc-lp-inline-event-title {
@@ -620,6 +631,10 @@
   font-weight: 600;
   color: var(--text-normal);
   flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .fc-lp-inline-event-title.is-completed {
@@ -638,6 +653,8 @@
   border: 1px solid var(--background-modifier-border);
   background-color: var(--background-primary);
   color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .fc-lp-inline-event-controls {
@@ -678,6 +695,9 @@
 /* Premium Frontmatter Header Card */
 
 .fc-lp-header-card {
+  display: block !important;
+  width: 100%;
+  box-sizing: border-box;
   margin: 16px 0 24px 0;
   background: linear-gradient(135deg, var(--background-secondary), var(--background-secondary-alt));
   border: 1px solid var(--background-modifier-border);

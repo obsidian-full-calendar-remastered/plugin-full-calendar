@@ -132,34 +132,51 @@ export class FrontmatterCardDecorator implements LivePreviewDecorator {
       return builder.finish();
     }
 
-    // Renders only if position 0 (the top) of the note is visible
-    const isTopVisible = visibleRanges.some(r => r.from === 0 || (r.from <= 0 && r.to >= 0));
-    if (!isTopVisible) {
+    // A FullNote represents exactly one event in this file
+    const event = storedEvents[0];
+    if (!event || !event.event) {
       return builder.finish();
     }
 
-    // A FullNote represents exactly one event in this file
-    const event = storedEvents[0];
     const calendarId = event.calendarId;
+    if (!calendarId) {
+      return builder.finish();
+    }
+
+    if (view.state.doc.length === 0) {
+      return builder.finish();
+    }
+
     const source = PluginState.getProviderRegistry().getSource(calendarId);
     const calendarName = source?.name || 'Local Notes';
     const calendarColor = source?.color || 'var(--interactive-accent)';
 
-    const date = event.event.type === 'single' ? event.event.date : '';
-    const startTime = event.event.allDay ? undefined : event.event.startTime;
-    const endTime = event.event.allDay ? undefined : event.event.endTime || undefined;
+    const innerEvent = event.event;
+    let date = '';
+    if (innerEvent.type === 'single') {
+      date = innerEvent.date || '';
+    }
+
+    let startTime: string | undefined;
+    let endTime: string | undefined;
+    if (innerEvent.allDay === false) {
+      startTime = innerEvent.startTime;
+      endTime = innerEvent.endTime || undefined;
+    }
+
+    const eventTitle = innerEvent.title || file.basename || 'Untitled Event';
 
     const widget = Decoration.widget({
       widget: new FrontmatterCardWidget(
         event.id,
         calendarColor,
         calendarName,
-        event.event.title,
+        eventTitle,
         date,
         startTime,
         endTime,
-        event.event.category,
-        event.event.subCategory,
+        innerEvent.category,
+        innerEvent.subCategory,
         // Edit callback
         () => {
           launchEditModal(PluginState.getPlugin(), event.id);
@@ -173,7 +190,38 @@ export class FrontmatterCardDecorator implements LivePreviewDecorator {
       block: true
     });
 
-    builder.add(0, 0, widget);
+    let targetPos = 0;
+    try {
+      const doc = view.state.doc;
+      if (doc.length > 0 && doc.line(1).text.trim() === '---') {
+        const maxLines = Math.min(doc.lines, 100);
+        for (let i = 2; i <= maxLines; i++) {
+          if (doc.line(i).text.trim() === '---') {
+            if (i < doc.lines) {
+              targetPos = doc.line(i + 1).from;
+            } else {
+              targetPos = doc.line(i).to;
+            }
+            break;
+          }
+        }
+      }
+    } catch {
+      // Quietly default to 0
+    }
+
+    try {
+      const docLength = view.state.doc.length;
+      if (targetPos < 0) {
+        targetPos = 0;
+      }
+      if (targetPos > docLength) {
+        targetPos = docLength;
+      }
+      builder.add(targetPos, targetPos, widget);
+    } catch {
+      // Quietly fail
+    }
 
     return builder.finish();
   }

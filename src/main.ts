@@ -26,7 +26,10 @@ import { Plugin, TFile, App, EventRef } from 'obsidian';
 import type { Workspace } from 'obsidian';
 import { initializeI18n, t } from './features/i18n/i18n';
 import './styles.css';
-import { livePreviewCoordinator } from './features/livepreview/LivePreviewCoordinator';
+import {
+  livePreviewCoordinator,
+  livePreviewStateField
+} from './features/livepreview/LivePreviewCoordinator';
 
 import { AppWithSettings } from './types/obsidian-ext';
 import { FullCalendarSettings, DEFAULT_SETTINGS } from './types/settings';
@@ -360,7 +363,18 @@ export default class FullCalendarPlugin extends Plugin {
       }
     });
 
+    this.registerEditorExtension(livePreviewStateField);
     this.registerEditorExtension(livePreviewCoordinator);
+
+    // Delayed background cache population for lazy start optimization
+    this.app.workspace.onLayoutReady(() => {
+      window.setTimeout(() => {
+        const cache = PluginState.getCache();
+        if (cache && !cache.initialized) {
+          void cache.populate();
+        }
+      }, 3000); // 3 seconds delay after layout is ready
+    });
   }
 
   /**

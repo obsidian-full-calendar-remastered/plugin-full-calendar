@@ -20,7 +20,8 @@ jest.mock(
     return {
       TFile,
       Plugin: class {},
-      App: class {}
+      App: class {},
+      editorInfoField: {}
     };
   },
   { virtual: true }
@@ -149,6 +150,40 @@ describe('LivePreviewDelegation Tests', () => {
 
     const coordinator = new LivePreviewCoordinatorPlugin(mockView);
     expect(coordinator.decorations).toBe(Decoration.none);
+  });
+
+  it('should skip a provider without getEditorDecorator and select a subsequent relevant provider that implements it', () => {
+    const file = new TFile();
+    file.path = 'test.md';
+    getActiveFileMock.mockReturnValue(file);
+
+    // Mock first provider: relevant but has no getEditorDecorator
+    const firstProvider: CalendarProvider<unknown> = {
+      type: 'first',
+      displayName: 'First Provider',
+      isRemote: false,
+      loadPriority: 10,
+      isFileRelevant: () => true,
+      getEvents: jest.fn(),
+      getCapabilities: jest.fn(),
+      getEventHandle: jest.fn(),
+      createEvent: jest.fn(),
+      updateEvent: jest.fn(),
+      deleteEvent: jest.fn(),
+      createInstanceOverride: jest.fn(),
+      getConfigurationComponent: jest.fn(),
+      getSettingsRowComponent: jest.fn()
+    };
+
+    // Second provider is mockProvider (which has getEditorDecorator)
+    getActiveProvidersMock.mockReturnValue([firstProvider, mockProvider]);
+
+    const expectedDecorations = {} as DecorationSet;
+    getDecorationsMock.mockReturnValue(expectedDecorations);
+
+    const coordinator = new LivePreviewCoordinatorPlugin(mockView);
+    expect(coordinator.decorations).toBe(expectedDecorations);
+    expect(getEditorDecoratorMock).toHaveBeenCalled();
   });
 
   it('should delegate to provider decorator if file is relevant and provider has decorator', () => {

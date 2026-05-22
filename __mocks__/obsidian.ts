@@ -1,3 +1,5 @@
+import { StateField } from '@codemirror/state';
+
 const toForwardSlashes = (value: string): string => value.replace(/\\/g, "/");
 const joinPath = (...parts: string[]): string => {
     const normalizedParts = parts
@@ -94,3 +96,8 @@ export async function requestUrl(_url: string): Promise<{ text: string }> {
 }
 
 export const getLanguage = jest.fn().mockReturnValue("en");
+
+export const editorInfoField = StateField.define<unknown>({
+    create: () => null,
+    update: (val: unknown) => val
+});

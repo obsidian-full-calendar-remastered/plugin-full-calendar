@@ -29,7 +29,7 @@ class InlineEventWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
-    const wrapper = activeDocument.createElement('div');
+    const wrapper = activeDocument.createElement('span');
     wrapper.addClass('fc-lp-inline-event-wrapper');
     wrapper.style.setProperty('--calendar-color', this.color);
 
@@ -67,7 +67,7 @@ class InlineEventWidget extends WidgetType {
     }
 
     // Action controls (Edit Details button revealed on hover)
-    const controls = activeDocument.createElement('div');
+    const controls = activeDocument.createElement('span');
     controls.addClass('fc-lp-inline-event-controls');
 
     const editBtn = createIconButton('pencil', 'Edit event', () => this.onEdit());
@@ -121,6 +121,13 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
     // Get active cursor line for exclusion (1-indexed)
     const selection = view.state.selection.main;
     const cursorLine = view.state.doc.lineAt(selection.head).number;
+
+    interface DecoEntry {
+      from: number;
+      to: number;
+      value: Decoration;
+    }
+    const decos: DecoEntry[] = [];
 
     for (const range of visibleRanges) {
       const startLineObj = view.state.doc.lineAt(range.from);
@@ -181,8 +188,44 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
             )
           });
 
-          // Add the replace decoration to standard CodeMirror range
-          builder.add(line.from, line.to, widget);
+          // Collect line-level override decoration
+          decos.push({
+            from: line.from,
+            to: line.from,
+            value: Decoration.line({ attributes: { class: 'fc-lp-line-override' } })
+          });
+
+          // Collect the replace decoration
+          decos.push({
+            from: line.from,
+            to: line.to,
+            value: widget
+          });
+        }
+      }
+    }
+
+    // Sort decorations by starting position (from) and element type
+    decos.sort((a, b) => {
+      if (a.from !== b.from) {
+        return a.from - b.from;
+      }
+      const aIsLine = a.to === a.from;
+      const bIsLine = b.to === b.from;
+      if (aIsLine && !bIsLine) return -1;
+      if (!aIsLine && bIsLine) return 1;
+      return a.to - b.to;
+    });
+
+    // Add sorted decorations to builder
+    let lastAdded = -1;
+    for (const deco of decos) {
+      if (deco.from >= lastAdded) {
+        try {
+          builder.add(deco.from, deco.to, deco.value);
+          lastAdded = deco.from;
+        } catch {
+          // Quietly ignore sorting conflicts
         }
       }
     }

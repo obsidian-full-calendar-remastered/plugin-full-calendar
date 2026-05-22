@@ -56,6 +56,17 @@ obsidian://open?vault=<vault-name>&file=<url-encoded-file-path>
 
 ---
 
+## Manual Synchronization Dispatch
+
+In addition to background debounced sync loops, the system supports manual forced synchronization through two distinct integration paths:
+
+1.  **Obsidian Command Palette**: Registered in `src/main.ts` with ID `full-calendar-sync-fcr-reminder`. The command utilizes a `checkCallback` block to dynamically register in the command interface only if `fcrReminderCompanion.enabled === true`.
+2.  **NLP Command Routing**: Defined in `src/features/nlp/payloads/en.json` with the rule `sync_fcr_reminder` mapping regex `^(?:sync|run|update)\s+(?:fcr\s+)?(?:reminder\s+)?companion\b` to the `SYNC_FCR_REMINDER` intent. The NLP dispatcher in `src/features/nlp/dispatcher.ts` catches this intent and directly triggers `plugin.fcrReminderManager.syncToCompanion()`.
+
+Both dispatch paths compile the lookahead payload, transmit it to the daemon loopback, and show a confirmation toast on success.
+
+---
+
 ## Alert Mutex (Obsidian Bypass)
 
 To prevent duplicate alerts when Obsidian and the companion daemon are running concurrently, `NotificationManager` implements a mutex:

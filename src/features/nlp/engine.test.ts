@@ -491,6 +491,21 @@ describe('NLP engine', () => {
 
       expect(result.intent).toBe('SYNC_ACTIVITYWATCH');
     });
+
+    it('short-circuits on SYNC_FCR_REMINDER', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('sync companion', payloadEn, now);
+
+      expect(result.intent).toBe('SYNC_FCR_REMINDER');
+      expect(result.title).toBe('');
+    });
+
+    it('recognizes "update reminder companion"', () => {
+      const now = new Date('2026-05-07T10:00:00');
+      const result = processNaturalLanguage('update reminder companion', payloadEn, now);
+
+      expect(result.intent).toBe('SYNC_FCR_REMINDER');
+    });
   });
 
   describe('GOTO_DATE (non-short-circuiting)', () => {

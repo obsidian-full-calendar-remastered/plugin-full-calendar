@@ -81,6 +81,12 @@
       "actions": ["SET_INTENT(SYNC_ACTIVITYWATCH)"]
     },
     {
+      "name": "sync_fcr_reminder",
+      "regex": "^(?:sync|run|update)\\s+(?:fcr\\s+)?(?:reminder\\s+)?companion\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(SYNC_FCR_REMINDER)"]
+    },
+    {
       "name": "goto_date",
       "regex": "^(?:go\\s+to|goto|jump\\s+to|navigate\\s+to)\\b",
       "flags": "i",

@@ -148,7 +148,8 @@
     "openChronoAnalyser": "打开数据分析器（仅桌面版）",
     "openSidebar": "在侧边栏打开",
     "syncActivityWatch": "同步 ActivityWatch",
-    "nlpQuickAdd": "FCR Command"
+    "nlpQuickAdd": "FCR Command",
+    "syncFcrReminder": "Sync FCR Reminder Companion"
   },
   "notices": {
     "settingsUpdated": "日历已将您的日历设置更新为新格式。",
@@ -199,7 +200,8 @@
     "chronoAnalyserDemoLoadedFromCache": "ChronoAnalyser demo loaded from cache.",
     "chronoAnalyserDemoLoadFailed": "Could not load the ChronoAnalyser demo. Falling back to live data.",
     "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
-    "failedToCreateLinkedNote": "Failed to create linked note."
+    "failedToCreateLinkedNote": "Failed to create linked note.",
+    "fcrReminderSynced": "FCR Reminder Companion synchronized successfully."
   },
   "eventCache": {
     "calendarNotFound": "无法添加事件：未找到 ID 为 {{calendarId}} 的日历。",
@@ -1316,7 +1318,8 @@
     },
     "notices": {
       "cacheReset": "Event cache has been reset.",
-      "awNotEnabled": "ActivityWatch is not enabled. Enable it in settings first."
+      "awNotEnabled": "ActivityWatch is not enabled. Enable it in settings first.",
+      "fcrCompanionNotEnabled": "FCR Reminder Companion is not enabled. Enable it in settings first."
     }
   },
   "outlook": {

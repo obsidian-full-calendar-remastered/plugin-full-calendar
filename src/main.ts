@@ -294,6 +294,26 @@ export default class FullCalendarPlugin extends Plugin {
       }
     });
     this.addCommand({
+      id: 'full-calendar-sync-fcr-reminder',
+      name: t('commands.syncFcrReminder'),
+      checkCallback: checking => {
+        const companionSettings = PluginState.getSettings().fcrReminderCompanion;
+        const isEnabled = companionSettings && companionSettings.enabled;
+        if (!isEnabled) {
+          return false;
+        }
+        if (!checking) {
+          void (async () => {
+            await this.#fcrReminderManager.syncToCompanion();
+            showNotice(
+              t('notices.fcrReminderSynced') || 'FCR Reminder Companion synchronized successfully.'
+            );
+          })();
+        }
+        return true;
+      }
+    });
+    this.addCommand({
       id: 'full-calendar-open',
       name: t('commands.openCalendar'),
       callback: () => {

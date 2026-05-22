@@ -148,7 +148,8 @@
     "openChronoAnalyser": "Chrono-Analyser öffnen (nur Desktop)",
     "openSidebar": "Im Seitenbereich öffnen",
     "syncActivityWatch": "ActivityWatch synchronisieren",
-    "nlpQuickAdd": "FCR Command"
+    "nlpQuickAdd": "FCR Command",
+    "syncFcrReminder": "Sync FCR Reminder Companion"
   },
   "notices": {
     "settingsUpdated": "Full Calendar hat Ihre Kalendereinstellungen auf ein neues Format aktualisiert.",
@@ -199,7 +200,8 @@
     "chronoAnalyserDemoLoadedFromCache": "ChronoAnalyser demo loaded from cache.",
     "chronoAnalyserDemoLoadFailed": "Could not load the ChronoAnalyser demo. Falling back to live data.",
     "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
-    "failedToCreateLinkedNote": "Failed to create linked note."
+    "failedToCreateLinkedNote": "Failed to create linked note.",
+    "fcrReminderSynced": "FCR Reminder Companion synchronized successfully."
   },
   "eventCache": {
     "calendarNotFound": "Ereignis kann nicht hinzugefügt werden: Kalender mit der ID {{calendarId}} nicht gefunden.",
@@ -1316,7 +1318,8 @@
     },
     "notices": {
       "cacheReset": "Ereignis-Cache wurde zurückgesetzt.",
-      "awNotEnabled": "ActivityWatch ist nicht aktiviert. Bitte zuerst in den Einstellungen aktivieren."
+      "awNotEnabled": "ActivityWatch ist nicht aktiviert. Bitte zuerst in den Einstellungen aktivieren.",
+      "fcrCompanionNotEnabled": "FCR Reminder Companion is not enabled. Enable it in settings first."
     }
   },
   "outlook": {

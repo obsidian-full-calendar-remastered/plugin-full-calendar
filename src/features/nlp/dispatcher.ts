@@ -210,6 +210,21 @@ export async function dispatchNLPAction(action: NLPActionObject): Promise<void> 
     return;
   }
 
+  if (action.intent === 'SYNC_FCR_REMINDER') {
+    const settings = PluginState.getSettings();
+    const companionSettings = settings.fcrReminderCompanion;
+    if (!companionSettings || !companionSettings.enabled) {
+      showNotice(
+        t('nlp.notices.fcrCompanionNotEnabled') || 'FCR Reminder Companion is not enabled.'
+      );
+      return;
+    }
+    const plugin = PluginState.getPlugin();
+    await plugin.fcrReminderManager.syncToCompanion();
+    showNotice(t('nlp.parseSuccess'));
+    return;
+  }
+
   // --- GOTO_DATE intent: navigate the calendar to the computed date ---
   if (action.intent === 'GOTO_DATE') {
     await internal.changeView('timeGridDay');

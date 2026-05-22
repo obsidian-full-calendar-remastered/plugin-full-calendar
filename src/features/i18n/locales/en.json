@@ -152,7 +152,8 @@
     "openChronoAnalyser": "Open ChronoAnalyser (Desktop Only)",
     "openSidebar": "Open in sidebar",
     "syncActivityWatch": "Sync ActivityWatch",
-    "nlpQuickAdd": "FCR Command"
+    "nlpQuickAdd": "FCR Command",
+    "syncFcrReminder": "Sync FCR Reminder Companion"
   },
   "notices": {
     "settingsUpdated": "Full Calendar has updated your calendar settings to a new format.",
@@ -174,6 +175,7 @@
     "revalidatingRemotes": "Revalidating remote calendars...",
     "revalidationFailed": "One or more remote calendars failed to load. Check the console for details.",
     "revalidationSuccess": "Remote calendars revalidated.",
+    "fcrReminderSynced": "FCR Reminder Companion synchronized successfully.",
     "cannotOpenRemote": "Cannot open note for a remote event.",
     "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
     "failedToCreateLinkedNote": "Failed to create linked note.",
@@ -1378,7 +1380,8 @@
     },
     "notices": {
       "cacheReset": "Event cache has been reset.",
-      "awNotEnabled": "ActivityWatch is not enabled. Enable it in settings first."
+      "awNotEnabled": "ActivityWatch is not enabled. Enable it in settings first.",
+      "fcrCompanionNotEnabled": "FCR Reminder Companion is not enabled. Enable it in settings first."
     }
   },
   "linkedNotes": {

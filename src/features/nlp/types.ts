@@ -12,6 +12,7 @@ export type NLPIntent =
   | 'RESET_CACHE'
   | 'REVALIDATE_REMOTE'
   | 'SYNC_ACTIVITYWATCH'
+  | 'SYNC_FCR_REMINDER'
   | 'GOTO_DATE'
   | 'NEW_EVENT';
 

@@ -44,4 +44,19 @@ Once configured, the synchronization happens completely in the background:
 
 ---
 
+## Manual Synchronization
+
+While Full Calendar automatically keeps your companion daemon synchronized in the background, you can trigger an immediate refresh of the companion app memory at any time:
+
+*   **Command Palette**: Open the Obsidian Command Palette (`Ctrl/Cmd + P`) and execute the command:
+    `Full Calendar: Sync FCR Reminder Companion`
+*   **FCR Command (NLP)**: Open the FCR Command modal (`Ctrl/Cmd + P` → `FCR Command`) and type one of the following commands:
+    *   `sync companion`
+    *   `sync reminder companion`
+    *   `update reminder companion`
+
+Obsidian will compile the latest 24-hour reminder lookahead array, dispatch it immediately to the local daemon, and show a success confirmation toast.
+
+---
+
 [Local Reminders and Snooze](reminders.md) · [Technical Architecture](../../architecture/system/features/fcr-reminder-architecture.md) · [NLP Quick-Add](nlp.md)

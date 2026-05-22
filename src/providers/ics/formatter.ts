@@ -7,6 +7,7 @@ import { isTask } from '../../types/tasks';
  * Formats a Luxon DateTime into an iCal DATE-TIME string (YYYYMMDDTHHMMSSZ or local).
  * @param dt The DateTime to format
  * @param isAllDay Whether this is an all-day event
+ * @param timezone Explicit event timezone; only UTC/Z forces trailing Z output
  */
 function formatDateTime(dt: DateTime, isAllDay: boolean, timezone?: string): ical.Time {
   const data: {

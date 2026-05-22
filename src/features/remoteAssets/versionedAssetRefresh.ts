@@ -1,5 +1,5 @@
 import { App } from 'obsidian';
-import { refreshCachedChronoDemoAsset } from '../../chrono_analyser/data/demoRemoteAsset';
+// import { refreshCachedChronoDemoAsset } from '../../chrono_analyser/data/demoRemoteAsset';
 import { refreshCurrentI18nLocaleForVersionUpdate } from '../i18n/i18n';
 import { refreshCurrentNLPPayloadForVersionUpdate } from '../nlp/loader';
 
@@ -46,10 +46,10 @@ export async function refreshRemoteAssetsForVersionUpdate(
   pluginId: string
 ): Promise<VersionedAssetRefreshResult[]> {
   return runVersionedAssetRefreshTasks([
-    {
-      id: 'chrono-analyser-demo',
-      refresh: () => refreshCachedChronoDemoAsset(app)
-    },
+    // {
+    //   id: 'chrono-analyser-demo',
+    //   refresh: () => refreshCachedChronoDemoAsset(app)
+    // },
     {
       id: 'i18n-current-locale',
       refresh: () => refreshCurrentI18nLocaleForVersionUpdate(app, pluginId)

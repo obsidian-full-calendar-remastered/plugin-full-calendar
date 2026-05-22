@@ -201,7 +201,8 @@
     "chronoAnalyserDemoLoadFailed": "Could not load the ChronoAnalyser demo. Falling back to live data.",
     "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
     "failedToCreateLinkedNote": "Failed to create linked note.",
-    "fcrReminderSynced": "FCR Reminder Companion synchronized successfully."
+    "fcrReminderSynced": "FCR Reminder Companion synchronized successfully.",
+    "fcrReminderCompanionOfflineBold": "WARNING: The FCR Reminder Companion daemon is offline. You will NOT receive native desktop notifications until it is started."
   },
   "eventCache": {
     "calendarNotFound": "Impossibile aggiungere l'evento: calendario con ID {{calendarId}} non trovato.",

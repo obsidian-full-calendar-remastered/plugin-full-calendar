@@ -33,6 +33,7 @@ In accordance with SOLID and DRY principles, **`NotificationManager` acts as the
 
 ### Debouncing and Gates
 * **Offline Resiliency**: `FcrReminderManager` queries `/status` on the daemon loopback address before attempting a sync. If offline, the sync is gracefully skipped to avoid network overhead.
+* **Startup Liveness Retries**: Upon startup or activation, if the daemon is not immediately reachable, `FcrReminderManager` performs up to 5 status checks spaced 3 seconds apart to accommodate slow daemon startup times. If all attempts fail, it displays a bold warning toast surviving for 15 seconds to notify the user.
 * **Debounced Syncing**: To prevent system lag during rapid file updates, cache-change triggers are debounced by `800ms`.
 
 ### The Synchronization Payload

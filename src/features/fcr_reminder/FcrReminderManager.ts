@@ -2,6 +2,8 @@ import { PluginState } from '../../core/PluginState';
 import { FullCalendarSettings } from '../../types/settings';
 import FullCalendarPlugin from '../../main';
 import { requestUrl } from 'obsidian';
+import { showNotice } from '../../utils/showNotice';
+import { t } from '../i18n/i18n';
 
 export class FcrReminderManager {
   private plugin: FullCalendarPlugin;
@@ -101,11 +103,35 @@ export class FcrReminderManager {
       this.updateCallback = () => this.handleCacheUpdate();
       PluginState.getCache().on('update', this.updateCallback);
 
-      // Perform initial check and sync on startup/enable
+      // Perform initial check and sync on startup/enable with lavish retries
       void (async () => {
-        const online = await this.checkDaemonStatus();
+        const attempts = 5;
+        const delayMs = 3000;
+        let online = false;
+
+        for (let i = 0; i < attempts; i++) {
+          online = await this.checkDaemonStatus();
+          if (online) {
+            break;
+          }
+          if (i < attempts - 1) {
+            await new Promise(resolve => window.setTimeout(resolve, delayMs));
+          }
+        }
+
         if (online) {
           await this.syncToCompanion();
+        } else {
+          const message =
+            t('notices.fcrReminderCompanionOfflineBold') ||
+            'WARNING: FCR Reminder Companion daemon is offline. You will NOT receive native desktop notifications.';
+          const notice = showNotice(message, 15000);
+          if (notice && notice.messageEl) {
+            notice.messageEl.setCssProps({
+              fontWeight: 'bold',
+              borderLeft: '4px solid var(--text-error, #ff5555)'
+            });
+          }
         }
       })();
     } else if (!shouldBeRunning && isRunning) {

@@ -176,6 +176,7 @@
     "revalidationFailed": "One or more remote calendars failed to load. Check the console for details.",
     "revalidationSuccess": "Remote calendars revalidated.",
     "fcrReminderSynced": "FCR Reminder Companion synchronized successfully.",
+    "fcrReminderCompanionOfflineBold": "WARNING: The FCR Reminder Companion daemon is offline. You will NOT receive native desktop notifications until it is started.",
     "cannotOpenRemote": "Cannot open note for a remote event.",
     "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
     "failedToCreateLinkedNote": "Failed to create linked note.",

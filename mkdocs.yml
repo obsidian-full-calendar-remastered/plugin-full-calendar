@@ -151,6 +151,7 @@ nav:
           - Chrono Analyser: 
                 - user/chrono_analyser/index.md
                 - Introduction: user/chrono_analyser/introduction.md
+                - Embedded Charts: user/chrono_analyser/embedded_charts.md
                 - Use Cases: user/chrono_analyser/usecases.md
                 - Configuration: user/chrono_analyser/settings.md
                 - FAQ: user/chrono_analyser/faq.md
@@ -198,7 +199,7 @@ nav:
                 - ActivityWatch Implementation: architecture/activitywatch/implementation.md
           - Views Architecture:
                 - architecture/views/architecture.md
-                - Embedded Calendars Architecture: architecture/views/embedded_calendars.md
+                - Unified Embedded Widgets Architecture: architecture/views/embedded_widgets.md
           - ChronoAnalyser:
                 - architecture/chrono_analyser/architecture.md
                 - Analysis Types Implementation: architecture/chrono_analyser/analysis-types.md

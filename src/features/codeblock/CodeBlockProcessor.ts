@@ -1,4 +1,4 @@
-import { App, MarkdownPostProcessorContext, TFile, parseYaml, Component } from 'obsidian';
+import { App, TFile, Component, parseYaml, MarkdownRenderChild } from 'obsidian';
 import {
   Calendar,
   EventSourceInput,
@@ -16,6 +16,12 @@ import { renderCalendar } from '../../ui/settings/sections/calendars/calendar';
 import { OFCEvent } from '../../types';
 import { VIEW_ZOOM_CONFIG } from '../../ui/calendar/ViewZoomHandler';
 import { ViewTimelineHandler } from '../../ui/calendar/ViewTimelineHandler';
+import {
+  EmbeddedWidgetStrategy,
+  EmbeddedWidgetInstance,
+  WidgetContext,
+  EmbeddedBlockRegistry
+} from './EmbeddedBlockRegistry';
 
 interface ViewConfig {
   view?: string;
@@ -55,67 +61,35 @@ export class EmbeddedCalendar extends Component implements ViewContext {
   private interactionHandler: ViewEventInteractionHandler;
   private timelineHandler: ViewTimelineHandler;
   private callback: (() => void) | null = null;
-  private observer: IntersectionObserver | null = null;
 
   constructor(
     plugin: FullCalendarPlugin,
     containerEl: HTMLElement,
-    configText: string,
-    private ctx: MarkdownPostProcessorContext
+    config: CodeBlockConfig,
+    private widgetCtx: WidgetContext
   ) {
     super();
     this.plugin = plugin;
     this.app = plugin.app;
     this.containerEl = containerEl;
+    this.config = config;
     this.enhancerInstance = new ViewEnhancer(PluginState.getSettings());
     this.interactionHandler = new ViewEventInteractionHandler(this);
     this.timelineHandler = new ViewTimelineHandler(this);
 
     // Create container
     this.contentEl = containerEl.createDiv({ cls: 'ofc-embedded-calendar-container' });
-
-    try {
-      this.config = (parseYaml(configText) || {}) as CodeBlockConfig;
-    } catch (e) {
-      this.contentEl.createEl('pre', {
-        text: `Full Calendar: Failed to parse configuration.\n${e instanceof Error ? e.message : String(e)}`
-      });
-      this.config = {};
-      return;
-    }
-
-    // Apply main orientation classes (for layout itself)
-    const orientation = this.config.orientation || 'vertical';
-    this.containerEl.addClass(`ofc-embed-orientation-${orientation}`);
   }
 
   onload(): void {
-    // Set up lazy rendering using IntersectionObserver
-    this.observer = new IntersectionObserver(
-      entries => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            void this.initializeCalendars();
-            this.observer?.disconnect();
-            this.observer = null;
-          }
-        }
-      },
-      { rootMargin: '100px' }
-    );
-    this.observer.observe(this.containerEl);
+    void this.initializeCalendars();
   }
 
   onunload(): void {
-    if (this.observer) {
-      this.observer.disconnect();
-      this.observer = null;
-    }
     this.calendars.forEach(cal => cal.destroy());
     this.calendars = [];
     this.activeCalendar = null;
     if (this.callback) {
-      PluginState.getCache().off('update', this.callback);
       this.callback = null;
     }
   }
@@ -126,6 +100,10 @@ export class EmbeddedCalendar extends Component implements ViewContext {
 
   get viewEnhancer(): ViewEnhancer | null {
     return this.enhancerInstance;
+  }
+
+  public updateSize(): void {
+    this.calendars.forEach(cal => cal.updateSize());
   }
 
   private async initializeCalendars(): Promise<void> {
@@ -196,7 +174,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
         });
       });
     };
-    PluginState.getCache().on('update', this.callback);
+    this.widgetCtx.onUpdate(this.callback);
   }
 
   private async renderSingleCalendar(el: HTMLElement, config: ViewConfig): Promise<void> {
@@ -209,7 +187,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
 
     let initialDate: string | undefined = undefined;
     if (config.defaultDate === 'auto') {
-      const file = this.app.vault.getAbstractFileByPath(this.ctx.sourcePath);
+      const file = this.app.vault.getAbstractFileByPath(this.widgetCtx.sourcePath);
       if (file instanceof TFile) {
         const dailyNoteDate = getDateFromFile(file, 'day');
         if (dailyNoteDate) {
@@ -373,6 +351,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       }
       return s;
     });
+
     // Add shadow events for subcategories if this is a timeline view so they show up on the parent category rows too.
     const isTimelineView =
       config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
@@ -421,9 +400,154 @@ export class EmbeddedCalendar extends Component implements ViewContext {
   }
 }
 
+export class CalendarWidgetStrategy implements EmbeddedWidgetStrategy {
+  constructor(private plugin: FullCalendarPlugin) {}
+
+  async render(
+    el: HTMLElement,
+    config: Record<string, unknown>,
+    ctx: WidgetContext
+  ): Promise<EmbeddedWidgetInstance> {
+    const calendarWidget = new EmbeddedCalendar(this.plugin, el, config, ctx);
+
+    calendarWidget.load();
+
+    return {
+      updateSize() {
+        calendarWidget.updateSize();
+      },
+      async refresh() {
+        await calendarWidget.refreshView();
+      },
+      destroy() {
+        calendarWidget.unload();
+      }
+    };
+  }
+}
+
 export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
-  plugin.registerMarkdownCodeBlockProcessor('fc-calendar', (source, el, ctx) => {
-    const calendar = new EmbeddedCalendar(plugin, el, source, ctx);
-    ctx.addChild(calendar);
-  });
+  // Re-instantiate calendar strategy with full plugin context
+  EmbeddedBlockRegistry.register('fc-calendar', new CalendarWidgetStrategy(plugin));
+
+  const registerProcessor = (blockType: string) => {
+    plugin.registerMarkdownCodeBlockProcessor(blockType, async (source, el, ctx) => {
+      const container = el.createDiv({
+        cls: `ofc-embedded-widget-container ofc-embed-${blockType}`
+      });
+
+      let parsedConfig: Record<string, unknown> = {};
+      try {
+        parsedConfig = (parseYaml(source) || {}) as Record<string, unknown>;
+      } catch (e) {
+        container.createEl('pre', {
+          text: `Full Calendar: Failed to parse configuration.\n${e instanceof Error ? e.message : String(e)}`
+        });
+        return;
+      }
+
+      const configObj = parsedConfig as {
+        styles?: Record<string, string>;
+        width?: string;
+        height?: string;
+      };
+
+      // Apply dynamic styles safely
+      if (
+        configObj.styles &&
+        typeof configObj.styles === 'object' &&
+        !Array.isArray(configObj.styles)
+      ) {
+        for (const [key, val] of Object.entries(configObj.styles)) {
+          const cssKey = key.startsWith('--') ? key : key.replace(/([A-Z])/g, '-$1').toLowerCase();
+          container.style.setProperty(cssKey, String(val));
+        }
+      }
+
+      if (configObj.width) {
+        container.style.width = configObj.width;
+      }
+      if (configObj.height && configObj.height !== 'fit') {
+        container.style.height = configObj.height;
+      }
+
+      let activeInstance: EmbeddedWidgetInstance | null = null;
+      const updateCallbacks: (() => void)[] = [];
+
+      const mountWidget = async () => {
+        let strategy = EmbeddedBlockRegistry.get(blockType);
+
+        // On-demand lazy load strategy if needed
+        if (!strategy && blockType === 'fc-analysis') {
+          try {
+            const { registerChronoAnalysisStrategy } =
+              await import('../../chrono_analyser/AnalysisWidgetStrategy');
+            registerChronoAnalysisStrategy(plugin);
+            strategy = EmbeddedBlockRegistry.get(blockType);
+          } catch (e) {
+            container.empty();
+            container.createEl('pre', {
+              text: `Failed to load Chrono Analyzer: ${e instanceof Error ? e.message : String(e)}`
+            });
+            return;
+          }
+        }
+
+        if (!strategy) {
+          container.empty();
+          container.createEl('pre', { text: `Unknown block type strategy: ${blockType}` });
+          return;
+        }
+
+        try {
+          activeInstance = await strategy.render(container, parsedConfig, {
+            sourcePath: ctx.sourcePath,
+            onUpdate: callback => {
+              updateCallbacks.push(callback);
+              PluginState.getCache().on('update', callback);
+            }
+          });
+        } catch (e) {
+          container.empty();
+          container.createEl('pre', {
+            text: `Rendering failed: ${e instanceof Error ? e.message : String(e)}`
+          });
+        }
+      };
+
+      // Set up lazy rendering using IntersectionObserver
+      let observer: IntersectionObserver | null = new IntersectionObserver(
+        entries => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              void mountWidget();
+              observer?.disconnect();
+              observer = null;
+            }
+          }
+        },
+        { rootMargin: '100px' }
+      );
+      observer.observe(container);
+
+      const renderChild = new MarkdownRenderChild(container);
+      renderChild.onunload = () => {
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+        updateCallbacks.forEach(cb => {
+          PluginState.getCache().off('update', cb);
+        });
+        if (activeInstance) {
+          activeInstance.destroy();
+          activeInstance = null;
+        }
+      };
+      ctx.addChild(renderChild);
+    });
+  };
+
+  registerProcessor('fc-calendar');
+  registerProcessor('fc-analysis');
 }

@@ -44,6 +44,46 @@ For time grid views (like `timeGridWeek`, `timeGridDay`, and `timeGrid3Days`), y
    - `slotDuration`: The duration of each grid slot (e.g., `"00:15:00"` for 15 minutes).
    - `slotLabelInterval`: The interval at which time labels are displayed on the axis (e.g., `"01:00:00"` for every hour).
 
+#### Scoped Style Customizations (`styles`)
+You can fully customize the look and feel of each embedded calendar by specifying a list of style overrides under `styles`. These are safely scoped and applied as inline style custom properties on the calendar container, so they will never leak or interfere with other elements of Obsidian's UI:
+
+* **Custom FullCalendar CSS variables**:
+  * `--fc-event-bg-color`: The background color of the event cards (e.g. `"#7b2cbf"`).
+  * `--fc-event-border-color`: The border color of the event cards (e.g. `"#9d4edd"`).
+  * `--fc-event-text-color`: The text color of events (e.g. `"#ffffff"`).
+  * `--fc-border-color`: The grid lines and calendar border color (e.g. `"#3c096c"`).
+  * `--fc-today-bg-color`: The background highlight for today (e.g. `"rgba(255, 255, 255, 0.05)"`).
+* **Standard CSS properties**:
+  * `fontSize`: Adjust font size within the widget (e.g., `"12px"`).
+  * `borderRadius`: Round event cards and border grid corners (e.g., `"6px"`).
+
+````yaml
+```fc-calendar
+view: timeGridWeek
+height: 400px
+styles:
+  --fc-event-bg-color: "#7b2cbf"
+  --fc-event-text-color: "#ffffff"
+  --fc-border-color: "#3c096c"
+  fontSize: "12px"
+```
+````
+
+#### Transposed Horizontal Views (Horizontal Time Axis)
+If you want to view your schedule transposed horizontally—where hours and days of the week are displayed as horizontal columns and categories or calendars are shown as vertical lanes—you can utilize the timeline views:
+
+* `resourceTimelineWeek`: Transposed weekly schedule.
+* `resourceTimelineDay`: Transposed daily schedule.
+
+Timeline views utilize the category hierarchy, automatically placing events in their corresponding category lanes and grouping them visually.
+
+````yaml
+```fc-calendar
+view: resourceTimelineWeek
+height: 350px
+```
+````
+
 ---
 
 ## 2. Multi-View Dashboards (Layouts)

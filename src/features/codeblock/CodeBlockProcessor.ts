@@ -15,6 +15,7 @@ import { ViewEventInteractionHandler } from '../../ui/calendar/ViewEventInteract
 import { renderCalendar } from '../../ui/settings/sections/calendars/calendar';
 import { OFCEvent } from '../../types';
 import { VIEW_ZOOM_CONFIG } from '../../ui/calendar/ViewZoomHandler';
+import { ViewTimelineHandler } from '../../ui/calendar/ViewTimelineHandler';
 
 interface ViewConfig {
   view?: string;
@@ -29,6 +30,7 @@ interface ViewConfig {
   zoomLevel?: number;
   slotDuration?: string;
   slotLabelInterval?: string;
+  styles?: Record<string, string>;
 }
 
 interface CodeBlockConfig extends ViewConfig {
@@ -51,6 +53,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
   private activeCalendar: Calendar | null = null;
   private enhancerInstance: ViewEnhancer;
   private interactionHandler: ViewEventInteractionHandler;
+  private timelineHandler: ViewTimelineHandler;
   private callback: (() => void) | null = null;
   private observer: IntersectionObserver | null = null;
 
@@ -66,6 +69,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
     this.containerEl = containerEl;
     this.enhancerInstance = new ViewEnhancer(PluginState.getSettings());
     this.interactionHandler = new ViewEventInteractionHandler(this);
+    this.timelineHandler = new ViewTimelineHandler(this);
 
     // Create container
     this.contentEl = containerEl.createDiv({ cls: 'ofc-embedded-calendar-container' });
@@ -196,6 +200,13 @@ export class EmbeddedCalendar extends Component implements ViewContext {
   }
 
   private async renderSingleCalendar(el: HTMLElement, config: ViewConfig): Promise<void> {
+    if (config.styles && typeof config.styles === 'object' && !Array.isArray(config.styles)) {
+      for (const [key, val] of Object.entries(config.styles)) {
+        const cssKey = key.startsWith('--') ? key : key.replace(/([A-Z])/g, '-$1').toLowerCase();
+        el.style.setProperty(cssKey, String(val));
+      }
+    }
+
     let initialDate: string | undefined = undefined;
     if (config.defaultDate === 'auto') {
       const file = this.app.vault.getAbstractFileByPath(this.ctx.sourcePath);
@@ -237,6 +248,10 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       }
     }
 
+    const isTimelineView =
+      config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
+    const resources = isTimelineView ? this.timelineHandler.buildTimelineResources() : undefined;
+
     // Render using renderCalendar factory
     const cal = await renderCalendar(el, sources, {
       timeZone:
@@ -255,6 +270,8 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       footerToolbar: config.header === false ? false : undefined,
       ...(slotDuration !== undefined && { slotDuration }),
       ...(slotLabelInterval !== undefined && { slotLabelInterval }),
+      ...(isTimelineView && { enableAdvancedCategorization: true }),
+      ...(resources !== undefined && { resources }),
       eventClick: (info: EventClickArg) => {
         this.activeCalendar = cal;
         void this.interactionHandler.handleEventClick(info);
@@ -356,6 +373,40 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       }
       return s;
     });
+    // Add shadow events for subcategories if this is a timeline view so they show up on the parent category rows too.
+    const isTimelineView =
+      config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
+    if (isTimelineView && PluginState.getSettings().enableAdvancedCategorization) {
+      filteredSources = filteredSources.map(s => {
+        if (typeof s === 'object' && s !== null && 'events' in s && Array.isArray(s.events)) {
+          const shadowEvents: EventInput[] = [];
+          for (const event of s.events) {
+            if (typeof event.resourceId === 'string' && event.resourceId.includes('::')) {
+              const parentCategory = event.resourceId.split('::')[0];
+              shadowEvents.push({
+                ...event,
+                id: `${event.id}-shadow`,
+                resourceId: parentCategory,
+                extendedProps: {
+                  ...event.extendedProps,
+                  isShadow: true,
+                  originalEventId: event.id
+                },
+                className: 'fc-event-shadow',
+                editable: false,
+                durationEditable: false,
+                startEditable: false
+              });
+            }
+          }
+          return {
+            ...s,
+            events: [...s.events, ...shadowEvents]
+          };
+        }
+        return s;
+      });
+    }
 
     return { sources: filteredSources };
   }

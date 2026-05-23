@@ -37,6 +37,7 @@ import { ProviderRegistry } from './providers/ProviderRegistry';
 import { PublicAPI, InternalAPI } from './api/FullCalendarAPI';
 import { openNLPCommandModal, registerNLPCommand } from './features/nlp/registerNLPCommand';
 import { registerCodeBlockProcessor } from './features/codeblock/CodeBlockProcessor';
+import { triggerDevMilestoneIfActive } from './features/milestones/milestones';
 
 // Inline the view type constants to avoid loading the heavy view module at startup
 const FULL_CALENDAR_VIEW_TYPE = 'full-calendar-view';
@@ -372,6 +373,7 @@ export default class FullCalendarPlugin extends Plugin {
 
     // Delayed background cache population for lazy start optimization
     this.app.workspace.onLayoutReady(() => {
+      void triggerDevMilestoneIfActive();
       window.setTimeout(() => {
         const cache = PluginState.getCache();
         if (cache && !cache.initialized) {

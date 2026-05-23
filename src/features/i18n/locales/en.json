@@ -536,6 +536,46 @@
             "title": "Digital Librarian",
             "description": "Maintain over 10,000 non-deleted events across local calendars.",
             "target": "Target: 10,000 live local events"
+          },
+          "nightOwl": {
+            "title": "Night Owl",
+            "description": "Successfully perform 15 calendar operations during late-night hours (10 PM to 4 AM).",
+            "target": "Target: 15 late-night actions"
+          },
+          "earlyBird": {
+            "title": "Early Bird",
+            "description": "Successfully perform 15 calendar operations during early-morning hours (5 AM to 8 AM).",
+            "target": "Target: 15 early-morning actions"
+          },
+          "weekendWarrior": {
+            "title": "Weekend Warrior",
+            "description": "Perform 40 successful calendar operations on Saturdays and Sundays.",
+            "target": "Target: 40 weekend actions"
+          },
+          "timezoneNomad": {
+            "title": "Nomadic Scheduler",
+            "description": "Maintain events spanning 5 or more distinct time zones.",
+            "target": "Target: 5 distinct time zones"
+          },
+          "superOrganizer": {
+            "title": "Super Organizer",
+            "description": "Maintain 5 or more active workspace configurations.",
+            "target": "Target: 5 workspaces"
+          },
+          "nlpWhisperer": {
+            "title": "NLP Whisperer",
+            "description": "Create 50 events using FCR NLP quick-add commands.",
+            "target": "Target: 50 NLP creations"
+          },
+          "powerPlanner": {
+            "title": "Power Planner",
+            "description": "Keep at least 3 distinct calendar provider types concurrently configured and active.",
+            "target": "Target: 3 active provider types"
+          },
+          "devMilestone": {
+            "title": "Developer Milestone",
+            "description": "A developer testing milestone triggered immediately via dev: 1 in settings.",
+            "target": "Target: Dev Mode Active"
           }
         }
       }

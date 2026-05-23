@@ -408,120 +408,47 @@
       "highlightCurrentOrNextEventDesc": "Highlights the current timed event, or the immediate next timed event if none is active.",
       "milestones": {
         "label": "Jalons",
-        "description": "Jalons locaux en lecture seule qui suivent l'activité des événements réussis sur tous les calendriers.",
-        "openButton": "Ouvrir les jalons",
-        "modal": {
-          "title": "Jalons",
-          "description": "Les jalons sont anonymes, locaux et en lecture seule. Ils se débloquent au fur et à mesure que les actions réussies sont terminées.",
-          "completed": "Terminé",
-          "inProgress": "En cours",
-          "progress": "{{current}} fait(s)"
-        },
+        "description": "Jalons locaux en lecture seule qui suivent l'activité des événements réussis.",
         "definitions": {
-          "createdCentury": {
-            "title": "Maître du Siècle",
-            "description": "Créer avec succès 100 événements.",
-            "target": "Objectif : 100 événements créés"
+          "nightOwl": {
+            "title": "Night Owl",
+            "description": "Successfully perform 15 calendar operations during late-night hours (10 PM to 4 AM).",
+            "target": "Target: 15 late-night actions"
           },
-          "createdMaster": {
-            "title": "Architecte d'Événements",
-            "description": "Créer avec succès 500 événements.",
-            "target": "Objectif : 500 événements créés"
+          "earlyBird": {
+            "title": "Early Bird",
+            "description": "Successfully perform 15 calendar operations during early-morning hours (5 AM to 8 AM).",
+            "target": "Target: 15 early-morning actions"
           },
-          "createdLegend": {
-            "title": "Titan du Calendrier",
-            "description": "Créer avec succès 5 000 événements.",
-            "target": "Objectif : 5 000 événements créés"
+          "weekendWarrior": {
+            "title": "Weekend Warrior",
+            "description": "Perform 40 successful calendar operations on Saturdays and Sundays.",
+            "target": "Target: 40 weekend actions"
           },
-          "deletedCentury": {
-            "title": "Apprenti Élagueur",
-            "description": "Supprimer avec succès 100 événements.",
-            "target": "Objectif : 100 événements supprimés"
+          "timezoneNomad": {
+            "title": "Nomadic Scheduler",
+            "description": "Maintain events spanning 5 or more distinct time zones.",
+            "target": "Target: 5 distinct time zones"
           },
-          "deletedMaster": {
-            "title": "Jardinier du Coffre",
-            "description": "Supprimer avec succès 500 événements.",
-            "target": "Objectif : 500 événements supprimés"
+          "superOrganizer": {
+            "title": "Super Organizer",
+            "description": "Maintain 5 or more active workspace configurations.",
+            "target": "Target: 5 workspaces"
           },
-          "updatedMaster": {
-            "title": "Moteur de Raffinement",
-            "description": "Mettre à jour avec succès 500 événements.",
-            "target": "Objectif : 500 événements mis à jour"
+          "nlpWhisperer": {
+            "title": "NLP Whisperer",
+            "description": "Create 50 events using FCR NLP quick-add commands.",
+            "target": "Target: 50 NLP creations"
           },
-          "updatedLegend": {
-            "title": "Réécrivain de Précision",
-            "description": "Mettre à jour avec succès 5 000 événements.",
-            "target": "Objectif : 5 000 événements mis à jour"
+          "powerPlanner": {
+            "title": "Power Planner",
+            "description": "Keep at least 3 distinct calendar provider types concurrently configured and active.",
+            "target": "Target: 3 active provider types"
           },
-          "movedMaster": {
-            "title": "Chorégraphe de Chronologie",
-            "description": "Déplacer avec succès 500 événements entre calendriers.",
-            "target": "Objectif : 500 événements déplacés"
-          },
-          "remoteArchitect": {
-            "title": "Architecte Distant",
-            "description": "Créer 500 événements via les fournisseurs ICS, CalDAV et Google.",
-            "target": "Objectif : 500 événements distants créés"
-          },
-          "taskOrchestrator": {
-            "title": "Orchestrateur de Tâches",
-            "description": "Créer 1 000 événements via les intégrations Tasks + TaskNotes.",
-            "target": "Objectif : 1 000 événements créés via l'intégration des tâches"
-          },
-          "polyglotBuilder": {
-            "title": "Bâtisseur Polyglotte",
-            "description": "Atteindre 500 événements créés dans 3 types de fournisseurs différents.",
-            "target": "Objectif : 3 fournisseurs à 500 créations chacun"
-          },
-          "cycleMaster": {
-            "title": "Maître du Cycle",
-            "description": "Atteindre à la fois 500 événements créés et 500 événements supprimés.",
-            "target": "Objectif : Équilibre de 500 créations/suppressions"
-          },
-          "opsLegend": {
-            "title": "Légende des Opérations",
-            "description": "Atteindre 10 000 opérations réussies au total (création/suppression/mise à jour/déplacement).",
-            "target": "Objectif : 10 000 opérations réussies"
-          },
-          "habitualPlanner": {
-            "title": "Planificateur Habituel",
-            "description": "Effectuer des actions sur le calendrier pendant 20 jours consécutifs.",
-            "target": "Objectif : série de 20 jours d'actions"
-          },
-          "dedicated": {
-            "title": "Le Dévoué",
-            "description": "Maintenir au moins 3 mois entre la première et la dernière action enregistrée.",
-            "target": "Objectif : historique de 90 jours"
-          },
-          "marathoner": {
-            "title": "Marathonien",
-            "description": "Atteindre un total de 100 000 opérations réussies.",
-            "target": "Objectif : 100 000 opérations"
-          },
-          "nlpSavant": {
-            "title": "Savant du NLP",
-            "description": "Créer 1 000 événements en utilisant la saisie NLP.",
-            "target": "Objectif : 1 000 événements créés par NLP"
-          },
-          "globalCitizen": {
-            "title": "Citoyen du Monde",
-            "description": "Créer des événements dans 3 fuseaux horaires différents ou plus.",
-            "target": "Objectif : 3 fuseaux horaires distincts"
-          },
-          "syncSpecialist": {
-            "title": "Spécialiste de la Sync",
-            "description": "Maintenir 5 calendriers distants actifs ou plus (Google/ICS/CalDAV).",
-            "target": "Objectif : 5 calendriers distants actifs"
-          },
-          "recurringMaster": {
-            "title": "Maître de la Récurrence",
-            "description": "Créer 30 séries d'événements récurrents.",
-            "target": "Objectif : 30 séries récurrentes"
-          },
-          "greatMigration": {
-            "title": "La Grande Migration",
-            "description": "Déplacer 200 événements entre différents calendriers.",
-            "target": "Objectif : 200 événements déplacés"
+          "devMilestone": {
+            "title": "Developer Milestone",
+            "description": "A developer testing milestone triggered immediately via dev: 1 in settings.",
+            "target": "Target: Dev Mode Active"
           },
           "perfectionist": {
             "title": "Le Perfectionniste",
@@ -532,7 +459,120 @@
             "title": "Bibliothécaire Numérique",
             "description": "Maintenir plus de 10 000 événements non supprimés dans les calendriers locaux.",
             "target": "Objectif : 10 000 événements locaux actifs"
+          },
+          "createdCentury": {
+            "title": "Century Maker",
+            "description": "Successfully create 100 events.",
+            "target": "Target: 100 created events"
+          },
+          "createdMaster": {
+            "title": "Event Architect",
+            "description": "Successfully create 500 events.",
+            "target": "Target: 500 created events"
+          },
+          "createdLegend": {
+            "title": "Calendar Titan",
+            "description": "Successfully create 5,000 events.",
+            "target": "Target: 5,000 created events"
+          },
+          "deletedCentury": {
+            "title": "Pruning Apprentice",
+            "description": "Successfully delete 100 events.",
+            "target": "Target: 100 deleted events"
+          },
+          "deletedMaster": {
+            "title": "Vault Gardener",
+            "description": "Successfully delete 500 events.",
+            "target": "Target: 500 deleted events"
+          },
+          "updatedMaster": {
+            "title": "Refinement Engine",
+            "description": "Successfully update 500 events.",
+            "target": "Target: 500 updated events"
+          },
+          "updatedLegend": {
+            "title": "Precision Rewriter",
+            "description": "Successfully update 5,000 events.",
+            "target": "Target: 5,000 updated events"
+          },
+          "movedMaster": {
+            "title": "Timeline Choreographer",
+            "description": "Successfully move 500 events between calendars.",
+            "target": "Target: 500 moved events"
+          },
+          "remoteArchitect": {
+            "title": "Remote Architect",
+            "description": "Create 500 events across ICS, CalDAV, and Google providers.",
+            "target": "Target: 500 remote created events"
+          },
+          "taskOrchestrator": {
+            "title": "Task Orchestrator",
+            "description": "Create 1,000 events through Tasks + TaskNotes integrations.",
+            "target": "Target: 1,000 task-integration created events"
+          },
+          "polyglotBuilder": {
+            "title": "Polyglot Builder",
+            "description": "Reach 500 created events in 3 different provider types.",
+            "target": "Target: 3 providers at 500 created each"
+          },
+          "cycleMaster": {
+            "title": "Cycle Master",
+            "description": "Reach both 500 created and 500 deleted events.",
+            "target": "Target: 500 create/delete balance"
+          },
+          "opsLegend": {
+            "title": "Operations Legend",
+            "description": "Reach 10,000 total successful operations (create/delete/update/move).",
+            "target": "Target: 10,000 successful operations"
+          },
+          "habitualPlanner": {
+            "title": "Habitual Planner",
+            "description": "Perform calendar actions on 20 consecutive days.",
+            "target": "Target: 20-day action streak"
+          },
+          "dedicated": {
+            "title": "The Dedicated",
+            "description": "Maintain at least 3 months between first and latest recorded action.",
+            "target": "Target: 90-day history span"
+          },
+          "marathoner": {
+            "title": "Marathoner",
+            "description": "Reach 100,000 total successful operations.",
+            "target": "Target: 100,000 operations"
+          },
+          "nlpSavant": {
+            "title": "NLP Savant",
+            "description": "Create 1,000 events using NLP input.",
+            "target": "Target: 1,000 NLP-created events"
+          },
+          "globalCitizen": {
+            "title": "Global Citizen",
+            "description": "Create events in 3 or more different time zones.",
+            "target": "Target: 3 distinct time zones"
+          },
+          "syncSpecialist": {
+            "title": "Sync Specialist",
+            "description": "Maintain 5 or more active remote calendars (Google/ICS/CalDAV).",
+            "target": "Target: 5 active remote calendars"
+          },
+          "recurringMaster": {
+            "title": "Recurring Master",
+            "description": "Create 30 recurring event series.",
+            "target": "Target: 30 recurring series"
+          },
+          "greatMigration": {
+            "title": "The Great Migration",
+            "description": "Move 200 events between different calendars.",
+            "target": "Target: 200 moved events"
           }
+        },
+        "openButton": "Open milestones",
+        "modal": {
+          "title": "Milestones",
+          "description": "Milestones are anonymous, local, and read-only. They unlock as successful actions are completed.",
+          "completed": "Completed",
+          "inProgress": "In progress",
+          "progress": "{{current}} done"
         }
       }
     },

@@ -418,120 +418,160 @@
           "progress": "已完成 {{current}}"
         },
         "definitions": {
+          "nightOwl": {
+            "title": "深夜猫头鹰",
+            "description": "在深夜时段（晚上10点至凌晨4点）成功执行 15 次日历操作。",
+            "target": "目标：15 次深夜操作"
+          },
+          "earlyBird": {
+            "title": "早起鸟儿",
+            "description": "在清晨时段（早上5点至上午8点）成功执行 15 次日历操作。",
+            "target": "目标：15 次清晨操作"
+          },
+          "weekendWarrior": {
+            "title": "周末勇士",
+            "description": "在周六和周日执行 40 次成功的日历操作。",
+            "target": "目标：40 次周末操作"
+          },
+          "timezoneNomad": {
+            "title": "游牧规划师",
+            "description": "维护跨越 5 个或更多不同时区的事件。",
+            "target": "目标：5 个不同的时区"
+          },
+          "superOrganizer": {
+            "title": "超级组织者",
+            "description": "维护 5 个或更多活跃的工作区配置。",
+            "target": "目标：5 个工作区"
+          },
+          "nlpWhisperer": {
+            "title": "NLP 耳语者",
+            "description": "使用 FCR NLP 快速添加命令创建 50 个事件。",
+            "target": "目标：50 次 NLP 创建"
+          },
+          "powerPlanner": {
+            "title": "全能策划人",
+            "description": "同时配置并激活至少 3 种不同的日历提供商类型。",
+            "target": "目标：3 个活跃的提供商类型"
+          },
+          "devMilestone": {
+            "title": "开发者里程碑",
+            "description": "通过设置中的 dev: 1 立即触发的开发者测试里程碑。",
+            "target": "目标：开发模式已激活"
+          },
           "createdCentury": {
-            "title": "百次创造者",
-            "description": "成功创建 100 个事件。",
-            "target": "目标：100 个创建的事件"
+            "title": "Century Maker",
+            "description": "Successfully create 100 events.",
+            "target": "Target: 100 created events"
           },
           "createdMaster": {
-            "title": "事件建筑师",
-            "description": "成功创建 500 个事件。",
-            "target": "目标：500 个创建的事件"
+            "title": "Event Architect",
+            "description": "Successfully create 500 events.",
+            "target": "Target: 500 created events"
           },
           "createdLegend": {
-            "title": "日历巨人",
-            "description": "成功创建 5,000 个事件。",
-            "target": "目标：5,000 个创建的事件"
+            "title": "Calendar Titan",
+            "description": "Successfully create 5,000 events.",
+            "target": "Target: 5,000 created events"
           },
           "deletedCentury": {
-            "title": "清理学徒",
-            "description": "成功删除 100 个事件。",
-            "target": "目标：100 个删除的事件"
+            "title": "Pruning Apprentice",
+            "description": "Successfully delete 100 events.",
+            "target": "Target: 100 deleted events"
           },
           "deletedMaster": {
-            "title": "仓库园丁",
-            "description": "成功删除 500 个事件。",
-            "target": "目标：500 个删除的事件"
+            "title": "Vault Gardener",
+            "description": "Successfully delete 500 events.",
+            "target": "Target: 500 deleted events"
           },
           "updatedMaster": {
-            "title": "精炼引擎",
-            "description": "成功更新 500 个事件。",
-            "target": "目标：500 个更新的事件"
+            "title": "Refinement Engine",
+            "description": "Successfully update 500 events.",
+            "target": "Target: 500 updated events"
           },
           "updatedLegend": {
-            "title": "精准重写者",
-            "description": "成功更新 5,000 个事件。",
-            "target": "目标：5,000 个更新的事件"
+            "title": "Precision Rewriter",
+            "description": "Successfully update 5,000 events.",
+            "target": "Target: 5,000 updated events"
           },
           "movedMaster": {
-            "title": "时间线编舞师",
-            "description": "在日历间成功移动 500 个事件。",
-            "target": "目标：500 个移动的事件"
+            "title": "Timeline Choreographer",
+            "description": "Successfully move 500 events between calendars.",
+            "target": "Target: 500 moved events"
           },
           "remoteArchitect": {
-            "title": "远程建筑师",
-            "description": "在 ICS、CalDAV 和 Google 提供商中创建 500 个事件。",
-            "target": "目标：500 个远程创建的事件"
+            "title": "Remote Architect",
+            "description": "Create 500 events across ICS, CalDAV, and Google providers.",
+            "target": "Target: 500 remote created events"
           },
           "taskOrchestrator": {
-            "title": "任务协调员",
-            "description": "通过 Tasks + TaskNotes 集成创建 1,000 个事件。",
-            "target": "目标：1,000 个通过任务集成创建的事件"
+            "title": "Task Orchestrator",
+            "description": "Create 1,000 events through Tasks + TaskNotes integrations.",
+            "target": "Target: 1,000 task-integration created events"
           },
           "polyglotBuilder": {
-            "title": "多语言构建者",
-            "description": "在 3 种不同的提供商类型中各达到 500 个创建事件。",
-            "target": "目标：3 个提供商各创建 500 个"
+            "title": "Polyglot Builder",
+            "description": "Reach 500 created events in 3 different provider types.",
+            "target": "Target: 3 providers at 500 created each"
           },
           "cycleMaster": {
-            "title": "循环大师",
-            "description": "同时达到 500 个创建事件和 500 个删除事件。",
-            "target": "目标：500 个创建/删除平衡"
+            "title": "Cycle Master",
+            "description": "Reach both 500 created and 500 deleted events.",
+            "target": "Target: 500 create/delete balance"
           },
           "opsLegend": {
-            "title": "操作传奇",
-            "description": "总计达到 10,000 次成功操作（创建/删除/更新/移动）。",
-            "target": "目标：10,000 次成功操作"
+            "title": "Operations Legend",
+            "description": "Reach 10,000 total successful operations (create/delete/update/move).",
+            "target": "Target: 10,000 successful operations"
           },
           "habitualPlanner": {
-            "title": "习惯规划师",
-            "description": "连续 20 天执行日历操作。",
-            "target": "目标：连续 20 天的操作记录"
+            "title": "Habitual Planner",
+            "description": "Perform calendar actions on 20 consecutive days.",
+            "target": "Target: 20-day action streak"
           },
           "dedicated": {
-            "title": "专注者",
-            "description": "第一次和最近一次记录的操作之间保持至少 3 个月的时间跨度。",
-            "target": "目标：90 天的历史跨度"
+            "title": "The Dedicated",
+            "description": "Maintain at least 3 months between first and latest recorded action.",
+            "target": "Target: 90-day history span"
           },
           "marathoner": {
-            "title": "马拉松选手",
-            "description": "达到 100,000 次总成功操作。",
-            "target": "目标：100,000 次操作"
+            "title": "Marathoner",
+            "description": "Reach 100,000 total successful operations.",
+            "target": "Target: 100,000 operations"
           },
           "nlpSavant": {
-            "title": "NLP 专家",
-            "description": "使用 NLP 输入创建 1,000 个事件。",
-            "target": "目标：1,000 个通过 NLP 创建的事件"
+            "title": "NLP Savant",
+            "description": "Create 1,000 events using NLP input.",
+            "target": "Target: 1,000 NLP-created events"
           },
           "globalCitizen": {
-            "title": "世界公民",
-            "description": "在 3 个或更多不同的时区创建事件。",
-            "target": "目标：3 个不同的时区"
+            "title": "Global Citizen",
+            "description": "Create events in 3 or more different time zones.",
+            "target": "Target: 3 distinct time zones"
           },
           "syncSpecialist": {
-            "title": "同步专家",
-            "description": "维护 5 个或更多活跃的远程日历 (Google/ICS/CalDAV)。",
-            "target": "目标：5 个活跃的远程日历"
+            "title": "Sync Specialist",
+            "description": "Maintain 5 or more active remote calendars (Google/ICS/CalDAV).",
+            "target": "Target: 5 active remote calendars"
           },
           "recurringMaster": {
-            "title": "循环大师",
-            "description": "创建 30 个循环事件系列。",
-            "target": "目标：30 个循环系列"
+            "title": "Recurring Master",
+            "description": "Create 30 recurring event series.",
+            "target": "Target: 30 recurring series"
           },
           "greatMigration": {
-            "title": "大迁徙",
-            "description": "在不同日历之间移动 200 个事件。",
-            "target": "目标：200 个移动的事件"
+            "title": "The Great Migration",
+            "description": "Move 200 events between different calendars.",
+            "target": "Target: 200 moved events"
           },
           "perfectionist": {
-            "title": "完美主义者",
-            "description": "拥有完美的一周，从周一到周日每天至少创建 3 个事件。",
-            "target": "目标：7/7 天，每天 3+ 事件"
+            "title": "The Perfectionist",
+            "description": "Have a perfect week with at least 3 created events every day Monday-Sunday.",
+            "target": "Target: 7/7 days with 3+ events"
           },
           "digitalLibrarian": {
-            "title": "数字图书管理员",
-            "description": "在本地日历中维护超过 10,000 个未删除的事件。",
-            "target": "目标：10,000 个活跃的本地事件"
+            "title": "Digital Librarian",
+            "description": "Maintain over 10,000 non-deleted events across local calendars.",
+            "target": "Target: 10,000 live local events"
           }
         }
       }

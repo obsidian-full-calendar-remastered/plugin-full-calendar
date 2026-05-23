@@ -54,7 +54,13 @@ interface MilestoneState {
 }
 
 const REMOTE_PROVIDER_TYPES: ProviderType[] = ['ical', 'caldav', 'google', 'outlook'];
-const LOCAL_TRACKED_PROVIDER_TYPES: ProviderType[] = ['local', 'dailynote', 'tasks', 'tasknotes'];
+const LOCAL_TRACKED_PROVIDER_TYPES: ProviderType[] = [
+  'local',
+  'dailynote',
+  'tasks',
+  'tasknotes',
+  'bases'
+];
 const ALL_PROVIDER_TYPES: ProviderType[] = [
   'local',
   'dailynote',
@@ -442,6 +448,72 @@ const MILESTONE_DEFINITIONS: MilestoneDefinition[] = [
     descriptionKey: 'settings.appearance.milestones.definitions.digitalLibrarian.description',
     targetKey: 'settings.appearance.milestones.definitions.digitalLibrarian.target',
     compute: _state => ({ current: computeLocalLiveEventCount(), target: 10000 })
+  },
+  {
+    id: 'nightOwl',
+    titleKey: 'settings.appearance.milestones.definitions.nightOwl.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.nightOwl.description',
+    targetKey: 'settings.appearance.milestones.definitions.nightOwl.target',
+    compute: state => ({ current: getCounter(state, 'meta.nightOwlOps'), target: 15 })
+  },
+  {
+    id: 'earlyBird',
+    titleKey: 'settings.appearance.milestones.definitions.earlyBird.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.earlyBird.description',
+    targetKey: 'settings.appearance.milestones.definitions.earlyBird.target',
+    compute: state => ({ current: getCounter(state, 'meta.earlyBirdOps'), target: 15 })
+  },
+  {
+    id: 'weekendWarrior',
+    titleKey: 'settings.appearance.milestones.definitions.weekendWarrior.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.weekendWarrior.description',
+    targetKey: 'settings.appearance.milestones.definitions.weekendWarrior.target',
+    compute: state => ({ current: getCounter(state, 'meta.weekendWarriorOps'), target: 40 })
+  },
+  {
+    id: 'timezoneNomad',
+    titleKey: 'settings.appearance.milestones.definitions.timezoneNomad.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.timezoneNomad.description',
+    targetKey: 'settings.appearance.milestones.definitions.timezoneNomad.target',
+    compute: state => ({ current: computeDistinctTimezones(state), target: 5 })
+  },
+  {
+    id: 'superOrganizer',
+    titleKey: 'settings.appearance.milestones.definitions.superOrganizer.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.superOrganizer.description',
+    targetKey: 'settings.appearance.milestones.definitions.superOrganizer.target',
+    compute: _state => {
+      const workspaces = PluginState.getSettings().workspaces ?? [];
+      return { current: workspaces.length, target: 5 };
+    }
+  },
+  {
+    id: 'nlpWhisperer',
+    titleKey: 'settings.appearance.milestones.definitions.nlpWhisperer.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.nlpWhisperer.description',
+    targetKey: 'settings.appearance.milestones.definitions.nlpWhisperer.target',
+    compute: state => ({ current: getCounter(state, 'meta.createdViaNlp'), target: 50 })
+  },
+  {
+    id: 'powerPlanner',
+    titleKey: 'settings.appearance.milestones.definitions.powerPlanner.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.powerPlanner.description',
+    targetKey: 'settings.appearance.milestones.definitions.powerPlanner.target',
+    compute: _state => {
+      const sources = PluginState.getSettings().calendarSources ?? [];
+      const distinctTypes = new Set(sources.map(s => s.type));
+      return { current: distinctTypes.size, target: 3 };
+    }
+  },
+  {
+    id: 'devMilestone',
+    titleKey: 'settings.appearance.milestones.definitions.devMilestone.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.devMilestone.description',
+    targetKey: 'settings.appearance.milestones.definitions.devMilestone.target',
+    compute: state => ({
+      current: state.unlockedAt['devMilestone'] ? 1 : 0,
+      target: 1
+    })
   }
 ];
 
@@ -498,6 +570,20 @@ function updateDayCounters(state: MilestoneState, action: MilestoneAction): void
   incrementCounter(state, `day.action.${dayKey}`);
   if (action === 'created') {
     incrementCounter(state, `day.created.${dayKey}`);
+  }
+
+  const hour = new Date().getHours();
+  if (hour >= 22 || hour < 4) {
+    incrementCounter(state, 'meta.nightOwlOps');
+  }
+
+  if (hour >= 5 && hour < 8) {
+    incrementCounter(state, 'meta.earlyBirdOps');
+  }
+
+  const dayOfWeek = new Date().getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    incrementCounter(state, 'meta.weekendWarriorOps');
   }
 }
 
@@ -598,4 +684,30 @@ export function getMilestoneCards(): MilestoneCard[] {
   });
 
   return cards;
+}
+
+export async function triggerDevMilestoneIfActive(): Promise<void> {
+  try {
+    const settings = PluginState.getSettings();
+    if (settings.dev === 1 || settings.dev === '1') {
+      const state = ensureMilestonesState();
+      if (!state.unlockedAt['devMilestone']) {
+        state.unlockedAt['devMilestone'] = Date.now();
+        await PluginState.persistData();
+        const definition = MILESTONE_DEFINITIONS.find(d => d.id === 'devMilestone');
+        if (definition) {
+          queueMilestoneToast(
+            {
+              id: 'devMilestone',
+              title: t(definition.titleKey),
+              description: t(definition.descriptionKey)
+            },
+            0
+          );
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Full Calendar: failed to trigger developer milestone.', error);
+  }
 }

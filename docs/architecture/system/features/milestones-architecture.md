@@ -60,6 +60,8 @@ Representative computation types:
 - threshold counts such as number of providers above a target
 - day-series analysis for streak and consistency objectives
 - live environment checks such as active remote source count and local live event totals
+- datetime contextual analysis such as late-night, early-morning, or weekend operations
+- active configuration analysis such as distinct configured providers or active workspaces
 
 ## UI Rendering Contract
 

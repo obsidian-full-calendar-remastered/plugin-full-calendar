@@ -532,6 +532,46 @@
             "title": "Bibliotecario Digitale",
             "description": "Mantieni oltre 10.000 eventi non eliminati nei calendari locali.",
             "target": "Obiettivo: 10.000 eventi locali attivi"
+          },
+          "nightOwl": {
+            "title": "Gufo della Notte",
+            "description": "Esegui con successo 15 operazioni sul calendario durante le ore tarde (dalle 22:00 alle 04:00).",
+            "target": "Obiettivo: 15 azioni notturne"
+          },
+          "earlyBird": {
+            "title": "Mattiniero",
+            "description": "Esegui con successo 15 operazioni sul calendario durante le prime ore del mattino (dalle 05:00 alle 08:00).",
+            "target": "Obiettivo: 15 azioni mattutine"
+          },
+          "weekendWarrior": {
+            "title": "Guerriero del Fine Settimana",
+            "description": "Esegui 40 operazioni di successo sul calendario il sabato e la domenica.",
+            "target": "Obiettivo: 40 azioni nel weekend"
+          },
+          "timezoneNomad": {
+            "title": "Pianificatore Nomade",
+            "description": "Mantieni eventi che si estendono su 5 o più fusi orari distinti.",
+            "target": "Obiettivo: 5 fusi orari distinti"
+          },
+          "superOrganizer": {
+            "title": "Super Organizzatore",
+            "description": "Mantieni 5 o più configurazioni di area di lavoro attive.",
+            "target": "Obiettivo: 5 aree di lavoro"
+          },
+          "nlpWhisperer": {
+            "title": "Sussurratore NLP",
+            "description": "Crea 50 eventi usando i comandi di aggiunta rapida FCR NLP.",
+            "target": "Obiettivo: 50 creazioni NLP"
+          },
+          "powerPlanner": {
+            "title": "Pianificatore Esperto",
+            "description": "Mantieni almeno 3 tipi diversi di provider di calendari configurati e attivi contemporaneamente.",
+            "target": "Obiettivo: 3 tipi di provider attivi"
+          },
+          "devMilestone": {
+            "title": "Traguardo dello Sviluppatore",
+            "description": "Un traguardo di test dello sviluppatore attivato immediatamente tramite dev: 1 nelle impostazioni.",
+            "target": "Obiettivo: Modalità sviluppatore attiva"
           }
         }
       }

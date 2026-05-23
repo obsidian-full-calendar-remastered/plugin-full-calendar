@@ -16,7 +16,12 @@ import { renderCalendar } from '../../ui/settings/sections/calendars/calendar';
 import { OFCEvent } from '../../types';
 import { VIEW_ZOOM_CONFIG } from '../../ui/calendar/ViewZoomHandler';
 import { ViewTimelineHandler } from '../../ui/calendar/ViewTimelineHandler';
-import { EmbeddedWidgetStrategy, EmbeddedWidgetInstance, WidgetContext, EmbeddedBlockRegistry } from './EmbeddedBlockRegistry';
+import {
+  EmbeddedWidgetStrategy,
+  EmbeddedWidgetInstance,
+  WidgetContext,
+  EmbeddedBlockRegistry
+} from './EmbeddedBlockRegistry';
 
 interface ViewConfig {
   view?: string;
@@ -121,7 +126,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
 
     // Keep reactive to cache updates
     this.callback = () => {
-      this.calendars.forEach((calendar) => {
+      this.calendars.forEach(calendar => {
         const { sources: updatedSources } = this.getSourcesAndConfig(this.config);
         window.requestAnimationFrame(() => {
           calendar.removeAllEventSources();
@@ -135,9 +140,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
   private async renderSingleCalendar(el: HTMLElement, config: ViewConfig): Promise<void> {
     if (config.styles && typeof config.styles === 'object' && !Array.isArray(config.styles)) {
       for (const [key, val] of Object.entries(config.styles)) {
-        const cssKey = key.startsWith('--') 
-          ? key 
-          : key.replace(/([A-Z])/g, '-$1').toLowerCase();
+        const cssKey = key.startsWith('--') ? key : key.replace(/([A-Z])/g, '-$1').toLowerCase();
         el.style.setProperty(cssKey, String(val));
       }
     }
@@ -183,7 +186,8 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       }
     }
 
-    const isTimelineView = config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
+    const isTimelineView =
+      config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
     const resources = isTimelineView ? this.timelineHandler.buildTimelineResources() : undefined;
 
     // Render using renderCalendar factory
@@ -309,7 +313,8 @@ export class EmbeddedCalendar extends Component implements ViewContext {
     });
 
     // Add shadow events for subcategories if this is a timeline view so they show up on the parent category rows too.
-    const isTimelineView = config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
+    const isTimelineView =
+      config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
     if (isTimelineView && PluginState.getSettings().enableAdvancedCategorization) {
       filteredSources = filteredSources.map(s => {
         if (typeof s === 'object' && s !== null && 'events' in s && Array.isArray(s.events)) {
@@ -346,7 +351,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
   }
 
   public async refreshView(): Promise<void> {
-    this.calendars.forEach((calendar) => {
+    this.calendars.forEach(calendar => {
       const { sources } = this.getSourcesAndConfig(this.config);
       calendar.removeAllEventSources();
       sources.forEach(source => calendar.addEventSource(source));
@@ -357,9 +362,13 @@ export class EmbeddedCalendar extends Component implements ViewContext {
 export class CalendarWidgetStrategy implements EmbeddedWidgetStrategy {
   constructor(private plugin: FullCalendarPlugin) {}
 
-  async render(el: HTMLElement, config: Record<string, unknown>, ctx: WidgetContext): Promise<EmbeddedWidgetInstance> {
-    const calendarWidget = new EmbeddedCalendar(this.plugin, el, config as CodeBlockConfig, ctx);
-    
+  async render(
+    el: HTMLElement,
+    config: Record<string, unknown>,
+    ctx: WidgetContext
+  ): Promise<EmbeddedWidgetInstance> {
+    const calendarWidget = new EmbeddedCalendar(this.plugin, el, config, ctx);
+
     calendarWidget.load();
 
     return {
@@ -382,7 +391,9 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
 
   const registerProcessor = (blockType: string) => {
     plugin.registerMarkdownCodeBlockProcessor(blockType, async (source, el, ctx) => {
-      const container = el.createDiv({ cls: `ofc-embedded-widget-container ofc-embed-${blockType}` });
+      const container = el.createDiv({
+        cls: `ofc-embedded-widget-container ofc-embed-${blockType}`
+      });
 
       let parsedConfig: Record<string, unknown> = {};
       try {
@@ -394,7 +405,9 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
         return;
       }
 
-      const layout = parsedConfig.layout as { orientation?: 'horizontal' | 'vertical'; views?: Record<string, unknown>[] } | undefined;
+      const layout = parsedConfig.layout as
+        | { orientation?: 'horizontal' | 'vertical'; views?: Record<string, unknown>[] }
+        | undefined;
       const hasLayout = layout && layout.views && layout.views.length > 0;
 
       const instances: EmbeddedWidgetInstance[] = [];
@@ -402,46 +415,59 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
 
       const mountWidget = async () => {
         let strategy = EmbeddedBlockRegistry.get(blockType);
-        
+
         // On-demand lazy load strategy if needed
         if (!strategy && blockType === 'fc-analysis') {
           try {
-            const { registerChronoAnalysisStrategy } = await import('../../chrono_analyser/AnalysisWidgetStrategy');
+            const { registerChronoAnalysisStrategy } =
+              await import('../../chrono_analyser/AnalysisWidgetStrategy');
             registerChronoAnalysisStrategy(plugin);
             strategy = EmbeddedBlockRegistry.get(blockType);
           } catch (e) {
             container.empty();
-            container.createEl('pre', { text: `Failed to load Chrono Analyzer: ${e instanceof Error ? e.message : String(e)}` });
+            container.createEl('pre', {
+              text: `Failed to load Chrono Analyzer: ${e instanceof Error ? e.message : String(e)}`
+            });
             return;
           }
         }
 
-        if (!strategy) {
+        const activeStrategy = strategy;
+        if (!activeStrategy) {
           container.empty();
           container.createEl('pre', { text: `Unknown block type strategy: ${blockType}` });
           return;
         }
 
         const renderItem = async (targetEl: HTMLElement, itemConfig: Record<string, unknown>) => {
-          if (itemConfig.styles && typeof itemConfig.styles === 'object' && !Array.isArray(itemConfig.styles)) {
+          if (
+            itemConfig.styles &&
+            typeof itemConfig.styles === 'object' &&
+            !Array.isArray(itemConfig.styles)
+          ) {
             for (const [key, val] of Object.entries(itemConfig.styles)) {
-              const cssKey = key.startsWith('--') 
-                ? key 
+              const cssKey = key.startsWith('--')
+                ? key
                 : key.replace(/([A-Z])/g, '-$1').toLowerCase();
               targetEl.style.setProperty(cssKey, String(val));
             }
           }
 
-          if (itemConfig.width) {
-            targetEl.style.width = String(itemConfig.width);
+          const itemWidth = itemConfig.width;
+          if (typeof itemWidth === 'string' || typeof itemWidth === 'number') {
+            targetEl.style.width = String(itemWidth);
           }
-          if (itemConfig.height && itemConfig.height !== 'fit') {
-            targetEl.style.height = String(itemConfig.height);
+          const itemHeight = itemConfig.height;
+          if (
+            (typeof itemHeight === 'string' || typeof itemHeight === 'number') &&
+            itemHeight !== 'fit'
+          ) {
+            targetEl.style.height = String(itemHeight);
           }
 
-          const inst = await strategy!.render(targetEl, itemConfig, {
+          const inst = await activeStrategy.render(targetEl, itemConfig, {
             sourcePath: ctx.sourcePath,
-            onUpdate: (callback) => {
+            onUpdate: callback => {
               updateCallbacks.push(callback);
               PluginState.getCache().on('update', callback);
             }
@@ -458,10 +484,14 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
               const viewEl = container.createDiv({ cls: 'ofc-layout-view-item' });
 
               // Custom width / flex layout control in horizontal layout
-              if (layoutOrientation === 'horizontal' && viewConfig.width) {
+              const viewWidth = viewConfig.width;
+              if (
+                layoutOrientation === 'horizontal' &&
+                (typeof viewWidth === 'string' || typeof viewWidth === 'number')
+              ) {
                 viewEl.setCssProps({
-                  width: String(viewConfig.width),
-                  flex: `0 0 ${viewConfig.width}`
+                  width: String(viewWidth),
+                  flex: `0 0 ${viewWidth}`
                 });
               } else {
                 viewEl.setCssProps({
@@ -469,27 +499,36 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
                 });
               }
 
-              if (viewConfig.height) {
+              const viewHeight = viewConfig.height;
+              if (typeof viewHeight === 'string' || typeof viewHeight === 'number') {
                 viewEl.setCssProps({
-                  height: viewConfig.height === 'fit' ? 'auto' : String(viewConfig.height)
+                  height: viewHeight === 'fit' ? 'auto' : String(viewHeight)
                 });
               } else {
                 const globalHeight = parsedConfig.height;
-                if (globalHeight) {
+                if (typeof globalHeight === 'string' || typeof globalHeight === 'number') {
                   viewEl.setCssProps({
                     height: globalHeight === 'fit' ? 'auto' : String(globalHeight)
                   });
                 }
               }
 
-              await renderItem(viewEl, viewConfig as Record<string, unknown>);
+              await renderItem(viewEl, viewConfig);
             }
           } else {
-            const configObj = parsedConfig as { styles?: Record<string, string>; width?: string; height?: string };
-            if (configObj.styles && typeof configObj.styles === 'object' && !Array.isArray(configObj.styles)) {
+            const configObj = parsedConfig as {
+              styles?: Record<string, string>;
+              width?: string;
+              height?: string;
+            };
+            if (
+              configObj.styles &&
+              typeof configObj.styles === 'object' &&
+              !Array.isArray(configObj.styles)
+            ) {
               for (const [key, val] of Object.entries(configObj.styles)) {
-                const cssKey = key.startsWith('--') 
-                  ? key 
+                const cssKey = key.startsWith('--')
+                  ? key
                   : key.replace(/([A-Z])/g, '-$1').toLowerCase();
                 container.style.setProperty(cssKey, String(val));
               }
@@ -506,7 +545,9 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
           }
         } catch (e) {
           container.empty();
-          container.createEl('pre', { text: `Rendering failed: ${e instanceof Error ? e.message : String(e)}` });
+          container.createEl('pre', {
+            text: `Rendering failed: ${e instanceof Error ? e.message : String(e)}`
+          });
         }
       };
 

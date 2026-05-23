@@ -21,6 +21,7 @@ import { StoredEvent } from '../../core/EventStore';
 import { toggleTask } from '../../types/tasks';
 import FullCalendarPlugin from '../../main';
 import { t } from '../../features/i18n/i18n';
+import { recordMilestoneAction } from '../milestones/milestones';
 
 /**
  * Manages all complex business logic related to recurring events.
@@ -730,11 +731,12 @@ export class RecurringEventManager {
       const standaloneEvent = { ...eventToCreate };
       delete standaloneEvent.recurringEventId;
 
-      await this.cache.addEvent(newCalendarId, standaloneEvent);
+      await this.cache.addEvent(newCalendarId, standaloneEvent, { trackMilestone: false });
 
       // 2. Detach from Old Master (add skip date)
-      await this.cache.deleteEvent(eventId);
+      await this.cache.deleteEvent(eventId, { silent: true });
 
+      await recordMilestoneAction('moved', newCalendarId);
       return true;
     }
 
@@ -744,7 +746,9 @@ export class RecurringEventManager {
 
       // 1. Create New Master in Destination
       // We use addEvent which handles ID generation and storage.
-      const successful = await this.cache.addEvent(newCalendarId, eventToCreate);
+      const successful = await this.cache.addEvent(newCalendarId, eventToCreate, {
+        trackMilestone: false
+      });
       if (!successful) throw new Error('Failed to create new master event in destination.');
 
       // We need to find the NEW master event to get its linking ID (e.g. filename).
@@ -796,13 +800,14 @@ export class RecurringEventManager {
             recurringEventId: newLinkId
           };
           // Add Child to New Calendar
-          await this.cache.addEvent(newCalendarId, newChildEvent);
+          await this.cache.addEvent(newCalendarId, newChildEvent, { trackMilestone: false });
         }
       }
 
       // 3. Delete Old Series (Master + Children)
       await this.deleteAllRecurring(eventId); // This deletes Master + Children from Old Calendar
 
+      await recordMilestoneAction('moved', newCalendarId);
       return true;
     }
 

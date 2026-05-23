@@ -452,6 +452,9 @@ export class CacheMutationHandler {
     const recurringManager = await this.ctx.getRecurringEventManager();
     await recurringManager.toggleRecurringInstance(eventId, instanceDate, isDone);
     this.ctx.flushUpdateQueue([], [], calendarId ? [calendarId] : []);
+    if (calendarId) {
+      await recordMilestoneAction('updated', calendarId);
+    }
   }
 
   async modifyRecurringInstance(
@@ -465,6 +468,9 @@ export class CacheMutationHandler {
     const recurringManager = await this.ctx.getRecurringEventManager();
     await recurringManager.modifyRecurringInstance(masterEventId, instanceDate, eventForStorage);
     this.ctx.flushUpdateQueue([], [], calendarId ? [calendarId] : []);
+    if (calendarId) {
+      await recordMilestoneAction('updated', calendarId);
+    }
   }
 
   public async scheduleTask(taskId: string, date: Date): Promise<void> {

@@ -185,6 +185,8 @@ export interface FullCalendarSettings {
   apiTokens?: Record<string, ApiTokenRecord>;
   authorizedTokens?: Record<string, { pluginId: string; reason: string; grantedAt: number }>;
 
+  dev?: number | string;
+
   currentVersion: string | null;
   linkedNotesDirectory: string;
   linkedNoteTemplate: string;

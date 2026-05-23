@@ -16,12 +16,7 @@ import { renderCalendar } from '../../ui/settings/sections/calendars/calendar';
 import { OFCEvent } from '../../types';
 import { VIEW_ZOOM_CONFIG } from '../../ui/calendar/ViewZoomHandler';
 import { ViewTimelineHandler } from '../../ui/calendar/ViewTimelineHandler';
-import {
-  EmbeddedWidgetStrategy,
-  EmbeddedWidgetInstance,
-  WidgetContext,
-  EmbeddedBlockRegistry
-} from './EmbeddedBlockRegistry';
+import { EmbeddedWidgetStrategy, EmbeddedWidgetInstance, WidgetContext, EmbeddedBlockRegistry } from './EmbeddedBlockRegistry';
 
 interface ViewConfig {
   view?: string;
@@ -117,57 +112,17 @@ export class EmbeddedCalendar extends Component implements ViewContext {
     this.contentEl.empty();
     this.calendars = [];
 
-    // Remove any existing layout orientation classes
-    this.contentEl.removeClass('ofc-layout-horizontal');
-    this.contentEl.removeClass('ofc-layout-vertical');
-
-    const layout = this.config.layout;
-    if (layout && layout.views && layout.views.length > 0) {
-      // Multiple calendars grid/flex layout
-      const layoutOrientation = layout.orientation || 'horizontal';
-      this.contentEl.addClass(`ofc-layout-${layoutOrientation}`);
-
-      for (const viewConfig of layout.views) {
-        const viewEl = this.contentEl.createDiv({ cls: 'ofc-layout-view-item' });
-
-        // Custom width / flex layout control in horizontal layout
-        if (layoutOrientation === 'horizontal' && viewConfig.width) {
-          viewEl.setCssProps({
-            width: viewConfig.width,
-            flex: `0 0 ${viewConfig.width}`
-          });
-        } else {
-          viewEl.setCssProps({
-            flex: '1'
-          });
-        }
-
-        if (viewConfig.height) {
-          viewEl.setCssProps({
-            height: viewConfig.height === 'fit' ? 'auto' : viewConfig.height
-          });
-        } else if (this.config.height) {
-          viewEl.setCssProps({
-            height: this.config.height === 'fit' ? 'auto' : this.config.height
-          });
-        }
-        await this.renderSingleCalendar(viewEl, viewConfig);
-      }
-    } else {
-      // Single calendar
-      if (this.config.height) {
-        this.contentEl.setCssProps({
-          height: this.config.height === 'fit' ? 'auto' : this.config.height
-        });
-      }
-      await this.renderSingleCalendar(this.contentEl, this.config);
+    if (this.config.height) {
+      this.contentEl.setCssProps({
+        height: this.config.height === 'fit' ? 'auto' : this.config.height
+      });
     }
+    await this.renderSingleCalendar(this.contentEl, this.config);
 
-    // Keep all calendars reactive to cache updates
+    // Keep reactive to cache updates
     this.callback = () => {
-      this.calendars.forEach((calendar, idx) => {
-        const viewConfig = layout?.views[idx] || this.config;
-        const { sources: updatedSources } = this.getSourcesAndConfig(viewConfig);
+      this.calendars.forEach((calendar) => {
+        const { sources: updatedSources } = this.getSourcesAndConfig(this.config);
         window.requestAnimationFrame(() => {
           calendar.removeAllEventSources();
           updatedSources.forEach(source => calendar.addEventSource(source));
@@ -180,7 +135,9 @@ export class EmbeddedCalendar extends Component implements ViewContext {
   private async renderSingleCalendar(el: HTMLElement, config: ViewConfig): Promise<void> {
     if (config.styles && typeof config.styles === 'object' && !Array.isArray(config.styles)) {
       for (const [key, val] of Object.entries(config.styles)) {
-        const cssKey = key.startsWith('--') ? key : key.replace(/([A-Z])/g, '-$1').toLowerCase();
+        const cssKey = key.startsWith('--') 
+          ? key 
+          : key.replace(/([A-Z])/g, '-$1').toLowerCase();
         el.style.setProperty(cssKey, String(val));
       }
     }
@@ -226,8 +183,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       }
     }
 
-    const isTimelineView =
-      config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
+    const isTimelineView = config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
     const resources = isTimelineView ? this.timelineHandler.buildTimelineResources() : undefined;
 
     // Render using renderCalendar factory
@@ -353,8 +309,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
     });
 
     // Add shadow events for subcategories if this is a timeline view so they show up on the parent category rows too.
-    const isTimelineView =
-      config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
+    const isTimelineView = config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
     if (isTimelineView && PluginState.getSettings().enableAdvancedCategorization) {
       filteredSources = filteredSources.map(s => {
         if (typeof s === 'object' && s !== null && 'events' in s && Array.isArray(s.events)) {
@@ -391,9 +346,8 @@ export class EmbeddedCalendar extends Component implements ViewContext {
   }
 
   public async refreshView(): Promise<void> {
-    this.calendars.forEach((calendar, idx) => {
-      const viewConfig = this.config.layout?.views[idx] || this.config;
-      const { sources } = this.getSourcesAndConfig(viewConfig);
+    this.calendars.forEach((calendar) => {
+      const { sources } = this.getSourcesAndConfig(this.config);
       calendar.removeAllEventSources();
       sources.forEach(source => calendar.addEventSource(source));
     });
@@ -403,13 +357,9 @@ export class EmbeddedCalendar extends Component implements ViewContext {
 export class CalendarWidgetStrategy implements EmbeddedWidgetStrategy {
   constructor(private plugin: FullCalendarPlugin) {}
 
-  async render(
-    el: HTMLElement,
-    config: Record<string, unknown>,
-    ctx: WidgetContext
-  ): Promise<EmbeddedWidgetInstance> {
-    const calendarWidget = new EmbeddedCalendar(this.plugin, el, config, ctx);
-
+  async render(el: HTMLElement, config: Record<string, unknown>, ctx: WidgetContext): Promise<EmbeddedWidgetInstance> {
+    const calendarWidget = new EmbeddedCalendar(this.plugin, el, config as CodeBlockConfig, ctx);
+    
     calendarWidget.load();
 
     return {
@@ -432,9 +382,7 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
 
   const registerProcessor = (blockType: string) => {
     plugin.registerMarkdownCodeBlockProcessor(blockType, async (source, el, ctx) => {
-      const container = el.createDiv({
-        cls: `ofc-embedded-widget-container ofc-embed-${blockType}`
-      });
+      const container = el.createDiv({ cls: `ofc-embedded-widget-container ofc-embed-${blockType}` });
 
       let parsedConfig: Record<string, unknown> = {};
       try {
@@ -446,49 +394,24 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
         return;
       }
 
-      const configObj = parsedConfig as {
-        styles?: Record<string, string>;
-        width?: string;
-        height?: string;
-      };
+      const layout = parsedConfig.layout as { orientation?: 'horizontal' | 'vertical'; views?: Record<string, unknown>[] } | undefined;
+      const hasLayout = layout && layout.views && layout.views.length > 0;
 
-      // Apply dynamic styles safely
-      if (
-        configObj.styles &&
-        typeof configObj.styles === 'object' &&
-        !Array.isArray(configObj.styles)
-      ) {
-        for (const [key, val] of Object.entries(configObj.styles)) {
-          const cssKey = key.startsWith('--') ? key : key.replace(/([A-Z])/g, '-$1').toLowerCase();
-          container.style.setProperty(cssKey, String(val));
-        }
-      }
-
-      if (configObj.width) {
-        container.style.width = configObj.width;
-      }
-      if (configObj.height && configObj.height !== 'fit') {
-        container.style.height = configObj.height;
-      }
-
-      let activeInstance: EmbeddedWidgetInstance | null = null;
+      const instances: EmbeddedWidgetInstance[] = [];
       const updateCallbacks: (() => void)[] = [];
 
       const mountWidget = async () => {
         let strategy = EmbeddedBlockRegistry.get(blockType);
-
+        
         // On-demand lazy load strategy if needed
         if (!strategy && blockType === 'fc-analysis') {
           try {
-            const { registerChronoAnalysisStrategy } =
-              await import('../../chrono_analyser/AnalysisWidgetStrategy');
+            const { registerChronoAnalysisStrategy } = await import('../../chrono_analyser/AnalysisWidgetStrategy');
             registerChronoAnalysisStrategy(plugin);
             strategy = EmbeddedBlockRegistry.get(blockType);
           } catch (e) {
             container.empty();
-            container.createEl('pre', {
-              text: `Failed to load Chrono Analyzer: ${e instanceof Error ? e.message : String(e)}`
-            });
+            container.createEl('pre', { text: `Failed to load Chrono Analyzer: ${e instanceof Error ? e.message : String(e)}` });
             return;
           }
         }
@@ -499,19 +422,91 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
           return;
         }
 
-        try {
-          activeInstance = await strategy.render(container, parsedConfig, {
+        const renderItem = async (targetEl: HTMLElement, itemConfig: Record<string, unknown>) => {
+          if (itemConfig.styles && typeof itemConfig.styles === 'object' && !Array.isArray(itemConfig.styles)) {
+            for (const [key, val] of Object.entries(itemConfig.styles)) {
+              const cssKey = key.startsWith('--') 
+                ? key 
+                : key.replace(/([A-Z])/g, '-$1').toLowerCase();
+              targetEl.style.setProperty(cssKey, String(val));
+            }
+          }
+
+          if (itemConfig.width) {
+            targetEl.style.width = String(itemConfig.width);
+          }
+          if (itemConfig.height && itemConfig.height !== 'fit') {
+            targetEl.style.height = String(itemConfig.height);
+          }
+
+          const inst = await strategy!.render(targetEl, itemConfig, {
             sourcePath: ctx.sourcePath,
-            onUpdate: callback => {
+            onUpdate: (callback) => {
               updateCallbacks.push(callback);
               PluginState.getCache().on('update', callback);
             }
           });
+          instances.push(inst);
+        };
+
+        try {
+          if (hasLayout && layout && layout.views) {
+            const layoutOrientation = layout.orientation || 'horizontal';
+            container.addClass(`ofc-layout-${layoutOrientation}`);
+
+            for (const viewConfig of layout.views) {
+              const viewEl = container.createDiv({ cls: 'ofc-layout-view-item' });
+
+              // Custom width / flex layout control in horizontal layout
+              if (layoutOrientation === 'horizontal' && viewConfig.width) {
+                viewEl.setCssProps({
+                  width: String(viewConfig.width),
+                  flex: `0 0 ${viewConfig.width}`
+                });
+              } else {
+                viewEl.setCssProps({
+                  flex: '1'
+                });
+              }
+
+              if (viewConfig.height) {
+                viewEl.setCssProps({
+                  height: viewConfig.height === 'fit' ? 'auto' : String(viewConfig.height)
+                });
+              } else {
+                const globalHeight = parsedConfig.height;
+                if (globalHeight) {
+                  viewEl.setCssProps({
+                    height: globalHeight === 'fit' ? 'auto' : String(globalHeight)
+                  });
+                }
+              }
+
+              await renderItem(viewEl, viewConfig as Record<string, unknown>);
+            }
+          } else {
+            const configObj = parsedConfig as { styles?: Record<string, string>; width?: string; height?: string };
+            if (configObj.styles && typeof configObj.styles === 'object' && !Array.isArray(configObj.styles)) {
+              for (const [key, val] of Object.entries(configObj.styles)) {
+                const cssKey = key.startsWith('--') 
+                  ? key 
+                  : key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                container.style.setProperty(cssKey, String(val));
+              }
+            }
+
+            if (configObj.width) {
+              container.style.width = configObj.width;
+            }
+            if (configObj.height && configObj.height !== 'fit') {
+              container.style.height = configObj.height;
+            }
+
+            await renderItem(container, parsedConfig);
+          }
         } catch (e) {
           container.empty();
-          container.createEl('pre', {
-            text: `Rendering failed: ${e instanceof Error ? e.message : String(e)}`
-          });
+          container.createEl('pre', { text: `Rendering failed: ${e instanceof Error ? e.message : String(e)}` });
         }
       };
 
@@ -539,10 +534,8 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
         updateCallbacks.forEach(cb => {
           PluginState.getCache().off('update', cb);
         });
-        if (activeInstance) {
-          activeInstance.destroy();
-          activeInstance = null;
-        }
+        instances.forEach(inst => inst.destroy());
+        instances.length = 0;
       };
       ctx.addChild(renderChild);
     });

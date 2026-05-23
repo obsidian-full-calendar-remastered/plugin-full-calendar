@@ -818,6 +818,7 @@
 }
 
 /* Multi-view layout container styles */
+.ofc-embedded-widget-container.ofc-layout-horizontal,
 .ofc-embedded-calendar-container.ofc-layout-horizontal {
   display: flex;
   flex-direction: row;
@@ -827,6 +828,7 @@
   padding: 8px;
 }
 
+.ofc-embedded-widget-container.ofc-layout-horizontal .ofc-layout-view-item,
 .ofc-embedded-calendar-container.ofc-layout-horizontal .ofc-layout-view-item {
   flex: 1;
   min-width: 0;
@@ -837,6 +839,7 @@
   box-sizing: border-box;
 }
 
+.ofc-embedded-widget-container.ofc-layout-vertical,
 .ofc-embedded-calendar-container.ofc-layout-vertical {
   display: flex;
   flex-direction: column;
@@ -846,6 +849,7 @@
   padding: 8px;
 }
 
+.ofc-embedded-widget-container.ofc-layout-vertical .ofc-layout-view-item,
 .ofc-embedded-calendar-container.ofc-layout-vertical .ofc-layout-view-item {
   width: 100%;
   background-color: var(--background-primary);

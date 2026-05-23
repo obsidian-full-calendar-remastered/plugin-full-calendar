@@ -111,11 +111,28 @@ height: 380px
 ### Example C: Productivity Weekly Heatmap
 Identify your most active working hours on your homepage dashboard:
 
-````yaml
-```fc-analysis
+```yaml
 chart: activity
 patternType: heatmapDOWvsHOD
 metric: count
 height: 300px
 ```
-````
+
+### Example D: Premium Stacked Dashboard (Horizontal/Vertical Layout)
+You can combine and stack multiple charts vertically or horizontally inside a single code block. All styles, filters, and height settings apply individually to each stacked chart:
+
+```yaml
+layout:
+  orientation: horizontal  # Stack 'horizontal' or 'vertical'
+  views:
+    - chart: sunburst
+      level: subcategory
+      metric: duration
+      height: 380px
+    - chart: time-series
+      type: stackedArea
+      stackBy: hierarchy
+      granularity: daily
+      metric: duration
+      height: 380px
+```

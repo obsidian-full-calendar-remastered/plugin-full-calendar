@@ -61,6 +61,8 @@ interface ExtraRenderProps {
   // New granular view configuration properties
   slotMinTime?: string;
   slotMaxTime?: string;
+  slotDuration?: string;
+  slotLabelInterval?: string;
   allDaySlot?: boolean;
   timeGridDayHeaderFormat?: string;
   weekends?: boolean;
@@ -70,6 +72,9 @@ interface ExtraRenderProps {
   onSearchQueryChange?: (query: string) => void;
   initialSearchQuery?: string;
   onEventsSet?: () => void;
+  headerToolbar?: false | object;
+  footerToolbar?: false | object;
+  height?: 'auto' | number | 'parent';
 }
 
 type TimeGridDayHeaderFormat =
@@ -528,6 +533,7 @@ export async function renderCalendar(
       : {}),
     customButtons: customButtonConfig,
     timeZone: settings?.timeZone,
+    height: settings?.height,
     plugins: [
       // View plugins
       dayGridPlugin,
@@ -548,8 +554,14 @@ export async function renderCalendar(
     nowIndicator: true,
     scrollTimeReset: false,
     dayMaxEvents: settings?.dayMaxEvents !== undefined ? settings.dayMaxEvents : true, // Use setting override or default to true
-    headerToolbar: initialToolbarLayout.headerToolbar,
-    footerToolbar: initialToolbarLayout.footerToolbar,
+    headerToolbar:
+      settings?.headerToolbar !== undefined
+        ? settings.headerToolbar
+        : initialToolbarLayout.headerToolbar,
+    footerToolbar:
+      settings?.footerToolbar !== undefined
+        ? settings.footerToolbar
+        : initialToolbarLayout.footerToolbar,
     // Cast at usage point to satisfy FullCalendar without polluting variable with any
     views,
     ...(showResourceViews && {
@@ -578,14 +590,22 @@ export async function renderCalendar(
       }
 
       currentToolbarMode = nextToolbarLayout.mode;
-      cal.setOption('headerToolbar', nextToolbarLayout.headerToolbar);
-      cal.setOption('footerToolbar', nextToolbarLayout.footerToolbar);
+      if (settings?.headerToolbar !== false) {
+        cal.setOption('headerToolbar', nextToolbarLayout.headerToolbar);
+      }
+      if (settings?.footerToolbar !== false) {
+        cal.setOption('footerToolbar', nextToolbarLayout.footerToolbar);
+      }
     },
 
     firstDay: settings?.firstDay,
     // New granular view configuration settings
     ...(settings?.slotMinTime !== undefined && { slotMinTime: settings.slotMinTime }),
     ...(settings?.slotMaxTime !== undefined && { slotMaxTime: settings.slotMaxTime }),
+    ...(settings?.slotDuration !== undefined && { slotDuration: settings.slotDuration }),
+    ...(settings?.slotLabelInterval !== undefined && {
+      slotLabelInterval: settings.slotLabelInterval
+    }),
     ...(settings?.allDaySlot !== undefined && { allDaySlot: settings.allDaySlot }),
     ...(settings?.weekends !== undefined && { weekends: settings.weekends }),
     ...(settings?.hiddenDays !== undefined && { hiddenDays: settings.hiddenDays }),
@@ -742,8 +762,12 @@ export async function renderCalendar(
     const nextToolbarLayout = getToolbarLayout(getResponsiveWidth());
     if (nextToolbarLayout.mode !== currentToolbarMode) {
       currentToolbarMode = nextToolbarLayout.mode;
-      cal.setOption('headerToolbar', nextToolbarLayout.headerToolbar);
-      cal.setOption('footerToolbar', nextToolbarLayout.footerToolbar);
+      if (settings?.headerToolbar !== false) {
+        cal.setOption('headerToolbar', nextToolbarLayout.headerToolbar);
+      }
+      if (settings?.footerToolbar !== false) {
+        cal.setOption('footerToolbar', nextToolbarLayout.footerToolbar);
+      }
       window.requestAnimationFrame(() => ensureToolbarSearchControl());
     }
 

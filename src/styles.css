@@ -787,3 +787,72 @@
   height: 16px;
 }
 
+/* Embedded Calendar Custom Styling */
+.ofc-embedded-calendar-container {
+  width: 100%;
+  min-height: 280px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Orientation layout variations */
+.ofc-embed-orientation-horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 16px;
+  width: 100%;
+}
+
+.ofc-embed-orientation-horizontal .ofc-embedded-calendar-container {
+  flex: 1;
+}
+
+.ofc-embed-orientation-vertical {
+  display: block;
+  width: 100%;
+}
+
+/* Multi-view layout container styles */
+.ofc-embedded-calendar-container.ofc-layout-horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 16px;
+  width: 100%;
+  padding: 8px;
+}
+
+.ofc-embedded-calendar-container.ofc-layout-horizontal .ofc-layout-view-item {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.ofc-embedded-calendar-container.ofc-layout-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  width: 100%;
+  padding: 8px;
+}
+
+.ofc-embedded-calendar-container.ofc-layout-vertical .ofc-layout-view-item {
+  width: 100%;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+

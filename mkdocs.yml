@@ -147,6 +147,7 @@ nav:
                 - Status Bar Integration: user/features/statusbar.md
                 - Internationalization: user/features/i18n.md
                 - Live Preview Decorators: user/features/live-preview.md
+                - Embedded Code Block Calendars: user/features/embedded_calendars.md
           - Chrono Analyser: 
                 - user/chrono_analyser/index.md
                 - Introduction: user/chrono_analyser/introduction.md
@@ -197,6 +198,7 @@ nav:
                 - ActivityWatch Implementation: architecture/activitywatch/implementation.md
           - Views Architecture:
                 - architecture/views/architecture.md
+                - Embedded Calendars Architecture: architecture/views/embedded_calendars.md
           - ChronoAnalyser:
                 - architecture/chrono_analyser/architecture.md
                 - Analysis Types Implementation: architecture/chrono_analyser/analysis-types.md

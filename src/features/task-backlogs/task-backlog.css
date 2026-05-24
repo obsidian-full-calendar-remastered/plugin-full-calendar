@@ -1,0 +1,58 @@
+@import '../../providers/tasks/backlog-styles.css';
+
+.tasks-backlog-title-row {
+  align-items: center;
+}
+
+.tasks-backlog-create-form {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  margin-bottom: 12px;
+}
+
+.tasks-backlog-create-source {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.tasks-backlog-new-title {
+  min-width: 0;
+  width: 100%;
+}
+
+.tasks-backlog-add {
+  align-items: center;
+  display: inline-flex;
+  height: var(--input-height);
+  justify-content: center;
+  padding: 0;
+  width: 32px;
+}
+
+.tasks-backlog-title-row {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+}
+
+.tasks-backlog-title-row .tasks-backlog-checkbox {
+  margin-top: 2px;
+}
+
+.tasks-backlog-title-row .tasks-backlog-title {
+  flex: 1;
+}
+
+.tasks-backlog-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tasks-backlog-action {
+  align-items: center;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  padding: 0 8px;
+}

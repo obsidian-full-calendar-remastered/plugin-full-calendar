@@ -2,7 +2,14 @@ import { OFCEvent, EventLocation } from '../../types';
 import { getEventsFromICS } from '../ics/ics';
 import { eventToIcs, createOverrideVEvent } from '../ics/formatter';
 import ical from 'ical.js';
-import { CalendarProvider, CalendarProviderCapabilities, SyncKeyProvider } from '../Provider';
+import {
+  CalendarProvider,
+  CalendarProviderCapabilities,
+  SyncKeyProvider,
+  TaskBacklogInfo,
+  TaskBacklogItem,
+  TaskBacklogProvider
+} from '../Provider';
 import { EventHandle, FCReactComponent, ProviderConfigContext } from '../typesProvider';
 import { CalDAVProviderConfig } from './typesCalDAV';
 import FullCalendarPlugin from '../../main';
@@ -682,7 +689,9 @@ const CalDAVConfigWrapper: React.FC<CalDAVConfigProps> = props => {
   });
 };
 
-export class CalDAVProvider implements CalendarProvider<CalDAVProviderConfig>, SyncKeyProvider {
+export class CalDAVProvider
+  implements CalendarProvider<CalDAVProviderConfig>, SyncKeyProvider, TaskBacklogProvider
+{
   static readonly type = 'caldav';
   static readonly displayName = 'CalDAV';
 
@@ -734,6 +743,15 @@ export class CalDAVProvider implements CalendarProvider<CalDAVProviderConfig>, S
     return {
       id: this.source.id,
       name: this.source.name
+    };
+  }
+
+  getTaskBacklogInfo(): TaskBacklogInfo {
+    return {
+      id: this.source.id,
+      name: this.source.name,
+      title: 'CalDAV task inbox',
+      supportsCreate: true
     };
   }
 
@@ -857,6 +875,11 @@ export class CalDAVProvider implements CalendarProvider<CalDAVProviderConfig>, S
     return this.undatedTaskLoadPromise;
   }
 
+  async refreshTaskBacklogItems(): Promise<TaskBacklogItem[]> {
+    const tasks = await this.refreshUndatedTasks();
+    return tasks.map(task => this.toTaskBacklogItem(task));
+  }
+
   async getUndatedTasks(): Promise<CalDAVTaskInboxItem[]> {
     if (!this.hasLoadedUndatedTasks && !this.undatedTaskLoadPromise) {
       void this.refreshUndatedTasks()
@@ -865,6 +888,66 @@ export class CalDAVProvider implements CalendarProvider<CalDAVProviderConfig>, S
     }
 
     return Promise.resolve([...this.undatedTaskCache]);
+  }
+
+  async getTaskBacklogItems(): Promise<TaskBacklogItem[]> {
+    const tasks = await this.getUndatedTasks();
+    return tasks.map(task => this.toTaskBacklogItem(task));
+  }
+
+  async createTaskBacklogItem(title: string): Promise<TaskBacklogItem> {
+    const task = await this.createTask(title);
+    return this.toTaskBacklogItem(task);
+  }
+
+  async openTaskBacklogItem(taskId: string): Promise<void> {
+    const parsed = this.parseTaskBacklogId(taskId);
+    if (!parsed || parsed.calendarId !== this.source.id) {
+      return;
+    }
+
+    const task = this.undatedTaskCache.find(candidate => candidate.uid === parsed.uid);
+    if (!task) {
+      return;
+    }
+
+    const file = await this.createLinkedNoteForTask(task);
+    if (!file) {
+      return;
+    }
+
+    const leaf = this.plugin.app.workspace.getLeaf(false);
+    await leaf.openFile(file);
+  }
+
+  private toTaskBacklogItem(task: CalDAVTaskInboxItem): TaskBacklogItem {
+    return {
+      id: this.encodeTaskBacklogId(task.calendarId, task.uid),
+      title: task.title,
+      completed: task.completed,
+      subtitle: task.calendarName,
+      sourceId: task.calendarId
+    };
+  }
+
+  private encodeTaskBacklogId(calendarId: string, uid: string): string {
+    return `caldav::${encodeURIComponent(calendarId)}::${encodeURIComponent(uid)}`;
+  }
+
+  private parseTaskBacklogId(taskId: string): { calendarId: string; uid: string } | null {
+    const parts = taskId.split('::');
+    if (parts.length !== 3 || parts[0] !== 'caldav') {
+      return null;
+    }
+
+    try {
+      return {
+        calendarId: decodeURIComponent(parts[1]),
+        uid: decodeURIComponent(parts[2])
+      };
+    } catch {
+      return null;
+    }
   }
 
   async createTask(title: string): Promise<CalDAVTaskInboxItem> {

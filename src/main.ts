@@ -140,7 +140,7 @@ export default class FullCalendarPlugin extends Plugin {
 
     this.#setupActivityWatchAutoSync();
 
-    // Ensure Tasks Backlog view is available immediately if a Tasks calendar exists
+    // Ensure the task backlog view is available immediately if a provider supports it.
     PluginState.getProviderRegistry().syncBacklogManagerLifecycle();
 
     await manageTimezone(this);

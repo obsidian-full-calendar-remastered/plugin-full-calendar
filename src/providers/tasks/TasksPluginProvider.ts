@@ -23,7 +23,10 @@ import {
   CalendarProvider,
   CalendarProviderCapabilities,
   RecoverableProviderLoadError,
-  SyncKeyProvider
+  SyncKeyProvider,
+  TaskBacklogInfo,
+  TaskBacklogItem,
+  TaskBacklogProvider
 } from '../Provider';
 import { EventHandle, FCReactComponent } from '../typesProvider';
 import { TasksProviderConfig } from './typesTask';
@@ -181,7 +184,9 @@ function summarizeDebugValue(value: unknown): unknown {
 
 export type EditableEventResponse = [OFCEvent, EventLocation | null];
 
-export class TasksPluginProvider implements CalendarProvider<TasksProviderConfig>, SyncKeyProvider {
+export class TasksPluginProvider
+  implements CalendarProvider<TasksProviderConfig>, SyncKeyProvider, TaskBacklogProvider
+{
   // Static metadata for registry
   static readonly type = 'tasks';
   static readonly displayName = 'Obsidian Tasks';
@@ -670,6 +675,24 @@ export class TasksPluginProvider implements CalendarProvider<TasksProviderConfig
         // Our internal lineNumber is 1-based, so subtract 1 to get the 0-based index for the ID.
         lineNumber: t.lineNumber - 1
       }
+    }));
+  }
+
+  public getTaskBacklogInfo(): TaskBacklogInfo {
+    return {
+      id: this.source.id,
+      name: this.source.name || 'Tasks',
+      title: 'Tasks backlog'
+    };
+  }
+
+  public async getTaskBacklogItems(): Promise<TaskBacklogItem[]> {
+    const tasks = await this.getUndatedTasks();
+    return tasks.map(task => ({
+      id: `${task.location.path}::${task.location.lineNumber}`,
+      title: task.title,
+      completed: task.isDone,
+      subtitle: `${task.location.path}:${task.location.lineNumber}`
     }));
   }
 

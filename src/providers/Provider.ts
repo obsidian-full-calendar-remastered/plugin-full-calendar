@@ -14,6 +14,29 @@ export interface CalendarProviderCapabilities {
   };
 }
 
+export interface TaskBacklogInfo {
+  id: string;
+  name: string;
+  title?: string;
+  supportsCreate?: boolean;
+}
+
+export interface TaskBacklogItem {
+  id: string;
+  title: string;
+  completed: boolean;
+  subtitle?: string;
+  sourceId?: string;
+}
+
+export interface TaskBacklogProvider {
+  getTaskBacklogInfo(): TaskBacklogInfo;
+  getTaskBacklogItems(): Promise<TaskBacklogItem[]>;
+  createTaskBacklogItem?(title: string): Promise<TaskBacklogItem>;
+  openTaskBacklogItem?(taskId: string): Promise<void>;
+  refreshTaskBacklogItems?(): Promise<TaskBacklogItem[]>;
+}
+
 export class RecoverableProviderLoadError extends Error {
   constructor(message: string) {
     super(message);

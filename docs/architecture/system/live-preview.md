@@ -92,17 +92,22 @@ To prevent visual lag and coordinate natural writing workflows, we perform **act
 
 ### Daily Note Cumulative Offset & Line Neutralization
 In daily notes, inline markdown event items (like bullets or checkboxes) are replaced with inline event pills. To prevent cumulative offset errors (where subsequent renders shift elements rightward due to nested indentation styles):
-1. **Inline Span Wrapper**: The event pill wrapper element uses a flat, inline/flex `span` instead of a block `div`.
+1. **Full-Width Inline Span Wrapper**: The event pill wrapper element uses a flat `span` styled with full-width `inline-flex`, keeping it out of Obsidian's list indentation flow while preserving right-side action controls.
 2. **Line Style Neutralizer**: The decorator applies a line-level decoration to the line:
    ```typescript
    Decoration.line({ attributes: { class: 'fc-lp-line-override' } })
    ```
-   The associated `.fc-lp-line-override` style neutralizes margin, text indent, and padding:
+   The associated `.fc-lp-line-override` style neutralizes margin, text indent, padding, and excess line-height:
    ```css
-   .cm-line.fc-lp-line-override {
-     padding-left: 0 !important;
-     text-indent: 0 !important;
-     margin-left: 0 !important;
+   .markdown-source-view.mod-cm6 .cm-content .cm-line.fc-lp-line-override {
+     padding-left: 0;
+     text-indent: 0;
+     margin-left: 0;
+     margin-top: 0;
+     margin-bottom: 0;
+     padding-top: 0;
+     padding-bottom: 0;
+     line-height: 1.2;
    }
    ```
    This ensures the pill occupies exactly the flat width of the editor line without layout leakage.

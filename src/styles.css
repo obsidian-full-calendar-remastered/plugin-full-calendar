@@ -581,13 +581,16 @@
   padding-left: 0 !important;
   text-indent: 0 !important;
   margin-left: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   min-height: 0 !important;
+  line-height: 1.2 !important;
 }
 
 .fc-lp-inline-event-wrapper {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   background-color: var(--background-secondary-alt);
@@ -599,6 +602,8 @@
   width: 100%;
   box-sizing: border-box;
   font-family: inherit;
+  line-height: 1.3;
+  vertical-align: top;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   cursor: pointer;
 }
@@ -858,5 +863,4 @@
   padding: 8px;
   box-sizing: border-box;
 }
-
 

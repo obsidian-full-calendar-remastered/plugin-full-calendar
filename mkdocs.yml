@@ -146,6 +146,7 @@ nav:
                 - Reminders and Notifications: user/features/reminders.md
                 - Status Bar Integration: user/features/statusbar.md
                 - Internationalization: user/features/i18n.md
+                - Link Notes to Remote Events: user/features/event-linked-notes.md
                 - Live Preview Decorators: user/features/live-preview.md
                 - Embedded Code Block Calendars: user/features/embedded_calendars.md
           - Chrono Analyser: 
@@ -197,6 +198,8 @@ nav:
                 - Milestones Architecture: architecture/system/features/milestones-architecture.md
                 - ActivityWatch Architecture: architecture/activitywatch/index.md
                 - ActivityWatch Implementation: architecture/activitywatch/implementation.md
+                - Linked Notes to Remote Events: architecture/system/features/event-linked-notes.md
+                - FCR Reminder Companion App: architecture/system/features/fcr-reminder-architecture.md
           - Views Architecture:
                 - architecture/views/architecture.md
                 - Unified Embedded Widgets Architecture: architecture/views/embedded_widgets.md

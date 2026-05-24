@@ -577,6 +577,8 @@ END:VCALENDAR
   describe('createLinkedNote', () => {
     interface MockCalDAVVault {
       getAbstractFileByPath: jest.Mock;
+      getMarkdownFiles: jest.Mock;
+      read: jest.Mock;
       create: jest.Mock;
     }
 
@@ -614,6 +616,8 @@ END:VCALENDAR
       mockCalDAVApp = {
         vault: {
           getAbstractFileByPath: jest.fn().mockReturnValue(null),
+          getMarkdownFiles: jest.fn().mockReturnValue([]),
+          read: jest.fn(),
           create: jest
             .fn()
             .mockImplementation((path: string, content: string): MockCalDAVCreatedFile => {

@@ -58,6 +58,8 @@ jest.mock('../../utils/showNotice');
 
 interface MockVault {
   getAbstractFileByPath: jest.Mock;
+  getMarkdownFiles: jest.Mock;
+  read: jest.Mock;
   create: jest.Mock;
 }
 
@@ -96,6 +98,8 @@ describe('GoogleProvider createLinkedNote', () => {
     mockApp = {
       vault: {
         getAbstractFileByPath: jest.fn().mockReturnValue(null),
+        getMarkdownFiles: jest.fn().mockReturnValue([]),
+        read: jest.fn(),
         create: jest.fn().mockImplementation((path: string, content: string): MockCreatedFile => {
           return { path, content };
         })

@@ -36,12 +36,12 @@ function getPrimaryLinkedNoteKey(event: OFCEvent): string | null {
   return getLinkedNoteKeys(event)[0] || null;
 }
 
-function getExistingLinkedNote(
+async function getExistingLinkedNote(
   linkedNoteIndex: LinkedNoteIndex,
   event: OFCEvent
-): TFile | null {
+): Promise<TFile | null> {
   for (const key of getLinkedNoteKeys(event)) {
-    const existingFile = linkedNoteIndex.getFileForEvent(key);
+    const existingFile = await linkedNoteIndex.findFileForEvent(key);
     if (existingFile) {
       return existingFile;
     }
@@ -78,7 +78,7 @@ export async function createLinkedNoteForProvider({
   calendarName: string;
   linkedNoteIndex: LinkedNoteIndex;
 }): Promise<TFile | null> {
-  const existingFile = getExistingLinkedNote(linkedNoteIndex, event);
+  const existingFile = await getExistingLinkedNote(linkedNoteIndex, event);
   if (existingFile) {
     return existingFile;
   }
@@ -100,8 +100,11 @@ export async function createLinkedNoteForProvider({
   const template = settings.linkedNoteTemplate || TemplateEngine.DEFAULT_TEMPLATE;
   const bodyContent = TemplateEngine.render(template, event, calendarName);
 
+  const linkedNoteKeys = getLinkedNoteKeys(event);
+  const alternateLinkedNoteKey = linkedNoteKeys.find(key => key !== primaryLinkedNoteKey);
   const frontmatter = {
     'fc-event-uid': primaryLinkedNoteKey,
+    ...(alternateLinkedNoteKey ? { 'fc-event-id': alternateLinkedNoteKey } : {}),
     'fc-calendar-id': calendarId
   };
 
@@ -148,7 +151,7 @@ export async function openOrCreateLinkedNote(
   }
 
   if (linkedNoteProvider.linkedNoteIndex) {
-    const existingFile = getExistingLinkedNote(linkedNoteProvider.linkedNoteIndex, event);
+    const existingFile = await getExistingLinkedNote(linkedNoteProvider.linkedNoteIndex, event);
     if (existingFile) {
       const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);
       await leaf.openFile(existingFile);

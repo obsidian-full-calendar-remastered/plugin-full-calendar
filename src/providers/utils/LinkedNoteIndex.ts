@@ -1,4 +1,5 @@
 import { App, TFile, EventRef } from 'obsidian';
+import { parse } from 'yaml';
 import { PluginState } from '../../core/PluginState';
 
 export class LinkedNoteIndex {
@@ -17,6 +18,39 @@ export class LinkedNoteIndex {
     if (!key) return null;
 
     return this.index.get(key) || null;
+  }
+
+  public async findFileForEvent(eventUid: string): Promise<TFile | null> {
+    const key = this.normalizeKey(eventUid);
+    if (!key) return null;
+
+    const indexedFile = this.getFileForEvent(key);
+    if (indexedFile) {
+      return indexedFile;
+    }
+
+    const dir = this.getDirectory().trim();
+    if (!dir) return null;
+
+    const files = this.app.vault.getMarkdownFiles();
+    for (const file of files) {
+      if (!this.isFileInDirectory(file)) {
+        continue;
+      }
+
+      this.processFile(file, false);
+      const cacheIndexedFile = this.getFileForEvent(key);
+      if (cacheIndexedFile) {
+        return cacheIndexedFile;
+      }
+
+      const contentIndexedFile = await this.processFileContent(file, false);
+      if (contentIndexedFile && this.getFileForEvent(key) === contentIndexedFile) {
+        return contentIndexedFile;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -87,25 +121,70 @@ export class LinkedNoteIndex {
       return this.removePathFromIndex(file.path, triggerReload);
     }
 
+    return this.processFrontmatter(file, frontmatter, triggerReload);
+  }
+
+  private processFrontmatter(
+    file: TFile,
+    frontmatter: Record<string, unknown>,
+    triggerReload = true
+  ): boolean {
     const calId = this.normalizeKey(frontmatter['fc-calendar-id']);
     const eventUid = this.normalizeKey(frontmatter['fc-event-uid']);
+    const eventId = this.normalizeKey(frontmatter['fc-event-id']);
 
-    if (calId === this.calendarId && eventUid) {
-      const prevFile = this.index.get(eventUid);
-      if (prevFile?.path !== file.path) {
-        this.index.set(eventUid, file);
+    if (calId === this.calendarId && (eventUid || eventId)) {
+      const keys = [eventUid, eventId].filter(
+        (key, index, arr): key is string => !!key && arr.indexOf(key) === index
+      );
+      let changed = false;
 
-        if (triggerReload) {
-          this.triggerReload();
+      for (const key of keys) {
+        const prevFile = this.index.get(key);
+        if (prevFile?.path !== file.path) {
+          this.index.set(key, file);
+          changed = true;
         }
-
-        return true;
       }
+
+      if (changed && triggerReload) {
+        this.triggerReload();
+      }
+
+      return changed;
     } else {
       return this.removePathFromIndex(file.path, triggerReload);
     }
+  }
 
-    return false;
+  private async processFileContent(file: TFile, triggerReload = true): Promise<TFile | null> {
+    try {
+      const content = await this.app.vault.read(file);
+      const frontmatter = this.extractFrontmatter(content);
+      if (!frontmatter) {
+        this.removePathFromIndex(file.path, triggerReload);
+        return null;
+      }
+
+      return this.processFrontmatter(file, frontmatter, triggerReload) ? file : null;
+    } catch (e) {
+      console.warn(`Full Calendar: Failed to read linked note metadata from "${file.path}".`, e);
+      return null;
+    }
+  }
+
+  private extractFrontmatter(content: string): Record<string, unknown> | null {
+    const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+    if (!match) return null;
+
+    try {
+      const parsed = parse(match[1]);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
   }
 
   private removePathFromIndex(path: string, triggerReload = true): boolean {

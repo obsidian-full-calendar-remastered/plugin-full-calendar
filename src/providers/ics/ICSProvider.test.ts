@@ -11,6 +11,8 @@ jest.mock('../../utils/showNotice');
 
 interface MockVault {
   getAbstractFileByPath: jest.Mock;
+  getMarkdownFiles: jest.Mock;
+  read: jest.Mock;
   create: jest.Mock;
 }
 
@@ -56,6 +58,8 @@ describe('ICSProvider createLinkedNote', () => {
     mockApp = {
       vault: {
         getAbstractFileByPath: jest.fn().mockReturnValue(null),
+        getMarkdownFiles: jest.fn().mockReturnValue([]),
+        read: jest.fn(),
         create: jest.fn().mockImplementation((path: string, content: string): MockCreatedFile => {
           return { path, content };
         })
@@ -100,5 +104,26 @@ describe('ICSProvider createLinkedNote', () => {
     expect(file).toBeDefined();
     expect(file!.path).toBe('Calendar/Notes/ICS Linked Note Event.md');
     expect(file!.content).toContain('ICS Custom: ICS Linked Note Event');
+  });
+
+  it('should persist an event id alias for recurring events after restart', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      linkedNotesDirectory: 'Calendar/Notes',
+      linkedNoteTemplate: ''
+    });
+
+    const file = (await provider.createLinkedNote({
+      ...mockEvent,
+      type: 'rrule',
+      id: 'ics::ics-uid-123::2026-05-21::recurring',
+      startDate: '2026-05-21',
+      rrule: 'RRULE:FREQ=DAILY;COUNT=1',
+      skipDates: [],
+      endDate: null
+    })) as MockCreatedFile | null;
+
+    expect(file).toBeDefined();
+    expect(file!.content).toContain('fc-event-uid: ics-uid-123');
+    expect(file!.content).toContain('fc-event-id: ics::ics-uid-123::2026-05-21::recurring');
   });
 });

@@ -33,6 +33,7 @@ describe('LinkedNoteIndex', () => {
   };
   let mockVault: {
     getMarkdownFiles: jest.Mock;
+    read: jest.Mock;
     on: jest.Mock;
     offref: jest.Mock;
   };
@@ -61,6 +62,7 @@ describe('LinkedNoteIndex', () => {
 
     mockVault = {
       getMarkdownFiles: jest.fn().mockReturnValue([]),
+      read: jest.fn(),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       on: jest.fn().mockImplementation((name: string, callback: (...args: any[]) => void) => {
         if (!registeredEvents[name]) registeredEvents[name] = [];
@@ -149,6 +151,45 @@ describe('LinkedNoteIndex', () => {
 
     expect(index.getFileForEvent('uid-reactive')).toBe(file);
     expect(mockRegistry.reloadProviderNow).toHaveBeenCalledWith(calendarId);
+  });
+
+  it('should initialize aliases from fc-event-id frontmatter after restart', () => {
+    const file = createMockFile('events/recurring-note.md');
+    mockVault.getMarkdownFiles.mockReturnValue([file]);
+
+    mockMetadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        'fc-calendar-id': calendarId,
+        'fc-event-uid': 'series-uid',
+        'fc-event-id': 'ics::series-uid::2026-05-21::recurring'
+      }
+    });
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    expect(index.getFileForEvent('series-uid')).toBe(file);
+    expect(index.getFileForEvent('ics::series-uid::2026-05-21::recurring')).toBe(file);
+  });
+
+  it('should find an existing linked note from file contents when metadata cache is cold', async () => {
+    const file = createMockFile('events/Test event.md');
+    mockVault.getMarkdownFiles.mockReturnValue([file]);
+    mockMetadataCache.getFileCache.mockReturnValue(null);
+    mockVault.read.mockResolvedValue(`---
+fc-event-uid: task-uid
+fc-calendar-id: ${calendarId}
+---
+# Test event
+`);
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    expect(index.getFileForEvent('task-uid')).toBeNull();
+    await expect(index.findFileForEvent('task-uid')).resolves.toBe(file);
+    expect(index.getFileForEvent('task-uid')).toBe(file);
+    expect(mockVault.read).toHaveBeenCalledWith(file);
   });
 
   it('should remove key mapping and trigger reload when file is deleted reactively', () => {

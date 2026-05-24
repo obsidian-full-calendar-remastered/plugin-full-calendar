@@ -15,6 +15,16 @@
 
 ---
 
+## Source Of Truth
+
+Linked note identity is **frontmatter-driven**. The canonical identifiers are:
+
+* `fc-event-uid`
+* `fc-calendar-id`
+* `fc-event-recurrence-id` for instance-specific recurring notes
+
+`LinkedNoteIndex` is only an in-memory projection of those identifiers. Filenames, rendered body text, and cache state are not authoritative and may change without breaking linkage.
+
 ## Architectural Principles & SOLID Boundaries
 
 To prevent architectural regression, this feature is built on three strict modular invariants:
@@ -37,7 +47,13 @@ To avoid vault contamination and ensure data cleanliness:
 Rather than executing expensive, repetitive full-vault scans on every calendar load:
 * `LinkedNoteIndex` builds and maintains a fast, reactive in-memory index map.
 * It leverages Obsidian's native `MetadataCache` to index remote event UIDs from file frontmatter.
-* It registers event listeners on `vault.on("create")`, `vault.on("modify")`, `vault.on("delete")`, and `metadataCache.on("changed")` to keep the cache perfectly synchronized in real-time as users add, delete, or modify their notes.
+* It registers event listeners on `vault.on("create")`, `vault.on("rename")`, `vault.on("delete")`, and `metadataCache.on("changed")` to keep the cache perfectly synchronized in real-time as users add, delete, rename, or modify linked-note files.
+* On plugin startup, `LinkedNoteIndex` enters a temporary hydration phase. During this phase it performs an initial scan, a rescan after `workspace.onLayoutReady()`, and listens to `metadataCache.on("resolved")` so pre-existing linked-note files are still discovered even when vault hydration lags behind provider initialization.
+* Once startup reconciliation completes, the broad hydration listener becomes inert and steady-state maintenance returns to the directory-scoped listeners only.
+* If metadata for a discovered file is still unavailable after any startup scan, the index waits for that specific file's metadata resolution and then reprocesses it before triggering a provider reload.
+
+!!! warning "Residual startup risk boundary"
+    Startup restoration is substantially more robust, but not mathematically guaranteed. A missed link after reload now requires a much narrower compound failure: the linked-note file must be absent from the initial scan, absent again at `workspace.onLayoutReady()`, still not become discoverable during `metadataCache.on("resolved")` reconciliation, and also never surface later through the directory-scoped `create`, `rename`, or `changed` events. This boundary is intentionally documented so contributors do not mistake the startup hydration phase for a stronger persistence contract than Obsidian itself exposes.
 
 ### 4️⃣ Centralized Note Creation (SOLID: DRY)
 All remote providers delegate to a single centralized helper `createLinkedNoteForProvider()` in `src/features/linked-notes/linkedNotes.ts`. This function:
@@ -56,6 +72,7 @@ To resolve note collisions for recurring remote events (daily or weekly meetings
 * **Fallback Strategy**: When querying notes, `LinkedNoteIndex.getFileForEvent(uid, recurrenceId)` prioritizes matching compound keys first, falling back to the master series note (`uid`) only if no instance note exists.
 * **Reactive Cache Scrubbing**: During reactive updates, if a note's frontmatter is modified to add or change the recurrence ID, `LinkedNoteIndex` automatically purges the old orphan key pointing to that same file path.
 * **Instance-Aware Filenames & Templating**: File names for newly created notes automatically append the occurrence date (e.g., `Weekly Sync 2026-05-20.md`) to avoid vault conflicts, and the `TemplateEngine` uses the instance date to format the `{{date}}` placeholder in the note body.
+* **Recurring Identity Source Of Truth**: The recurrence-specific frontmatter field remains canonical. Filename date suffixes are collision-avoidance and readability aids only.
 
 ---
 

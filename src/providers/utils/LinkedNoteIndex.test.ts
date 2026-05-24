@@ -31,10 +31,14 @@ describe('LinkedNoteIndex', () => {
     on: jest.Mock;
     offref: jest.Mock;
   };
+  let mockWaitForMetadata: jest.Mock;
   let mockVault: {
     getMarkdownFiles: jest.Mock;
     on: jest.Mock;
     offref: jest.Mock;
+  };
+  let mockWorkspace: {
+    onLayoutReady: jest.Mock;
   };
   let mockRegistry: {
     reloadProviderNow: jest.Mock;
@@ -45,8 +49,23 @@ describe('LinkedNoteIndex', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let registeredEvents: Record<string, ((...args: any[]) => void)[]> = {};
 
+  const triggerEvent = (name: string, ...args: unknown[]): void => {
+    const callbacks = registeredEvents[name] || [];
+    for (const callback of callbacks) {
+      switch (name) {
+        case 'resolved':
+          (callback as () => void)();
+          break;
+        default:
+          callback(...args);
+          break;
+      }
+    }
+  };
+
   beforeEach(() => {
     registeredEvents = {};
+    mockWaitForMetadata = jest.fn().mockResolvedValue({ frontmatter: {} });
 
     mockMetadataCache = {
       getFileCache: jest.fn(),
@@ -70,9 +89,17 @@ describe('LinkedNoteIndex', () => {
       offref: jest.fn()
     };
 
+    mockWorkspace = {
+      onLayoutReady: jest.fn().mockImplementation((callback: () => void) => {
+        callback();
+      })
+    };
+
     mockApp = {
       metadataCache: mockMetadataCache,
-      vault: mockVault
+      vault: mockVault,
+      workspace: mockWorkspace,
+      waitForMetadata: mockWaitForMetadata
     } as unknown as App;
 
     mockRegistry = {
@@ -126,6 +153,94 @@ describe('LinkedNoteIndex', () => {
 
     expect(index.getFileForEvent('uid-1')).toBe(file1);
     expect(index.getFileForEvent('uid-2')).toBeNull(); // Different calendar ID
+  });
+
+  it('recovers links after startup when frontmatter becomes available asynchronously', async () => {
+    const file = createMockFile('events/startup-note.md');
+
+    mockWorkspace.onLayoutReady.mockImplementation(() => undefined);
+
+    mockVault.getMarkdownFiles.mockReturnValue([file]);
+    mockMetadataCache.getFileCache
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValue({
+        frontmatter: {
+          'fc-calendar-id': calendarId,
+          'fc-event-uid': 'uid-startup'
+        }
+      });
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockWaitForMetadata).toHaveBeenCalledWith(file);
+    expect(index.getFileForEvent('uid-startup')).toBe(file);
+    expect(mockRegistry.reloadProviderNow).toHaveBeenCalledWith(calendarId);
+  });
+
+  it('rescans on layout ready when the initial vault scan is empty during startup', () => {
+    const file = createMockFile('events/layout-ready-note.md');
+
+    mockVault.getMarkdownFiles.mockReturnValueOnce([]).mockReturnValue([file]);
+
+    mockMetadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        'fc-calendar-id': calendarId,
+        'fc-event-uid': 'uid-layout-ready'
+      }
+    });
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    expect(mockWorkspace.onLayoutReady).toHaveBeenCalled();
+    expect(index.getFileForEvent('uid-layout-ready')).toBe(file);
+  });
+
+  it('rescans on metadata resolved when startup scans still miss linked-note files', () => {
+    const file = createMockFile('events/resolved-note.md');
+
+    mockWorkspace.onLayoutReady.mockImplementation(() => undefined);
+    mockWaitForMetadata.mockImplementation(() => new Promise(() => undefined));
+    mockVault.getMarkdownFiles.mockReturnValueOnce([]).mockReturnValue([file]);
+
+    mockMetadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        'fc-calendar-id': calendarId,
+        'fc-event-uid': 'uid-resolved'
+      }
+    });
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    expect(index.getFileForEvent('uid-resolved')).toBeNull();
+
+    triggerEvent('resolved');
+
+    expect(index.getFileForEvent('uid-resolved')).toBe(file);
+  });
+
+  it('indexes linked-note files created in the watched directory', () => {
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    const file = createMockFile('events/created-note.md');
+    mockMetadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        'fc-calendar-id': calendarId,
+        'fc-event-uid': 'uid-created'
+      }
+    });
+
+    triggerEvent('create', file);
+
+    expect(index.getFileForEvent('uid-created')).toBe(file);
+    expect(mockRegistry.reloadProviderNow).toHaveBeenCalledWith(calendarId);
   });
 
   it('should trigger reload on changed metadata when a new linked note is added reactively', () => {

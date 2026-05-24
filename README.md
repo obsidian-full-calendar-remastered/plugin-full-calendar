@@ -28,7 +28,7 @@ Integrations include
 
 - [**Tasks Plugin**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/tasks-plugin-integration/): Sync with the Obsidian Tasks plugin
 - [**TaskNote Integration**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/tasknotes/): Sync with TaskNote Plugin
-- [**ActivityWatcher Integration**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/tasknotes/): Integrates into [ActivityWatcher](https://activitywatch.net/).
+- [**ActivityWatcher Integration**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/activitywatch/): Integrates into [ActivityWatcher](https://activitywatch.net/).
 
 ![Sample Calendar](https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/guides/sample-calendar.png)
 

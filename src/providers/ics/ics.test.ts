@@ -322,6 +322,36 @@ END:VCALENDAR`;
     expect(task).toHaveProperty('endTime', '11:00');
   });
 
+  it('does not parse an unscheduled VTODO task as a calendar event', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-unscheduled-1
+SUMMARY:Unscheduled Task
+DTSTAMP:20260520T100000Z
+CREATED:20260520T100000Z
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(0);
+  });
+
+  it('does not default an undated VTODO task to the current date', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-undated-1
+SUMMARY:Undated Task
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(0);
+  });
+
   it('parses recurring VTODO task', () => {
     const ics = `BEGIN:VCALENDAR
 VERSION:2.0

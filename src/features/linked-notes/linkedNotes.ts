@@ -15,7 +15,55 @@ import { replaceFrontmatter } from '../../providers/fullnote/frontmatter';
 import FullCalendarPlugin from '../../main';
 
 /**
- * Centrally creates a linked note for a remote event, ensuring absolute DRY behavior and zero hardcoded English strings.
+ * Return stable linked-note lookup keys for an event.
+ *
+ * Prefer uid because this is the existing linked-note frontmatter contract
+ * and because current providers already query LinkedNoteIndex by uid.
+ *
+ * Fall back to id for providers/events that expose a more specific internal id,
+ * such as parsed ICS/CalDAV recurring events.
+ */
+function getLinkedNoteKeys(event: OFCEvent): string[] {
+  const candidates = [event.uid, event.id];
+
+  return candidates
+    .filter((value): value is string => typeof value === 'string' && value.trim() !== '')
+    .map(value => value.trim())
+    .filter((value, index, arr) => arr.indexOf(value) === index);
+}
+
+function getPrimaryLinkedNoteKey(event: OFCEvent): string | null {
+  return getLinkedNoteKeys(event)[0] || null;
+}
+
+function getExistingLinkedNote(
+  linkedNoteIndex: LinkedNoteIndex,
+  event: OFCEvent
+): TFile | null {
+  for (const key of getLinkedNoteKeys(event)) {
+    const existingFile = linkedNoteIndex.getFileForEvent(key);
+    if (existingFile) {
+      return existingFile;
+    }
+  }
+
+  return null;
+}
+
+function registerLinkedNoteKeys(
+  linkedNoteIndex: LinkedNoteIndex,
+  event: OFCEvent,
+  file: TFile
+): void {
+  const keys = getLinkedNoteKeys(event);
+
+  keys.forEach((key, index) => {
+    linkedNoteIndex.setFileForEvent(key, file, index === 0);
+  });
+}
+
+/**
+ * Centrally creates a linked note for a remote event.
  */
 export async function createLinkedNoteForProvider({
   app,
@@ -30,9 +78,16 @@ export async function createLinkedNoteForProvider({
   calendarName: string;
   linkedNoteIndex: LinkedNoteIndex;
 }): Promise<TFile | null> {
-  const existingFile = linkedNoteIndex.getFileForEvent(event.uid || '');
+  const existingFile = getExistingLinkedNote(linkedNoteIndex, event);
   if (existingFile) {
     return existingFile;
+  }
+
+  const primaryLinkedNoteKey = getPrimaryLinkedNoteKey(event);
+  if (!primaryLinkedNoteKey) {
+    console.warn('Full Calendar: Cannot create linked note for event without uid or id.', event);
+    showNotice(t('notices.failedToCreateLinkedNote'));
+    return null;
   }
 
   const settings = PluginState.getSettings();
@@ -46,12 +101,11 @@ export async function createLinkedNoteForProvider({
   const bodyContent = TemplateEngine.render(template, event, calendarName);
 
   const frontmatter = {
-    'fc-event-uid': event.uid,
+    'fc-event-uid': primaryLinkedNoteKey,
     'fc-calendar-id': calendarId
   };
 
   const yaml = serializeFrontmatter(frontmatter);
-  // Smart reuse of FullNote's replaceFrontmatter utility
   const fileContent = replaceFrontmatter(bodyContent, yaml);
 
   const baseFilename = sanitizeTitleForFilename(event.title || t('linkedNotes.untitledNote'));
@@ -59,6 +113,11 @@ export async function createLinkedNoteForProvider({
   const uniquePath = findUniquePath(appAdapter, directory, baseFilename);
 
   const file = await appAdapter.create(uniquePath, fileContent);
+
+  // Critical fix:
+  // Do not wait for metadataCache.on("changed") before the note can be found again.
+  registerLinkedNoteKeys(linkedNoteIndex, event, file);
+
   return file;
 }
 
@@ -76,21 +135,20 @@ export async function openOrCreateLinkedNote(
     linkedNoteIndex?: LinkedNoteIndex;
     createLinkedNote?: (event: OFCEvent) => Promise<TFile | null>;
   };
+
   if (!linkedNoteProvider) {
     showNotice(t('notices.cannotOpenRemote'));
     return;
   }
 
-  // 1. Check if a directory is set
   const settings = PluginState.getSettings();
   if (!settings.linkedNotesDirectory) {
     showNotice(t('notices.configureLinkedNotesDirFirst'));
     return;
   }
 
-  // 2. Check if note already exists
   if (linkedNoteProvider.linkedNoteIndex) {
-    const existingFile = linkedNoteProvider.linkedNoteIndex.getFileForEvent(event.uid || '');
+    const existingFile = getExistingLinkedNote(linkedNoteProvider.linkedNoteIndex, event);
     if (existingFile) {
       const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);
       await leaf.openFile(existingFile);
@@ -98,7 +156,6 @@ export async function openOrCreateLinkedNote(
     }
   }
 
-  // 3. Otherwise create a new note
   if (typeof linkedNoteProvider.createLinkedNote === 'function') {
     try {
       const file = await linkedNoteProvider.createLinkedNote(event);

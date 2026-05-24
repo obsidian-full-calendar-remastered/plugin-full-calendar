@@ -215,52 +215,18 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
   const dueProp = todo.getFirstProperty('due');
   const due: ical.Time | null = dueProp ? dueProp.getFirstValue() : null;
 
-  // Find a baseline ical.Time for the date field
-  let baseTime: ical.Time | null = dtstart || due;
-  let hasValidBaseTime = false;
+  const dtstartDate = dtstart ? parseTimezoneAwareString(dtstart) : null;
+  const dueDate = due ? parseTimezoneAwareString(due) : null;
+  const hasValidDtstart = !!dtstartDate?.isValid;
+  const hasValidDue = !!dueDate?.isValid;
 
-  let startDate: DateTime | null = null;
-  if (baseTime) {
-    startDate = parseTimezoneAwareString(baseTime);
-    if (startDate.isValid) {
-      hasValidBaseTime = true;
-    }
-  }
+  // VTODO CREATED/DTSTAMP describe metadata, not scheduling. Without DTSTART or
+  // DUE, the task has no calendar placement and should not render as an event.
+  const baseTime: ical.Time | null = hasValidDtstart ? dtstart : hasValidDue ? due : null;
+  const startDate: DateTime | null = hasValidDtstart ? dtstartDate : hasValidDue ? dueDate : null;
 
-  if (!hasValidBaseTime) {
-    // Try dtstamp or created
-    const dtstampProp = todo.getFirstProperty('dtstamp');
-    const dtstamp: ical.Time | null = dtstampProp ? dtstampProp.getFirstValue() : null;
-    if (dtstamp) {
-      startDate = parseTimezoneAwareString(dtstamp);
-      if (startDate.isValid) {
-        baseTime = dtstamp;
-        hasValidBaseTime = true;
-      }
-    }
-  }
-
-  if (!hasValidBaseTime) {
-    const createdProp = todo.getFirstProperty('created');
-    const created: ical.Time | null = createdProp ? createdProp.getFirstValue() : null;
-    if (created) {
-      startDate = parseTimezoneAwareString(created);
-      if (startDate.isValid) {
-        baseTime = created;
-        hasValidBaseTime = true;
-      }
-    }
-  }
-
-  if (!hasValidBaseTime || !startDate) {
-    // Absolute fallback: current local date
-    startDate = DateTime.now();
-    baseTime = new ical.Time({
-      year: startDate.year,
-      month: startDate.month,
-      day: startDate.day,
-      isDate: true
-    });
+  if (!baseTime || !startDate) {
+    return null;
   }
 
   const isAllDay = baseTime ? baseTime.isDate : true;

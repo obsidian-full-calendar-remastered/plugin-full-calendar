@@ -4,7 +4,7 @@ import { PluginState } from '../../core/PluginState';
 export class LinkedNoteIndex {
   private app: App;
   private calendarId: string;
-  private index = new Map<string, TFile>(); // uid -> TFile
+  private index = new Map<string, TFile>(); // linked note key -> TFile
   private eventRefs: EventRef[] = [];
 
   constructor(app: App, calendarId: string) {
@@ -13,7 +13,42 @@ export class LinkedNoteIndex {
   }
 
   public getFileForEvent(eventUid: string): TFile | null {
-    return this.index.get(eventUid) || null;
+    const key = this.normalizeKey(eventUid);
+    if (!key) return null;
+
+    return this.index.get(key) || null;
+  }
+
+  /**
+   * Immediately registers a linked note without waiting for Obsidian's metadata cache.
+   * This prevents duplicate note creation when the user presses "Open note" again
+   * before metadataCache.on("changed") has indexed the newly-created file.
+   */
+  public setFileForEvent(eventUid: string, file: TFile, triggerReload = true): boolean {
+    const key = this.normalizeKey(eventUid);
+    if (!key) return false;
+
+    const prevFile = this.index.get(key);
+    if (prevFile?.path === file.path) {
+      return false;
+    }
+
+    this.index.set(key, file);
+
+    if (triggerReload) {
+      this.triggerReload();
+    }
+
+    return true;
+  }
+
+  private normalizeKey(value: unknown): string | null {
+    if (typeof value !== 'string' && typeof value !== 'number') {
+      return null;
+    }
+
+    const key = String(value).trim();
+    return key.length > 0 ? key : null;
   }
 
   private getDirectory(): string {
@@ -23,13 +58,14 @@ export class LinkedNoteIndex {
   private isFileInDirectory(file: TFile): boolean {
     const dir = this.getDirectory().trim();
     if (!dir) return false;
-    // Normalize paths
+
     const normalizedDir = dir.replace(/\/$/, '');
     return file.path.startsWith(`${normalizedDir}/`);
   }
 
   public initialize(): void {
     this.destroy();
+
     const dir = this.getDirectory().trim();
     if (!dir) return;
 
@@ -48,20 +84,21 @@ export class LinkedNoteIndex {
     const frontmatter = cache?.frontmatter;
 
     if (!frontmatter) {
-      // Remove any existing mapping for this file
       return this.removePathFromIndex(file.path, triggerReload);
     }
 
-    const calId = frontmatter['fc-calendar-id'] as unknown;
-    const eventUid = frontmatter['fc-event-uid'] as unknown;
+    const calId = this.normalizeKey(frontmatter['fc-calendar-id']);
+    const eventUid = this.normalizeKey(frontmatter['fc-event-uid']);
 
-    if (calId === this.calendarId && typeof eventUid === 'string' && eventUid.trim() !== '') {
+    if (calId === this.calendarId && eventUid) {
       const prevFile = this.index.get(eventUid);
       if (prevFile?.path !== file.path) {
         this.index.set(eventUid, file);
+
         if (triggerReload) {
           this.triggerReload();
         }
+
         return true;
       }
     } else {
@@ -73,15 +110,18 @@ export class LinkedNoteIndex {
 
   private removePathFromIndex(path: string, triggerReload = true): boolean {
     let removed = false;
+
     for (const [uid, indexedFile] of this.index.entries()) {
       if (indexedFile.path === path) {
         this.index.delete(uid);
         removed = true;
       }
     }
+
     if (removed && triggerReload) {
       this.triggerReload();
     }
+
     return removed;
   }
 
@@ -102,7 +142,6 @@ export class LinkedNoteIndex {
         if (this.isFileInDirectory(file)) {
           this.processFile(file);
         } else {
-          // If the file was in our index but is now moved out of directory, remove it
           this.removePathFromIndex(file.path);
         }
       }
@@ -118,10 +157,8 @@ export class LinkedNoteIndex {
 
     const renameRef = this.app.vault.on('rename', (file, oldPath) => {
       if (file instanceof TFile) {
-        // Remove old mapping by treating it as a deleted file
         const removed = this.removePathFromIndex(oldPath, false);
 
-        // Process as new file if it's in the directory now
         if (this.isFileInDirectory(file)) {
           this.processFile(file);
         } else if (removed) {
@@ -134,10 +171,10 @@ export class LinkedNoteIndex {
 
   public destroy(): void {
     for (const ref of this.eventRefs) {
-      // metadataCache and vault can offref their listeners
       this.app.metadataCache.offref(ref);
       this.app.vault.offref(ref);
     }
+
     this.eventRefs = [];
     this.index.clear();
   }

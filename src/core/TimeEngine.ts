@@ -39,6 +39,29 @@ const CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 const OCCURRENCE_CACHE_LOOKAHEAD = { days: 7 }; // Pre-calculate occurrences for the next 7 days.
 const MAX_OCCURRENCES = 100; // Max number of occurrences to cache to prevent performance issues.
 
+const parseEventDateTime = (date: string, time?: string, timezone?: string): DateTime => {
+  const dateTimeString = time ? `${date}T${time}` : date;
+  if (!timezone) {
+    return DateTime.fromISO(dateTimeString);
+  }
+
+  const zone = timezone === 'Z' || timezone.toLowerCase() === 'utc' ? 'utc' : timezone;
+  const zoned = DateTime.fromISO(dateTimeString, { zone });
+  return zoned.isValid ? zoned : DateTime.fromISO(dateTimeString);
+};
+
+const parseRecurringStart = (event: Extract<OFCEvent, { type: 'rrule' }>): DateTime => {
+  if (event.startDate.includes('T')) {
+    return parseEventDateTime(event.startDate, undefined, event.timezone);
+  }
+
+  return parseEventDateTime(
+    event.startDate,
+    event.allDay ? undefined : event.startTime,
+    event.allDay ? undefined : event.timezone
+  );
+};
+
 // ============== CLASS DEFINITION ==============
 
 export class TimeEngine {
@@ -142,12 +165,6 @@ export class TimeEngine {
       const now = DateTime.now();
       const lookaheadEnd = now.plus(OCCURRENCE_CACHE_LOOKAHEAD);
 
-      // Helper moved here so it is in scope for all usages below.
-      const fromISO = (date: string, time?: string) => {
-        const dateTimeString = time ? `${date}T${time}` : date;
-        return DateTime.fromISO(dateTimeString);
-      };
-
       for (const storedEvent of allStoredEvents) {
         const { id, event, location: pathLocation } = storedEvent; // RENAMED
         // TRANSFORM to EventLocation shape expected by subscribers
@@ -160,16 +177,16 @@ export class TimeEngine {
 
         if (event.type === 'single') {
           if (event.allDay) {
-            const start = fromISO(event.date).startOf('day');
-            const end = fromISO(event.endDate || event.date).endOf('day');
+            const start = parseEventDateTime(event.date).startOf('day');
+            const end = parseEventDateTime(event.endDate || event.date).endOf('day');
             if (end >= now) {
               newOccurrences.push({ id, event, location, start, end });
             }
           } else {
-            const start = fromISO(event.date, event.startTime);
+            const start = parseEventDateTime(event.date, event.startTime, event.timezone);
             if (!start.isValid) continue;
             const end = event.endTime
-              ? fromISO(event.endDate || event.date, event.endTime)
+              ? parseEventDateTime(event.endDate || event.date, event.endTime, event.timezone)
               : start.plus({ hours: 1 });
             if (end >= now) {
               newOccurrences.push({ id, event, location, start, end });
@@ -180,14 +197,13 @@ export class TimeEngine {
           try {
             let dtstart: Date;
             if (event.type === 'rrule') {
-              // startDate may already contain time+offset (from timezone conversion),
-              // so parse it directly without appending startTime.
-              const dt = DateTime.fromISO(event.startDate);
+              const dt = parseRecurringStart(event);
               dtstart = dt.isValid ? dt.toJSDate() : new Date(event.startDate);
             } else {
-              dtstart = fromISO(
+              dtstart = parseEventDateTime(
                 event.startRecur || '1970-01-01',
-                event.allDay ? undefined : event.startTime
+                event.allDay ? undefined : event.startTime,
+                event.allDay ? undefined : event.timezone
               ).toJSDate();
             }
 
@@ -214,7 +230,7 @@ export class TimeEngine {
                 }
               }
               if (event.endRecur) {
-                ruleOptions.until = fromISO(event.endRecur).endOf('day').toJSDate();
+                ruleOptions.until = parseEventDateTime(event.endRecur).endOf('day').toJSDate();
               }
             } else {
               const parsed = rrulestr(event.rrule);

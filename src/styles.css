@@ -577,16 +577,16 @@
 /* Live Preview Event Decorations styling */
 
 /* Override CodeMirror/Obsidian list indent styles to allow full event pill alignment without double checkboxes/bullets */
-.cm-line.fc-lp-line-override {
-  padding-left: 0 !important;
-  text-indent: 0 !important;
-  margin-left: 0 !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  min-height: 0 !important;
-  line-height: 1.2 !important;
+.fc-lp-line-override {
+  padding-left: 0;
+  /* text-indent: 0; */
+  margin-left: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  min-height: 0;
+  line-height: 1.2;
 }
 
 .fc-lp-inline-event-wrapper {
@@ -598,7 +598,7 @@
   border-left: 4px solid var(--calendar-color);
   border-radius: 6px;
   padding: 4px 10px;
-  margin: 0 !important;
+  margin: 0;
   width: 100%;
   box-sizing: border-box;
   font-family: inherit;
@@ -700,7 +700,7 @@
 /* Premium Frontmatter Header Card */
 
 .fc-lp-header-card {
-  display: block !important;
+  display: block;
   width: 100%;
   box-sizing: border-box;
   margin: 16px 0 24px 0;

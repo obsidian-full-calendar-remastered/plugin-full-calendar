@@ -32,6 +32,7 @@ class InlineEventWidget extends WidgetType {
     const wrapper = activeDocument.createElement('span');
     wrapper.addClass('fc-lp-inline-event-wrapper');
     wrapper.style.setProperty('--calendar-color', this.color);
+    // wrapper.style.setProperty('margin', '0', 'important');
 
     // Checkbox (if task checklist is enabled)
     if (this.completed !== null) {
@@ -192,7 +193,13 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
           decos.push({
             from: line.from,
             to: line.from,
-            value: Decoration.line({ attributes: { class: 'fc-lp-line-override' } })
+            value: Decoration.line({
+              attributes: {
+                class: 'fc-lp-line-override',
+                style:
+                  'padding-left: 0px !important; text-indent: 0px !important; margin-left: 0px !important; margin-top: 0px !important; margin-bottom: 0px !important; padding-top: 0px !important; padding-bottom: 0px !important; min-height: 0px !important; line-height: 1.2 !important;'
+              }
+            })
           });
 
           // Collect the replace decoration

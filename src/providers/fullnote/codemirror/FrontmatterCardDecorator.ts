@@ -31,6 +31,7 @@ class FrontmatterCardWidget extends WidgetType {
     const card = activeDocument.createElement('div');
     card.addClass('fc-lp-header-card');
     card.style.setProperty('--calendar-color', this.color);
+    // card.style.setProperty('display', 'block', 'important');
 
     // Color banner & Calendar badge
     const banner = activeDocument.createElement('div');

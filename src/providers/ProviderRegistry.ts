@@ -154,6 +154,7 @@ export class ProviderRegistry {
     this.register('ical', () => import('./ics/ICSProvider'));
     this.register('caldav', () => import('./caldav/CalDAVProvider'));
     this.register('google', () => import('./google/GoogleProvider'));
+    this.register('googletasks', () => import('./googletasks/GoogleTasksProvider'));
     this.register('outlook', () => import('./outlook/OutlookProvider'));
     this.register('tasks', () => import('./tasks/TasksPluginProvider'));
     this.register('tasknotes', () => import('./tasknotes/TaskNotesProvider'));

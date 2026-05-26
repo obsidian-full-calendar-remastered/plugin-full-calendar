@@ -8,7 +8,7 @@
 | Family      | Providers             | Notes                                                                   |
 | ----------- | --------------------- | ----------------------------------------------------------------------- |
 | Local       | Full Note, Daily Note | Vault-backed, file-centric parsing and persistence.                     |
-| Remote      | Google, Outlook, CalDAV, ICS   | Network-backed with auth/protocol handling and staged loading behavior. |
+| Remote      | Google, Outlook, CalDAV, ICS, Google Tasks   | Network-backed with auth/protocol handling and staged loading behavior. |
 | Integration | Tasks, TaskNotes, Bases | Plugin/API integration with custom semantics beyond simple event files. |
 | Virtual     | Holidays              | Computed on-the-fly from bundled data; no vault file or network backing. |
 
@@ -57,6 +57,15 @@ Uses direct `REPORT`/`GET` flow with robust XML namespace handling and fallback 
 Uses OAuth-backed authenticated requests, handles recurrence cancellation edge cases (`cancelled` instances merged into skip dates), and keeps provider-facing payload conversion isolated in parser/auth modules.
 
 For token and permission boundaries, see [API Architecture](../system/api-architecture.md).
+
+### Google Tasks Provider
+
+Integrates with the Google Tasks API for complete two-way synchronization of tasks. It shares the existing Google Calendar authentication infrastructure (so connected Google accounts appear once in the integrations settings, but Google Tasks is configured as a separate calendar system).
+
+**Key Integration and Behavior Characteristics:**
+- **Zero-Impact Backlog Integration:** Satisfies the `TaskBacklogProvider` interface to automatically feed undated/incomplete tasks into the sidebar backlog view.
+- **Drag-and-Drop Scheduling:** Handles moving undated backlog items onto the calendar by setting their `due` date.
+- **Single-Event Mappings:** Tasks are strictly mapped to `single` OFCEvent structures since the Google Tasks API only supports single due dates and does not natively support complex event recurrences.
 
 ### Outlook Provider
 
@@ -234,6 +243,7 @@ This no-provider-branching rule aligns with [Data Flow](../system/data-flow.md#f
 - `src/providers/ics/ICSProvider.ts`
 - `src/providers/caldav/CalDAVProvider.ts`
 - `src/providers/google/GoogleProvider.ts`
+- `src/providers/googletasks/GoogleTasksProvider.ts`
 - `src/providers/tasks/TasksPluginProvider.ts`
 - `src/providers/tasknotes/TaskNotesProvider.ts`
 - `src/providers/holidays/HolidayProvider.ts`

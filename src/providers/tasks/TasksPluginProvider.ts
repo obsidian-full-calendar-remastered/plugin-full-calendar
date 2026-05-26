@@ -904,7 +904,9 @@ export class TasksPluginProvider
 
   public ownsTaskId(taskId: string): boolean {
     const parts = taskId.split('::');
-    return parts.length === 2 && !taskId.startsWith('caldav::');
+    return (
+      parts.length === 2 && !taskId.startsWith('caldav::') && !taskId.startsWith('googletasks_')
+    );
   }
 
   public async validateTaskSchedule(

@@ -63,3 +63,48 @@ export async function fetchGoogleCalendarList(
 
   return allCalendars;
 }
+
+const TASK_LISTS_URL = 'https://tasks.googleapis.com/v1/users/@me/lists';
+
+export interface GoogleTaskListEntry {
+  id: string;
+  title: string;
+  updated?: string;
+  [key: string]: unknown;
+}
+
+interface GoogleTaskListResponse {
+  items?: unknown[];
+  nextPageToken?: string;
+}
+
+export async function fetchGoogleTaskList(
+  plugin: FullCalendarPlugin,
+  account: GoogleAccount
+): Promise<GoogleTaskListEntry[]> {
+  const allTaskLists: GoogleTaskListEntry[] = [];
+  let pageToken: string | undefined = undefined;
+
+  const token = account.accessToken;
+  if (!token) {
+    throw new GoogleApiError('Account is missing an access token.');
+  }
+
+  do {
+    const url = new URL(TASK_LISTS_URL);
+    if (pageToken) {
+      url.searchParams.set('pageToken', pageToken);
+    }
+    const data = await makeAuthenticatedRequest<GoogleTaskListResponse>(token, url.toString());
+    if (Array.isArray(data.items)) {
+      data.items.forEach((item: unknown) => {
+        if (item && typeof item === 'object' && 'id' in item && 'title' in item) {
+          allTaskLists.push(item as GoogleTaskListEntry);
+        }
+      });
+    }
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  return allTaskLists;
+}

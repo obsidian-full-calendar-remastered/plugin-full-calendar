@@ -121,6 +121,7 @@ nav:
                 - ICS (Remote and Local): user/calendars/ics.md
                 - CalDAV: user/calendars/caldav.md
                 - Google Calendar: user/calendars/gcal.md
+                - Google Tasks: user/calendars/gtasks.md
                 - Outlook Calendar: user/calendars/outlook.md
                 - Tasks Plugin Integration: user/calendars/tasks-plugin-integration.md
                 - TaskNotes Integration: user/calendars/tasknotes.md

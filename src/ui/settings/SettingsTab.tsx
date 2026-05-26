@@ -129,6 +129,7 @@ export function addCalendarButton(
           caldav: t('settings.calendars.types.caldav'),
           ical: t('settings.calendars.types.ical'),
           google: t('settings.calendars.types.google'),
+          googletasks: 'Google Tasks',
           outlook: t('settings.calendars.types.outlook'),
           tasks: t('settings.calendars.types.tasks'),
           tasknotes: t('settings.calendars.types.tasknotes'),
@@ -269,11 +270,16 @@ export function addCalendarButton(
                     ...finalConfig,
                     id: newSettingsId,
                     ...(providerType === 'google' && accountId && { googleAccountId: accountId }),
+                    ...(providerType === 'googletasks' &&
+                      accountId && { googleAccountId: accountId }),
                     ...(providerType === 'outlook' &&
                       accountId && { microsoftAccountId: accountId }),
                     // For Google, the config's 'id' is the calendarId for the API.
                     ...((providerType === 'google' || providerType === 'outlook') && {
                       calendarId: finalConfig.id as string
+                    }),
+                    ...(providerType === 'googletasks' && {
+                      listId: finalConfig.id as string
                     })
                   } as CalendarInfo;
 

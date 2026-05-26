@@ -158,7 +158,7 @@ export class GoogleTasksProvider
     if (!token) return [];
 
     try {
-      const url = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks?showCompleted=true&showHidden=true&maxResults=100`;
+      const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks?showCompleted=true&showHidden=true&maxResults=100`;
       const data = await makeAuthenticatedRequest<{ items?: GoogleTaskApiItem[] }>(token, url);
       if (!data || !Array.isArray(data.items)) return [];
 
@@ -209,7 +209,7 @@ export class GoogleTasksProvider
       throw new Error('Google Tasks only supports single events.');
     }
 
-    const url = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks`;
+    const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks`;
     const body: Partial<GoogleTaskApiItem> = {
       title: event.title,
       notes: event.description || '',
@@ -257,7 +257,7 @@ export class GoogleTasksProvider
     const newEvent = newEventData;
 
     // Fetch original to preserve unmapped attributes
-    const getUrl = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+    const getUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
     const task = await makeAuthenticatedRequest<GoogleTaskApiItem>(token, getUrl);
 
     task.title = newEvent.title;
@@ -277,7 +277,7 @@ export class GoogleTasksProvider
       task.completed = undefined;
     }
 
-    const putUrl = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+    const putUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
     await makeAuthenticatedRequest(token, putUrl, 'PUT', task);
     return null;
   }
@@ -287,7 +287,7 @@ export class GoogleTasksProvider
     const token = await this.getToken();
     if (!token) throw new GoogleApiError('Cannot delete task: not authenticated.');
 
-    const url = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+    const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
     await makeAuthenticatedRequest(token, url, 'DELETE');
   }
 
@@ -316,7 +316,7 @@ export class GoogleTasksProvider
       const token = await this.getToken();
       if (!token) return false;
 
-      const getUrl = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+      const getUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
       const task = await makeAuthenticatedRequest<GoogleTaskApiItem>(token, getUrl);
 
       task.status = isDone ? 'completed' : 'needsAction';
@@ -326,7 +326,7 @@ export class GoogleTasksProvider
         task.completed = undefined;
       }
 
-      const putUrl = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+      const putUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
       await makeAuthenticatedRequest(token, putUrl, 'PUT', task);
 
       const updatedEvent: OFCEvent = {
@@ -377,7 +377,7 @@ export class GoogleTasksProvider
     if (!token) return [];
 
     try {
-      const url = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks?showCompleted=false&showHidden=false&maxResults=100`;
+      const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks?showCompleted=false&showHidden=false&maxResults=100`;
       const data = await makeAuthenticatedRequest<{ items?: GoogleTaskApiItem[] }>(token, url);
       if (!data || !Array.isArray(data.items)) return [];
 
@@ -400,7 +400,7 @@ export class GoogleTasksProvider
     const token = await this.getToken();
     if (!token) throw new Error('Cannot create backlog task: not authenticated.');
 
-    const url = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks`;
+    const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks`;
     const body: Partial<GoogleTaskApiItem> = {
       title,
       status: 'needsAction'
@@ -430,12 +430,12 @@ export class GoogleTasksProvider
     // Google Tasks due date requires YYYY-MM-DDThh:mm:ssZ (time is always 00:00:00)
     const dueString = `${DateTime.fromJSDate(date).toFormat('yyyy-MM-dd')}T00:00:00.000Z`;
 
-    const getUrl = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+    const getUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
     const task = await makeAuthenticatedRequest<GoogleTaskApiItem>(token, getUrl);
 
     task.due = dueString;
 
-    const putUrl = `https://tasks.googleapis.com/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+    const putUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
     await makeAuthenticatedRequest(token, putUrl, 'PUT', task);
   }
 

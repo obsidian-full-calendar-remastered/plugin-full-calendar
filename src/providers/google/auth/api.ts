@@ -64,7 +64,7 @@ export async function fetchGoogleCalendarList(
   return allCalendars;
 }
 
-const TASK_LISTS_URL = 'https://tasks.googleapis.com/v1/users/@me/lists';
+const TASK_LISTS_URL = 'https://tasks.googleapis.com/tasks/v1/users/@me/lists';
 
 export interface GoogleTaskListEntry {
   id: string;

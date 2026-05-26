@@ -16,7 +16,7 @@ import { t } from '../../../features/i18n/i18n';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const PROXY_REFRESH_URL = 'https://gcal-proxy-server.vercel.app/api/google/refresh';
 const PUBLIC_CLIENT_ID = '272284435724-ltjbog78np5lnbjhgecudaqhsfba9voi.apps.googleusercontent.com';
-const PRIMARY_CALENDAR_URL = 'https://www.googleapis.com/calendar/v3/users/me/calendarList/primary';
+const USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
 
 interface GoogleTokenResponse {
   access_token: string;
@@ -166,15 +166,14 @@ export class GoogleAuthManager {
   }
 
   /**
-   * Fetches the user's primary calendar ID, which is their email address.
+   * Fetches the user's email address using the standard OIDC userinfo endpoint.
    */
-  private async getPrimaryCalendarId(accessToken: string): Promise<string> {
+  private async getUserEmail(accessToken: string): Promise<string> {
     const response = await requestUrl({
-      url: PRIMARY_CALENDAR_URL,
+      url: USERINFO_URL,
       headers: { Authorization: `Bearer ${accessToken}` }
     });
-    // The 'id' field of the primary calendar is the user's email.
-    return (response.json as { id: string }).id;
+    return (response.json as { email: string }).email;
   }
 
   /**
@@ -186,7 +185,7 @@ export class GoogleAuthManager {
     accessToken: string;
     expiryDate: number;
   }): Promise<GoogleAccount> {
-    const userEmail = await this.getPrimaryCalendarId(auth.accessToken);
+    const userEmail = await this.getUserEmail(auth.accessToken);
     const newAccount: GoogleAccount = {
       id: `gcal_${userEmail}`,
       email: userEmail,

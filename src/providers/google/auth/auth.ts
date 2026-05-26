@@ -25,8 +25,9 @@ const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'; // Renamed for clarity
 const PROXY_TOKEN_URL = 'https://gcal-proxy-server.vercel.app/api/google/token';
 
-const SCOPES =
-  'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/tasks';
+const CALENDAR_SCOPES =
+  'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events email';
+const TASKS_SCOPES = 'https://www.googleapis.com/auth/tasks email';
 
 const MOBILE_REDIRECT_URI =
   'https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/assets/meta/google-auth-callback.html';
@@ -144,7 +145,10 @@ function startDesktopLogin(plugin: FullCalendarPlugin, authUrl: string): void {
 /**
  * Kicks off the Google OAuth 2.0 flow.
  */
-export async function startGoogleLogin(plugin: FullCalendarPlugin): Promise<void> {
+export async function startGoogleLogin(
+  plugin: FullCalendarPlugin,
+  flowType: 'calendar' | 'tasks' = 'calendar'
+): Promise<void> {
   const settings = PluginState.getSettings();
   const isMobile = Platform.isMobile;
 
@@ -179,6 +183,8 @@ export async function startGoogleLogin(plugin: FullCalendarPlugin): Promise<void
     return;
   }
 
+  const scopes = flowType === 'tasks' ? TASKS_SCOPES : CALENDAR_SCOPES;
+
   const params = new URLSearchParams({
     client_id: clientId,
     response_type: 'code',
@@ -186,7 +192,7 @@ export async function startGoogleLogin(plugin: FullCalendarPlugin): Promise<void
     prompt: 'consent',
     access_type: 'offline',
     state: state,
-    scope: SCOPES,
+    scope: scopes,
     code_challenge: challenge,
     code_challenge_method: 'S256'
   });

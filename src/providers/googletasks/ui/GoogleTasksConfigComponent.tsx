@@ -85,7 +85,7 @@ export const GoogleTasksConfigComponent: React.FC<GoogleTasksConfigComponentProp
           });
           if (!token) {
             throw new GoogleApiError(
-              `Failed to refresh token for ${account.email}. Please try connecting the account again.`
+              t('google.errors.tokenRefreshFailed', { email: account.email })
             );
           }
           account.accessToken = token;
@@ -110,7 +110,7 @@ export const GoogleTasksConfigComponent: React.FC<GoogleTasksConfigComponentProp
         setView('calendar-select');
       } catch (e) {
         const message = e instanceof Error ? e.message : 'An unknown error occurred.';
-        setError(`Failed to fetch task lists for ${account.email}. ${message}`);
+        setError(t('google.errors.fetchTaskListsFailed', { email: account.email, message }));
         setView('account-select');
       } finally {
         setIsLoading(false);
@@ -151,7 +151,7 @@ export const GoogleTasksConfigComponent: React.FC<GoogleTasksConfigComponentProp
           .setName(account.email)
           .addButton(button =>
             button
-              .setButtonText(t('google.buttons.selectCalendars'))
+              .setButtonText(t('google.buttons.selectTaskLists'))
               .onClick(() => handleSelectAccount(account))
           );
       });
@@ -160,7 +160,7 @@ export const GoogleTasksConfigComponent: React.FC<GoogleTasksConfigComponentProp
         button
           .setButtonText(t('google.buttons.connectAccount'))
           .setCta()
-          .onClick(() => startGoogleLogin(plugin))
+          .onClick(() => startGoogleLogin(plugin, 'tasks'))
       );
     }
   }, [view, accounts, plugin, handleSelectAccount]);
@@ -200,12 +200,12 @@ export const GoogleTasksConfigComponent: React.FC<GoogleTasksConfigComponentProp
         <div className="setting-item setting-item-heading">
           <div className="setting-item-info">
             <div className="setting-item-name">
-              Select Google Task Lists for {selectedAccount?.email ?? ''}
+              {t('google.selectTasks.title', { email: selectedAccount?.email ?? '' })}
             </div>
             <div className="setting-item-description">
               {availableLists.length === 0
-                ? 'No remaining task lists found on this account.'
-                : 'Select the Google Task lists you want to add.'}
+                ? t('google.selectTasks.noTaskLists')
+                : t('google.selectTasks.description')}
             </div>
           </div>
         </div>
@@ -221,7 +221,7 @@ export const GoogleTasksConfigComponent: React.FC<GoogleTasksConfigComponentProp
               onClick={handleSave}
               disabled={selection.size === 0}
             >
-              Add Google Task List
+              {t('google.buttons.addTaskList')}
             </button>
           </div>
         </div>

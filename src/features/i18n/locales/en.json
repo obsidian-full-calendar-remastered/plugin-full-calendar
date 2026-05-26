@@ -1310,7 +1310,9 @@
       "connectAccount": "Connect Google Account",
       "backToAccounts": "Back to Accounts",
       "addCalendars": "Add {{count}} Calendar",
-      "addCalendarsPlural": "Add {{count}} Calendars"
+      "addCalendarsPlural": "Add {{count}} Calendars",
+      "selectTaskLists": "Select task lists",
+      "addTaskList": "Add Google Task List"
     },
     "selectAccount": {
       "title": "Connect a Google Account"
@@ -1319,6 +1321,15 @@
       "title": "Select Calendars from {{email}}",
       "noCalendars": "No new calendars found, or all calendars from this account have been added.",
       "description": "Choose which calendars you would like to add to Obsidian."
+    },
+    "selectTasks": {
+      "title": "Select Google Task Lists for {{email}}",
+      "noTaskLists": "No remaining task lists found on this account.",
+      "description": "Select the Google Task lists you want to add."
+    },
+    "errors": {
+      "tokenRefreshFailed": "Failed to refresh token for {{email}}. Please try connecting the account again.",
+      "fetchTaskListsFailed": "Failed to fetch task lists for {{email}}. {{message}}"
     },
     "loading": "Loading..."
   },

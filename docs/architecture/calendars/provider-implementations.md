@@ -66,6 +66,7 @@ Integrates with the Google Tasks API for complete two-way synchronization of tas
 - **Zero-Impact Backlog Integration:** Satisfies the `TaskBacklogProvider` interface to automatically feed undated/incomplete tasks into the sidebar backlog view.
 - **Drag-and-Drop Scheduling:** Handles moving undated backlog items onto the calendar by setting their `due` date.
 - **Single-Event Mappings:** Tasks are strictly mapped to `single` OFCEvent structures since the Google Tasks API only supports single due dates and does not natively support complex event recurrences.
+- **Incremental OAuth Scopes:** Scopes are kept strictly incremental and separate (`CALENDAR_SCOPES` vs `TASKS_SCOPES`), both utilizing the standard OpenID Connect `email` scope. This allows `GoogleAuthManager` to query the standardized `userinfo` endpoint (`https://openidconnect.googleapis.com/v1/userinfo`) to resolve the user's email address for unique account registration without requesting Calendar permissions for Task-only setups.
 
 ### Outlook Provider
 

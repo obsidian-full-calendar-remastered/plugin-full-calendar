@@ -594,7 +594,8 @@
         "tasks": "Tâches Obsidian",
         "bases": "Obsidian Bases",
         "tasknotes": "TaskNotes",
-        "outlook": "Outlook Calendar"
+        "outlook": "Outlook Calendar",
+        "holidays": "Holidays"
       },
       "fullNote": {
         "directory": {
@@ -696,6 +697,47 @@
         "title": "Linked Note Settings",
         "description": "Configure settings for creating local Obsidian notes linked to remote calendar events.",
         "learnMore": "Linked Notes Guide"
+      },
+      "holidays": {
+        "calendarName": {
+          "label": "Calendar Name",
+          "description": "Display name shown in the calendar list"
+        },
+        "country": {
+          "label": "Country",
+          "description": "ISO 3166-1 alpha-2 country code, e.g. US, GB, DE, CA."
+        },
+        "state": {
+          "label": "State / Province",
+          "description": "State or province code for regional holidays, e.g. ca, ny, on, by. Leave empty for national holidays only."
+        },
+        "region": {
+          "label": "Region",
+          "description": "Sub-state region code for city or district level holidays. Leave empty if not needed."
+        },
+        "holidayTypes": {
+          "label": "Holiday Types",
+          "description": "Which tiers of holidays to display.",
+          "options": {
+            "public": "Public holidays only",
+            "public_bank": "Public + Bank holidays",
+            "public_bank_observance": "Public + Bank + Observance",
+            "all_except_optional": "All except optional",
+            "all": "All types"
+          }
+        },
+        "display": {
+          "label": "Display Style",
+          "description": "How holiday events are rendered on the calendar.",
+          "options": {
+            "block": "Normal event (block)",
+            "background": "Background event",
+            "inverseBackground": "Inverse background",
+            "auto": "Auto",
+            "none": "Hidden"
+          }
+        },
+        "adding": "Adding..."
       }
     },
     "categorization": {
@@ -1319,7 +1361,8 @@
   },
   "global": {
     "learnMore": "En savoir plus",
-    "settingsHeader": "Basculez entre des groupes de paramètres ciblés pour garder la configuration plus légère et plus facile à parcourir."
+    "settingsHeader": "Basculez entre des groupes de paramètres ciblés pour garder la configuration plus légère et plus facile à parcourir.",
+    "learnMoreLink": "Learn more"
   },
   "api": {
     "authorization": {

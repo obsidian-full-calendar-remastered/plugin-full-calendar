@@ -71,6 +71,20 @@ const calendarOptionsSchema = z.discriminatedUnion('type', [
     id: z.string(),
     name: z.string(),
     basePath: z.string()
+  }),
+  z.object({
+    type: z.literal('holidays'),
+    id: z.string(),
+    name: z.string(),
+    country: z.string(),
+    state: z.string().optional(),
+    region: z.string().optional(),
+    holidayTypes: z
+      .enum(['public', 'public_bank', 'public_bank_observance', 'all_except_optional', 'all'])
+      .default('public'),
+    display: z
+      .enum(['auto', 'block', 'list-item', 'background', 'inverse-background', 'none'])
+      .optional()
   })
 ]);
 

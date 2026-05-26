@@ -150,6 +150,7 @@ export class ProviderRegistry {
     this.register('tasks', () => import('./tasks/TasksPluginProvider'));
     this.register('tasknotes', () => import('./tasknotes/TaskNotesProvider'));
     this.register('bases', () => import('./bases/BasesProvider'));
+    this.register('holidays', () => import('./holidays/HolidayProvider'));
   }
 
   public register(type: string, loader: ProviderLoader): void {

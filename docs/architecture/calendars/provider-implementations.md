@@ -10,6 +10,7 @@
 | Local       | Full Note, Daily Note | Vault-backed, file-centric parsing and persistence.                     |
 | Remote      | Google, Outlook, CalDAV, ICS   | Network-backed with auth/protocol handling and staged loading behavior. |
 | Integration | Tasks, TaskNotes, Bases | Plugin/API integration with custom semantics beyond simple event files. |
+| Virtual     | Holidays              | Computed on-the-fly from bundled data; no vault file or network backing. |
 
 ## Key implementation notes
 
@@ -149,6 +150,37 @@ This prevents duplicate modal UX and keeps provider-specific behavior outside di
 
 The mutation lifecycle this relies on is defined in [EventCache Contract](../system/eventcache.md#mutation-lifecycle-authoritative-path).
 
+### Holiday Provider (virtual, bundled data)
+
+Read-only provider that surfaces [date-holidays](https://github.com/commenthol/date-holidays) data as all-day `OFCEvent` objects. No vault file, no network request, no `EventLocation`.
+
+**Architecture invariants:**
+
+- `isRemote = false`, `loadPriority = 5` — loads in the first provider wave alongside local sources.
+- CRUD methods (`createEvent`, `updateEvent`, `deleteEvent`, `createInstanceOverride`) unconditionally reject. `getCapabilities()` returns `{ canCreate: false, canEdit: false, canDelete: false }`.
+- Events are typed `single`, `allDay: true`, `date: YYYY-MM-DD`, ID format `date-holidays:{date}:{name}`.
+- **Timezone:** provider intentionally omits any timezone argument to `date-holidays`. All-day events carry no time component; the plugin's [`EventEnhancer`](../system/data-flow.md) applies the global display timezone uniformly. Passing a per-provider timezone here would cause double-correction.
+
+**Cache model:**
+
+Results are cached in `localStorage` keyed by a djb2 hash of `country|state|region|holidayTypes|display` plus year. TTL is 30 days. Hash change on config edit = automatic cache invalidation. `localStorage` failures are silently swallowed (plugin functions correctly; data is recomputed on next open).
+
+**Config hash inputs** (`src/providers/holidays/HolidayProvider.ts` `_computeConfigHash`):
+
+```
+country | state | region | holidayTypes | display
+```
+
+**Source files:**
+
+- `src/providers/holidays/typesHoliday.ts` — `HolidayProviderConfig`, `HolidayTypeFilter`, `getHolidayTypesForFilter()`
+- `src/providers/holidays/HolidayProvider.ts` — provider class, cache layer, `OFCEvent` conversion
+- `src/providers/holidays/ui/HolidayConfigComponent.tsx` — settings modal; links to [date-holidays country list](https://github.com/commenthol/date-holidays/blob/master/docs/Holidays.md) and [type specification](https://github.com/commenthol/date-holidays/blob/master/docs/specification.md#types-of-holidays) inline
+
+User docs: [Holidays calendar](../../user/calendars/holidays.md)
+
+---
+
 ## Cross-provider orchestration constraints
 
 - Registry is the only runtime router for provider read/write operations.
@@ -204,3 +236,4 @@ This no-provider-branching rule aligns with [Data Flow](../system/data-flow.md#f
 - `src/providers/google/GoogleProvider.ts`
 - `src/providers/tasks/TasksPluginProvider.ts`
 - `src/providers/tasknotes/TaskNotesProvider.ts`
+- `src/providers/holidays/HolidayProvider.ts`

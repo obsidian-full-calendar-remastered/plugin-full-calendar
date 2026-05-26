@@ -132,7 +132,8 @@ export function addCalendarButton(
           outlook: t('settings.calendars.types.outlook'),
           tasks: t('settings.calendars.types.tasks'),
           tasknotes: t('settings.calendars.types.tasknotes'),
-          bases: t('settings.calendars.types.bases')
+          bases: t('settings.calendars.types.bases'),
+          holidays: t('settings.calendars.types.holidays')
         }))
     )
     .addExtraButton(button => {

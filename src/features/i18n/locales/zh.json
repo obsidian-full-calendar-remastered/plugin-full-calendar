@@ -52,101 +52,101 @@
         "groupExists": "组名称\"{{name}}\"已存在。"
       },
       "docs": {
-        "configurationGuide": "Configuration guide",
-        "matchingRules": "Matching rules",
-        "faq": "FAQ",
-        "personaGuide": "Persona guide",
-        "insightsGuide": "Insight reference",
-        "ruleParameters": "Rule parameters",
-        "terminology": "Terminology",
-        "filtersGuide": "Filter syntax"
+        "configurationGuide": "配置指南",
+        "matchingRules": "匹配规则",
+        "faq": "常见问题",
+        "personaGuide": "角色指南",
+        "insightsGuide": "分析参考",
+        "ruleParameters": "规则参数",
+        "terminology": "术语",
+        "filtersGuide": "筛选语法"
       }
     },
     "analyser": {
       "header": "📊 ChronoAnalyser",
-      "subtitle": "Interactive analysis of your time tracking data",
-      "proTip": "Pro tip",
-      "clickNextTip": "Click to see the next tip",
+      "subtitle": "对您的时间追踪数据进行交互式分析",
+      "proTip": "专业提示",
+      "clickNextTip": "点击查看下一个提示",
       "insights": {
-        "title": "💡 Insights",
-        "generate": "Generate insights",
-        "configure": "Configure insights",
-        "placeholder": "Click \"Generate Insights\" to analyze your data."
+        "title": "💡 洞察",
+        "generate": "生成分析",
+        "configure": "配置分析",
+        "placeholder": "点击 \"生成分析\" 以分析您的数据。"
       },
       "filters": {
-        "hierarchy": "📂 Filter by hierarchy (calendar source)",
-        "hierarchyPlaceholder": "All hierarchies (type to filter...)",
-        "project": "📋 Filter by project",
-        "projectPlaceholder": "All projects (type to filter...)",
-        "category": "🔍 Filter by category (e.g., keyword -exclude)",
-        "categoryPlaceholder": "E.g., task.* -review",
-        "dateRange": "📅 Date range",
-        "dateRangePlaceholder": "Select date range (yyyy-mm-dd to yyyy-mm-dd)",
-        "today": "Today",
-        "yesterday": "Yesterday",
-        "thisWeek": "This week",
-        "thisMonth": "This month",
-        "clearDates": "🗑️ Clear dates",
-        "clearDatesTooltip": "Clear date filters"
+        "hierarchy": "📂 按层级筛选（日历来源）",
+        "hierarchyPlaceholder": "所有层级（输入以筛选...）",
+        "project": "📋 按项目筛选",
+        "projectPlaceholder": "所有项目（输入以筛选...）",
+        "category": "🔍 按类别筛选（例如：关键词 -排除）",
+        "categoryPlaceholder": "例如：task.* -review",
+        "dateRange": "📅 日期范围",
+        "dateRangePlaceholder": "选择日期范围（yyyy-mm-dd 到 yyyy-mm-dd）",
+        "today": "今天",
+        "yesterday": "昨天",
+        "thisWeek": "本周",
+        "thisMonth": "本月",
+        "clearDates": "🗑️ 清除日期",
+        "clearDatesTooltip": "清除日期筛选"
       },
       "config": {
-        "metric": "📏 Metric",
-        "duration": "Duration (hours)",
-        "count": "Event count",
-        "analysisType": "🎯 Analysis type",
-        "pie": "Categorywise (pie)",
-        "sunburst": "Categorywise (sunburst)",
-        "timeSeries": "Time-series trend",
-        "activity": "Activity patterns",
-        "breakdownLevel": "📈 Breakdown level",
-        "hierarchy": "Hierarchy",
-        "project": "Project",
-        "subproject": "Sub-project",
-        "projectsByHierarchy": "Projects by hierarchy",
-        "subprojectsByProject": "Sub-projects by project",
-        "granularity": "🕒 Granularity",
-        "daily": "Daily",
-        "weekly": "Weekly",
-        "monthly": "Monthly",
-        "chartType": "📊 Chart type",
-        "overallTrend": "Overall trend",
-        "stackedByCategory": "Stacked by category",
-        "stackBy": "📚 Stack by",
-        "analyzeBy": "📅 Analyze by",
-        "dayOfWeek": "Day of week",
-        "hourOfDay": "Hour of day (task start)",
-        "heatmap": "Heatmap (day vs hour)",
+        "metric": "📏 指标",
+        "duration": "持续时间（小时）",
+        "count": "事件计数",
+        "analysisType": "🎯 分析类型",
+        "pie": "按分类（饼图）",
+        "sunburst": "按分类（旭日图）",
+        "timeSeries": "时间序列趋势",
+        "activity": "活动模式",
+        "breakdownLevel": "📈 细分级别",
+        "hierarchy": "层级",
+        "project": "项目",
+        "subproject": "子项目",
+        "projectsByHierarchy": "按层级显示项目",
+        "subprojectsByProject": "按项目显示子项目",
+        "granularity": "🕒 粒度",
+        "daily": "每日",
+        "weekly": "每周",
+        "monthly": "每月",
+        "chartType": "📊 图表类型",
+        "overallTrend": "整体趋势",
+        "stackedByCategory": "按分类堆叠",
+        "stackBy": "📚 堆叠依据",
+        "analyzeBy": "📅 分析维度",
+        "dayOfWeek": "星期几",
+        "hourOfDay": "一天中的小时（任务开始）",
+        "heatmap": "热力图（天 vs 小时）",
         "tooltips": {
-          "categorywise": "Visualize how time is distributed across different categories.",
-          "timeSeries": "Visualize how time spent changes over a period.",
-          "activity": "Identify patterns in when tasks are typically performed.",
-          "dayOfWeek": "Displays a bar chart showing the total hours spent on each day of the week.",
-          "hourOfDay": "Displays a bar chart showing the total hours associated with tasks that start in each hour of the day.",
-          "heatmap": "Displays a heatmap where rows are days of the week, columns are hours of the day, and the color intensity of each cell represents the total hours for tasks starting at that specific day/hour combination."
+          "categorywise": "可视化时间在不同类别之间的分布。",
+          "timeSeries": "可视化一段时间内耗时的变化。",
+          "activity": "识别任务通常何时执行的模式。",
+          "dayOfWeek": "显示一个柱状图，展示每周每天的总小时数。",
+          "hourOfDay": "显示一个柱状图，展示每天各小时开始的任务所占的总小时数。",
+          "heatmap": "显示一个热力图，行是星期几，列是一天中的小时，单元格的颜色强度代表在该日期/小时组合开始任务的总小时数。"
         }
       },
       "stats": {
-        "totalHours": "Total Hours (Filtered)",
-        "filesInFilter": "Files in Filter",
-        "activeAnalysis": "Active Analysis"
+        "totalHours": "总小时数（已筛选）",
+        "filesInFilter": "筛选中的文件数",
+        "activeAnalysis": "当前分析"
       },
       "log": {
-        "title": "📋 Processing log & issues",
-        "noIssues": "No issues found."
+        "title": "📋 处理日志与问题",
+        "noIssues": "未发现问题。"
       },
       "details": {
-        "title": "Category details",
-        "close": "Close",
-        "project": "Project",
-        "subproject": "Sub-project (full)",
-        "duration": "Duration (hrs)",
-        "date": "Date",
-        "filePath": "File path"
+        "title": "分类详情",
+        "close": "关闭",
+        "project": "项目",
+        "subproject": "子项目（完整）",
+        "duration": "持续时间（小时）",
+        "date": "日期",
+        "filePath": "文件路径"
       },
       "demo": {
-        "title": "DEMO MODE",
-        "description": "You are exploring sample ChronoAnalyser data. Configure your own insight groups to switch permanently to live data.",
-        "turnOff": "Turn off demo"
+        "title": "演示模式",
+        "description": "您正在查看 ChronoAnalyser 的示例数据。配置您自己的分析组以永久切换到实时数据。",
+        "turnOff": "关闭演示"
       }
     }
   },
@@ -158,8 +158,8 @@
     "openChronoAnalyser": "打开数据分析器（仅桌面版）",
     "openSidebar": "在侧边栏打开",
     "syncActivityWatch": "同步 ActivityWatch",
-    "nlpQuickAdd": "FCR Command",
-    "syncFcrReminder": "Sync FCR Reminder Companion"
+    "nlpQuickAdd": "FCR 命令",
+    "syncFcrReminder": "同步 FCR Reminder Companion"
   },
   "notices": {
     "settingsUpdated": "日历已将您的日历设置更新为新格式。",
@@ -194,25 +194,25 @@
       "apiUnavailable": "Obsidian Tasks 插件 API 不可用。"
     },
     "tasknotes": {
-      "addSourceFirst": "Add a TaskNotes calendar source first, then return here to configure integration.",
-      "handoffSingleOnly": "TaskNotes NLP handoff currently supports single events only.",
-      "handoffTitleRequired": "TaskNotes NLP handoff requires a title.",
-      "handoffStartTimeRequired": "TaskNotes NLP handoff requires a valid start time for timed events.",
-      "invalidSourceId": "TaskNotes provider source ID must follow tasknotes_[n] pattern (received: {{sourceId}}).",
-      "createModalUnavailable": "TaskNotes plugin is unavailable or does not expose create modal integration.",
-      "selectorUnavailable": "TaskNotes plugin is unavailable or does not expose selector integration."
+      "addSourceFirst": "请先添加一个 TaskNotes 日历源，然后返回此处配置集成。",
+      "handoffSingleOnly": "TaskNotes 的 NLP 转发当前仅支持单个事件。",
+      "handoffTitleRequired": "TaskNotes 的 NLP 转发需要标题。",
+      "handoffStartTimeRequired": "TaskNotes 的 NLP 转发需要有效的开始时间用于有时限的事件。",
+      "invalidSourceId": "TaskNotes 提供程序源 ID 必须遵循 tasknotes_[n] 模式（接收：{{sourceId}}）。",
+      "createModalUnavailable": "TaskNotes 插件不可用或未公开创建模态集成。",
+      "selectorUnavailable": "TaskNotes 插件不可用或未公开选择器集成。"
     },
     "milestones": {
       "unlockedTitle": "成就已达成",
       "unlockedBody": "{{title}} - {{description}}"
     },
-    "chronoAnalyserDemoLoaded": "ChronoAnalyser demo loaded.",
-    "chronoAnalyserDemoLoadedFromCache": "ChronoAnalyser demo loaded from cache.",
-    "chronoAnalyserDemoLoadFailed": "Could not load the ChronoAnalyser demo. Falling back to live data.",
-    "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
-    "failedToCreateLinkedNote": "Failed to create linked note.",
-    "fcrReminderSynced": "FCR Reminder Companion synchronized successfully.",
-    "fcrReminderCompanionOfflineBold": "WARNING: The FCR Reminder Companion daemon is offline. You will NOT receive native desktop notifications until it is started."
+    "chronoAnalyserDemoLoaded": "ChronoAnalyser 示例已加载。",
+    "chronoAnalyserDemoLoadedFromCache": "ChronoAnalyser 示例已从缓存加载。",
+    "chronoAnalyserDemoLoadFailed": "无法加载 ChronoAnalyser 示例。回退到实时数据。",
+    "configureLinkedNotesDirFirst": "请先在设置中配置一个链接笔记目录。",
+    "failedToCreateLinkedNote": "创建链接笔记失败。",
+    "fcrReminderSynced": "FCR Reminder Companion 已成功同步。",
+    "fcrReminderCompanionOfflineBold": "警告：FCR Reminder Companion 守护进程处于离线状态。在启动之前，您将无法收到本地桌面通知。"
   },
   "eventCache": {
     "calendarNotFound": "无法添加事件：未找到 ID 为 {{calendarId}} 的日历。",
@@ -278,14 +278,14 @@
         "description": "关闭此选项则点击时打开日视图。"
       },
       "linkedNotesDirectory": {
-        "label": "Linked notes directory",
-        "description": "Choose the folder path where event linked notes will be created.",
+        "label": "链接笔记目录",
+        "description": "选择用于创建事件链接笔记的文件夹路径。",
         "vaultRoot": "/ (Vault Root)"
       },
       "linkedNoteTemplate": {
-        "label": "Linked note template",
-        "description": "Define the template used for creating new linked notes. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
-        "placeholder": "Enter note Markdown template..."
+        "label": "关联笔记模板",
+        "description": "定义用于创建新关联笔记的模板。支持：{{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
+        "placeholder": "输入笔记的 Markdown 模板..."
       }
     },
     "reminders": {
@@ -404,8 +404,8 @@
         "label": "在状态栏显示当前事件",
         "description": "在 Obsidian 状态栏显示当前正在运行的事件标题。"
       },
-      "highlightCurrentOrNextEvent": "Highlight current or next event",
-      "highlightCurrentOrNextEventDesc": "Highlights the current timed event, or the immediate next timed event if none is active.",
+      "highlightCurrentOrNextEvent": "突出显示当前或下一个事件",
+      "highlightCurrentOrNextEventDesc": "突出显示当前进行的计时事件；如果没有，则突出显示紧接着的下一个计时事件。",
       "milestones": {
         "label": "里程碑",
         "description": "只读本地里程碑，追踪所有日历中的成功事件活动。",
@@ -459,119 +459,119 @@
             "target": "目标：开发模式已激活"
           },
           "createdCentury": {
-            "title": "Century Maker",
-            "description": "Successfully create 100 events.",
-            "target": "Target: 100 created events"
+            "title": "百场创建者",
+            "description": "成功创建 100 个事件。",
+            "target": "目标：创建 100 个事件"
           },
           "createdMaster": {
-            "title": "Event Architect",
-            "description": "Successfully create 500 events.",
-            "target": "Target: 500 created events"
+            "title": "事件架构师",
+            "description": "成功创建 500 个事件。",
+            "target": "目标：创建 500 个事件"
           },
           "createdLegend": {
-            "title": "Calendar Titan",
-            "description": "Successfully create 5,000 events.",
-            "target": "Target: 5,000 created events"
+            "title": "日历泰坦",
+            "description": "成功创建 5,000 个事件。",
+            "target": "目标：创建 5,000 个事件"
           },
           "deletedCentury": {
-            "title": "Pruning Apprentice",
-            "description": "Successfully delete 100 events.",
-            "target": "Target: 100 deleted events"
+            "title": "修剪学徒",
+            "description": "成功删除 100 个事件。",
+            "target": "目标：删除 100 个事件"
           },
           "deletedMaster": {
-            "title": "Vault Gardener",
-            "description": "Successfully delete 500 events.",
-            "target": "Target: 500 deleted events"
+            "title": "库园丁",
+            "description": "成功删除 500 个事件。",
+            "target": "目标：删除 500 个事件"
           },
           "updatedMaster": {
-            "title": "Refinement Engine",
-            "description": "Successfully update 500 events.",
-            "target": "Target: 500 updated events"
+            "title": "精进引擎",
+            "description": "成功更新 500 个事件。",
+            "target": "目标：更新 500 个事件"
           },
           "updatedLegend": {
-            "title": "Precision Rewriter",
-            "description": "Successfully update 5,000 events.",
-            "target": "Target: 5,000 updated events"
+            "title": "精确重写者",
+            "description": "成功更新 5,000 个事件。",
+            "target": "目标：更新 5,000 个事件"
           },
           "movedMaster": {
-            "title": "Timeline Choreographer",
-            "description": "Successfully move 500 events between calendars.",
-            "target": "Target: 500 moved events"
+            "title": "时间线编排者",
+            "description": "成功在日历间移动 500 个事件。",
+            "target": "目标：移动 500 个事件"
           },
           "remoteArchitect": {
-            "title": "Remote Architect",
-            "description": "Create 500 events across ICS, CalDAV, and Google providers.",
-            "target": "Target: 500 remote created events"
+            "title": "远程架构师",
+            "description": "在 ICS、CalDAV 和 Google 提供者处创建 500 个事件。",
+            "target": "目标：在远程提供者处创建 500 个事件"
           },
           "taskOrchestrator": {
-            "title": "Task Orchestrator",
-            "description": "Create 1,000 events through Tasks + TaskNotes integrations.",
-            "target": "Target: 1,000 task-integration created events"
+            "title": "任务指挥官",
+            "description": "通过 Tasks + TaskNotes 集成创建 1,000 个事件。",
+            "target": "目标：通过任务集成创建 1,000 个事件"
           },
           "polyglotBuilder": {
-            "title": "Polyglot Builder",
-            "description": "Reach 500 created events in 3 different provider types.",
-            "target": "Target: 3 providers at 500 created each"
+            "title": "多语构建者",
+            "description": "在 3 种不同提供者类型中各创建 500 个事件。",
+            "target": "目标：3 个提供者，各创建 500 个事件"
           },
           "cycleMaster": {
-            "title": "Cycle Master",
-            "description": "Reach both 500 created and 500 deleted events.",
-            "target": "Target: 500 create/delete balance"
+            "title": "循环大师",
+            "description": "同时达到 500 个创建与 500 个删除的平衡。",
+            "target": "目标：创建/删除 平衡达到 500"
           },
           "opsLegend": {
-            "title": "Operations Legend",
-            "description": "Reach 10,000 total successful operations (create/delete/update/move).",
-            "target": "Target: 10,000 successful operations"
+            "title": "运营传奇",
+            "description": "累计达到 10,000 次成功操作（创建/删除/更新/移动）。",
+            "target": "目标：10,000 次成功操作"
           },
           "habitualPlanner": {
-            "title": "Habitual Planner",
-            "description": "Perform calendar actions on 20 consecutive days.",
-            "target": "Target: 20-day action streak"
+            "title": "习惯规划者",
+            "description": "连续 20 天执行日历操作。",
+            "target": "目标：20 天连续操作"
           },
           "dedicated": {
-            "title": "The Dedicated",
-            "description": "Maintain at least 3 months between first and latest recorded action.",
-            "target": "Target: 90-day history span"
+            "title": "奉献者",
+            "description": "首次与最近记录操作之间保持至少 3 个月的时间跨度。",
+            "target": "目标：90 天历史跨度"
           },
           "marathoner": {
-            "title": "Marathoner",
-            "description": "Reach 100,000 total successful operations.",
-            "target": "Target: 100,000 operations"
+            "title": "耐力达人",
+            "description": "累计达到 100,000 次成功操作。",
+            "target": "目标：100,000 次操作"
           },
           "nlpSavant": {
-            "title": "NLP Savant",
-            "description": "Create 1,000 events using NLP input.",
-            "target": "Target: 1,000 NLP-created events"
+            "title": "NLP 奇才",
+            "description": "使用 NLP 输入创建 1,000 个事件。",
+            "target": "目标：通过 NLP 创建 1,000 个事件"
           },
           "globalCitizen": {
-            "title": "Global Citizen",
-            "description": "Create events in 3 or more different time zones.",
-            "target": "Target: 3 distinct time zones"
+            "title": "全球公民",
+            "description": "在 3 个或更多不同时区创建事件。",
+            "target": "目标：3 个不同的时区"
           },
           "syncSpecialist": {
-            "title": "Sync Specialist",
-            "description": "Maintain 5 or more active remote calendars (Google/ICS/CalDAV).",
-            "target": "Target: 5 active remote calendars"
+            "title": "同步专家",
+            "description": "维护 5 个或更多活动的远程日历（Google/ICS/CalDAV）。",
+            "target": "目标：5 个活动的远程日历"
           },
           "recurringMaster": {
-            "title": "Recurring Master",
-            "description": "Create 30 recurring event series.",
-            "target": "Target: 30 recurring series"
+            "title": "重复大师",
+            "description": "创建 30 个重复事件系列。",
+            "target": "目标：30 个重复系列"
           },
           "greatMigration": {
-            "title": "The Great Migration",
-            "description": "Move 200 events between different calendars.",
-            "target": "Target: 200 moved events"
+            "title": "大迁移",
+            "description": "在不同日历间移动 200 个事件。",
+            "target": "目标：移动 200 个事件"
           },
           "perfectionist": {
-            "title": "The Perfectionist",
-            "description": "Have a perfect week with at least 3 created events every day Monday-Sunday.",
-            "target": "Target: 7/7 days with 3+ events"
+            "title": "完美主义者",
+            "description": "在一周内每天至少创建 3 个事件，达到完美周。",
+            "target": "目标：7/7 天，每天 3 个以上事件"
           },
           "digitalLibrarian": {
-            "title": "Digital Librarian",
-            "description": "Maintain over 10,000 non-deleted events across local calendars.",
-            "target": "Target: 10,000 live local events"
+            "title": "数字馆长",
+            "description": "在本地日历中维护超过 10,000 个未删除事件。",
+            "target": "目标：10,000 个本地活动事件"
           }
         }
       }
@@ -609,11 +609,11 @@
           "description": "日记中存储事件的标题。"
         },
         "format": {
-          "label": "Format",
-          "description": "Choose how timed events are written in daily notes.",
+          "label": "格式",
+          "description": "选择在日记中如何写入有时限的事件。",
           "options": {
-            "default": "Default",
-            "dayPlanner": "DayPlanner Format"
+            "default": "默认",
+            "dayPlanner": "日程计划格式"
           }
         }
       },
@@ -638,7 +638,7 @@
         },
         "importButton": "导入日历",
         "importing": "正在导入...",
-        "importFailed": "Failed to import calendar"
+        "importFailed": "导入日历失败"
       },
       "tasks": {
         "zeroConfig": {
@@ -690,54 +690,54 @@
         "google": "Google 日历",
         "tasks": "Tasks 集成",
         "bases": "Bases 日历",
-        "taskNotes": "TaskNote 集成",
-        "outlook": "Outlook calendar"
+        "taskNotes": "TaskNotes 集成",
+        "outlook": "Outlook 日历"
       },
       "linkedNotes": {
-        "title": "Linked Note Settings",
-        "description": "Configure settings for creating local Obsidian notes linked to remote calendar events.",
-        "learnMore": "Linked Notes Guide"
+        "title": "链接笔记设置",
+        "description": "配置用于创建与远程日历事件相关联的本地 Obsidian 笔记的设置。",
+        "learnMore": "链接笔记指南"
       },
       "holidays": {
         "calendarName": {
-          "label": "Calendar Name",
-          "description": "Display name shown in the calendar list"
+          "label": "日历名称",
+          "description": "日历列表中显示的名称"
         },
         "country": {
-          "label": "Country",
-          "description": "ISO 3166-1 alpha-2 country code, e.g. US, GB, DE, CA."
+          "label": "国家",
+          "description": "ISO 3166-1 alpha-2 国家代码，例如：US、GB、DE、CA。"
         },
         "state": {
-          "label": "State / Province",
-          "description": "State or province code for regional holidays, e.g. ca, ny, on, by. Leave empty for national holidays only."
+          "label": "州 / 省",
+          "description": "区域假期的州或省代码，例如：ca、ny、on、by。仅针对国家级假期请留空。"
         },
         "region": {
-          "label": "Region",
-          "description": "Sub-state region code for city or district level holidays. Leave empty if not needed."
+          "label": "地区",
+          "description": "市或区级别的子区域代码。如不需要请留空。"
         },
         "holidayTypes": {
-          "label": "Holiday Types",
-          "description": "Which tiers of holidays to display.",
+          "label": "节假日类型",
+          "description": "要显示哪些等级的节假日。",
           "options": {
-            "public": "Public holidays only",
-            "public_bank": "Public + Bank holidays",
-            "public_bank_observance": "Public + Bank + Observance",
-            "all_except_optional": "All except optional",
-            "all": "All types"
+            "public": "仅公共假期",
+            "public_bank": "公共 + 银行假期",
+            "public_bank_observance": "公共 + 银行 + 纪念日",
+            "all_except_optional": "除可选外全部",
+            "all": "所有类型"
           }
         },
         "display": {
-          "label": "Display Style",
-          "description": "How holiday events are rendered on the calendar.",
+          "label": "显示样式",
+          "description": "假期事件在日历上的渲染方式。",
           "options": {
-            "block": "Normal event (block)",
-            "background": "Background event",
-            "inverseBackground": "Inverse background",
-            "auto": "Auto",
-            "none": "Hidden"
+            "block": "普通事件（块）",
+            "background": "背景事件",
+            "inverseBackground": "反向背景",
+            "auto": "自动",
+            "none": "隐藏"
           }
         },
-        "adding": "Adding..."
+        "adding": "正在添加..."
       }
     },
     "categorization": {
@@ -810,11 +810,11 @@
         "donationMessage": "FCR 是通过 AI 增强工程高速构建的。如果它为您提供了价值，请考虑每月捐助 25 美元，以帮助维持这种可持续的发展速度。",
         "donationButton": "透明度报告与捐赠"
       },
-      "whatsNew": "What's New",
-      "viewFull": "View full changelog"
+      "whatsNew": "新功能",
+      "viewFull": "查看完整更新日志"
     },
     "utils": {
-      "timelineDisabled": "时间线视图已禁用。将桌面默认视图重置为 \"Week\"。"
+      "timelineDisabled": "时间线视图已禁用。将桌面默认视图重置为“周”。"
     },
     "warnings": {
       "oneDailyNote": "只允许一个日记。"
@@ -901,20 +901,20 @@
     },
     "fcrReminder": {
       "title": "FCR Reminder Companion",
-      "description": "Sync your upcoming calendar events with the persistent FCR Reminder background companion daemon to receive native system-level toast notifications even when Obsidian is completely closed.",
-      "learnMore": "FCR Reminder Guide",
+      "description": "将即将到来的日历事件与持久运行的 FCR Reminder 后台守护程序同步，即使 Obsidian 完全关闭也能接收本地系统级别的弹出通知。",
+      "learnMore": "FCR 提醒指南",
       "enable": {
-        "label": "Enable companion integration",
-        "description": "Synchronize upcoming event alarms to the background companion daemon."
+        "label": "启用 companion 集成",
+        "description": "将即将到来的事件闹钟同步到后台 companion 守护进程。"
       },
       "apiUrl": {
-        "label": "Companion server url",
-        "description": "The loopback address of the FCR Reminder daemon.",
+        "label": "Companion 服务器 URL",
+        "description": "FCR Reminder 守护进程的回环地址。",
         "placeholder": "http://127.0.0.1:45677"
       },
       "offlineBanner": {
-        "title": "⚠️ Companion app offline",
-        "message": "FCR Reminder is not running. Please start the companion app to enable native, offline notifications."
+        "title": "⚠️ Companion 应用已离线",
+        "message": "FCR Reminder 未运行。请启动 companion 应用以启用本地离线通知。"
       }
     }
   },
@@ -1280,12 +1280,12 @@
         "description": "使用您自己的 OAuth Client ID 和 Secret 代替默认值。插件目前已通过 Google 验证，但您仍可使用此选项。"
       },
       "clientId": {
-        "label": "Client ID",
-        "description": "您的 Google OAuth 2.0 Client ID"
+        "label": "客户端 ID",
+        "description": "您的 Google OAuth 2.0 客户端 ID"
       },
       "clientSecret": {
-        "label": "Client Secret",
-        "description": "您的 Google OAuth 2.0 Client Secret"
+        "label": "客户端密钥",
+        "description": "您的 Google OAuth 2.0 客户端密钥"
       }
     },
     "noAccounts": "未连接 Google 账户。请在日历部分添加 Google 日历以连接账户。",
@@ -1360,18 +1360,18 @@
     "errorBody": "日历：无法显示桌面通知。请检查控制台获取错误。"
   },
   "global": {
-    "learnMore": "Learn more: ",
-    "settingsHeader": "Switch between focused setting groups to keep configuration lighter and easier to scan.",
-    "learnMoreLink": "Learn more"
+    "learnMore": "了解更多：",
+    "settingsHeader": "在聚焦的设置分组之间切换，以保持配置更精简、更易于浏览。",
+    "learnMoreLink": "了解更多"
   },
   "api": {
     "authorization": {
-      "title": "Authorization request",
-      "requestingPluginMessage": "The plugin \"{{pluginId}}\" is requesting access to Full Calendar.",
-      "reasonLabel": "Reason: {{reason}}",
-      "permissionsLabel": "Select which permissions to grant. You can change these later in settings.",
-      "approve": "Approve",
-      "deny": "Deny"
+      "title": "授权请求",
+      "requestingPluginMessage": "插件 \"{{pluginId}}\" 正在请求访问 Full Calendar。",
+      "reasonLabel": "原因：{{reason}}",
+      "permissionsLabel": "选择要授予的权限。您可以稍后在设置中更改这些权限。",
+      "approve": "批准",
+      "deny": "拒绝"
     },
     "settings": {
       "title": "API access",
@@ -1384,120 +1384,120 @@
     }
   },
   "nlp": {
-    "modalTitle": "FCR Command",
-    "placeholder": "e.g., tomorrow at 4pm Team standup, open settings, go to next tuesday",
-    "submit": "Run",
-    "cancel": "Cancel",
-    "previewHint": "Type a command — create events, navigate views, open settings, and more.",
-    "noCalendars": "No writable calendars available. Please add a calendar first.",
-    "parseSuccess": "Command executed.",
-    "navigating": "Navigating to {{view}} view.",
+    "modalTitle": "FCR 命令",
+    "placeholder": "例如：明天下午4点 团队例会，打开设置，跳到下周二",
+    "submit": "执行",
+    "cancel": "取消",
+    "previewHint": "输入命令 — 创建事件、切换视图、打开设置等。",
+    "noCalendars": "没有可写的日历。请先添加一个日历。",
+    "parseSuccess": "命令已执行。",
+    "navigating": "正在导航到 {{view}} 视图。",
     "intents": {
-      "CREATE_EVENT": "📅 Create Event",
-      "NEW_EVENT": "📅 New Event (blank)",
-      "NAVIGATE_DAY": "🧭 Navigate → Day View",
-      "NAVIGATE_WEEK": "🧭 Navigate → Week View",
-      "NAVIGATE_MONTH": "🧭 Navigate → Month View",
-      "OPEN_CALENDAR": "📖 Open Calendar",
-      "OPEN_SIDEBAR": "📖 Open Sidebar",
-      "OPEN_SETTINGS": "⚙️ Open Settings",
-      "OPEN_CHRONO": "📊 Open ChronoAnalyser",
-      "SHOW_CHANGELOG": "📋 Show Changelog",
-      "RESET_CACHE": "🗑️ Reset Event Cache",
-      "REVALIDATE_REMOTE": "🔄 Revalidate Remote Calendars",
-      "SYNC_ACTIVITYWATCH": "⏱️ Sync ActivityWatch",
-      "GOTO_DATE": "📆 Go to Date",
-      "SHOW_MILESTONES": "🏅 Show Milestones"
+      "CREATE_EVENT": "📅 创建事件",
+      "NEW_EVENT": "📅 新事件（空）",
+      "NAVIGATE_DAY": "🧭 导航 → 日视图",
+      "NAVIGATE_WEEK": "🧭 导航 → 周视图",
+      "NAVIGATE_MONTH": "🧭 导航 → 月视图",
+      "OPEN_CALENDAR": "📖 打开日历",
+      "OPEN_SIDEBAR": "📖 打开侧边栏",
+      "OPEN_SETTINGS": "⚙️ 打开设置",
+      "OPEN_CHRONO": "📊 打开 ChronoAnalyser",
+      "SHOW_CHANGELOG": "📋 显示更新日志",
+      "RESET_CACHE": "🗑️ 重置事件缓存",
+      "REVALIDATE_REMOTE": "🔄 重新验证远程日历",
+      "SYNC_ACTIVITYWATCH": "⏱️ 同步 ActivityWatch",
+      "GOTO_DATE": "📆 转到日期",
+      "SHOW_MILESTONES": "🏅 显示里程碑"
     },
     "descriptions": {
-      "OPEN_SETTINGS": "Opens the Full Calendar settings tab.",
-      "OPEN_CHRONO": "Launches the ChronoAnalyser dashboard.",
-      "SHOW_CHANGELOG": "Displays the latest release notes.",
-      "RESET_CACHE": "Clears and rebuilds the event cache.",
-      "REVALIDATE_REMOTE": "Forces a fresh sync of all remote calendars.",
-      "SYNC_ACTIVITYWATCH": "Pulls latest data from ActivityWatch.",
-      "SHOW_MILESTONES": "Opens the milestones page in settings."
+      "OPEN_SETTINGS": "打开 Full Calendar 的设置选项卡。",
+      "OPEN_CHRONO": "启动 ChronoAnalyser 仪表板。",
+      "SHOW_CHANGELOG": "显示最新的发行说明。",
+      "RESET_CACHE": "清除并重建事件缓存。",
+      "REVALIDATE_REMOTE": "强制刷新所有远程日历的同步。",
+      "SYNC_ACTIVITYWATCH": "从 ActivityWatch 拉取最新数据。",
+      "SHOW_MILESTONES": "在设置中打开里程碑页面。"
     },
     "preview": {
-      "target": "Target",
-      "title": "Title",
-      "date": "Date",
-      "time": "Time",
-      "allDay": "All day",
-      "calendar": "Calendar",
-      "recurrence": "Recurrence",
-      "every": "Every",
-      "patternsMatched": "✓ {{count}} pattern matched"
+      "target": "目标",
+      "title": "标题",
+      "date": "日期",
+      "time": "时间",
+      "allDay": "全天",
+      "calendar": "日历",
+      "recurrence": "重复",
+      "every": "每",
+      "patternsMatched": "✓ 匹配 {{count}} 个模式"
     },
     "notices": {
-      "cacheReset": "Event cache has been reset.",
-      "awNotEnabled": "ActivityWatch is not enabled. Enable it in settings first.",
-      "fcrCompanionNotEnabled": "FCR Reminder Companion is not enabled. Enable it in settings first."
+      "cacheReset": "事件缓存已重置。",
+      "awNotEnabled": "ActivityWatch 未启用。请先在设置中启用。",
+      "fcrCompanionNotEnabled": "FCR Reminder Companion 未启用。请先在设置中启用。"
     }
   },
   "outlook": {
     "auth": {
-      "expired": "Outlook authentication expired. Please reconnect your account.",
-      "authFailed": "Could not authenticate Outlook calendar. Please re-add it in settings.",
-      "desktopOnly": "Outlook sign-in is currently available on desktop only.",
-      "clientIdMissing": "Microsoft Client ID is required. Configure it in Integrations > Outlook.",
-      "proxyMissing": "Microsoft proxy URL is required. Configure it in Integrations > Outlook.",
-      "stateMismatch": "Outlook authentication failed. State mismatch.",
-      "success": "Successfully connected Outlook account!",
-      "failed": "Failed to connect Outlook account. Check the developer console for details.",
-      "callbackSuccess": "Authentication successful! Please return to Obsidian.",
-      "callbackFailed": "Authentication failed. Check Obsidian console and try again."
+      "expired": "Outlook 身份验证已过期。请重新连接您的帐户。",
+      "authFailed": "无法验证 Outlook 日历。请在设置中重新添加。",
+      "desktopOnly": "Outlook 登录目前仅在桌面可用。",
+      "clientIdMissing": "需要 Microsoft 客户端 ID。请在 集成 > Outlook 中配置。",
+      "proxyMissing": "需要 Microsoft 代理 URL。请在 集成 > Outlook 中配置。",
+      "stateMismatch": "Outlook 身份验证失败。状态不匹配。",
+      "success": "已成功连接 Outlook 帐户！",
+      "failed": "连接 Outlook 帐户失败。请检查开发者控制台以获取详细信息。",
+      "callbackSuccess": "身份验证成功！请返回 Obsidian。",
+      "callbackFailed": "身份验证失败。请检查 Obsidian 控制台并重试。"
     },
-    "title": "Outlook Accounts",
+    "title": "Outlook 帐户",
     "docs": {
-      "setupGuide": "Outlook calendar setup"
+      "setupGuide": "Outlook 日历设置"
     },
     "customCredentials": {
       "enable": {
-        "label": "Use custom Microsoft credentials",
-        "description": "Use your own Microsoft Client ID and proxy URL instead of the built-in defaults."
+        "label": "使用自定义 Microsoft 凭据",
+        "description": "使用您自己的 Microsoft Client ID 和代理 URL，替换内置默认值。"
       }
     },
     "config": {
       "clientId": {
-        "label": "Microsoft Client ID",
-        "description": "OAuth app Client ID used for Microsoft login."
+        "label": "Microsoft 客户端 ID",
+        "description": "用于 Microsoft 登录的 OAuth 应用客户端 ID。"
       },
       "proxyUrl": {
-        "label": "Vercel proxy URL",
-        "description": "Base URL for your Microsoft token proxy (for example: https://your-app.vercel.app).",
+        "label": "Vercel 代理 URL",
+        "description": "您的 Microsoft 令牌代理的基础 URL（例如：https://your-app.vercel.app）。",
         "placeholder": "https://your-app.vercel.app"
       },
       "clientIdPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     },
     "misc": {
-      "settingsSourcesLink": "Calendar sources settings"
+      "settingsSourcesLink": "日历来源设置"
     },
-    "noAccounts": "No Outlook accounts connected. Add an Outlook calendar in Calendars to connect one.",
-    "accountDescription": "Connected account. ID: {{id}}",
+    "noAccounts": "未连接任何 Outlook 帐户。请在“日历”中添加一个 Outlook 日历以连接。",
+    "accountDescription": "已连接的帐户。ID：{{id}}",
     "buttons": {
-      "disconnect": "Disconnect",
-      "selectCalendars": "Select Calendars",
-      "connectAccount": "Connect Outlook Account",
-      "backToAccounts": "Back to Accounts",
-      "addCalendars": "Add {{count}} Calendar",
-      "addCalendarsPlural": "Add {{count}} Calendars"
+      "disconnect": "断开连接",
+      "selectCalendars": "选择日历",
+      "connectAccount": "连接 Outlook 帐户",
+      "backToAccounts": "返回帐户",
+      "addCalendars": "添加 {{count}} 个日历",
+      "addCalendarsPlural": "添加 {{count}} 个日历"
     },
     "selectAccount": {
-      "title": "Connect an Outlook Account"
+      "title": "连接 Outlook 帐户"
     },
     "selectCalendars": {
-      "title": "Select Calendars from {{email}}",
-      "noCalendars": "No new calendars found, or all calendars from this account have already been added.",
-      "description": "Choose which Outlook calendars you would like to add to Obsidian."
+      "title": "从 {{email}} 选择日历",
+      "noCalendars": "未找到新日历，或此帐户的所有日历已被添加。",
+      "description": "请选择要添加到 Obsidian 的 Outlook 日历。"
     },
     "errors": {
-      "fetchCalendars": "Failed to fetch Outlook calendars for {{email}}. {{message}}",
-      "unknown": "Unknown error"
+      "fetchCalendars": "无法获取 {{email}} 的 Outlook 日历。{{message}}",
+      "unknown": "未知错误"
     },
-    "loading": "Loading..."
+    "loading": "加载中..."
   },
   "linkedNotes": {
-    "untitledNote": "Untitled Linked Note"
+    "untitledNote": "未命名的链接笔记"
   }
 }

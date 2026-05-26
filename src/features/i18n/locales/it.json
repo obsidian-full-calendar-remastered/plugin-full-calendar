@@ -52,14 +52,14 @@
         "groupExists": "Il nome del gruppo \"{{name}}\" esiste già."
       },
       "docs": {
-        "configurationGuide": "Configuration guide",
-        "matchingRules": "Matching rules",
+        "configurationGuide": "Guida alla configurazione",
+        "matchingRules": "Regole di corrispondenza",
         "faq": "FAQ",
-        "personaGuide": "Persona guide",
-        "insightsGuide": "Insight reference",
-        "ruleParameters": "Rule parameters",
-        "terminology": "Terminology",
-        "filtersGuide": "Filter syntax"
+        "personaGuide": "Guida Persona",
+        "insightsGuide": "Riferimento insight",
+        "ruleParameters": "Parametri della regola",
+        "terminology": "Terminologia",
+        "filtersGuide": "Sintassi dei filtri"
       }
     },
     "analyser": {
@@ -144,9 +144,9 @@
         "filePath": "Percorso file"
       },
       "demo": {
-        "title": "DEMO MODE",
-        "description": "You are exploring sample ChronoAnalyser data. Configure your own insight groups to switch permanently to live data.",
-        "turnOff": "Turn off demo"
+        "title": "MODALITÀ DEMO",
+        "description": "Stai esplorando dati di esempio di ChronoAnalyser. Configura i tuoi gruppi di insight per passare permanentemente ai dati in tempo reale.",
+        "turnOff": "Disattiva demo"
       }
     }
   },
@@ -159,7 +159,7 @@
     "openSidebar": "Apri nella barra laterale",
     "syncActivityWatch": "Sincronizza ActivityWatch",
     "nlpQuickAdd": "FCR Command",
-    "syncFcrReminder": "Sync FCR Reminder Companion"
+    "syncFcrReminder": "Sincronizza FCR Reminder Companion"
   },
   "notices": {
     "settingsUpdated": "Full Calendar ha aggiornato le impostazioni del calendario a un nuovo formato.",
@@ -194,25 +194,25 @@
       "apiUnavailable": "API del plugin Obsidian Tasks non disponibile."
     },
     "tasknotes": {
-      "addSourceFirst": "Add a TaskNotes calendar source first, then return here to configure integration.",
-      "handoffSingleOnly": "TaskNotes NLP handoff currently supports single events only.",
-      "handoffTitleRequired": "TaskNotes NLP handoff requires a title.",
-      "handoffStartTimeRequired": "TaskNotes NLP handoff requires a valid start time for timed events.",
-      "invalidSourceId": "TaskNotes provider source ID must follow tasknotes_[n] pattern (received: {{sourceId}}).",
-      "createModalUnavailable": "TaskNotes plugin is unavailable or does not expose create modal integration.",
-      "selectorUnavailable": "TaskNotes plugin is unavailable or does not expose selector integration."
+      "addSourceFirst": "Aggiungi prima una sorgente calendario TaskNotes, poi torna qui per configurare l'integrazione.",
+      "handoffSingleOnly": "Il trasferimento NLP di TaskNotes supporta attualmente solo eventi singoli.",
+      "handoffTitleRequired": "Il trasferimento NLP di TaskNotes richiede un titolo.",
+      "handoffStartTimeRequired": "Il trasferimento NLP di TaskNotes richiede un orario di inizio valido per gli eventi temporizzati.",
+      "invalidSourceId": "L'ID della sorgente provider TaskNotes deve seguire il modello tasknotes_[n] (ricevuto: {{sourceId}}).",
+      "createModalUnavailable": "Il plugin TaskNotes non è disponibile o non espone l'integrazione del modal di creazione.",
+      "selectorUnavailable": "Il plugin TaskNotes non è disponibile o non espone l'integrazione del selettore."
     },
     "milestones": {
       "unlockedTitle": "Traguardo sbloccato",
       "unlockedBody": "{{title}} - {{description}}"
     },
-    "chronoAnalyserDemoLoaded": "ChronoAnalyser demo loaded.",
-    "chronoAnalyserDemoLoadedFromCache": "ChronoAnalyser demo loaded from cache.",
-    "chronoAnalyserDemoLoadFailed": "Could not load the ChronoAnalyser demo. Falling back to live data.",
-    "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
-    "failedToCreateLinkedNote": "Failed to create linked note.",
-    "fcrReminderSynced": "FCR Reminder Companion synchronized successfully.",
-    "fcrReminderCompanionOfflineBold": "WARNING: The FCR Reminder Companion daemon is offline. You will NOT receive native desktop notifications until it is started."
+    "chronoAnalyserDemoLoaded": "Demo di ChronoAnalyser caricato.",
+    "chronoAnalyserDemoLoadedFromCache": "Demo di ChronoAnalyser caricato dalla cache.",
+    "chronoAnalyserDemoLoadFailed": "Impossibile caricare il demo di ChronoAnalyser. Ripiegamento sui dati live.",
+    "configureLinkedNotesDirFirst": "Configura prima una directory per le Note collegate nelle impostazioni.",
+    "failedToCreateLinkedNote": "Impossibile creare la nota collegata.",
+    "fcrReminderSynced": "FCR Reminder Companion sincronizzato con successo.",
+    "fcrReminderCompanionOfflineBold": "ATTENZIONE: Il demone FCR Reminder Companion è offline. NON riceverai notifiche desktop native fino al suo avvio."
   },
   "eventCache": {
     "calendarNotFound": "Impossibile aggiungere l'evento: calendario con ID {{calendarId}} non trovato.",
@@ -278,14 +278,14 @@
         "description": "Disattiva per aprire la vista giorno al clic."
       },
       "linkedNotesDirectory": {
-        "label": "Linked notes directory",
-        "description": "Choose the folder path where event linked notes will be created.",
+        "label": "Directory delle note collegate",
+        "description": "Scegli il percorso della cartella in cui verranno create le note collegate agli eventi.",
         "vaultRoot": "/ (Vault Root)"
       },
       "linkedNoteTemplate": {
-        "label": "Linked note template",
-        "description": "Define the template used for creating new linked notes. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
-        "placeholder": "Enter note Markdown template..."
+        "label": "Modello per note collegate",
+        "description": "Definisci il modello usato per creare nuove note collegate. Supporta: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
+        "placeholder": "Inserisci il modello Markdown della nota..."
       }
     },
     "reminders": {
@@ -404,8 +404,8 @@
         "label": "Mostra evento corrente nella barra di stato",
         "description": "Visualizza il titolo dell'evento in corso nella barra di stato di Obsidian."
       },
-      "highlightCurrentOrNextEvent": "Highlight current or next event",
-      "highlightCurrentOrNextEventDesc": "Highlights the current timed event, or the immediate next timed event if none is active.",
+      "highlightCurrentOrNextEvent": "Evidenzia evento corrente o successivo",
+      "highlightCurrentOrNextEventDesc": "Evidenzia l'evento temporizzato corrente o, se non ce n'è uno attivo, l'immediato prossimo evento temporizzato.",
       "milestones": {
         "label": "Traguardi",
         "description": "Traguardi locali di sola lettura che tracciano l'attività degli eventi riusciti in tutti i calendari.",
@@ -638,7 +638,7 @@
         },
         "importButton": "Importa calendari",
         "importing": "Importazione...",
-        "importFailed": "Failed to import calendar"
+        "importFailed": "Impossibile importare il calendario"
       },
       "tasks": {
         "zeroConfig": {
@@ -694,36 +694,36 @@
         "outlook": "Outlook calendar"
       },
       "linkedNotes": {
-        "title": "Linked Note Settings",
-        "description": "Configure settings for creating local Obsidian notes linked to remote calendar events.",
-        "learnMore": "Linked Notes Guide"
+        "title": "Impostazioni note collegate",
+        "description": "Configura le impostazioni per creare note locali di Obsidian collegate a eventi del calendario remoti.",
+        "learnMore": "Guida alle note collegate"
       },
       "holidays": {
         "calendarName": {
-          "label": "Calendar Name",
-          "description": "Display name shown in the calendar list"
+          "label": "Nome calendario",
+          "description": "Nome visualizzato nella lista dei calendari"
         },
         "country": {
-          "label": "Country",
-          "description": "ISO 3166-1 alpha-2 country code, e.g. US, GB, DE, CA."
+          "label": "Paese",
+          "description": "Codice paese ISO 3166-1 alpha-2, es. US, GB, DE, CA."
         },
         "state": {
-          "label": "State / Province",
-          "description": "State or province code for regional holidays, e.g. ca, ny, on, by. Leave empty for national holidays only."
+          "label": "Stato / Provincia",
+          "description": "Codice di stato o provincia per festività regionali, es. ca, ny, on, by. Lascia vuoto per solo festività nazionali."
         },
         "region": {
-          "label": "Region",
-          "description": "Sub-state region code for city or district level holidays. Leave empty if not needed."
+          "label": "Regione",
+          "description": "Codice di sottoregione per festività a livello cittadino o distrettuale. Lascia vuoto se non necessario."
         },
         "holidayTypes": {
-          "label": "Holiday Types",
-          "description": "Which tiers of holidays to display.",
+          "label": "Tipi di festività",
+          "description": "Quali livelli di festività visualizzare.",
           "options": {
-            "public": "Public holidays only",
-            "public_bank": "Public + Bank holidays",
-            "public_bank_observance": "Public + Bank + Observance",
-            "all_except_optional": "All except optional",
-            "all": "All types"
+            "public": "Solo festività pubbliche",
+            "public_bank": "Festività pubbliche + bancarie",
+            "public_bank_observance": "Festività pubbliche + bancarie + osservanze",
+            "all_except_optional": "Tutte tranne opzionali",
+            "all": "Tutti i tipi"
           }
         },
         "display": {
@@ -737,7 +737,7 @@
             "none": "Hidden"
           }
         },
-        "adding": "Adding..."
+        "adding": "Aggiunta..."
       }
     },
     "categorization": {
@@ -753,7 +753,7 @@
         "buttonDisable": "Disabilita e pulisci note",
         "buttonCancel": "Annulla"
       },
-      "learnMoreLink": "here"
+      "learnMoreLink": "qui"
     },
     "workspaces": {
       "title": "Workspace",
@@ -810,8 +810,8 @@
         "donationMessage": "FCR è costruito ad alta velocità con ingegneria aumentata dall'IA. Se questo ti ha fornito valore, considera di contribuire a un sussidio di 25 $/mese per aiutare a mantenere questo ritmo sostenibile.",
         "donationButton": "Rapporto sulla trasparenza e donazione"
       },
-      "whatsNew": "What's New",
-      "viewFull": "View full changelog"
+      "whatsNew": "Novità",
+      "viewFull": "Visualizza il changelog completo"
     },
     "utils": {
       "timelineDisabled": "La vista timeline è disabilitata. Ripristino della vista desktop predefinita a \"Settimana\"."
@@ -901,20 +901,20 @@
     },
     "fcrReminder": {
       "title": "FCR Reminder Companion",
-      "description": "Sync your upcoming calendar events with the persistent FCR Reminder background companion daemon to receive native system-level toast notifications even when Obsidian is completely closed.",
-      "learnMore": "FCR Reminder Guide",
+      "description": "Sincronizza i prossimi eventi del calendario con il demone in background FCR Reminder per ricevere notifiche native di sistema anche quando Obsidian è completamente chiuso.",
+      "learnMore": "Guida a FCR Reminder",
       "enable": {
-        "label": "Enable companion integration",
-        "description": "Synchronize upcoming event alarms to the background companion daemon."
+        "label": "Abilita integrazione companion",
+        "description": "Sincronizza gli allarmi dei prossimi eventi con il demone companion in background."
       },
       "apiUrl": {
-        "label": "Companion server url",
-        "description": "The loopback address of the FCR Reminder daemon.",
+        "label": "URL del server companion",
+        "description": "L'indirizzo loopback del demone FCR Reminder.",
         "placeholder": "http://127.0.0.1:45677"
       },
       "offlineBanner": {
-        "title": "⚠️ Companion app offline",
-        "message": "FCR Reminder is not running. Please start the companion app to enable native, offline notifications."
+        "title": "⚠️ App companion non in esecuzione",
+        "message": "FCR Reminder non è in esecuzione. Avvia l'app companion per abilitare le notifiche native offline."
       }
     }
   },
@@ -1360,9 +1360,9 @@
     "errorBody": "Full Calendar: Impossibile mostrare la notifica desktop. Controlla la console per errori."
   },
   "global": {
-    "learnMore": "Scopri di più",
-    "settingsHeader": "Passa tra gruppi di impostazioni focalizzati per mantenere la configurazione più leggera e facile da scansionare.",
-    "learnMoreLink": "Learn more"
+    "learnMore": "Per saperne di più: ",
+    "settingsHeader": "Passa tra gruppi di impostazioni focalizzati per mantenere la configurazione più snella e più facile da esaminare.",
+    "learnMoreLink": "Per saperne di più"
   },
   "api": {
     "authorization": {
@@ -1407,7 +1407,7 @@
       "REVALIDATE_REMOTE": "🔄 Convalida calendari remoti",
       "SYNC_ACTIVITYWATCH": "⏱️ Sincronizza ActivityWatch",
       "GOTO_DATE": "📆 Vai alla data",
-      "SHOW_MILESTONES": "🏅 Show Milestones"
+      "SHOW_MILESTONES": "🏅 Mostra traguardi"
     },
     "descriptions": {
       "OPEN_SETTINGS": "Apre la scheda delle impostazioni di Full Calendar.",
@@ -1416,7 +1416,7 @@
       "RESET_CACHE": "Svuota e ricostruisce la cache degli eventi.",
       "REVALIDATE_REMOTE": "Forza una sincronizzazione completa di tutti i calendari remoti.",
       "SYNC_ACTIVITYWATCH": "Recupera gli ultimi dati da ActivityWatch.",
-      "SHOW_MILESTONES": "Opens the milestones page in settings."
+      "SHOW_MILESTONES": "Apre la pagina dei traguardi nelle impostazioni."
     },
     "preview": {
       "target": "Destinazione",
@@ -1432,72 +1432,72 @@
     "notices": {
       "cacheReset": "La cache degli eventi è stata reimpostata.",
       "awNotEnabled": "ActivityWatch non è abilitato. Abilitalo prima nelle impostazioni.",
-      "fcrCompanionNotEnabled": "FCR Reminder Companion is not enabled. Enable it in settings first."
+      "fcrCompanionNotEnabled": "FCR Reminder Companion non è abilitato. Abilitalo prima nelle impostazioni."
     }
   },
   "outlook": {
     "auth": {
-      "expired": "Outlook authentication expired. Please reconnect your account.",
-      "authFailed": "Could not authenticate Outlook calendar. Please re-add it in settings.",
-      "desktopOnly": "Outlook sign-in is currently available on desktop only.",
-      "clientIdMissing": "Microsoft Client ID is required. Configure it in Integrations > Outlook.",
-      "proxyMissing": "Microsoft proxy URL is required. Configure it in Integrations > Outlook.",
-      "stateMismatch": "Outlook authentication failed. State mismatch.",
-      "success": "Successfully connected Outlook account!",
-      "failed": "Failed to connect Outlook account. Check the developer console for details.",
-      "callbackSuccess": "Authentication successful! Please return to Obsidian.",
-      "callbackFailed": "Authentication failed. Check Obsidian console and try again."
+      "expired": "Autenticazione Outlook scaduta. Ricollega il tuo account.",
+      "authFailed": "Impossibile autenticare il calendario Outlook. Ricollega il tuo account nelle impostazioni.",
+      "desktopOnly": "L'accesso a Outlook è attualmente disponibile solo su desktop.",
+      "clientIdMissing": "È richiesto l'ID client Microsoft. Configuralo in Integrazioni > Outlook.",
+      "proxyMissing": "È richiesto l'URL proxy Microsoft. Configuralo in Integrazioni > Outlook.",
+      "stateMismatch": "Autenticazione Outlook fallita. Mancanza di corrispondenza dello stato.",
+      "success": "Account Outlook collegato con successo!",
+      "failed": "Connessione dell'account Outlook non riuscita. Controlla la console di sviluppo per i dettagli.",
+      "callbackSuccess": "Autenticazione riuscita! Torna a Obsidian.",
+      "callbackFailed": "Autenticazione fallita. Controlla la console di Obsidian e riprova."
     },
-    "title": "Outlook Accounts",
+    "title": "Account Outlook",
     "docs": {
-      "setupGuide": "Outlook calendar setup"
+      "setupGuide": "Configurazione calendario Outlook"
     },
     "customCredentials": {
       "enable": {
-        "label": "Use custom Microsoft credentials",
-        "description": "Use your own Microsoft Client ID and proxy URL instead of the built-in defaults."
+        "label": "Usa credenziali Microsoft personalizzate",
+        "description": "Usa il tuo Microsoft Client ID e URL proxy invece dei valori predefiniti incorporati."
       }
     },
     "config": {
       "clientId": {
         "label": "Microsoft Client ID",
-        "description": "OAuth app Client ID used for Microsoft login."
+        "description": "ID client dell'app OAuth usato per l'accesso Microsoft."
       },
       "proxyUrl": {
-        "label": "Vercel proxy URL",
-        "description": "Base URL for your Microsoft token proxy (for example: https://your-app.vercel.app).",
+        "label": "URL proxy Vercel",
+        "description": "URL base per il tuo proxy token Microsoft (esempio: https://your-app.vercel.app).",
         "placeholder": "https://your-app.vercel.app"
       },
       "clientIdPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     },
     "misc": {
-      "settingsSourcesLink": "Calendar sources settings"
+      "settingsSourcesLink": "Impostazioni sorgenti calendario"
     },
-    "noAccounts": "No Outlook accounts connected. Add an Outlook calendar in Calendars to connect one.",
-    "accountDescription": "Connected account. ID: {{id}}",
+    "noAccounts": "Nessun account Outlook connesso. Aggiungi un calendario Outlook in Calendars per collegarne uno.",
+    "accountDescription": "Account connesso. ID: {{id}}",
     "buttons": {
-      "disconnect": "Disconnect",
-      "selectCalendars": "Select Calendars",
-      "connectAccount": "Connect Outlook Account",
-      "backToAccounts": "Back to Accounts",
-      "addCalendars": "Add {{count}} Calendar",
-      "addCalendarsPlural": "Add {{count}} Calendars"
+      "disconnect": "Disconnetti",
+      "selectCalendars": "Seleziona calendari",
+      "connectAccount": "Collega account Outlook",
+      "backToAccounts": "Torna agli account",
+      "addCalendars": "Aggiungi {{count}} calendario",
+      "addCalendarsPlural": "Aggiungi {{count}} calendari"
     },
     "selectAccount": {
-      "title": "Connect an Outlook Account"
+      "title": "Collega un account Outlook"
     },
     "selectCalendars": {
-      "title": "Select Calendars from {{email}}",
-      "noCalendars": "No new calendars found, or all calendars from this account have already been added.",
-      "description": "Choose which Outlook calendars you would like to add to Obsidian."
+      "title": "Seleziona calendari da {{email}}",
+      "noCalendars": "Nessun nuovo calendario trovato, oppure tutti i calendari di questo account sono già stati aggiunti.",
+      "description": "Scegli quali calendari Outlook vuoi aggiungere a Obsidian."
     },
     "errors": {
-      "fetchCalendars": "Failed to fetch Outlook calendars for {{email}}. {{message}}",
-      "unknown": "Unknown error"
+      "fetchCalendars": "Impossibile recuperare i calendari Outlook per {{email}}. {{message}}",
+      "unknown": "Errore sconosciuto"
     },
-    "loading": "Loading..."
+    "loading": "Caricamento..."
   },
   "linkedNotes": {
-    "untitledNote": "Untitled Linked Note"
+    "untitledNote": "Nota collegata senza titolo"
   }
 }

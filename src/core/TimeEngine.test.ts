@@ -1,6 +1,7 @@
-import { Settings } from 'luxon';
+import { DateTime, Settings } from 'luxon';
 import { TimeEngine } from './TimeEngine';
 import type EventCache from './EventCache';
+import type { TimeState } from './TimeEngine';
 import type { OFCEvent } from '../types';
 
 function createTimeEngine(events: { id: string; event: OFCEvent }[]): TimeEngine {
@@ -12,6 +13,20 @@ function createTimeEngine(events: { id: string; event: OFCEvent }[]): TimeEngine
   } as unknown as EventCache;
 
   return new TimeEngine(cache);
+}
+
+async function buildState(
+  events: { id: string; event: OFCEvent }[],
+  nowIso: string
+): Promise<TimeState> {
+  const engine = createTimeEngine(events);
+  const internals = engine as unknown as {
+    rebuildOccurrenceCache: () => Promise<void>;
+    calculateCurrentState: (now: DateTime) => TimeState;
+  };
+
+  await internals.rebuildOccurrenceCache();
+  return internals.calculateCurrentState(DateTime.fromISO(nowIso));
 }
 
 describe('TimeEngine', () => {
@@ -71,5 +86,68 @@ describe('TimeEngine', () => {
     expect(occurrence).toBeDefined();
     expect(occurrence.start.toUTC().toISO()).toBe('2026-06-15T14:00:00.000Z');
     expect(occurrence.end.toUTC().toISO()).toBe('2026-06-15T15:00:00.000Z');
+  });
+
+  it('does not include all-day task events in current or upcoming time state', async () => {
+    Settings.now = () => Date.parse('2026-06-15T10:00:00.000Z');
+
+    const allDayTask = {
+      type: 'single',
+      title: 'All-day task',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: true,
+      completed: false
+    } as OFCEvent;
+    const upcomingAllDayTask = {
+      type: 'single',
+      title: 'Tomorrow all-day task',
+      date: '2026-06-16',
+      endDate: null,
+      allDay: true,
+      completed: false
+    } as OFCEvent;
+
+    const state = await buildState(
+      [
+        { id: 'task-current', event: allDayTask },
+        { id: 'task-upcoming', event: upcomingAllDayTask }
+      ],
+      '2026-06-15T12:00:00.000'
+    );
+
+    expect(state.current).toBeNull();
+    expect(state.upcoming).toEqual([]);
+  });
+
+  it('prefers a timed current event over an all-day current event', async () => {
+    Settings.now = () => Date.parse('2026-06-15T10:00:00.000Z');
+
+    const allDayEvent = {
+      type: 'single',
+      title: 'All-day event',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: true
+    } as OFCEvent;
+    const timedEvent = {
+      type: 'single',
+      title: 'Scheduled event',
+      date: '2026-06-15',
+      startTime: '11:00',
+      endTime: '12:30',
+      allDay: false,
+      endDate: null
+    } as OFCEvent;
+
+    const state = await buildState(
+      [
+        { id: 'all-day', event: allDayEvent },
+        { id: 'timed', event: timedEvent }
+      ],
+      '2026-06-15T12:00:00.000'
+    );
+
+    expect(state.current?.id).toBe('timed');
   });
 });

@@ -62,6 +62,36 @@ const parseRecurringStart = (event: Extract<OFCEvent, { type: 'rrule' }>): DateT
   );
 };
 
+const isTaskEvent = (event: OFCEvent): boolean => {
+  return (
+    ('completed' in event && event.completed !== undefined) ||
+    ('isTask' in event && Boolean(event.isTask))
+  );
+};
+
+const shouldExcludeFromTimeState = (event: OFCEvent): boolean => {
+  return event.allDay && isTaskEvent(event);
+};
+
+const compareCurrentEventPriority = (
+  candidate: EnrichedOFCEvent,
+  current: EnrichedOFCEvent | null
+): number => {
+  if (!current) return -1;
+
+  if (candidate.event.allDay !== current.event.allDay) {
+    return candidate.event.allDay ? 1 : -1;
+  }
+
+  const candidateEnd = candidate.end.toMillis();
+  const currentEnd = current.end.toMillis();
+  if (candidateEnd !== currentEnd) {
+    return candidateEnd - currentEnd;
+  }
+
+  return candidate.start.toMillis() - current.start.toMillis();
+};
+
 // ============== CLASS DEFINITION ==============
 
 export class TimeEngine {
@@ -141,8 +171,14 @@ export class TimeEngine {
     const upcoming: EnrichedOFCEvent[] = [];
 
     for (const occurrence of this.occurrenceCache) {
+      if (shouldExcludeFromTimeState(occurrence.event)) {
+        continue;
+      }
+
       if (occurrence.start <= now && now < occurrence.end) {
-        current = occurrence;
+        if (compareCurrentEventPriority(occurrence, current) < 0) {
+          current = occurrence;
+        }
       } else if (occurrence.start > now) {
         upcoming.push(occurrence);
       }

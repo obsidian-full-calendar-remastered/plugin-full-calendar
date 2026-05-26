@@ -2,17 +2,29 @@
 
 Full Calendar is open to contributions, and we’re excited to have you here! This guide will help you get set up for local development.
 
-## Important Information for Contributors:
+> We welcome any and all types of PR, including the ones assisted by AI. Nevertheless, to ensure the code base is clean and up to the standards, it is ensured that it is strictly adhered to the following principles.
 
-- **Respect code architecture:** Please follow the established architecture and modular design of the project. Avoid placing code arbitrarily; keep changes organized and maintainable.
+## Core Engineering Standards & Guidelines
 
-- **Dont Modify test files:** Do **not** modify any existing `.test` files. You may add new tests, but existing tests should remain unchanged. This allows core maintainers to easily identify breaking changes and ensures they are responsible for updating tests if needed.
+To maintain a premium, state-of-the-art codebase, all contributions must strictly adhere to the following principles:
 
-- **Build configuration:** Avoid changing build configuration files unless absolutely necessary. Sudden build changes can disrupt other contributors, as many have their own development setups.
+### 1. SOLID, DRY & Modularity (Standard Programming practices)
+- **Open-Closed Principle (OCP)**: Leverage polymorphic interfaces so new features require extending systems, not modifying core registries or mutating existing flows.
+- **Single Responsibility (SRP)**: Keep classes, files, and views highly focused. Decouple concern layers cleanly (e.g. separate upper scrollable list filters from persistent fixed footers).
+- **Don't Repeat Yourself (DRY)**: Re-use selectors, normalizers, and formatting helpers. Avoid copy-pasted layout rules or logic.
 
-- **Document your changes:** Update documentation (README, docs, or code comments) when you add features or change existing behavior, so that other collaborators can easily catch up.
+### 2. Internationalization (i18n)
+- **Zero Hardcoded UI Strings**: All user-facing strings, headers, placeholders, helper text, and tooltips **MUST** be defined in [en.json](file:///d:/Codes/plugin-full-calendar/src/features/i18n/locales/en.json) and rendered via `t('key.path')`. (Do not modify other locale JSONs directly; maintainers or localized workflows will sync them later).
 
-- **Test your changes:** Add or update tests for your code. Make sure all tests pass before submitting a PR. If some tests do not pass and you have good reason to believe the tests themselves are incorrect, mention this in your PR description, but do not change the tests (core maintainers will handle test updates). Run both `npm run test` and `npm run lint:eslint` before submitting a PR.
+### 3. Documentation Sync & Formatting
+- **Technical & User Docs**: Synchronize architecture docs (under `docs/architecture/`) and user guides (under `docs/user/`) in the same PR. As the name suggests, one is the single source of implementation logic, while the other is for ease of access of users.
+- **Formatting Style**: Write extremely concise, hyperlinked, compact markdown. Rely on clean comparison tables and structural note/warning boxes rather than verbose paragraphs.
+
+### 4. Strict Type Safety & Linting
+- **Verification**: Run local tests and verify everything builds cleanly before submitting. Run `pnpm run ra` (for TypeScript compiling, Prettier formatting, ESLint/CSS lint checks, i18n validation, and Jest unit tests) and ensure it completes with **0 errors**.
+
+### 5. Test Integrity
+- **Don't Modify Existing Tests**: Never modify existing `.test` files. You are encouraged to add new unit or integration tests, but baseline coverage must remain intact to prevent regressions. If there is a good reason to modify the existing test files, please let the maintainers know and do not do it yourself.
 
 ---
 
@@ -40,13 +52,13 @@ You can build the plugin in two ways:
 * For development:
 
   ```bash
-  npm run dev
+  pnpm run dev
   ```
 
 * For a production/minified build:
 
   ```bash
-  npm run prod
+  pnpm run prod
   ```
 
 All build output will appear in the plugin directory created above.

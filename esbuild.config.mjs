@@ -80,7 +80,7 @@ async function build() {
             }
 
             // Copy manifest.json
-            const manifestSrc = path.join(process.cwd(), "manifest.json");
+            const manifestSrc = path.join(process.cwd(), "manifest-beta.json");
             const manifestDest = path.join(outputDir, "manifest.json");
             try {
               fs.copyFileSync(manifestSrc, manifestDest);

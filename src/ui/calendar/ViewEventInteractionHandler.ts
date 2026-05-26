@@ -123,7 +123,7 @@ export class ViewEventInteractionHandler {
     allDay: boolean,
     viewType: string
   ): Promise<void> {
-    if (viewType === 'dayGridMonth') {
+    if (allDay) {
       end.setDate(end.getDate() - 1);
     }
     const displayZone =

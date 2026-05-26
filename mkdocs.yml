@@ -142,6 +142,7 @@ nav:
           - Features:    
                 - user/features/index.md
                 - FCR Command (NLP): user/features/nlp.md
+                - Task Backlog Panel: user/features/tasks-backlog.md
                 - Interactions and Gestures: user/features/interactions.md
                 - Milestones and Progress: user/features/milestones.md
                 - Reminders and Notifications: user/features/reminders.md

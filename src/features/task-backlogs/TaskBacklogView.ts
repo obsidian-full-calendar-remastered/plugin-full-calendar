@@ -340,7 +340,7 @@ export class TaskBacklogView extends ItemView {
       createDocsLinksFragment([
         {
           text: t('settings.taskBacklog.learnMore'),
-          path: 'user/calendars/tasks-plugin-integration/'
+          path: 'user/features/tasks-backlog/'
         }
       ])
     );

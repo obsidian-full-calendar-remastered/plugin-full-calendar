@@ -923,8 +923,8 @@
       "placeholder": "Task title...",
       "newTitleLabel": "New task name",
       "addBtnLabel": "Add task",
-      "helpText": "Creates a task on your remote server. ",
-      "learnMore": "Learn more"
+      "helpText": "Crée une tâche non planifiée dans le fournisseur sélectionné. ",
+      "learnMore": "Guide du backlog des tâches"
     }
   },
   "modals": {

@@ -848,7 +848,7 @@
       "placeholder": "Task title...",
       "newTitleLabel": "New task name",
       "addBtnLabel": "Add task",
-      "helpText": "Creates a task on your remote server. ",
+      "helpText": "Creates an unscheduled task in your selected provider. ",
       "learnMore": "Tasks Backlog Guide"
     },
     "tasksIntegration": {

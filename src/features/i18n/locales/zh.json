@@ -923,8 +923,8 @@
       "placeholder": "Task title...",
       "newTitleLabel": "New task name",
       "addBtnLabel": "Add task",
-      "helpText": "Creates a task on your remote server. ",
-      "learnMore": "Learn more"
+      "helpText": "在选定的提供商中创建未计划的任务。 ",
+      "learnMore": "任务待办列表指南"
     }
   },
   "modals": {

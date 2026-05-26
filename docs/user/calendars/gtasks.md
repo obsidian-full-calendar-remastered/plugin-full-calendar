@@ -26,7 +26,7 @@ If you haven't already connected a Google account:
 ## Key Features & Workflows
 
 ### 📥 Zero-Impact Backlog Integration
-Any undated or incomplete tasks on your Google Tasks list automatically appear in the sidebar **Tasks Backlog** panel. 
+Any undated or incomplete tasks on your Google Tasks list automatically appear in the sidebar **[Tasks Backlog](../features/tasks-backlog.md)** panel. 
 
 - **Access the Backlog:** Open the Tasks Backlog sidebar to view all active, unscheduled tasks.
 - **Drag-and-Drop Scheduling:** To schedule a task, drag it from the backlog list and drop it onto any date in your calendar view. This instantly writes the corresponding due date back to Google Tasks.
@@ -39,7 +39,7 @@ Any undated or incomplete tasks on your Google Tasks list automatically appear i
 ### 📝 Linked Notes
 Keep detailed project notes or task descriptions locally in Obsidian while keeping them linked to your remote task.
 - Click a task event in the calendar or backlog, and click **Create Event Note**.
-- A local markdown note will be created, indexed, and linked.
+- A local markdown note will be created, indexed, and linked using **[Event Linked Notes](../features/event-linked-notes.md)** templates.
 - The linked note indicator will automatically show that a local page is associated with the Google Task.
 
 ---

@@ -15,6 +15,7 @@
 | Use in your native language | [Internationalization (i18n)](i18n.md) | Multi-language support and automatic translation |
 | Glance at next event | [Status Bar Integration](statusbar.md) | Quick countdown to your next meeting in the Obsidian status bar |
 | Take local notes for remote events | [Event Linked Notes](event-linked-notes.md) | Link rich local notes to external events with automatic templating |
+| Unified Backlog Panel | [Task Backlog](tasks-backlog.md) | Aggregate and schedule tasks across multiple providers |
 
 ## Feature Directory
 
@@ -25,6 +26,7 @@
 - Global: [Internationalization (i18n)](i18n.md)
 - UI: [Status Bar Integration](statusbar.md)
 - Note Integration: [Event Linked Notes](event-linked-notes.md)
+- Task Backlog: [Task Backlog](tasks-backlog.md)
 
 ## Related Sections
 
@@ -35,4 +37,4 @@
 
 ---
 
-[NLP](nlp.md) · [Interactions](interactions.md) · [Milestones](milestones.md) · [Reminders](reminders.md) · [FCR Reminder](fcr-reminder.md) · [i18n](i18n.md) · [Status Bar](statusbar.md) · [Linked Notes](event-linked-notes.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)
+[NLP](nlp.md) · [Interactions](interactions.md) · [Milestones](milestones.md) · [Reminders](reminders.md) · [FCR Reminder](fcr-reminder.md) · [i18n](i18n.md) · [Status Bar](statusbar.md) · [Linked Notes](event-linked-notes.md) · [Task Backlog](tasks-backlog.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)

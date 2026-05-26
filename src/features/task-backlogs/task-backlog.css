@@ -59,11 +59,11 @@
 
 /* Persistent Footer Layout Redesign */
 .tasks-backlog-view {
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-  padding: 0 !important;
-  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
 }
 
 .tasks-backlog-content {

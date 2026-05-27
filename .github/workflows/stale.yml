@@ -5,20 +5,23 @@ on:
     - cron: "0 3 * * 1"  # daily run
   workflow_dispatch:
 
+permissions:
+  issues: write
+  pull-requests: write
+
 jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v9
+      - name: Handle Stale Issues
+        uses: actions/stale@v9
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
           # ✅ Timing
           days-before-issue-stale: 30
           days-before-issue-close: 10
-
-          days-before-pr-stale: 30
-          days-before-pr-close: 10
+          days-before-pr-stale: -1 # Disable PR processing in this step
 
           # ✅ Messages
           stale-issue-message: >
@@ -28,25 +31,152 @@ jobs:
           close-issue-message: >
             Closing this issue due to inactivity.
 
-          stale-pr-message: >
-            This PR has been inactive for 60 days.
-            It will be closed in 10 days unless updated.
-
-          close-pr-message: >
-            Closing this PR due to inactivity.
-
           # ✅ Labels applied
           stale-issue-label: stale
-          stale-pr-label: stale
 
           # ✅ IMPORTANT: exemptions
           exempt-issue-labels: "keep open,help wanted"
-          exempt-pr-labels: "keep open"
 
           # ✅ Behavior tweaks
           remove-stale-when-updated: true
-          delete-branch: false
-
-          # Optional but useful:
           operations-per-run: 200
           ascending: true
+
+      - name: Handle Stale PRs
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const STALE_DAYS = 30;
+            const CLOSE_DAYS = 10;
+            const STALE_LABEL = 'stale';
+            const now = new Date();
+
+            // ==========================================
+            // PROCESS PULL REQUESTS (CUSTOM LOGIC)
+            // ==========================================
+            const { data: pullRequests } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+            });
+
+            for (const pr of pullRequests) {
+              console.log(`Processing PR #${pr.number}: ${pr.title}`);
+
+              // Fetch commits in the PR
+              const { data: commits } = await github.rest.pulls.listCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+              });
+
+              // Fetch issue comments (general discussion comments)
+              const { data: issueComments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+              });
+
+              // Fetch review comments (inline code comments)
+              const { data: reviewComments } = await github.rest.pulls.listReviewComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+              });
+
+              // Fetch reviews
+              const { data: reviews } = await github.rest.pulls.listReviews({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+              });
+
+              // Calculate latest activity date based strictly on PR actions (ignoring base branch updates)
+              let latestActivityDate = new Date(pr.created_at);
+
+              // Check commits
+              for (const commit of commits) {
+                const commitDate = new Date(commit.commit.author.date);
+                if (commitDate > latestActivityDate) latestActivityDate = commitDate;
+              }
+
+              // Check comments (excluding comments posted by the stale bot itself)
+              for (const comment of issueComments) {
+                if (comment.user && comment.user.login === 'github-actions[bot]') continue;
+                const commentDate = new Date(comment.created_at);
+                if (commentDate > latestActivityDate) latestActivityDate = commentDate;
+              }
+
+              // Check inline review comments
+              for (const comment of reviewComments) {
+                if (comment.user && comment.user.login === 'github-actions[bot]') continue;
+                const commentDate = new Date(comment.created_at);
+                if (commentDate > latestActivityDate) latestActivityDate = commentDate;
+              }
+
+              // Check reviews
+              for (const review of reviews) {
+                if (review.user && review.user.login === 'github-actions[bot]') continue;
+                if (review.submitted_at) {
+                  const reviewDate = new Date(review.submitted_at);
+                  if (reviewDate > latestActivityDate) latestActivityDate = reviewDate;
+                }
+              }
+
+              const daysInactive = (now - latestActivityDate) / (1000 * 60 * 60 * 24);
+              console.log(`  - Days inactive: ${daysInactive.toFixed(1)} (Latest genuine activity: ${latestActivityDate.toISOString()})`);
+
+              const labels = pr.labels.map(l => l.name);
+              const hasStaleLabel = labels.includes(STALE_LABEL);
+              const isExempt = labels.includes('keep open');
+
+              if (isExempt) {
+                console.log(`  - PR is exempt (has 'keep open' label). Skipping.`);
+                continue;
+              }
+
+              if (daysInactive > (STALE_DAYS + CLOSE_DAYS)) {
+                if (hasStaleLabel) {
+                  console.log(`  - PR is inactive for over ${STALE_DAYS + CLOSE_DAYS} days. Closing PR.`);
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    body: 'Closing this PR due to inactivity.',
+                  });
+                  await github.rest.pulls.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: pr.number,
+                    state: 'closed',
+                  });
+                }
+              } else if (daysInactive > STALE_DAYS) {
+                if (!hasStaleLabel) {
+                  console.log(`  - PR is stale. Adding '${STALE_LABEL}' label and warning comment.`);
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    labels: [STALE_LABEL],
+                  });
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    body: 'This PR has been inactive for 30 days. It will be closed in 10 days unless updated.',
+                  });
+                }
+              } else {
+                if (hasStaleLabel) {
+                  console.log(`  - PR has new genuine activity. Removing '${STALE_LABEL}' label.`);
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    name: STALE_LABEL,
+                  });
+                }
+              }
+            }

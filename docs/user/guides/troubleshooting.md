@@ -42,6 +42,16 @@ Use this page as a first response checklist for common issues.
 
     See: [Timezone Support](../events/timezones.md)
 
+??? question "How do I force a 24-hour format and European (DD/MM/YYYY) date display while keeping English UI?"
+    <a id="how-do-i-force-24-hour-format-and-european-dates"></a>
+    If your system defaults override the calendar formatting, you can force Obsidian to display a 24-hour clock and European date order (while keeping Obsidian's interface in English) by launching it with the `LANG` environment variable set to `en_DK.UTF-8` on Linux or macOS:
+    
+    ```bash
+    LANG=en_DK.UTF-8 obsidian
+    ```
+    
+    This ensures that Electron/Obsidian inherits the 24-hour format directly from this standard ISO locale. For more details on this setup and community discussion, see [GitHub Issue #272, Comment 4529803759](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/272#issuecomment-4529803759).
+
 ## FCR Command (NLP)
 
 ??? question "FCR Command not found"

@@ -8,6 +8,18 @@
 ## Time & Dates
 
 *   **24-Hour Time**: Toggle between AM/PM and 24h military time.
+
+    !!! tip "System Locale & Environment Override"
+        Many underlying date and time format properties (like 24-hour display and day/month/year order) are inherited directly from your operating system's locale settings via Obsidian.
+        
+        If you want to use the **English interface** but force **24-hour time** and the **day/month/year (DD/MM/YYYY)** formatting on Linux or macOS, you can launch Obsidian with the `LANG` environment variable set to `en_DK.UTF-8`:
+        
+        ```bash
+        LANG=en_DK.UTF-8 obsidian
+        ```
+        
+        For more details and community discussion on this setup, see [GitHub Issue #272, Comment 4529803759](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/272#issuecomment-4529803759).
+
 *   **First Day of Week**: Choose which day (Sunday, Monday, etc.) starts your week view.
 
     ![Change First Day of Week](../../assets/settings/change-week-start.gif)

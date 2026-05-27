@@ -165,6 +165,125 @@ for (const localeFile of localeFiles) {
   }
 }
 
+// --- NLP payloads synchronization logic ---
+
+const nlpDir = path.join('src', 'features', 'nlp', 'payloads');
+const nlpEnPath = path.join(nlpDir, 'en.json');
+const nlpEnJson = JSON.parse(fs.readFileSync(nlpEnPath, 'utf8'));
+
+// Specialized sync function for NLP objects to preserve regex/flags and custom rules
+function syncNlpObjects(template, target, targetLocale) {
+  let modified = false;
+
+  // 1. Sync version
+  if (target.version !== template.version) {
+    target.version = template.version;
+    modified = true;
+  }
+
+  // 2. Sync locale
+  if (target.locale !== targetLocale) {
+    target.locale = targetLocale;
+    modified = true;
+  }
+
+  // 3. Sync categoryParsing
+  if (!target.categoryParsing) {
+    target.categoryParsing = {};
+    modified = true;
+  }
+  if (syncObjects(template.categoryParsing, target.categoryParsing)) {
+    modified = true;
+  }
+
+  // 4. Sync rules array
+  if (!target.rules) {
+    target.rules = [];
+    modified = true;
+  }
+
+  const templateRuleNames = new Set(template.rules.map(r => r.name));
+  const targetOnlyRules = target.rules.filter(r => !templateRuleNames.has(r.name));
+
+  const finalRules = [];
+  for (const tempRule of template.rules) {
+    const tRule = target.rules.find(r => r.name === tempRule.name);
+    if (tRule) {
+      const merged = { ...tempRule };
+      if (tRule.hasOwnProperty('regex')) merged.regex = tRule.regex;
+      if (tRule.hasOwnProperty('flags')) merged.flags = tRule.flags;
+      // actions are logic/intent properties, so copy directly from template
+      if (tempRule.hasOwnProperty('actions')) {
+        merged.actions = [...tempRule.actions];
+      }
+      finalRules.push(merged);
+    } else {
+      finalRules.push({ ...tempRule });
+    }
+  }
+
+  // Preserve target-only rules in their relative original positions
+  for (const targetOnlyRule of targetOnlyRules) {
+    const origIdx = target.rules.findIndex(r => r.name === targetOnlyRule.name);
+    let nextTemplateRuleName = null;
+    for (let i = origIdx + 1; i < target.rules.length; i++) {
+      if (templateRuleNames.has(target.rules[i].name)) {
+        nextTemplateRuleName = target.rules[i].name;
+        break;
+      }
+    }
+    
+    if (nextTemplateRuleName) {
+      const insertIdx = finalRules.findIndex(r => r.name === nextTemplateRuleName);
+      if (insertIdx !== -1) {
+        finalRules.splice(insertIdx, 0, targetOnlyRule);
+        continue;
+      }
+    }
+    finalRules.push(targetOnlyRule);
+  }
+
+  if (JSON.stringify(target.rules) !== JSON.stringify(finalRules)) {
+    target.rules = finalRules;
+    modified = true;
+  }
+
+  return modified;
+}
+
+console.log(`\n🔄 Syncing and checking NLP payloads...`);
+const allLocales = fs.readdirSync(localesDir)
+  .filter(f => f.endsWith('.json'))
+  .map(f => path.basename(f, '.json')); // e.g. ["de", "en", "es", "fr", "it", "zh"]
+
+for (const lang of allLocales) {
+  if (lang === 'en') continue;
+
+  const nlpFilePath = path.join(nlpDir, `${lang}.json`);
+  let nlpJson;
+  let wasModified = false;
+
+  if (!fs.existsSync(nlpFilePath)) {
+    console.log(`🆕 NLP payload for '${lang}' does not exist. Creating from en.json...`);
+    nlpJson = JSON.parse(JSON.stringify(nlpEnJson));
+    nlpJson.locale = lang;
+    fs.writeFileSync(nlpFilePath, JSON.stringify(nlpJson, null, 2) + '\n', 'utf8');
+    console.log(`✅ Created ${lang}.json in NLP payloads`);
+    wasModified = true;
+    hasErrors = true;
+  } else {
+    nlpJson = JSON.parse(fs.readFileSync(nlpFilePath, 'utf8'));
+    wasModified = syncNlpObjects(nlpEnJson, nlpJson, lang);
+    if (wasModified) {
+      fs.writeFileSync(nlpFilePath, JSON.stringify(nlpJson, null, 2) + '\n', 'utf8');
+      console.log(`✅ Synced ${lang}.json in NLP payloads with en.json`);
+      hasErrors = true;
+    } else {
+      console.log(`✅ NLP payload for '${lang}' is already in sync`);
+    }
+  }
+}
+
 if (hasErrors) {
   if (missingKeys.length > 0) {
     console.error('\n🚨 Run failed due to missing i18n keys.');

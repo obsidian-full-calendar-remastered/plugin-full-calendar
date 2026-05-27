@@ -67,9 +67,10 @@ async function build() {
         setup(build) {
           build.onEnd(() => {
 
-            const outputDir = "obsidian-dev-vault/.obsidian/plugins/full-calendar-remastered";
-            const oldCssPath = path.join(outputDir, "main.css");
-            const newCssPath = path.join(outputDir, "styles.css");
+            const rootDir = process.cwd();
+            const devEnvDir = "obsidian-dev-vault/.obsidian/plugins/full-calendar-remastered";
+            const oldCssPath = path.join(rootDir, "main.css");
+            const newCssPath = path.join(rootDir, "styles.css");
 
             // Rename CSS file
             if (fs.existsSync(oldCssPath)) {
@@ -79,9 +80,29 @@ async function build() {
               console.warn("⚠️ CSS file not found to rename");
             }
 
+            // Ensure output directory exists
+            try {
+              if (!fs.existsSync(devEnvDir)) {
+                fs.mkdirSync(devEnvDir, { recursive: true });
+              }
+            } catch (err) {
+              console.warn("⚠️ Could not create output directory:", err);
+            }
+
+            // Copy main.js and styles.css to dev environment
+            try {
+              fs.copyFileSync(path.join(rootDir, "main.js"), path.join(devEnvDir, "main.js"));
+              if (fs.existsSync(newCssPath)) {
+                fs.copyFileSync(newCssPath, path.join(devEnvDir, "styles.css"));
+              }
+              console.log(" | Copied main.js and styles.css to dev vault");
+            } catch (err) {
+              console.warn("⚠️ Could not copy build files to dev vault:", err);
+            }
+
             // Copy manifest.json
-            const manifestSrc = path.join(process.cwd(), "manifest-beta.json");
-            const manifestDest = path.join(outputDir, "manifest.json");
+            const manifestSrc = path.join(rootDir, "manifest-beta.json");
+            const manifestDest = path.join(devEnvDir, "manifest.json");
             try {
               fs.copyFileSync(manifestSrc, manifestDest);
               console.log(" | Copied manifest.json to dev vault");
@@ -92,7 +113,7 @@ async function build() {
         }
       }
     ],
-    outfile: "obsidian-dev-vault/.obsidian/plugins/full-calendar-remastered/main.js",
+    outfile: "main.js",
     metafile: true,
   });
 

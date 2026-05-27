@@ -101,3 +101,70 @@ export const editorInfoField = StateField.define<unknown>({
     create: () => null,
     update: (val: unknown) => val
 });
+
+export class Component {}
+export class MarkdownRenderChild extends Component {}
+export class Modal {
+    contentEl: HTMLElement;
+    constructor(public app: unknown) {
+        this.contentEl = document.createElement("div");
+    }
+    open() {}
+    close() {}
+    onOpen() {}
+    onClose() {}
+}
+export class App {}
+
+export class PluginSettingTab {
+    containerEl: HTMLElement;
+    constructor(public app: unknown, public plugin: unknown) {
+        this.containerEl = document.createElement("div");
+    }
+}
+
+export class WorkspaceLeaf {}
+export class ItemView {
+    constructor(public leaf: unknown) {}
+}
+
+export class DropdownComponent {
+
+    value: string = "";
+    addOptions(options: Record<string, string>): this {
+        return this;
+    }
+    getValue(): string {
+        return this.value;
+    }
+    setValue(value: string): this {
+        this.value = value;
+        return this;
+    }
+}
+
+export class Setting {
+    constructor(public containerEl: HTMLElement) {}
+    setName(name: string): this { return this; }
+    setDesc(desc: unknown): this { return this; }
+    setHeading(): this { return this; }
+    addDropdown(cb: (d: DropdownComponent) => unknown): this {
+        cb(new DropdownComponent());
+        return this;
+    }
+    addExtraButton(cb: (b: unknown) => unknown): this {
+        const button = {
+            setTooltip: () => button,
+            setIcon: () => button,
+            onClick: (onClickCb: unknown) => { return button; }
+        };
+        cb(button);
+        return this;
+    }
+}
+
+
+export function setIcon(el: HTMLElement, iconId: string): void {}
+export const activeDocument = typeof document !== 'undefined' ? document : null;
+
+

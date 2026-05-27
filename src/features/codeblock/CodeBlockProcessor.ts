@@ -9,7 +9,13 @@ import {
 import { getDateFromFile } from 'obsidian-daily-notes-interface';
 import FullCalendarPlugin from '../../main';
 import { PluginState } from '../../core/PluginState';
-import { EventFilterSortEngine, QueryableEvent } from '../../core/EventFilterSortEngine';
+import {
+  EventFilterSortEngine,
+  QueryableEvent,
+  EventFilterCriteria,
+  EventSortCriteria
+} from '../../core/EventFilterSortEngine';
+import { DateTime } from 'luxon';
 import { ViewContext } from '../../ui/calendar/ViewContext';
 import { ViewEnhancer } from '../../core/ViewEnhancer';
 import { ViewEventInteractionHandler } from '../../ui/calendar/ViewEventInteractionHandler';
@@ -24,16 +30,48 @@ import {
   EmbeddedBlockRegistry
 } from './EmbeddedBlockRegistry';
 
+export function parseRelativeOffset(offsetStr: string, baseDate: DateTime): DateTime {
+  const match = offsetStr.trim().match(/^([+-]?\d+)\s*([dwmy])$/);
+  if (!match) return baseDate;
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+
+  switch (unit) {
+    case 'd':
+      return baseDate.plus({ days: value });
+    case 'w':
+      return baseDate.plus({ weeks: value });
+    case 'm':
+      return baseDate.plus({ months: value });
+    case 'y':
+      return baseDate.plus({ years: value });
+    default:
+      return baseDate;
+  }
+}
+
 interface ViewConfig {
   view?: string;
   height?: string;
   width?: string;
   defaultDate?: string;
+  startOffset?: string;
+  endOffset?: string;
   calendars?: string[];
-  header?: boolean;
+  categories?: string[];
+  subCategories?: string[];
+  completed?: boolean;
+  isTask?: boolean;
+  excludeAllDayTasks?: boolean;
+  textSearch?: string;
   titleFilter?: string;
   tagFilter?: string;
   pathFilter?: string;
+  sortBy?: 'start' | 'end' | 'title' | 'category' | 'priority';
+  sortOrder?: 'asc' | 'desc';
+  inheritFilters?: boolean;
+  header?: boolean;
   zoomLevel?: number;
   slotDuration?: string;
   slotLabelInterval?: string;
@@ -260,53 +298,95 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       });
     }
 
-    // Apply advanced content/metadata filters on event arrays
+    // Parse Date Range Offsets
+    let baseDate = DateTime.now().startOf('day');
+    if (config.defaultDate === 'today') {
+      baseDate = DateTime.now().startOf('day');
+    } else if (config.defaultDate && config.defaultDate !== 'auto') {
+      const parsed = DateTime.fromISO(config.defaultDate);
+      if (parsed.isValid) baseDate = parsed.startOf('day');
+    } else {
+      const file = this.app.vault.getAbstractFileByPath(this.widgetCtx.sourcePath);
+      if (file instanceof TFile) {
+        const dailyNoteDate = getDateFromFile(file, 'day');
+        if (dailyNoteDate) {
+          const parsed = DateTime.fromISO(dailyNoteDate.format('YYYY-MM-DD'));
+          if (parsed.isValid) baseDate = parsed.startOf('day');
+        }
+      }
+    }
+
+    let startMillis: number | undefined;
+    let endMillis: number | undefined;
+    if (config.startOffset) {
+      startMillis = parseRelativeOffset(config.startOffset, baseDate).toMillis();
+    }
+    if (config.endOffset) {
+      endMillis = parseRelativeOffset(config.endOffset, baseDate).endOf('day').toMillis();
+    }
+
+    // Build central criteria
+    const criteria: EventFilterCriteria = {
+      calendarIds: config.calendars,
+      categories: config.categories,
+      subCategories: config.subCategories,
+      isCompleted: config.completed,
+      isTask: config.isTask,
+      excludeAllDayTasks: config.excludeAllDayTasks,
+      ...(config.pathFilter && { filePathSubstring: config.pathFilter }),
+      ...(config.tagFilter && { tags: [config.tagFilter] }),
+      ...((startMillis !== undefined || endMillis !== undefined) && {
+        dateRange: { startMillis, endMillis }
+      }),
+      ...(config.textSearch && {
+        textSearch: { query: config.textSearch, mode: 'default' }
+      })
+    };
+
+    // Build sort criteria
+    const sorts: EventSortCriteria[] = [];
+    if (config.sortBy) {
+      sorts.push({
+        field: config.sortBy,
+        order: config.sortOrder || 'asc'
+      });
+    }
+
+    // Apply advanced filters and sorts using the engine
     filteredSources = filteredSources.map(s => {
       if (typeof s === 'object' && s !== null && 'events' in s && Array.isArray(s.events)) {
-        const filteredEvents = s.events.filter((item: EventInput) => {
-          const eItem = item as unknown as { event: OFCEvent; id: string };
-          const ofcEvent = eItem.event;
-          if (!ofcEvent) return true;
+        const queryables = s.events
+          .map((item: EventInput) => {
+            const eItem = item as unknown as { event: OFCEvent; id: string };
+            const ofcEvent = eItem.event;
+            if (!ofcEvent) return null;
 
-          const details = PluginState.getCache().store.getEventDetails(eItem.id);
-          const queryable: QueryableEvent = {
-            id: eItem.id,
-            title: ofcEvent.title || '',
-            description: ofcEvent.description,
-            category: ofcEvent.category,
-            subCategory: ofcEvent.subCategory,
-            filePath: details?.location?.path || ''
-          };
+            const details = PluginState.getCache().store.getEventDetails(eItem.id);
+            const q = EventFilterSortEngine.fromStoredEvent(
+              details || {
+                id: eItem.id,
+                event: ofcEvent,
+                location: null,
+                calendarId: typeof s === 'object' && 'id' in s ? (s.id as string) : ''
+              }
+            );
+            // Attach reference to item for rebuilding
+            q.rawEvent = item;
+            return q;
+          })
+          .filter((q): q is QueryableEvent => q !== null);
 
-          // 1. Filter by Title (case-insensitive substring)
-          if (config.titleFilter) {
-            if (!queryable.title.toLowerCase().includes(config.titleFilter.toLowerCase())) {
-              return false;
-            }
-          }
+        // Run engine query
+        let queried = EventFilterSortEngine.query(queryables, criteria, sorts);
 
-          // 2. Filter by File Path (case-insensitive substring)
-          if (config.pathFilter) {
-            if (
-              !queryable.filePath ||
-              !queryable.filePath.toLowerCase().includes(config.pathFilter.toLowerCase())
-            ) {
-              return false;
-            }
-          }
+        // Apply custom titleFilter substring check if defined
+        const titleFilter = config.titleFilter;
+        if (titleFilter) {
+          queried = queried.filter(q => q.title.toLowerCase().includes(titleFilter.toLowerCase()));
+        }
 
-          // 3. Filter by Tag (case-insensitive title, description or category/subcategory search)
-          if (config.tagFilter) {
-            const isMatch = EventFilterSortEngine.matchEvent(queryable, {
-              textSearch: { query: config.tagFilter, mode: 'embedded' }
-            });
-            if (!isMatch) {
-              return false;
-            }
-          }
-
-          return true;
-        });
+        // Map back to EventInput elements
+        const filteredEvents = queried.map(q => q.rawEvent as EventInput);
 
         return {
           ...s,
@@ -517,7 +597,28 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
                 }
               }
 
-              await renderItem(viewEl, viewConfig);
+              const shouldInherit =
+                viewConfig.inheritFilters !== false && parsedConfig.inheritFilters !== false;
+              const mergedViewConfig = {
+                ...(shouldInherit && {
+                  calendars: parsedConfig.calendars,
+                  categories: parsedConfig.categories,
+                  subCategories: parsedConfig.subCategories,
+                  completed: parsedConfig.completed,
+                  isTask: parsedConfig.isTask,
+                  excludeAllDayTasks: parsedConfig.excludeAllDayTasks,
+                  textSearch: parsedConfig.textSearch,
+                  titleFilter: parsedConfig.titleFilter,
+                  tagFilter: parsedConfig.tagFilter,
+                  pathFilter: parsedConfig.pathFilter,
+                  sortBy: parsedConfig.sortBy,
+                  sortOrder: parsedConfig.sortOrder,
+                  startOffset: parsedConfig.startOffset,
+                  endOffset: parsedConfig.endOffset
+                }),
+                ...viewConfig
+              };
+              await renderItem(viewEl, mergedViewConfig);
             }
           } else {
             const configObj = parsedConfig as {

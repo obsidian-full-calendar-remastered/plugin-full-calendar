@@ -1305,7 +1305,9 @@
       "connectAccount": "连接 Google 账户",
       "backToAccounts": "返回账户",
       "addCalendars": "添加 {{count}} 个日历",
-      "addCalendarsPlural": "添加 {{count}} 个日历"
+      "addCalendarsPlural": "添加 {{count}} 个日历",
+      "selectTaskLists": "Select task lists",
+      "addTaskList": "Add Google Task List"
     },
     "selectAccount": {
       "title": "连接 Google 账户"
@@ -1315,7 +1317,16 @@
       "noCalendars": "未找到新日历，或此账户的所有日历均已添加。",
       "description": "选择要添加到 Obsidian 的日历。"
     },
-    "loading": "加载中..."
+    "loading": "加载中...",
+    "selectTasks": {
+      "title": "Select Google Task Lists for {{email}}",
+      "noTaskLists": "No remaining task lists found on this account.",
+      "description": "Select the Google Task lists you want to add."
+    },
+    "errors": {
+      "tokenRefreshFailed": "Failed to refresh token for {{email}}. Please try connecting the account again.",
+      "fetchTaskListsFailed": "Failed to fetch task lists for {{email}}. {{message}}"
+    }
   },
   "ui": {
     "view": {

@@ -16,6 +16,7 @@ import { DateTime } from 'luxon';
 import { RRule, rrulestr } from 'rrule';
 import { OFCEvent, EventLocation } from '../types';
 import EventCache from './EventCache';
+import { EventFilterSortEngine } from './EventFilterSortEngine';
 
 // ============== INTERFACES ==============
 
@@ -266,8 +267,17 @@ export class TimeEngine {
         }
       }
 
-      newOccurrences.sort((a, b) => a.start.toMillis() - b.start.toMillis());
-      this.occurrenceCache = newOccurrences.slice(0, MAX_OCCURRENCES);
+      const queryables = newOccurrences.map(occ => {
+        const q = EventFilterSortEngine.fromEnrichedEvent(occ);
+        q.rawEvent = occ;
+        return q;
+      });
+      const sortedQueryables = EventFilterSortEngine.sortEvents(queryables, [
+        { field: 'start', order: 'asc' }
+      ]);
+      this.occurrenceCache = sortedQueryables
+        .map(q => q.rawEvent as EnrichedOFCEvent)
+        .slice(0, MAX_OCCURRENCES);
     } finally {
       this.isBuildingCache = false;
     }

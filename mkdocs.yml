@@ -171,6 +171,7 @@ nav:
           - System:
                 - architecture/system/overview.md
                 - Event Cache: architecture/system/eventcache.md
+                - Event Filtering & Sorting: architecture/system/event-filtering-sorting.md
                 - Performance and Staged Loading: architecture/system/performance.md
                 - Event Storage and Identifiers: architecture/system/event-storage.md
                 - FullCalendar Interop: architecture/system/interop.md

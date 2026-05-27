@@ -9,6 +9,7 @@ import {
 import { getDateFromFile } from 'obsidian-daily-notes-interface';
 import FullCalendarPlugin from '../../main';
 import { PluginState } from '../../core/PluginState';
+import { EventFilterSortEngine, QueryableEvent } from '../../core/EventFilterSortEngine';
 import { ViewContext } from '../../ui/calendar/ViewContext';
 import { ViewEnhancer } from '../../core/ViewEnhancer';
 import { ViewEventInteractionHandler } from '../../ui/calendar/ViewEventInteractionHandler';
@@ -267,36 +268,39 @@ export class EmbeddedCalendar extends Component implements ViewContext {
           const ofcEvent = eItem.event;
           if (!ofcEvent) return true;
 
+          const details = PluginState.getCache().store.getEventDetails(eItem.id);
+          const queryable: QueryableEvent = {
+            id: eItem.id,
+            title: ofcEvent.title || '',
+            description: ofcEvent.description,
+            category: ofcEvent.category,
+            subCategory: ofcEvent.subCategory,
+            filePath: details?.location?.path || ''
+          };
+
           // 1. Filter by Title (case-insensitive substring)
           if (config.titleFilter) {
-            const title = (ofcEvent.title || '').toLowerCase();
-            if (!title.includes(config.titleFilter.toLowerCase())) {
+            if (!queryable.title.toLowerCase().includes(config.titleFilter.toLowerCase())) {
               return false;
             }
           }
 
           // 2. Filter by File Path (case-insensitive substring)
           if (config.pathFilter) {
-            const details = PluginState.getCache().store.getEventDetails(eItem.id);
-            const filePath = (details?.location?.path || '').toLowerCase();
-            if (!filePath.includes(config.pathFilter.toLowerCase())) {
+            if (
+              !queryable.filePath ||
+              !queryable.filePath.toLowerCase().includes(config.pathFilter.toLowerCase())
+            ) {
               return false;
             }
           }
 
           // 3. Filter by Tag (case-insensitive title, description or category/subcategory search)
           if (config.tagFilter) {
-            const tag = config.tagFilter.toLowerCase();
-            const desc = (ofcEvent.description || '').toLowerCase();
-            const category = (ofcEvent.category || '').toLowerCase();
-            const subCategory = (ofcEvent.subCategory || '').toLowerCase();
-            const title = (ofcEvent.title || '').toLowerCase();
-            const match =
-              title.includes(tag) ||
-              desc.includes(tag) ||
-              category.includes(tag) ||
-              subCategory.includes(tag);
-            if (!match) {
+            const isMatch = EventFilterSortEngine.matchEvent(queryable, {
+              textSearch: { query: config.tagFilter, mode: 'embedded' }
+            });
+            if (!isMatch) {
               return false;
             }
           }

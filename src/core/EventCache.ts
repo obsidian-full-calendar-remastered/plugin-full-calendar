@@ -19,11 +19,16 @@ import { PluginState } from './PluginState';
 import { FullCalendarSettings } from '../types/settings';
 
 import FullCalendarPlugin from '../main';
-import EventStore from './EventStore';
+import EventStore, { StoredEvent } from './EventStore';
 import { OFCEvent, EventLocation } from '../types';
 import { CalendarProvider } from '../providers/Provider';
 import { EventEnhancer } from './EventEnhancer';
 import { TimeEngine, TimeState, EnrichedOFCEvent } from './TimeEngine';
+import {
+  EventFilterSortEngine,
+  EventFilterCriteria,
+  EventSortCriteria
+} from './EventFilterSortEngine';
 
 // Import refactored handlers
 import { CacheSubscriptionManager } from './cache/CacheSubscriptionManager';
@@ -450,6 +455,40 @@ export default class EventCache {
   // ====================================================================
   //                         GETTERS & SETTERS
   // ====================================================================
+
+  /**
+   * Centralized filtering and sorting of stored events.
+   */
+  public queryEvents(criteria: EventFilterCriteria, sorts?: EventSortCriteria[]): StoredEvent[] {
+    const allQueryable = this._store.getAllEvents().map(stored =>
+      EventFilterSortEngine.fromStoredEvent(stored, calId => {
+        const source = PluginState.getProviderRegistry().getSource(calId);
+        return source?.name || '';
+      })
+    );
+    const queryResults = EventFilterSortEngine.query(allQueryable, criteria, sorts);
+    const resultMap = new Map(queryResults.map(q => [q.id, q]));
+    return this._store.getAllEvents().filter(stored => resultMap.has(stored.id));
+  }
+
+  /**
+   * Centralized filtering and sorting of event occurrences.
+   */
+  public queryOccurrences(
+    criteria: EventFilterCriteria,
+    sorts?: EventSortCriteria[]
+  ): EnrichedOFCEvent[] {
+    const occurrences = this.getOccurrenceCache();
+    const allQueryable = occurrences.map(occ =>
+      EventFilterSortEngine.fromEnrichedEvent(occ, calId => {
+        const source = PluginState.getProviderRegistry().getSource(calId);
+        return source?.name || '';
+      })
+    );
+    const queryResults = EventFilterSortEngine.query(allQueryable, criteria, sorts);
+    const resultMap = new Map(queryResults.map(q => [q.id, q]));
+    return occurrences.filter(occ => resultMap.has(occ.id));
+  }
 
   public getOccurrenceCache(): EnrichedOFCEvent[] {
     return this.timeEngine.getOccurrenceCache();

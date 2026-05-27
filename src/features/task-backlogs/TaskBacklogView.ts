@@ -2,6 +2,7 @@ import { ItemView, setIcon, WorkspaceLeaf } from 'obsidian';
 import { Draggable } from '@fullcalendar/interaction';
 import FullCalendarPlugin from '../../main';
 import { PluginState } from '../../core/PluginState';
+import { EventFilterSortEngine } from '../../core/EventFilterSortEngine';
 import {
   CalendarProvider,
   TaskBacklogInfo,
@@ -161,39 +162,16 @@ export class TaskBacklogView extends ItemView {
       return tasks;
     }
 
-    const tokens = trimmed.toLowerCase().split(/\s+/).filter(Boolean);
-
     return tasks.filter(task => {
-      const title = task.title.toLowerCase();
-      const subtitle = task.subtitle?.toLowerCase() ?? '';
-      const providerName = task.providerInfo.name.toLowerCase();
-      const haystacks = [title, subtitle, providerName];
-
-      // Extract the last path segment (file name or task source base name) to preserve legacy filename-only search behavior
-      const baseName = subtitle.split(/[/\\]/).pop()?.split(':')[0]?.trim() || '';
-      if (baseName && baseName !== subtitle) {
-        haystacks.push(baseName);
-      }
-
-      return tokens.every(token =>
-        haystacks.some(
-          haystack => haystack.includes(token) || this.isFuzzySubsequence(token, haystack)
-        )
+      const queryable = EventFilterSortEngine.fromBacklogItem(
+        task,
+        task.providerInfo.name,
+        task.providerInfo.id
       );
+      return EventFilterSortEngine.matchEvent(queryable, {
+        textSearch: { query, mode: 'backlog' }
+      });
     });
-  }
-
-  private isFuzzySubsequence(needle: string, haystack: string): boolean {
-    if (!needle) return true;
-    let i = 0;
-    let j = 0;
-    while (i < needle.length && j < haystack.length) {
-      if (needle[i] === haystack[j]) {
-        i++;
-      }
-      j++;
-    }
-    return i === needle.length;
   }
 
   private render(): void {

@@ -84,6 +84,19 @@ export function renderAppearanceSettings(
         });
     });
 
+  new Setting(containerEl)
+    .setName('Enable Monthly Milestones Report')
+    .setDesc(
+      'Periodically generate a beautiful usage statistics and milestones note at the start of each month.'
+    )
+    .addToggle(toggle => {
+      toggle.setValue(PluginState.getSettings().enableMonthlyStatsReport);
+      toggle.onChange(async val => {
+        PluginState.getSettings().enableMonthlyStatsReport = val;
+        await PluginState.saveSettings();
+      });
+    });
+
   // Business Hours Settings
   new Setting(containerEl)
     .setName(t('settings.appearance.businessHours.enable.label'))

@@ -21,6 +21,9 @@ async function build() {
     },
     entryPoints: ["src/main.ts"],
     bundle: true,
+    loader: {
+      ".md": "text"
+    },
     external: [
       "obsidian",
       "electron",

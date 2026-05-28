@@ -181,6 +181,9 @@ export interface FullCalendarSettings {
   activityWatch: ActivityWatchSettings;
   tasksIntegration: TasksIntegrationSettings;
   milestones: MilestonesSettings;
+  enableMonthlyStatsReport: boolean;
+  lastMonthlyMilestonesGeneratedMonth: string | null;
+  lastMonthlyMilestonesCheckDate: string | null;
   fcrReminderCompanion: FcrReminderCompanionSettings;
   apiTokens?: Record<string, ApiTokenRecord>;
   authorizedTokens?: Record<string, { pluginId: string; reason: string; grantedAt: number }>;
@@ -261,6 +264,9 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     counters: {},
     unlockedAt: {}
   },
+  enableMonthlyStatsReport: true,
+  lastMonthlyMilestonesGeneratedMonth: null,
+  lastMonthlyMilestonesCheckDate: null,
   fcrReminderCompanion: {
     enabled: false,
     apiUrl: 'http://127.0.0.1:45677'

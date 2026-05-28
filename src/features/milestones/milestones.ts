@@ -711,3 +711,119 @@ export async function triggerDevMilestoneIfActive(): Promise<void> {
     console.warn('Full Calendar: failed to trigger developer milestone.', error);
   }
 }
+
+export interface MonthlyActivitySummary {
+  totalOps: number;
+  createdCount: number;
+}
+
+/**
+ * Calculates the monthly activity metrics for a given 'yyyy-mm' month key.
+ */
+export function getMonthlyActivitySummary(monthKey: string): MonthlyActivitySummary {
+  const state = ensureMilestonesState();
+  let totalOps = 0;
+  let createdCount = 0;
+
+  const actionPrefix = `day.action.${monthKey}-`;
+  const createdPrefix = `day.created.${monthKey}-`;
+
+  for (const [key, value] of Object.entries(state.counters)) {
+    if (key.startsWith(actionPrefix)) {
+      totalOps += value;
+    } else if (key.startsWith(createdPrefix)) {
+      createdCount += value;
+    }
+  }
+
+  return { totalOps, createdCount };
+}
+
+export interface LifetimeMilestoneStats {
+  operations: {
+    created: number;
+    updated: number;
+    deleted: number;
+    moved: number;
+  };
+  operationsByCalendarType: Record<
+    string,
+    {
+      created: number;
+      updated: number;
+      deleted: number;
+      moved: number;
+    }
+  >;
+  meta: {
+    bestStreak: number;
+    createdViaNlp: number;
+    recurringCreated: number;
+    nightOwlOps: number;
+    earlyBirdOps: number;
+    weekendWarriorOps: number;
+    distinctTimezones: number;
+    workspacesCount: number;
+  };
+}
+
+/**
+ * Aggregates lifetime usage statistics of all calendars and action types.
+ */
+export function getLifetimeMilestoneStats(): LifetimeMilestoneStats {
+  const state = ensureMilestonesState();
+  const providers: ProviderType[] = [
+    'local',
+    'dailynote',
+    'ical',
+    'caldav',
+    'google',
+    'outlook',
+    'tasks',
+    'tasknotes',
+    'bases'
+  ];
+
+  const ops = {
+    created: getActionCounter(state, 'created', 'total'),
+    updated: getActionCounter(state, 'updated', 'total'),
+    deleted: getActionCounter(state, 'deleted', 'total'),
+    moved: getActionCounter(state, 'moved', 'total')
+  };
+
+  const opsByCalendarType: Record<
+    string,
+    {
+      created: number;
+      updated: number;
+      deleted: number;
+      moved: number;
+    }
+  > = {};
+
+  for (const provider of providers) {
+    opsByCalendarType[provider] = {
+      created: getActionCounter(state, 'created', provider),
+      updated: getActionCounter(state, 'updated', provider),
+      deleted: getActionCounter(state, 'deleted', provider),
+      moved: getActionCounter(state, 'moved', provider)
+    };
+  }
+
+  const meta = {
+    bestStreak: computeActionStreakDays(state),
+    createdViaNlp: getCounter(state, 'meta.createdViaNlp'),
+    recurringCreated: getCounter(state, 'meta.recurringSeriesCreated'),
+    nightOwlOps: getCounter(state, 'meta.nightOwlOps'),
+    earlyBirdOps: getCounter(state, 'meta.earlyBirdOps'),
+    weekendWarriorOps: getCounter(state, 'meta.weekendWarriorOps'),
+    distinctTimezones: computeDistinctTimezones(state),
+    workspacesCount: PluginState.getSettings().workspaces?.length ?? 0
+  };
+
+  return {
+    operations: ops,
+    operationsByCalendarType: opsByCalendarType,
+    meta
+  };
+}

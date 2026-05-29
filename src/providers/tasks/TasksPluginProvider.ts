@@ -641,14 +641,22 @@ export class TasksPluginProvider
       .filter((e): e is [OFCEvent, EventLocation | null] => e !== null);
   }
 
-  public filterTasksByGlobalQuery(tasks: CalendarTask[]): CalendarTask[] {
-    const globalQuery = (
+  public async filterTasksByGlobalQuery(tasks: CalendarTask[]): Promise<CalendarTask[]> {
+    const tasksPlugin = (
       this.plugin.app as unknown as {
         plugins?: {
-          plugins?: Record<string, { settings?: { globalQuery?: string } }>;
+          plugins?: Record<
+            string,
+            {
+              settings?: { globalQuery?: string };
+              loadData?: () => Promise<{ globalQuery?: string } | null>;
+            }
+          >;
         };
       }
-    ).plugins?.plugins?.['obsidian-tasks-plugin']?.settings?.globalQuery;
+    ).plugins?.plugins?.['obsidian-tasks-plugin'];
+    const persistedData = tasksPlugin?.settings?.globalQuery ? null : await tasksPlugin?.loadData?.();
+    const globalQuery = tasksPlugin?.settings?.globalQuery ?? persistedData?.globalQuery;
 
     if (!globalQuery) {
       return tasks;
@@ -663,7 +671,7 @@ export class TasksPluginProvider
 
     const settings = PluginState.getSettings();
     if (settings.tasksIntegration.includeGlobalQueryInBacklog) {
-      tasks = this.filterTasksByGlobalQuery(tasks);
+      tasks = await this.filterTasksByGlobalQuery(tasks);
     }
 
     return tasks.map(t => ({

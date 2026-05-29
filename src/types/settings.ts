@@ -48,6 +48,7 @@ export interface TasksIntegrationSettings {
   openEditModalAfterBacklogDrop: boolean;
   taskDisplayFormat?: TasksDisplayFormat;
   includeGlobalQueryInBacklog?: boolean;
+  backlogQuery?: string;
 }
 
 export interface MilestonesSettings {
@@ -255,7 +256,8 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     calendarDisplayDateTarget: 'scheduledDate',
     openEditModalAfterBacklogDrop: false,
     taskDisplayFormat: 'dayPlanner',
-    includeGlobalQueryInBacklog: false
+    includeGlobalQueryInBacklog: false,
+    backlogQuery: ''
   },
   milestones: {
     counters: {},

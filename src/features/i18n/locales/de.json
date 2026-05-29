@@ -859,6 +859,11 @@
         "label": "Globale Abfrage im Backlog berücksichtigen",
         "description": "Wenden Sie die Filter der globalen Abfrage von Obsidian Tasks auf die Backlog-Ansicht an."
       },
+      "backlogQuery": {
+        "label": "Backlog-Abfrage",
+        "description": "Wendet diese Tasks-Abfrage nur auf das Full Calendar-Backlog an. Jede unterstützte Zeile muss übereinstimmen, damit eine Aufgabe angezeigt wird.",
+        "placeholder": "path does not include Templates\nfolder includes Projects\ntags do not include someday"
+      },
       "calendarDisplayDateTarget": {
         "label": "Kalender-Anzeigedatum-Feld",
         "description": "Wählen Sie, welchen Tasks-Datumsmarker Full Calendar zur Anzeige von Tasks-Ereignissen verwendet. Es gibt kein Fallback auf andere Datumsmarker. Starten Sie Obsidian neu oder laden Sie das Plugin neu, damit diese Änderung vollständig wirksam wird."

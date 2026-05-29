@@ -866,5 +866,91 @@ describe('TasksPluginProvider', () => {
       const tasks = await provider.getUndatedTasks();
       expect(tasks).toHaveLength(1);
     });
+
+    it('filters backlog tasks by the dedicated backlog query without enabling the global query', async () => {
+      mockPlugin.settings.tasksIntegration.includeGlobalQueryInBacklog = false;
+      mockPlugin.settings.tasksIntegration.backlogQuery = 'folder includes Projects\ntags do not include someday';
+      tasksPluginSettings.globalQuery = 'path does not include Projects';
+
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Projects/Active.md',
+                  description: 'Task 1 #next',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Task 1 #next',
+                  isDone: false
+                },
+                {
+                  path: 'Projects/Someday.md',
+                  description: 'Task 2 #someday',
+                  taskLocation: { lineNumber: 1 },
+                  originalMarkdown: '- [ ] Task 2 #someday',
+                  isDone: false
+                },
+                {
+                  path: 'Inbox.md',
+                  description: 'Task 3 #next',
+                  taskLocation: { lineNumber: 2 },
+                  originalMarkdown: '- [ ] Task 3 #next',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      const tasks = await provider.getUndatedTasks();
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].title).toBe('Task 1 #next');
+    });
+
+    it('combines the dedicated backlog query with the global query using AND semantics', async () => {
+      mockPlugin.settings.tasksIntegration.includeGlobalQueryInBacklog = true;
+      mockPlugin.settings.tasksIntegration.backlogQuery = 'folder includes Projects';
+      tasksPluginSettings.globalQuery = 'tags include next';
+
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Projects/Active.md',
+                  description: 'Task 1 #next',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Task 1 #next',
+                  isDone: false
+                },
+                {
+                  path: 'Projects/Waiting.md',
+                  description: 'Task 2 #waiting',
+                  taskLocation: { lineNumber: 1 },
+                  originalMarkdown: '- [ ] Task 2 #waiting',
+                  isDone: false
+                },
+                {
+                  path: 'Inbox.md',
+                  description: 'Task 3 #next',
+                  taskLocation: { lineNumber: 2 },
+                  originalMarkdown: '- [ ] Task 3 #next',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      const tasks = await provider.getUndatedTasks();
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].title).toBe('Task 1 #next');
+    });
   });
 });

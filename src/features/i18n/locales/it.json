@@ -859,6 +859,11 @@
         "label": "Includi query globale nel backlog",
         "description": "Applica i filtri della query globale di Obsidian Tasks alla vista backlog."
       },
+      "backlogQuery": {
+        "label": "Query backlog",
+        "description": "Applica questa query Tasks solo al backlog di Full Calendar. Ogni riga supportata deve corrispondere affinché un'attività venga mostrata.",
+        "placeholder": "path does not include Templates\nfolder includes Projects\ntags do not include someday"
+      },
       "calendarDisplayDateTarget": {
         "label": "Campo data di visualizzazione calendario",
         "description": "Scegli quale marcatore di data di Tasks Full Calendar utilizza per visualizzare gli eventi Tasks. Nessun fallback su altri marcatori di data. Riavvia Obsidian o ricarica il plugin affinché questa modifica abbia effetto."

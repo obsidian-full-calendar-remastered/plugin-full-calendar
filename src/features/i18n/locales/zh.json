@@ -855,6 +855,11 @@
         "label": "在待办事项中包含全局查询",
         "description": "将 Obsidian Tasks 全局查询过滤器应用于待办事项视图。"
       },
+      "backlogQuery": {
+        "label": "待办列表查询",
+        "description": "仅将此 Tasks 查询应用于 Full Calendar 待办列表。任务必须匹配每个受支持的行才会显示。",
+        "placeholder": "path does not include Templates\nfolder includes Projects\ntags do not include someday"
+      },
       "calendarDisplayDateTarget": {
         "label": "日历显示日期字段",
         "description": "选择日历用于显示 Tasks 事件的 Tasks 日期标记。没有回退到其他日期标记的选项。重启 Obsidian 或重新加载插件以使此更改完全生效。"

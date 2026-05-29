@@ -670,6 +670,11 @@ export class TasksPluginProvider
     let tasks = this.allTasks.filter(t => !this.hasBacklogTargetDate(t) && !t.isDone);
 
     const settings = PluginState.getSettings();
+    const backlogQuery = settings.tasksIntegration.backlogQuery?.trim();
+    if (backlogQuery) {
+      tasks = new TasksQueryFilter(backlogQuery).filter(tasks);
+    }
+
     if (settings.tasksIntegration.includeGlobalQueryInBacklog) {
       tasks = await this.filterTasksByGlobalQuery(tasks);
     }

@@ -75,6 +75,24 @@ export class TasksIntegrationSettingsModal extends Modal {
       });
 
     new Setting(this.contentEl)
+      .setName(t('settings.tasksIntegration.backlogQuery.label'))
+      .setDesc(t('settings.tasksIntegration.backlogQuery.description'))
+      .addTextArea(text => {
+        text
+          .setPlaceholder(t('settings.tasksIntegration.backlogQuery.placeholder'))
+          .setValue(settings.backlogQuery ?? '')
+          .onChange(async value => {
+            settings.backlogQuery = value;
+            await PluginState.saveSettings();
+            PluginState.getProviderRegistry().refreshBacklogViews();
+            this.onChange();
+          });
+        text.inputEl.rows = 6;
+        text.inputEl.cols = 50;
+        text.inputEl.setCssProps({ width: '100%' });
+      });
+
+    new Setting(this.contentEl)
       .setName(t('settings.tasksIntegration.taskDisplayFormat.label'))
       .setDesc(t('settings.tasksIntegration.taskDisplayFormat.description'))
       .addDropdown(dropdown => {

@@ -877,6 +877,11 @@
         "label": "Include global query in the backlog",
         "description": "Apply the Obsidian Tasks global query filters to the backlog view."
       },
+      "backlogQuery": {
+        "label": "Backlog query",
+        "description": "Apply this Tasks query only to the Full Calendar backlog. Each supported line must match for a task to appear.",
+        "placeholder": "path does not include Templates\nfolder includes Projects\ntags do not include someday"
+      },
       "taskDisplayFormat": {
         "label": "Task time format",
         "description": "Choose how Full Calendar writes time into Tasks lines.",

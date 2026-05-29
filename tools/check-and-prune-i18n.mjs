@@ -52,6 +52,8 @@ const missingKeys = [];
 
 allFiles.forEach(file => {
   const content = fs.readFileSync(file, 'utf8');
+  
+  // 1. Scan for static t('key') calls
   let m;
   while ((m = regex.exec(content)) !== null) {
     const key = m[2];
@@ -61,8 +63,7 @@ allFiles.forEach(file => {
     }
   }
 
-  // Detect statically-declared dynamic key mappings used later via t(variable).
-  // This keeps pruning strict while supporting patterns like milestone definitions.
+  // 2. Detect statically-declared dynamic key mappings in objects
   while ((m = dynamicKeyPropertyRegex.exec(content)) !== null) {
     const key = m[2];
     foundKeys.add(key);
@@ -70,6 +71,17 @@ allFiles.forEach(file => {
       missingKeys.push({ file, key });
     }
   }
+
+  // 3. Scan for any literal keys used dynamically (e.g. as function arguments)
+  keySet.forEach(key => {
+    if (
+      content.includes(`'${key}'`) ||
+      content.includes(`"${key}"`) ||
+      content.includes(`\`${key}\``)
+    ) {
+      foundKeys.add(key);
+    }
+  });
 });
 
 const unusedKeys = flatKeys.filter(k => !foundKeys.has(k) && !k.includes('{{') && !k.match(/weekdays\.|ordinal\./));

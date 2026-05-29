@@ -16,6 +16,7 @@
 | Glance at next event | [Status Bar Integration](statusbar.md) | Quick countdown to your next meeting in the Obsidian status bar |
 | Take local notes for remote events | [Event Linked Notes](event-linked-notes.md) | Link rich local notes to external events with automatic templating |
 | Unified Backlog Panel | [Task Backlog](tasks-backlog.md) | Aggregate and schedule tasks across multiple providers |
+| Glance at weather conditions | [Weather Forecasts](weather.md) | Glance at live WMO conditions and temperatures in your daily, weekly, and monthly views |
 
 ## Feature Directory
 
@@ -27,6 +28,7 @@
 - UI: [Status Bar Integration](statusbar.md)
 - Note Integration: [Event Linked Notes](event-linked-notes.md)
 - Task Backlog: [Task Backlog](tasks-backlog.md)
+- Weather: [Weather Forecasts](weather.md)
 
 ## Related Sections
 
@@ -37,4 +39,4 @@
 
 ---
 
-[NLP](nlp.md) · [Interactions](interactions.md) · [Milestones](milestones.md) · [Reminders](reminders.md) · [FCR Reminder](fcr-reminder.md) · [i18n](i18n.md) · [Status Bar](statusbar.md) · [Linked Notes](event-linked-notes.md) · [Task Backlog](tasks-backlog.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)
+[NLP](nlp.md) · [Interactions](interactions.md) · [Reminders](reminders.md) · [FCR Reminder](fcr-reminder.md) · [Status Bar](statusbar.md) · [Linked Notes](event-linked-notes.md) · [Task Backlog](tasks-backlog.md) · [Weather](weather.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)

@@ -560,6 +560,41 @@ export async function renderCalendar(
     panelEl.createDiv({ cls: 'ofc-weather-desc' }).setText(data.desc);
   };
 
+  const injectUnconfiguredHeaderWeather = (el: HTMLElement, isFirst: boolean) => {
+    if (el.querySelector('.ofc-weather-panel')) {
+      return;
+    }
+
+    const innerEl = el.querySelector('.fc-scrollgrid-sync-inner') || el;
+    const panelEl = innerEl.createDiv({ cls: 'ofc-weather-panel is-unconfigured' });
+
+    const emojiTempEl = panelEl.createDiv({ cls: 'ofc-weather-emoji-temp' });
+    emojiTempEl.createSpan({ cls: 'ofc-weather-emoji' }).setText('🌤️❓');
+
+    if (isFirst) {
+      emojiTempEl.createSpan({ cls: 'ofc-weather-temp' }).setText('Configure');
+      panelEl.createDiv({ cls: 'ofc-weather-desc' }).setText('Set weather location');
+    } else {
+      emojiTempEl.createSpan({ cls: 'ofc-weather-temp' }).setText('Setup');
+      panelEl.createDiv({ cls: 'ofc-weather-desc' }).setText('Click to configure');
+    }
+
+    panelEl.setCssProps({ cursor: 'pointer' });
+    panelEl.addEventListener('click', e => {
+      e.stopPropagation();
+      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
+      const obsidianApp = (window as any).app;
+      if (obsidianApp) {
+        const setting = obsidianApp.setting;
+        if (setting) {
+          setting.open();
+          setting.openTabById('full-calendar-remastered');
+        }
+      }
+      /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
+    });
+  };
+
   const injectCellWeather = (el: HTMLElement, data: { emoji: string }) => {
     const topEl = el.querySelector('.fc-daygrid-day-top');
     if (!topEl) return;
@@ -579,6 +614,14 @@ export async function renderCalendar(
 
     const settings = PluginState.getSettings();
     if (settings.weatherHide) {
+      pendingHeaders = [];
+      pendingCells = [];
+      return;
+    }
+
+    if (settings.weatherLatitude === null || settings.weatherLongitude === null) {
+      pendingHeaders = [];
+      pendingCells = [];
       return;
     }
 
@@ -627,6 +670,18 @@ export async function renderCalendar(
 
   const cal = new CalendarCtor(containerEl, {
     dayHeaderDidMount: arg => {
+      const settings = PluginState.getSettings();
+      if (settings.weatherHide) {
+        return;
+      }
+      const isUnconfigured =
+        settings.weatherLatitude === null || settings.weatherLongitude === null;
+      if (isUnconfigured) {
+        const isFirst = pendingHeaders.length === 0;
+        pendingHeaders.push({ dateStr: formatDateLocal(arg.date), el: arg.el });
+        injectUnconfiguredHeaderWeather(arg.el, isFirst);
+        return;
+      }
       const dateStr = formatDateLocal(arg.date);
       if (activeForecast && activeForecast[dateStr]) {
         injectHeaderWeather(arg.el, activeForecast[dateStr]);
@@ -635,6 +690,14 @@ export async function renderCalendar(
       }
     },
     dayCellDidMount: arg => {
+      const settings = PluginState.getSettings();
+      if (
+        settings.weatherHide ||
+        settings.weatherLatitude === null ||
+        settings.weatherLongitude === null
+      ) {
+        return;
+      }
       const dateStr = formatDateLocal(arg.date);
       if (activeForecast && activeForecast[dateStr]) {
         injectCellWeather(arg.el, activeForecast[dateStr]);

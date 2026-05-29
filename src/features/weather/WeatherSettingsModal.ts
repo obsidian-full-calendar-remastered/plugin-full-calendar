@@ -70,61 +70,21 @@ export class WeatherSettingsModal extends Modal {
 
     if (currentMode === 'coords') {
       // Coords input mode: Latitude and Longitude fields
-      new Setting(this.dynamicContainer)
-        .setName(t('settings.weather.modal.latitude.label'))
-        .setDesc(t('settings.weather.modal.latitude.description'))
-        .addText(text => {
-          const initialLat = PluginState.getSettings().weatherLatitude;
-          text
-            .setPlaceholder(t('settings.weather.modal.latitude.placeholder'))
-            .setValue(initialLat !== null && initialLat !== undefined ? String(initialLat) : '')
-            .onChange(val => {
-              // Always obtain the freshest reference from PluginState to avoid stale copies
-              const freshSettings = PluginState.getSettings();
-              const parsed = parseFloat(val);
-              if (!isNaN(parsed)) {
-                freshSettings.weatherLatitude = parsed;
-              } else if (!val.trim()) {
-                freshSettings.weatherLatitude = null;
-              }
-            });
+      this.createCoordinateSetting(
+        this.dynamicContainer,
+        'settings.weather.modal.latitude.label',
+        'settings.weather.modal.latitude.description',
+        'settings.weather.modal.latitude.placeholder',
+        'weatherLatitude'
+      );
 
-          // Save and refresh only on blur to avoid database and view I/O lag
-          text.inputEl.addEventListener('blur', () => {
-            void (async () => {
-              await PluginState.saveSettings();
-              this.onChange();
-            })();
-          });
-        });
-
-      new Setting(this.dynamicContainer)
-        .setName(t('settings.weather.modal.longitude.label'))
-        .setDesc(t('settings.weather.modal.longitude.description'))
-        .addText(text => {
-          const initialLng = PluginState.getSettings().weatherLongitude;
-          text
-            .setPlaceholder(t('settings.weather.modal.longitude.placeholder'))
-            .setValue(initialLng !== null && initialLng !== undefined ? String(initialLng) : '')
-            .onChange(val => {
-              // Always obtain the freshest reference from PluginState to avoid stale copies
-              const freshSettings = PluginState.getSettings();
-              const parsed = parseFloat(val);
-              if (!isNaN(parsed)) {
-                freshSettings.weatherLongitude = parsed;
-              } else if (!val.trim()) {
-                freshSettings.weatherLongitude = null;
-              }
-            });
-
-          // Save and refresh only on blur to avoid database and view I/O lag
-          text.inputEl.addEventListener('blur', () => {
-            void (async () => {
-              await PluginState.saveSettings();
-              this.onChange();
-            })();
-          });
-        });
+      this.createCoordinateSetting(
+        this.dynamicContainer,
+        'settings.weather.modal.longitude.label',
+        'settings.weather.modal.longitude.description',
+        'settings.weather.modal.longitude.placeholder',
+        'weatherLongitude'
+      );
     } else {
       // City input mode: Place name field with geocoding resolution status
       const weatherSetting = new Setting(this.dynamicContainer)
@@ -189,43 +149,7 @@ export class WeatherSettingsModal extends Modal {
             statusEl.className = 'ofc-weather-status is-accent';
 
             this.debounceTimeout = window.setTimeout(() => {
-              void (async () => {
-                try {
-                  const coords = await geocodeCity(val);
-                  const activeSettings = PluginState.getSettings();
-                  // Check that the user hasn't typed anything else in the meantime and we are still in city mode
-                  if (
-                    activeSettings &&
-                    activeSettings.weatherInputMode === 'city' &&
-                    activeSettings.weatherCity === val
-                  ) {
-                    if (coords) {
-                      activeSettings.weatherLatitude = coords.latitude;
-                      activeSettings.weatherLongitude = coords.longitude;
-                    } else {
-                      activeSettings.weatherLatitude = null;
-                      activeSettings.weatherLongitude = null;
-                    }
-                    updateStatusText();
-                    await PluginState.saveSettings();
-                    this.onChange();
-                  }
-                } catch (e) {
-                  console.error('Weather geocoding failed', e);
-                  const activeSettings = PluginState.getSettings();
-                  if (
-                    activeSettings &&
-                    activeSettings.weatherInputMode === 'city' &&
-                    activeSettings.weatherCity === val
-                  ) {
-                    activeSettings.weatherLatitude = null;
-                    activeSettings.weatherLongitude = null;
-                    updateStatusText();
-                    await PluginState.saveSettings();
-                    this.onChange();
-                  }
-                }
-              })();
+              void this.resolveCityCoordinates(val, updateStatusText);
             }, 1000);
           });
 
@@ -236,42 +160,83 @@ export class WeatherSettingsModal extends Modal {
             window.clearTimeout(this.debounceTimeout);
             this.debounceTimeout = null;
           }
+          void this.resolveCityCoordinates(val, updateStatusText);
+        });
+      });
+    }
+  }
 
-          if (!val.trim()) {
-            PluginState.getSettings().weatherLatitude = null;
-            PluginState.getSettings().weatherLongitude = null;
-            updateStatusText();
-            void PluginState.saveSettings();
-            this.onChange();
-            return;
-          }
-
-          void (async () => {
-            try {
-              const coords = await geocodeCity(val);
-              const activeSettings = PluginState.getSettings();
-              if (
-                activeSettings &&
-                activeSettings.weatherInputMode === 'city' &&
-                activeSettings.weatherCity === val
-              ) {
-                if (coords) {
-                  activeSettings.weatherLatitude = coords.latitude;
-                  activeSettings.weatherLongitude = coords.longitude;
-                } else {
-                  activeSettings.weatherLatitude = null;
-                  activeSettings.weatherLongitude = null;
-                }
-                updateStatusText();
-                await PluginState.saveSettings();
-                this.onChange();
-              }
-            } catch (e) {
-              console.error('Weather geocoding failed', e);
+  private createCoordinateSetting(
+    parent: HTMLElement,
+    nameKey: string,
+    descKey: string,
+    placeholderKey: string,
+    settingField: 'weatherLatitude' | 'weatherLongitude'
+  ): void {
+    new Setting(parent)
+      .setName(t(nameKey))
+      .setDesc(t(descKey))
+      .addText(text => {
+        const initialVal = PluginState.getSettings()[settingField];
+        text
+          .setPlaceholder(t(placeholderKey))
+          .setValue(initialVal !== null && initialVal !== undefined ? String(initialVal) : '')
+          .onChange(val => {
+            const freshSettings = PluginState.getSettings();
+            const parsed = parseFloat(val);
+            if (!isNaN(parsed)) {
+              freshSettings[settingField] = parsed;
+            } else if (!val.trim()) {
+              freshSettings[settingField] = null;
             }
+          });
+
+        text.inputEl.addEventListener('blur', () => {
+          void (async () => {
+            await PluginState.saveSettings();
+            this.onChange();
           })();
         });
       });
+  }
+
+  private async resolveCityCoordinates(
+    cityVal: string,
+    updateStatusText: () => void
+  ): Promise<void> {
+    try {
+      const coords = cityVal.trim() ? await geocodeCity(cityVal) : null;
+      const activeSettings = PluginState.getSettings();
+      if (
+        activeSettings &&
+        activeSettings.weatherInputMode === 'city' &&
+        activeSettings.weatherCity === cityVal
+      ) {
+        if (coords) {
+          activeSettings.weatherLatitude = coords.latitude;
+          activeSettings.weatherLongitude = coords.longitude;
+        } else {
+          activeSettings.weatherLatitude = null;
+          activeSettings.weatherLongitude = null;
+        }
+        updateStatusText();
+        await PluginState.saveSettings();
+        this.onChange();
+      }
+    } catch (e) {
+      console.error('Weather geocoding failed', e);
+      const activeSettings = PluginState.getSettings();
+      if (
+        activeSettings &&
+        activeSettings.weatherInputMode === 'city' &&
+        activeSettings.weatherCity === cityVal
+      ) {
+        activeSettings.weatherLatitude = null;
+        activeSettings.weatherLongitude = null;
+        updateStatusText();
+        await PluginState.saveSettings();
+        this.onChange();
+      }
     }
   }
 

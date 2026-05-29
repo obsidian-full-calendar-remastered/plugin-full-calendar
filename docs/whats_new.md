@@ -4,6 +4,20 @@ This page highlights the latest **major features and improvements** to help you 
 For a detailed version-by-version breakdown, see the [Changelog](changelog.md).
 
 
+## 🌤️ Weather Forecast Integration
+
+Plan your schedule in harmony with the weather! Full Calendar now includes a fully integrated, live weather forecast feature for your daily, weekly, and monthly views.
+
+*   **Autonomic Free Geocoding**: Enter any city or region (e.g., `Prague`), and the plugin will dynamically resolve its geographic coordinates using Open-Meteo's free geocoding API—completely keyless and zero-configuration!
+*   **Daily & Weekly Overview**: Displays full details directly in column headers, including mapped WMO conditions emojis, max daily temperatures, and readable forecasts (e.g., "Partly cloudy", "Heavy rain").
+*   **Monthly Footprint**: Shows compact conditions emojis in month day cells without cluttering your scheduled events.
+*   **Secure Caching**: Uses a composite in-memory cache to keep page switching instant, saving network requests.
+*   **Interactive Onboarding**: If coordinates are unconfigured, a helpful "Configure weather location" placeholder panel will guide you directly to settings in a single click.
+
+➡️ Learn more in the **[Weather Forecast Integration Guide](user/features/weather.md)**.
+
+---
+
 ## 📋 Unified Task Backlog & CalDAV Tasks
 
 The task backlog has been completely reimagined as a **generalized, multi-source task backlog framework**! It is now fully decoupled from specific integrations, adhering to strict SOLID design principles, and aggregates unscheduled tasks from multiple sources in a single aggregated side panel.

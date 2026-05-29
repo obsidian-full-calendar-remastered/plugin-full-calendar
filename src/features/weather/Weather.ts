@@ -141,6 +141,9 @@ interface GeocodingResponse {
  * Resolves a city or region name to latitude and longitude coordinates.
  */
 export async function geocodeCity(city: string): Promise<GeocodingResult | null> {
+  if (!city || !city.trim()) {
+    return null;
+  }
   try {
     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&format=json`;
     const geoResponse = await requestUrl(url);

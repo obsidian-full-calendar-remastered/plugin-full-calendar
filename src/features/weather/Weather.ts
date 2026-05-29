@@ -5,6 +5,7 @@
  */
 
 import { requestUrl } from 'obsidian';
+import { t } from '../i18n/i18n';
 
 export interface WeatherInfo {
   emoji: string;
@@ -26,35 +27,35 @@ interface ForecastResponse {
 
 // WMO Weather Interpretation Codes (WW)
 // See https://open-meteo.com/en/docs
-export const WEATHER_MAP: Record<number, { emoji: string; desc: string }> = {
-  0: { emoji: '☀️', desc: 'Clear sky' },
-  1: { emoji: '🌤️', desc: 'Mainly clear' },
-  2: { emoji: '⛅', desc: 'Partly cloudy' },
-  3: { emoji: '☁️', desc: 'Overcast' },
-  45: { emoji: '🌫️', desc: 'Fog' },
-  48: { emoji: '🌫️', desc: 'Depositing rime fog' },
-  51: { emoji: '🌧️', desc: 'Light drizzle' },
-  53: { emoji: '🌧️', desc: 'Moderate drizzle' },
-  55: { emoji: '🌧️', desc: 'Dense drizzle' },
-  56: { emoji: '🌧️', desc: 'Light freezing drizzle' },
-  57: { emoji: '🌧️', desc: 'Dense freezing drizzle' },
-  61: { emoji: '🌧️', desc: 'Slight rain' },
-  63: { emoji: '🌧️', desc: 'Moderate rain' },
-  65: { emoji: '🌧️', desc: 'Heavy rain' },
-  66: { emoji: '🌧️', desc: 'Light freezing rain' },
-  67: { emoji: '🌧️', desc: 'Heavy freezing rain' },
-  71: { emoji: '❄️', desc: 'Slight snow fall' },
-  73: { emoji: '❄️', desc: 'Moderate snow fall' },
-  75: { emoji: '❄️', desc: 'Heavy snow fall' },
-  77: { emoji: '❄️', desc: 'Snow grains' },
-  80: { emoji: '🌧️', desc: 'Slight rain showers' },
-  81: { emoji: '🌧️', desc: 'Moderate rain showers' },
-  82: { emoji: '🌧️', desc: 'Violent rain showers' },
-  85: { emoji: '❄️', desc: 'Slight snow showers' },
-  86: { emoji: '❄️', desc: 'Heavy snow showers' },
-  95: { emoji: '⛈️', desc: 'Thunderstorm' },
-  96: { emoji: '⛈️', desc: 'Thunderstorm with slight hail' },
-  99: { emoji: '⛈️', desc: 'Thunderstorm with heavy hail' }
+export const WEATHER_MAP: Record<number, { emoji: string; i18nKey: string }> = {
+  0: { emoji: '☀️', i18nKey: 'settings.weather.conditions.clearSky' },
+  1: { emoji: '🌤️', i18nKey: 'settings.weather.conditions.mainlyClear' },
+  2: { emoji: '⛅', i18nKey: 'settings.weather.conditions.partlyCloudy' },
+  3: { emoji: '☁️', i18nKey: 'settings.weather.conditions.overcast' },
+  45: { emoji: '🌫️', i18nKey: 'settings.weather.conditions.fog' },
+  48: { emoji: '🌫️', i18nKey: 'settings.weather.conditions.depositingRimeFog' },
+  51: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.lightDrizzle' },
+  53: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.moderateDrizzle' },
+  55: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.denseDrizzle' },
+  56: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.lightFreezingDrizzle' },
+  57: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.denseFreezingDrizzle' },
+  61: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.slightRain' },
+  63: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.moderateRain' },
+  65: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.heavyRain' },
+  66: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.lightFreezingRain' },
+  67: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.heavyFreezingRain' },
+  71: { emoji: '❄️', i18nKey: 'settings.weather.conditions.slightSnowFall' },
+  73: { emoji: '❄️', i18nKey: 'settings.weather.conditions.moderateSnowFall' },
+  75: { emoji: '❄️', i18nKey: 'settings.weather.conditions.heavySnowFall' },
+  77: { emoji: '❄️', i18nKey: 'settings.weather.conditions.snowGrains' },
+  80: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.slightRainShowers' },
+  81: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.moderateRainShowers' },
+  82: { emoji: '🌧️', i18nKey: 'settings.weather.conditions.violentRainShowers' },
+  85: { emoji: '❄️', i18nKey: 'settings.weather.conditions.slightSnowShowers' },
+  86: { emoji: '❄️', i18nKey: 'settings.weather.conditions.heavySnowShowers' },
+  95: { emoji: '⛈️', i18nKey: 'settings.weather.conditions.thunderstorm' },
+  96: { emoji: '⛈️', i18nKey: 'settings.weather.conditions.thunderstormWithSlightHail' },
+  99: { emoji: '⛈️', i18nKey: 'settings.weather.conditions.thunderstormWithHeavyHail' }
 };
 
 // In-memory cache for forecasts: cacheKey -> Record<dateStr, WeatherInfo>
@@ -108,10 +109,12 @@ export async function fetchWeatherForecast(
         continue;
       }
 
-      const weatherInfo = WEATHER_MAP[code] || { emoji: '❓', desc: 'Unknown' };
+      const weatherInfo = WEATHER_MAP[code];
+      const desc = weatherInfo ? t(weatherInfo.i18nKey) : t('settings.weather.conditions.unknown');
+      const emoji = weatherInfo?.emoji || '❓';
       forecast[dateStr] = {
-        emoji: weatherInfo.emoji,
-        desc: weatherInfo.desc,
+        emoji,
+        desc,
         maxTemp,
         minTemp
       };

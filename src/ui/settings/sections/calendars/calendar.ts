@@ -578,9 +578,12 @@ export async function renderCalendar(
     // Clearing them here discards the DOM elements collected during dayHeaderDidMount/dayCellDidMount.
 
     const settings = PluginState.getSettings();
-    if (!settings.weatherLatitude || !settings.weatherLongitude) {
+    if (settings.weatherHide) {
       return;
     }
+
+    const latitude = settings.weatherLatitude ?? 50.088;
+    const longitude = settings.weatherLongitude ?? 14.4208;
 
     if (!view) return;
 
@@ -601,12 +604,7 @@ export async function renderCalendar(
     const startStr = formatDateLocal(actualStart);
     const endStr = formatDateLocal(actualEnd);
 
-    const forecast = await fetchWeatherForecast(
-      settings.weatherLatitude,
-      settings.weatherLongitude,
-      startStr,
-      endStr
-    );
+    const forecast = await fetchWeatherForecast(latitude, longitude, startStr, endStr);
 
     if (forecast) {
       activeForecast = forecast;

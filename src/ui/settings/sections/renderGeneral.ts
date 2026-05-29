@@ -114,5 +114,5 @@ export function renderGeneralSettings(
     });
 
   // Render modular Weather Settings
-  renderWeatherSettings(containerEl);
+  renderWeatherSettings(containerEl, _plugin, _rerender);
 }

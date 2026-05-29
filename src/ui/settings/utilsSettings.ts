@@ -104,7 +104,9 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     linkedNoteTemplate: raw.linkedNoteTemplate ?? DEFAULT_SETTINGS.linkedNoteTemplate,
     weatherCity: raw.weatherCity ?? DEFAULT_SETTINGS.weatherCity,
     weatherLatitude: raw.weatherLatitude ?? DEFAULT_SETTINGS.weatherLatitude,
-    weatherLongitude: raw.weatherLongitude ?? DEFAULT_SETTINGS.weatherLongitude
+    weatherLongitude: raw.weatherLongitude ?? DEFAULT_SETTINGS.weatherLongitude,
+    weatherHide: raw.weatherHide ?? DEFAULT_SETTINGS.weatherHide,
+    weatherInputMode: raw.weatherInputMode ?? DEFAULT_SETTINGS.weatherInputMode
   } as FullCalendarSettings & { calendarSources: (CalendarInfo | GoogleSourceWithAuth)[] } & {
     googleAuth?: LegacyGoogleAuth;
   };

@@ -6,23 +6,47 @@
 
 import { fetchWeatherForecast, clearWeatherCache, WEATHER_MAP } from './Weather';
 import { requestUrl } from 'obsidian';
+import { initializeI18n } from '../i18n/i18n';
 
 jest.mock('obsidian', () => ({
-  requestUrl: jest.fn()
+  requestUrl: jest.fn(),
+  getLanguage: jest.fn().mockReturnValue('en')
 }));
 
 const mockRequestUrl = requestUrl as jest.MockedFunction<typeof requestUrl>;
 
 describe('Weather Service Feature', () => {
+  beforeAll(async () => {
+    const mockApp = {
+      vault: {
+        getConfig: jest.fn().mockReturnValue('en'),
+        configDir: 'mock-config-dir',
+        adapter: {
+          exists: jest.fn().mockResolvedValue(false)
+        }
+      }
+    } as unknown as import('obsidian').App;
+    await initializeI18n(mockApp, 'full-calendar-remastered');
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     clearWeatherCache();
   });
 
   it('maps weather codes correctly', () => {
-    expect(WEATHER_MAP[0]).toEqual({ emoji: '☀️', desc: 'Clear sky' });
-    expect(WEATHER_MAP[3]).toEqual({ emoji: '☁️', desc: 'Overcast' });
-    expect(WEATHER_MAP[95]).toEqual({ emoji: '⛈️', desc: 'Thunderstorm' });
+    expect(WEATHER_MAP[0]).toEqual({
+      emoji: '☀️',
+      i18nKey: 'settings.weather.conditions.clearSky'
+    });
+    expect(WEATHER_MAP[3]).toEqual({
+      emoji: '☁️',
+      i18nKey: 'settings.weather.conditions.overcast'
+    });
+    expect(WEATHER_MAP[95]).toEqual({
+      emoji: '⛈️',
+      i18nKey: 'settings.weather.conditions.thunderstorm'
+    });
   });
 
   it('fetches and maps weather data correctly', async () => {

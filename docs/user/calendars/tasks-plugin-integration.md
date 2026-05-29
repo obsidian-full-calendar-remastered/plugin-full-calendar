@@ -24,8 +24,34 @@ The integration revolves around two surfaces: the **Backlog** (where unscheduled
 The Tasks Backlog supports multiple filters that work together seamlessly to help you manage even the largest backlogs:
 
 - **Missing Date** dropdown: selects which missing Tasks date marker defines backlog membership (`⏳`, `🛫`, or `📅`).
+- **Backlog Query** setting: defines a Full Calendar-specific Tasks query that is applied only to the sidebar backlog.
 - **Fuzzy Search** input: filters visible backlog rows by task title, file name, or full file path.
 - **Global Query Filter** (Toggle): When **"Include global query in the backlog"** is enabled in settings, Full Calendar will retrieve the global query string defined in your Obsidian Tasks plugin settings and apply all its filter rules to the backlog in real-time. This is extremely powerful for excluding archive files, private areas, templates, or only matching specific folders/tags automatically.
+
+### Proposed Backlog Query Setting
+
+The dedicated backlog query would let you filter the Full Calendar backlog without changing the global query used by the Tasks plugin itself.
+
+Example setting value:
+
+```tasks
+path does not include Templates
+folder includes Projects
+tags do not include someday
+priority is not lowest
+```
+
+With this query configured, a task appears in the backlog only when all of these are true:
+
+- It is missing the configured **Backlog Filter Date**.
+- It is not completed.
+- It matches every supported line in the **Backlog Query**.
+- If **Include global query in the backlog** is also enabled, it also matches every supported line in the Tasks plugin global query.
+- It matches the current fuzzy search text, if any.
+
+This keeps the global Tasks query as a broad vault-wide default while allowing Full Calendar to maintain a narrower scheduling queue. For example, the global query might hide archived notes everywhere, while the backlog query shows only actionable project tasks that are ready to schedule.
+
+Unsupported Tasks query lines should be ignored in the same way they are ignored for global query filtering. Display and layout instructions such as `sort by`, `group by`, `limit`, `hide`, and `show` do not affect the backlog query.
 
 ### Supported Global Query Syntax
 

@@ -74,12 +74,36 @@ The provider enforces a strict mapping policy to maintain data integrity:
 Backlog filtering is split by responsibility:
 
 - **Provider-level filter** (`TasksPluginProvider.getUndatedTasks()`): decides which tasks are backlog candidates using `backlogDateTarget` and completion state.
+- **Backlog Query Filter** (proposed): applies a Full Calendar-owned query string from `settings.tasksIntegration.backlogQuery` to backlog candidates before they are exposed to the backlog view.
 - **Global Query Filter** (`TasksQueryFilter`): If the setting `includeGlobalQueryInBacklog` is enabled, the provider fetches the global query string defined in Obsidian Tasks (`app.plugins.plugins['obsidian-tasks-plugin']?.settings?.globalQuery`) and filters backlog tasks accordingly.
 - **View-level filter** (`TasksBacklogView`): applies client-side fuzzy filtering over candidate tasks by title and file path.
 
 View-layer boundary reference: [Views Architecture](../views/architecture.md).
 
 The view-level fuzzy filter is intentionally non-destructive: it does not mutate provider state and only narrows visible rows in the panel.
+
+### Proposed Dedicated Backlog Query
+
+The dedicated backlog query should be a persisted Full Calendar setting rather than an Obsidian Tasks plugin setting:
+
+```ts
+interface TasksIntegrationSettings {
+  backlogQuery?: string;
+}
+```
+
+Suggested evaluation order in `TasksPluginProvider.getUndatedTasks()`:
+
+1. Select incomplete tasks missing the configured `backlogDateTarget`.
+2. If `tasksIntegration.backlogQuery` is non-empty, filter tasks with `new TasksQueryFilter(backlogQuery)`.
+3. If `includeGlobalQueryInBacklog` is enabled, filter the remaining tasks with the Tasks plugin `globalQuery`.
+4. Map the final tasks to `ParsedUndatedTask` for the backlog view.
+
+The backlog query and global query are combined with logical AND semantics. Each query line is already evaluated with AND semantics by `TasksQueryFilter`, so applying both filters sequentially preserves a simple mental model: a backlog task must satisfy every supported backlog rule and every supported global rule.
+
+The settings UI should expose this as a multiline text box in **Integrations → Tasks Plugin Integration**, near the existing **Include global query in the backlog** toggle. Saving the field should call `PluginState.saveSettings()` and `PluginState.getProviderRegistry().refreshBacklogViews()` so the sidebar updates immediately.
+
+The feature should reuse `TasksQueryFilter` instead of introducing another parser. This keeps supported syntax identical between the global query fallback and the dedicated backlog query, including ignored display/layout lines and unsupported lines.
 
 ### Global Query Filtering Architecture (`TasksQueryFilter`)
 

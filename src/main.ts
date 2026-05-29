@@ -38,6 +38,7 @@ import { PublicAPI, InternalAPI } from './api/FullCalendarAPI';
 import { openNLPCommandModal, registerNLPCommand } from './features/nlp/registerNLPCommand';
 import { registerCodeBlockProcessor } from './features/codeblock/CodeBlockProcessor';
 import { triggerDevMilestoneIfActive } from './features/milestones/milestones';
+/* Unplugged monthly report imports
 import {
   registerMilestoneProtocolHandler,
   runMonthlyReportScheduler,
@@ -45,6 +46,7 @@ import {
   startupCleanupTempNote,
   generateAndOpenMonthlyReport
 } from './features/milestones/monthlyReport';
+*/
 
 // Inline the view type constants to avoid loading the heavy view module at startup
 const FULL_CALENDAR_VIEW_TYPE = 'full-calendar-view';
@@ -233,6 +235,7 @@ export default class FullCalendarPlugin extends Plugin {
       })
     );
 
+    /* Unplugged monthly statistics report file-cleaning layout observers
     this.registerEvent(
       this.app.workspace.on('layout-change', () => {
         void checkAndCleanupTempNote(this.app);
@@ -243,6 +246,7 @@ export default class FullCalendarPlugin extends Plugin {
         void checkAndCleanupTempNote(this.app);
       })
     );
+    */
 
     const { CalendarView } = await import('./ui/view');
 
@@ -363,9 +367,10 @@ export default class FullCalendarPlugin extends Plugin {
       }
     });
 
+    /* Unplugged monthly report command palette command
     this.addCommand({
       id: 'full-calendar-show-monthly-report',
-      name: 'Show Monthly Milestones & Usage Report',
+      name: 'Show monthly milestones & usage report',
       callback: () => {
         const now = new Date();
         const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -373,6 +378,7 @@ export default class FullCalendarPlugin extends Plugin {
         void generateAndOpenMonthlyReport(this.app, this, prevMonthStr);
       }
     });
+    */
 
     // Register FCR Command (Natural Language Orchestrator)
     registerNLPCommand(this);
@@ -383,7 +389,7 @@ export default class FullCalendarPlugin extends Plugin {
       defaultMod: true
     });
 
-    registerMilestoneProtocolHandler(this);
+    // registerMilestoneProtocolHandler(this);
 
     this.registerObsidianProtocolHandler('full-calendar-google-auth', async params => {
       if (params.code && params.state) {
@@ -404,8 +410,8 @@ export default class FullCalendarPlugin extends Plugin {
 
     // Delayed background cache population for lazy start optimization
     this.app.workspace.onLayoutReady(() => {
-      void startupCleanupTempNote(this.app);
-      void runMonthlyReportScheduler(this.app, this);
+      // void startupCleanupTempNote(this.app);
+      // void runMonthlyReportScheduler(this.app, this);
       void triggerDevMilestoneIfActive();
       window.setTimeout(() => {
         const cache = PluginState.getCache();

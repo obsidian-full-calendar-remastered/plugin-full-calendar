@@ -85,7 +85,7 @@ export function renderAppearanceSettings(
     });
 
   new Setting(containerEl)
-    .setName('Enable Monthly Milestones Report')
+    .setName('Enable monthly milestones report')
     .setDesc(
       'Periodically generate a beautiful usage statistics and milestones note at the start of each month.'
     )

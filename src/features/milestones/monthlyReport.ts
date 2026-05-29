@@ -1,8 +1,14 @@
 import { App, MarkdownView, TFile, normalizePath, requestUrl, Platform } from 'obsidian';
 import { PluginState } from '../../core/PluginState';
-import { getMonthlyActivitySummary, getLifetimeMilestoneStats } from './milestones';
+import {
+  getMonthlyActivitySummary,
+  getLifetimeMilestoneStats,
+  LifetimeMilestoneStats
+} from './milestones';
 import type FullCalendarPlugin from '../../main';
 import baseTemplate from './assets/template.md';
+import { FullCalendarSettings } from '../../types/settings';
+import { CalendarInfo } from '../../types/calendar_settings';
 
 const REMOTE_TEMPLATE_URL = 'https://fcr-cdn.plugin-fcr.workers.dev/assets/milestones/template.md';
 const TEMP_FILE_NAME = 'Full Calendar - Monthly Milestones (Temp).md';
@@ -75,7 +81,10 @@ export async function getMilestoneTemplate(app: App, pluginId: string): Promise<
 /**
  * Builds a clean Markdown table summarizing calendar configurations and activity (governed by Obsidian native styles).
  */
-function buildCalendarsTable(settings: any, stats: any): string {
+function buildCalendarsTable(
+  settings: FullCalendarSettings,
+  stats: LifetimeMilestoneStats
+): string {
   const sources = settings.calendarSources ?? [];
   const typesMap: Record<string, number> = {};
   for (const source of sources) {
@@ -100,8 +109,15 @@ function buildCalendarsTable(settings: any, stats: any): string {
     holidays: 'Holidays Calendar'
   };
 
-  const allTypes = Array.from(
-    new Set([...sources.map((s: any) => s.type), 'local', 'google', 'ical', 'caldav', 'tasks'])
+  const allTypes: string[] = Array.from(
+    new Set([
+      ...sources.map((s: CalendarInfo) => s.type),
+      'local',
+      'google',
+      'ical',
+      'caldav',
+      'tasks'
+    ])
   );
 
   let hasRows = false;
@@ -133,7 +149,11 @@ function buildCalendarsTable(settings: any, stats: any): string {
 /**
  * Builds the fully anonymized telemetry JSON object matching the developer parameters.
  */
-function buildTelemetryPayload(monthKey: string, settings: any, stats: any): string {
+function buildTelemetryPayload(
+  monthKey: string,
+  settings: FullCalendarSettings,
+  stats: LifetimeMilestoneStats
+): string {
   const sources = settings.calendarSources ?? [];
   const calendarsByType: Record<string, number> = {};
   for (const source of sources) {
@@ -263,7 +283,7 @@ export async function checkAndCleanupTempNote(app: App): Promise<void> {
     if (file instanceof TFile) {
       untrackTemporaryReport();
       try {
-        await app.vault.trash(file, true);
+        await app.fileManager.trashFile(file);
       } catch (error) {
         console.warn('[Full Calendar] Failed to delete closed temporary usage note.', error);
       }
@@ -278,7 +298,7 @@ export async function startupCleanupTempNote(app: App): Promise<void> {
   const file = app.vault.getAbstractFileByPath(TEMP_FILE_NAME);
   if (file instanceof TFile) {
     try {
-      await app.vault.trash(file, true);
+      await app.fileManager.trashFile(file);
     } catch (error) {
       console.warn('[Full Calendar] Startup temp file cleanup failed.', error);
     }
@@ -299,7 +319,6 @@ export async function runMonthlyReportScheduler(
   }
 
   const now = new Date();
-  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   // Calculate prior month in 'yyyy-mm'
@@ -379,7 +398,7 @@ export function registerMilestoneProtocolHandler(plugin: FullCalendarPlugin): vo
         }
 
         try {
-          await app.vault.trash(file, true);
+          await app.fileManager.trashFile(file);
           const { showNotice } = await import('../../utils/showNotice');
           showNotice('Temporary milestones report deleted.');
         } catch (error) {

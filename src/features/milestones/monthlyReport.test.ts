@@ -1,6 +1,8 @@
 import { getMonthlyActivitySummary } from './milestones';
 import { compileMonthlyReport } from './monthlyReport';
 import { PluginState } from '../../core/PluginState';
+import { App } from 'obsidian';
+import { FullCalendarSettings } from '../../types/settings';
 
 // Mock Obsidian modules
 jest.mock(
@@ -43,7 +45,7 @@ const mockSettings = {
   workspaces: []
 };
 
-PluginState.getSettings = () => mockSettings as any;
+PluginState.getSettings = () => mockSettings as unknown as FullCalendarSettings;
 
 describe('Monthly Milestones Statistics & Report Feature', () => {
   beforeEach(() => {
@@ -68,7 +70,7 @@ describe('Monthly Milestones Statistics & Report Feature', () => {
     it('should compile the note content and contain all mandatory placeholders', async () => {
       const appMock = {
         vault: {
-          configDir: '.obsidian',
+          configDir: 'test-vault-config-dir',
           adapter: {
             exists: jest.fn().mockResolvedValue(true),
             read: jest
@@ -78,7 +80,7 @@ describe('Monthly Milestones Statistics & Report Feature', () => {
               )
           }
         }
-      } as any;
+      } as unknown as App;
       const pluginId = 'obsidian-full-calendar-remastered';
 
       const report = await compileMonthlyReport(appMock, pluginId, '2026-04');

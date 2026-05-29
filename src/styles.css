@@ -864,3 +864,103 @@
   box-sizing: border-box;
 }
 
+/* Weather Integration Styling */
+
+.ofc-weather-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  background: linear-gradient(180deg, var(--background-secondary-alt), var(--background-secondary));
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  margin: 6px 4px 2px 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  font-family: var(--font-interface);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  line-height: 1.2;
+}
+
+.ofc-weather-panel:hover {
+  background: var(--background-secondary);
+  border-color: var(--interactive-accent);
+}
+
+.ofc-weather-emoji-temp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.95em;
+  color: var(--text-normal);
+}
+
+.ofc-weather-emoji {
+  font-size: 1.1em;
+}
+
+.ofc-weather-temp {
+  font-family: var(--font-monospace);
+  letter-spacing: -0.02em;
+}
+
+.ofc-weather-desc {
+  font-size: 0.76em;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 2px;
+  font-weight: 500;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ofc-weather-month-emoji {
+  font-size: 1.25em;
+  margin-right: 4px;
+  opacity: 0.9;
+  cursor: default;
+  transition: transform 0.15s ease;
+}
+
+.ofc-weather-month-emoji:hover {
+  transform: scale(1.2);
+}
+
+/* Adjust FullCalendar DayGrid Top layout for month-view emoji alignment */
+.fc .fc-daygrid-day-top {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px;
+}
+
+/* Weather settings status styles */
+.ofc-weather-status {
+  margin-top: 4px;
+  font-size: 0.9em;
+}
+
+.ofc-weather-status.is-success {
+  color: var(--text-success);
+  font-weight: bold;
+}
+
+.ofc-weather-status.is-warning {
+  color: var(--text-warning);
+  font-weight: bold;
+}
+
+.ofc-weather-status.is-muted {
+  color: var(--text-muted);
+}
+
+.ofc-weather-status.is-accent {
+  color: var(--text-accent);
+  font-weight: bold;
+}
+

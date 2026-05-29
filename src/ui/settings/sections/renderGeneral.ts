@@ -9,6 +9,7 @@ import { Setting } from 'obsidian';
 import FullCalendarPlugin from '../../../main';
 import { t } from '../../../features/i18n/i18n';
 import { createDescWithDocs } from '../docsLinks';
+import { renderWeatherSettings } from '../../../features/weather/WeatherSettings';
 
 const INITIAL_VIEW_OPTIONS = {
   DESKTOP: {
@@ -111,4 +112,7 @@ export function renderGeneralSettings(
         await PluginState.saveSettings();
       });
     });
+
+  // Render modular Weather Settings
+  renderWeatherSettings(containerEl);
 }

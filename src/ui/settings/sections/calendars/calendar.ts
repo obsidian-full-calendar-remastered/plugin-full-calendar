@@ -30,6 +30,8 @@ import {
   patchRRuleTimezoneExpansion,
   type RRulePluginLike
 } from '../../../../features/timezone/Timezone';
+import { PluginState } from '../../../../core/PluginState';
+import { fetchWeatherForecast } from '../../../../features/weather/Weather';
 
 interface ExtraRenderProps {
   eventClick?: (info: EventClickArg) => void;
@@ -526,7 +528,125 @@ export async function renderCalendar(
     currentUpcomingEventIds = nextUpcomingEventIds;
   };
 
+  let pendingHeaders: { dateStr: string; el: HTMLElement }[] = [];
+  let pendingCells: { dateStr: string; el: HTMLElement }[] = [];
+  let activeForecast: Record<
+    string,
+    { emoji: string; desc: string; maxTemp: number; minTemp: number }
+  > | null = null;
+
+  const formatDateLocal = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const injectHeaderWeather = (
+    el: HTMLElement,
+    data: { emoji: string; desc: string; maxTemp: number }
+  ) => {
+    if (el.querySelector('.ofc-weather-panel')) {
+      return;
+    }
+
+    const innerEl = el.querySelector('.fc-scrollgrid-sync-inner') || el;
+    const panelEl = innerEl.createDiv({ cls: 'ofc-weather-panel' });
+
+    const emojiTempEl = panelEl.createDiv({ cls: 'ofc-weather-emoji-temp' });
+    emojiTempEl.createSpan({ cls: 'ofc-weather-emoji' }).setText(data.emoji);
+    emojiTempEl.createSpan({ cls: 'ofc-weather-temp' }).setText(`${Math.round(data.maxTemp)}°C`);
+
+    panelEl.createDiv({ cls: 'ofc-weather-desc' }).setText(data.desc);
+  };
+
+  const injectCellWeather = (el: HTMLElement, data: { emoji: string }) => {
+    const topEl = el.querySelector('.fc-daygrid-day-top');
+    if (!topEl) return;
+
+    if (topEl.querySelector('.ofc-weather-month-emoji')) {
+      return;
+    }
+
+    const emojiEl = topEl.createSpan({ cls: 'ofc-weather-month-emoji' });
+    emojiEl.setText(data.emoji);
+  };
+
+  const handleViewChangeAndFetchWeather = async (view: { activeStart: Date; activeEnd: Date }) => {
+    // DO NOT clear pendingHeaders, pendingCells, or activeForecast at the start of this function!
+    // FullCalendar mounts headers and cells BEFORE datesSet triggers.
+    // Clearing them here discards the DOM elements collected during dayHeaderDidMount/dayCellDidMount.
+
+    const settings = PluginState.getSettings();
+    if (!settings.weatherLatitude || !settings.weatherLongitude) {
+      return;
+    }
+
+    if (!view) return;
+
+    const start = view.activeStart;
+    const end = new Date(view.activeEnd.getTime() - 24 * 60 * 60 * 1000); // end date is exclusive
+
+    const today = new Date();
+    const minStart = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
+    const maxEnd = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+    const actualStart = start < minStart ? minStart : start;
+    const actualEnd = end > maxEnd ? maxEnd : end;
+
+    if (actualStart > actualEnd) {
+      return;
+    }
+
+    const startStr = formatDateLocal(actualStart);
+    const endStr = formatDateLocal(actualEnd);
+
+    const forecast = await fetchWeatherForecast(
+      settings.weatherLatitude,
+      settings.weatherLongitude,
+      startStr,
+      endStr
+    );
+
+    if (forecast) {
+      activeForecast = forecast;
+
+      pendingHeaders.forEach(({ dateStr, el }) => {
+        if (forecast[dateStr]) {
+          injectHeaderWeather(el, forecast[dateStr]);
+        }
+      });
+      pendingHeaders = [];
+
+      pendingCells.forEach(({ dateStr, el }) => {
+        if (forecast[dateStr]) {
+          injectCellWeather(el, forecast[dateStr]);
+        }
+      });
+      pendingCells = [];
+    }
+  };
+
   const cal = new CalendarCtor(containerEl, {
+    dayHeaderDidMount: arg => {
+      const dateStr = formatDateLocal(arg.date);
+      if (activeForecast && activeForecast[dateStr]) {
+        injectHeaderWeather(arg.el, activeForecast[dateStr]);
+      } else {
+        pendingHeaders.push({ dateStr, el: arg.el });
+      }
+    },
+    dayCellDidMount: arg => {
+      const dateStr = formatDateLocal(arg.date);
+      if (activeForecast && activeForecast[dateStr]) {
+        injectCellWeather(arg.el, activeForecast[dateStr]);
+      } else {
+        pendingCells.push({ dateStr, el: arg.el });
+      }
+    },
+    datesSet: (info: { view: { activeStart: Date; activeEnd: Date } }) => {
+      void handleViewChangeAndFetchWeather(info.view);
+    },
     // Only include schedulerLicenseKey when resource-timeline plugin is loaded
     ...(showResourceViews && resourceTimelinePlugin
       ? { schedulerLicenseKey: 'GPL-My-Project-Is-Open-Source' }

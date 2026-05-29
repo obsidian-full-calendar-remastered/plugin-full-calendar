@@ -1,0 +1,68 @@
+# Devlog: Weather Forecast Integration
+
+This page documents the design decisions, modular architecture, and implementation details for integrating live weather forecasts into the Obsidian Full Calendar plugin.
+
+---
+
+## 1. Summary
+
+We added a live weather forecast feature to the daily, weekly, and monthly calendar views. The implementation resolves location coordinates using Open-Meteo's geocoding endpoint, retrieves forecasts dynamically for visible date ranges, and renders the data securely in daily column headers and monthly day cells. The codebase was refactored strictly under `src/features/weather/` to adhere to SOLID, DRY, and modularity principles.
+
+---
+
+## 2. Design Decisions & SOLID Modularity
+
+In alignment with modularity and separation of concerns (SOLID principles):
+- All weather forecasting, caching, settings UI rendering, and testing components are strictly grouped in `src/features/weather/`.
+- **Weather Service (`src/features/weather/Weather.ts`)**: Acts as a decoupled domain boundary containing pure functions for forecast fetching (`fetchWeatherForecast`), WMO weather mappings (`WEATHER_MAP`), and geocoding coordinates resolution (`geocodeCity`). It is completely independent of the UI and calendar rendering lifecycle.
+- **Weather Settings Component (`src/features/weather/WeatherSettings.ts`)**: Encapsulates the complete user settings UI rendering hook (`renderWeatherSettings`), including input field creation, debounced validation, semantic status feedback, and coordinates persistence.
+- **Settings Delegation**: `renderGeneralSettings` in `renderGeneral.ts` simply invokes the exported hook `renderWeatherSettings(containerEl)`. This guarantees a single responsibility layout, ensuring the general tab is completely decoupled from the geocoding APIs and styling parameters.
+
+---
+
+## 3. Geocoding API & Coordinates Resolution
+
+Weather forecasting requires numerical latitude and longitude coordinates. We integrated Open-Meteo's free geocoding API:
+- **Endpoint**: `https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&format=json`
+- **Settings Input**: Added under the General tab with a 1-second debounce to throttle typing events.
+- **Coordinates validation**: Displays real-time status feedback (e.g. `Resolving location...`, `Resolved: Lat 50.0833, Lng 14.4667`, `Could not resolve coordinates`) styled beautifully using semantic CSS classes (complying with Obsidian's strict `obsidianmd/no-static-styles-assignment` lint rules).
+
+---
+
+## 4. Forecast Retrieval, Caching & Clamping
+
+To prevent hitting the Open-Meteo forecast API repeatedly during calendar navigation, we designed a robust, in-memory caching and clamping pipeline:
+- **Forecast Cache**: Foreacasts are cached using a composite key: `${latitude},${longitude},${startDate},${endDate}`.
+- **Date Clamping**: Open-Meteo's free forecast API restricts future forecast queries to a maximum of 16 days. To guarantee API safety and prevent requests from failing when users switch to Month view (which spans up to 42 days), we clamp the requested date ranges to at most `[today - 3 days, today + 14 days]`.
+
+---
+
+## 5. FullCalendar DOM Injection Pipeline
+
+FullCalendar v5/v6 renders column headers and day cells synchronously. Since forecast retrieval is asynchronous, we implemented a non-blocking queue pipeline:
+- **Synchronous Check**: When `dayHeaderDidMount` and `dayCellDidMount` are called, if the forecast for that date is already in the cache, the weather panel (week/day views) or emoji (month view) is rendered synchronously.
+- **Asynchronous Queue**: If the forecast is loading, elements are registered into `pendingHeaders` and `pendingCells` lists. When the weather fetch completes, all queued elements are updated instantly in a single, flicker-free pass.
+- **Grid Layout Harmony**: Daily/weekly view weather panels are styled to render as a cohesive horizontal bar directly above the all-day events row, perfectly matching the calendar's grid lines. Month view emojis are aligned to the top-left of each day cell, shifting the day number to the right.
+
+---
+
+## 6. Styling, Theming & ESLint Compliance
+
+- **No static styles**: Handled status elements dynamically by assigning standard CSS classes (e.g. `.is-success`, `.is-warning`, `.is-accent`, `.is-muted`) in `styles.css` instead of setting inline styles (which violates custom Obsidian MD ESLint rules).
+- **Harmony with Dark/Light Themes**: Uses Obsidian CSS variables (e.g. `var(--text-success)`, `var(--text-muted)`) so that colors are harmonized automatically when users toggle themes.
+
+---
+
+## 7. Verification Coverage
+
+### TypeScript Compilation
+- **Command**: `pnpm run compile`
+- **Result**: **Passed with zero errors**. All files compile successfully with proper type interfaces.
+
+### Lint Compliance
+- **Command**: `pnpm run lint`
+- **Result**: **Passed with zero errors and warnings**. Fully compliant with strict standard TypeScript ESLint rules and Obsidian MD policies.
+
+### Jest Tests
+- **Command**: `pnpm run test`
+- **Result**: **Passed with 100% success rate**. All 56 test suites (612 tests) passed successfully, including the new unit test suite (`src/features/weather/Weather.test.ts`) that mocks Obsidian's `requestUrl` and validates coordinates resolution, mapping, caching, and error safety.

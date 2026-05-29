@@ -11,6 +11,13 @@ Corresponds to
 
 ### New Features
 
+-   **[Weather Forecast Integration](user/features/weather.md)**  
+    _Introduced an Open-Meteo weather integration for daily, weekly, and monthly views._  
+    - Debounced geocoding and coordinates resolution in Settings  
+    - In-memory cached daily weather forecasting mapped to WMO emojis and text descriptions  
+    - Column-header horizontal weather panel in Day/Week views  
+    - Minimal weather emoji indicators in Month view day cells  
+
 -   **[ChronoAnalyser Demo](user/chrono_analyser/introduction.md)**  
     _Introduced the ChronoAnalyser demo to improve accessibility and provide a preview of analytical capabilities._
 

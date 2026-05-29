@@ -195,6 +195,9 @@ export interface FullCalendarSettings {
   linkedNoteTemplate: string;
   taskBacklogLastProviderId: string;
   caldavTaskInboxLastCalendarId: string;
+  weatherCity: string;
+  weatherLatitude: number | null;
+  weatherLongitude: number | null;
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
@@ -280,6 +283,9 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   linkedNotesDirectory: '',
   taskBacklogLastProviderId: '',
   caldavTaskInboxLastCalendarId: '',
+  weatherCity: '',
+  weatherLatitude: null,
+  weatherLongitude: null,
   linkedNoteTemplate:
     '# {{title}}\n\n**Date**: {{date}}\n**Time**: {{timeString}}\n**Location**: {{location}}\n**Calendar**: {{calendarName}}\n\n## Description\n{{description}}\n\n## Notes\n- '
 };

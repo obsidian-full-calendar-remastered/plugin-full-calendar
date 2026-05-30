@@ -1036,8 +1036,11 @@
         "new": "Nuevo evento",
         "edit": "Editar evento"
       },
+      "advancedOptions": "Opciones avanzadas",
       "buttons": {
-        "openNote": "Abrir nota"
+        "openNote": "Abrir nota",
+        "delete": "Eliminar",
+        "save": "Guardar evento"
       },
       "errors": {
         "createNoCalendars": "No se puede crear el evento: No hay calendarios editables disponibles.",
@@ -1057,15 +1060,14 @@
       },
       "fields": {
         "title": {
-          "label": "Título",
           "placeholder": "Título del evento"
         },
         "category": {
-          "label": "Categoría",
           "placeholder": "Categoría (opcional)"
         },
         "display": {
           "label": "Visualización",
+          "tooltip": "Elige cómo aparece este evento en el calendario",
           "options": {
             "auto": "Evento normal",
             "background": "Evento de fondo",
@@ -1088,9 +1090,9 @@
           "completed": "Completado"
         },
         "notification": {
-          "label": "Notificar:",
-          "mins": "Min.",
+          "label": "Notificar",
           "select": "Seleccionar...",
+          "mins": "Min.",
           "presets": {
             "30m": "30 min",
             "1h": "1 hora",
@@ -1126,11 +1128,18 @@
           },
           "yearlyText": "Se repite cada año en {{date}}.",
           "endRepeat": "Fin de repetición"
+        },
+        "location": {
+          "placeholder": "Añadir ubicación..."
+        },
+        "description": {
+          "placeholder": "Añadir descripción..."
         }
       },
       "tooltips": {
         "recurringTaskCompletion": "La finalización de tareas recurrentes puede alternarse en instancias individuales en la vista de calendario.",
-        "dailyNoteRecurring": "Los eventos recurrentes no son compatibles en Notas Diarias. Por favor usa un calendario de 'Nota completa'."
+        "dailyNoteRecurring": "Los eventos recurrentes no son compatibles en Notas Diarias. Por favor usa un calendario de 'Nota completa'.",
+        "inheritedProperty": "Esta propiedad se hereda. Haz clic para editar el evento recurrente padre."
       }
     },
     "deleteRecurring": {

@@ -18,6 +18,17 @@ import { CalendarInfo, OFCEvent } from '../../types';
 import { AutocompleteInput } from '../components/forms/AutocompleteInput';
 import { parseSubcategoryTitle } from '../../features/category/categoryParser';
 import { t } from '../../features/i18n/i18n';
+import { setIcon } from 'obsidian';
+
+const Icon = ({ name }: { name: string }) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (ref.current) {
+      setIcon(ref.current, name);
+    }
+  }, [name]);
+  return <div ref={ref} className="edit-event-icon" />;
+};
 
 interface DayChoiceProps {
   code: string;
@@ -123,7 +134,7 @@ export const EditEvent = ({
 }: EditEventProps) => {
   const isChildOverride = !!initialEvent?.recurringEventId;
 
-  const disabledTooltip = 'This property is inherited. Click to edit the parent recurring event.'; // Update tooltip
+  const disabledTooltip = t('modals.editEvent.tooltips.inheritedProperty'); // Update tooltip
 
   const [date, setDate] = useState(
     initialEvent
@@ -147,6 +158,8 @@ export const EditEvent = ({
   );
   const [title, setTitle] = useState(initialEvent?.title || '');
   const [category, setCategory] = useState(initialEvent?.category || '');
+  const [location, setLocation] = useState(initialEvent?.location || '');
+  const [description, setDescription] = useState(initialEvent?.description || '');
   // const [isRecurring, setIsRecurring] = useState(initialEvent?.type === 'recurring' || false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(
     getInitialRecurrenceType(initialEvent)
@@ -288,6 +301,8 @@ export const EditEvent = ({
       category: category || undefined,
       display: display !== 'auto' ? display : undefined,
       subCategory: parsedSubCategory,
+      location: location || undefined,
+      description: description || undefined,
 
       notify: notifyValue !== '' ? { value: Number(notifyValue) } : undefined,
       ...timeInfo,
@@ -311,12 +326,9 @@ export const EditEvent = ({
           )}
         </div>
 
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">{t('modals.editEvent.fields.title.label')}</div>
-          </div>
+        <div className="premium-title-item">
           <div
-            className={`setting-item-control ${isChildOverride ? 'is-override-disabled' : ''}`}
+            className={`ofc-premium-title-wrap ${isChildOverride ? 'is-override-disabled' : ''}`}
             onClick={isChildOverride ? onAttemptEditInherited : undefined}
             title={isChildOverride ? disabledTooltip : ''}
           >
@@ -324,63 +336,64 @@ export const EditEvent = ({
               ref={titleRef}
               type="text"
               value={title}
-              placeholder={t('modals.editEvent.fields.title.placeholder')}
+              placeholder={t('modals.editEvent.fields.title.placeholder') || 'Event Title'}
               required
               onChange={e => setTitle(e.target.value)}
-              readOnly={isChildOverride} // Change `disabled` to `readOnly`
+              readOnly={isChildOverride}
+              className="ofc-premium-title-input"
             />
           </div>
         </div>
 
-        {enableCategory && (
-          <div className="setting-item">
-            <div className="setting-item-info">
-              <div className="setting-item-name">{t('modals.editEvent.fields.category.label')}</div>
+        <div className="ofc-premium-fields-row">
+          {enableCategory && (
+            <div className="premium-field-col">
+              <div
+                className={`ofc-premium-input-wrap ${isChildOverride ? 'is-override-disabled' : ''}`}
+                onClick={isChildOverride ? onAttemptEditInherited : undefined}
+                title={isChildOverride ? disabledTooltip : ''}
+              >
+                <Icon name="tag" />
+                <AutocompleteInput
+                  id="category-autocomplete"
+                  value={category}
+                  onChange={setCategory}
+                  suggestions={availableCategories}
+                  placeholder={
+                    t('modals.editEvent.fields.category.placeholder') || 'Category (optional)'
+                  }
+                  readOnly={isChildOverride}
+                />
+              </div>
             </div>
-            <div
-              className={`setting-item-control ${isChildOverride ? 'is-override-disabled' : ''}`}
-              onClick={isChildOverride ? onAttemptEditInherited : undefined}
-              title={isChildOverride ? disabledTooltip : ''}
-            >
-              <AutocompleteInput
-                id="category-autocomplete"
-                value={category}
-                onChange={setCategory}
-                suggestions={availableCategories}
-                placeholder={t('modals.editEvent.fields.category.placeholder')}
-                readOnly={isChildOverride} // Change `disabled` to `readOnly`
+          )}
+
+          <div className="premium-field-col">
+            <div className="ofc-premium-input-wrap">
+              <Icon name="map-pin" />
+              <input
+                type="text"
+                value={location}
+                placeholder={t('modals.editEvent.fields.location.placeholder') || 'Add location...'}
+                onChange={e => setLocation(e.target.value)}
               />
             </div>
           </div>
-        )}
+        </div>
 
-        {enableBackgroundEvents && (
-          <div className="setting-item">
-            <div
-              className="setting-item-info"
-              title="Choose how this event appears on the calendar"
-            >
-              <div className="setting-item-name">{t('modals.editEvent.fields.display.label')}</div>
-            </div>
-            <div
-              className={`setting-item-control ${isChildOverride ? 'is-override-disabled' : ''}`}
-              onClick={isChildOverride ? onAttemptEditInherited : undefined}
-              title={isChildOverride ? disabledTooltip : ''}
-            >
-              <select
-                value={display}
-                onChange={e => setDisplay(e.target.value as typeof display)}
-                disabled={isChildOverride}
-              >
-                <option value="auto">{t('modals.editEvent.fields.display.options.auto')}</option>
-                <option value="background">
-                  {t('modals.editEvent.fields.display.options.background')}
-                </option>
-                <option value="none">{t('modals.editEvent.fields.display.options.none')}</option>
-              </select>
-            </div>
+        <div className="premium-field-full">
+          <div className="ofc-premium-input-wrap ofc-premium-textarea-wrap">
+            <Icon name="align-left" />
+            <textarea
+              value={description}
+              placeholder={
+                t('modals.editEvent.fields.description.placeholder') || 'Add description...'
+              }
+              onChange={e => setDescription(e.target.value)}
+              rows={3}
+            />
           </div>
-        )}
+        </div>
 
         <div className="setting-item">
           <div className="setting-item-info">
@@ -400,8 +413,6 @@ export const EditEvent = ({
           </div>
         </div>
 
-        <hr className="modal-hr" />
-
         <div className="setting-item">
           <div className="setting-item-info">
             <div className="setting-item-name">{t('modals.editEvent.fields.date.label')}</div>
@@ -416,41 +427,42 @@ export const EditEvent = ({
             <div className="setting-item-name">{t('modals.editEvent.fields.time.label')}</div>
           </div>
           <div className="setting-item-control time-group">
-            <input
-              type="time"
-              value={startTime}
-              required={!allDay}
-              disabled={allDay}
-              onChange={e => setStartTime(e.target.value)}
-            />
-            <span>-</span>
-            <input
-              type="time"
-              value={endTime}
-              disabled={allDay}
-              onChange={e => setEndTime(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Options section replaced */}
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">{t('modals.editEvent.fields.options.label')}</div>
-          </div>
-          <div className="setting-item-control options-group">
-            <label title={isChildOverride ? disabledTooltip : ''}>
+            <div className="ofc-time-inputs-wrap">
+              <input
+                type="time"
+                value={startTime}
+                required={!allDay}
+                disabled={allDay}
+                onChange={e => setStartTime(e.target.value)}
+              />
+              <span>➔</span>
+              <input
+                type="time"
+                value={endTime}
+                disabled={allDay}
+                onChange={e => setEndTime(e.target.value)}
+              />
+            </div>
+            <label className="all-day-toggle-label" title={isChildOverride ? disabledTooltip : ''}>
               <input
                 type="checkbox"
                 checked={allDay}
                 onChange={e => setAllDay(e.target.checked)}
                 disabled={isChildOverride}
-              />{' '}
-              {t('modals.editEvent.fields.options.allDay')}
+              />
+              <span>{t('modals.editEvent.fields.options.allDay')}</span>
             </label>
+          </div>
+        </div>
+
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">{t('modals.editEvent.fields.options.label')}</div>
+          </div>
+          <div className="setting-item-control options-group">
             <label>
-              <input type="checkbox" checked={isTask} onChange={e => setIsTask(e.target.checked)} />{' '}
-              {t('modals.editEvent.fields.options.isTask')}
+              <input type="checkbox" checked={isTask} onChange={e => setIsTask(e.target.checked)} />
+              <span> {t('modals.editEvent.fields.options.isTask')}</span>
             </label>
             {isTask && (
               <label
@@ -463,205 +475,88 @@ export const EditEvent = ({
                     !isRecurring && setComplete(e.target.checked ? DateTime.now().toISO() : false)
                   }
                   disabled={isRecurring}
-                />{' '}
-                {t('modals.editEvent.fields.options.completed')}
-              </label>
-            )}
-            {/* Notification Control Replaces EndReminder */}
-            {enableReminders && (
-              <div className="u-flex-align-center u-gap-8px u-pl-4px">
-                <span>{t('modals.editEvent.fields.notification.label')}</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="1440"
-                  placeholder={t('modals.editEvent.fields.notification.mins')}
-                  value={notifyValue}
-                  onChange={e => setNotifyValue(e.target.value)}
-                  className="u-w-60px"
                 />
-                <select
-                  onChange={e => {
-                    const val = e.target.value;
-                    if (val) setNotifyValue(val);
-                  }}
-                  value="" // Always reset to allow re-selection
-                >
-                  <option value="" disabled>
-                    {t('modals.editEvent.fields.notification.select')}
-                  </option>
-                  <option value="30">
-                    {t('modals.editEvent.fields.notification.presets.30m')}
-                  </option>
-                  <option value="60">{t('modals.editEvent.fields.notification.presets.1h')}</option>
-                  <option value="360">
-                    {t('modals.editEvent.fields.notification.presets.6h')}
-                  </option>
-                  <option value="720">
-                    {t('modals.editEvent.fields.notification.presets.12h')}
-                  </option>
-                  <option value="1440">
-                    {t('modals.editEvent.fields.notification.presets.24h')}
-                  </option>
-                </select>
-              </div>
+                <span> {t('modals.editEvent.fields.options.completed')}</span>
+              </label>
             )}
           </div>
         </div>
 
-        {/* New "Repeats" section */}
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">{t('modals.editEvent.fields.repeats.label')}</div>
-          </div>
-          <div className="setting-item-control">
-            <select
-              value={recurrenceType}
-              onChange={e => setRecurrenceType(e.target.value as RecurrenceType)}
-              disabled={isDailyNoteCalendar}
-              title={recurringTooltip}
-            >
-              <option value="none">{t('modals.editEvent.fields.repeats.options.none')}</option>
-              <option value="weekly">{t('modals.editEvent.fields.repeats.options.weekly')}</option>
-              <option value="monthly">
-                {t('modals.editEvent.fields.repeats.options.monthly')}
-              </option>
-              <option value="yearly">{t('modals.editEvent.fields.repeats.options.yearly')}</option>
-            </select>
-          </div>
-        </div>
-        {isRecurring && (
+        {enableReminders && (
           <div className="setting-item">
-            <div className="setting-item-info"></div>
-            <div className="setting-item-control u-flex-align-center u-gap-8px">
-              <span>{t('modals.editEvent.fields.repeats.repeatEvery')}</span>
+            <div className="setting-item-info">
+              <div className="setting-item-name">
+                {t('modals.editEvent.fields.notification.label')}
+              </div>
+            </div>
+            <div className="setting-item-control ofc-notify-group">
               <input
                 type="number"
-                min="1"
-                value={repeatInterval}
-                onChange={e => setRepeatInterval(parseInt(e.target.value, 10) || 1)}
-                className="u-w-60px"
+                min="0"
+                max="1440"
+                placeholder={t('modals.editEvent.fields.notification.mins') || 'Mins'}
+                value={notifyValue}
+                onChange={e => setNotifyValue(e.target.value)}
+                style={{ width: '80px', marginRight: '8px' }}
               />
-              <span>
-                {recurrenceType === 'weekly' &&
-                  (repeatInterval > 1
-                    ? t('modals.editEvent.fields.repeats.weeks')
-                    : t('modals.editEvent.fields.repeats.week'))}
-                {recurrenceType === 'monthly' &&
-                  (repeatInterval > 1
-                    ? t('modals.editEvent.fields.repeats.months')
-                    : t('modals.editEvent.fields.repeats.month'))}
-                {recurrenceType === 'yearly' &&
-                  (repeatInterval > 1
-                    ? t('modals.editEvent.fields.repeats.years')
-                    : t('modals.editEvent.fields.repeats.year'))}
-              </span>
+              <select
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val) setNotifyValue(val);
+                }}
+                value="" // Always reset to allow re-selection
+              >
+                <option value="" disabled>
+                  {t('modals.editEvent.fields.notification.select') || 'Select...'}
+                </option>
+                <option value="30">{t('modals.editEvent.fields.notification.presets.30m')}</option>
+                <option value="60">{t('modals.editEvent.fields.notification.presets.1h')}</option>
+                <option value="360">{t('modals.editEvent.fields.notification.presets.6h')}</option>
+                <option value="720">{t('modals.editEvent.fields.notification.presets.12h')}</option>
+                <option value="1440">
+                  {t('modals.editEvent.fields.notification.presets.24h')}
+                </option>
+              </select>
             </div>
           </div>
         )}
 
-        {/* Recurring fields fragment replaced */}
-        {isRecurring && (
-          <>
-            {recurrenceType === 'weekly' && (
+        <details className="ofc-advanced-options-details">
+          <summary>{t('modals.editEvent.advancedOptions') || 'Advanced Options'}</summary>
+          <div className="ofc-advanced-options-content">
+            {enableBackgroundEvents && (
               <div className="setting-item">
-                <div className="setting-item-info">
+                <div
+                  className="setting-item-info"
+                  title={
+                    t('modals.editEvent.fields.display.tooltip') ||
+                    'Choose how this event appears on the calendar'
+                  }
+                >
                   <div className="setting-item-name">
-                    {t('modals.editEvent.fields.repeats.repeatOn')}
+                    {t('modals.editEvent.fields.display.label')}
                   </div>
                 </div>
-                <div className="setting-item-control">
-                  <DaySelect value={daysOfWeek} onChange={setDaysOfWeek} />
-                </div>
-              </div>
-            )}
-            {/* REPLACE monthly block */}
-            {recurrenceType === 'monthly' && date && (
-              <div className="setting-item">
-                <div className="setting-item-info"></div>
-                <div className="setting-item-control u-display-block">
-                  {/* Radio button for "On day X" */}
-                  <div>
-                    <input
-                      type="radio"
-                      id="monthly-day-of-month"
-                      name="monthly-mode"
-                      value="dayOfMonth"
-                      checked={monthlyMode === 'dayOfMonth'}
-                      onChange={() => setMonthlyMode('dayOfMonth')}
-                    />
-                    <label htmlFor="monthly-day-of-month">
-                      {' '}
-                      {t('modals.editEvent.fields.repeats.onDay', {
-                        day: DateTime.fromISO(date).day
-                      })}
-                    </label>
-                  </div>
-                  {/* Radio button for "On the Nth weekday" */}
-                  <div className="u-flex-align-center u-gap-8px u-mt-8px">
-                    <input
-                      type="radio"
-                      id="monthly-on-the"
-                      name="monthly-mode"
-                      value="onThe"
-                      checked={monthlyMode === 'onThe'}
-                      onChange={() => setMonthlyMode('onThe')}
-                    />
-                    <label htmlFor="monthly-on-the">
-                      {t('modals.editEvent.fields.repeats.onThe')}
-                    </label>
-                    <select
-                      value={repeatOnWeek}
-                      onChange={e => setRepeatOnWeek(parseInt(e.target.value, 10))}
-                      disabled={monthlyMode !== 'onThe'}
-                    >
-                      <option value="1">
-                        {t('modals.editEvent.fields.repeats.ordinal.first')}
-                      </option>
-                      <option value="2">
-                        {t('modals.editEvent.fields.repeats.ordinal.second')}
-                      </option>
-                      <option value="3">
-                        {t('modals.editEvent.fields.repeats.ordinal.third')}
-                      </option>
-                      <option value="4">
-                        {t('modals.editEvent.fields.repeats.ordinal.fourth')}
-                      </option>
-                      <option value="-1">
-                        {t('modals.editEvent.fields.repeats.ordinal.last')}
-                      </option>
-                    </select>
-                    <select
-                      value={repeatOnWeekday}
-                      onChange={e => setRepeatOnWeekday(parseInt(e.target.value, 10))}
-                      disabled={monthlyMode !== 'onThe'}
-                    >
-                      {[
-                        t('settings.weekdays.sunday'),
-                        t('settings.weekdays.monday'),
-                        t('settings.weekdays.tuesday'),
-                        t('settings.weekdays.wednesday'),
-                        t('settings.weekdays.thursday'),
-                        t('settings.weekdays.friday'),
-                        t('settings.weekdays.saturday')
-                      ].map((day, index) => (
-                        <option key={index} value={index}>
-                          {day}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* END monthly block replacement */}
-            {recurrenceType === 'yearly' && date && (
-              <div className="setting-item">
-                <div className="setting-item-info"></div>
-                <div className="setting-item-control">
-                  {t('modals.editEvent.fields.repeats.yearlyText', {
-                    date: DateTime.fromISO(date).toFormat('MMMM d')
-                  })}
+                <div
+                  className={`setting-item-control ${isChildOverride ? 'is-override-disabled' : ''}`}
+                  onClick={isChildOverride ? onAttemptEditInherited : undefined}
+                  title={isChildOverride ? disabledTooltip : ''}
+                >
+                  <select
+                    value={display}
+                    onChange={e => setDisplay(e.target.value as typeof display)}
+                    disabled={isChildOverride}
+                  >
+                    <option value="auto">
+                      {t('modals.editEvent.fields.display.options.auto')}
+                    </option>
+                    <option value="background">
+                      {t('modals.editEvent.fields.display.options.background')}
+                    </option>
+                    <option value="none">
+                      {t('modals.editEvent.fields.display.options.none')}
+                    </option>
+                  </select>
                 </div>
               </div>
             )}
@@ -669,33 +564,190 @@ export const EditEvent = ({
             <div className="setting-item">
               <div className="setting-item-info">
                 <div className="setting-item-name">
-                  {t('modals.editEvent.fields.repeats.endRepeat')}
+                  {t('modals.editEvent.fields.repeats.label')}
                 </div>
               </div>
               <div className="setting-item-control">
-                <input
-                  type="date"
-                  value={endRecur || ''}
-                  onChange={e => setEndRecur(e.target.value || undefined)}
-                />
+                <select
+                  value={recurrenceType}
+                  onChange={e => setRecurrenceType(e.target.value as RecurrenceType)}
+                  disabled={isDailyNoteCalendar}
+                  title={recurringTooltip}
+                >
+                  <option value="none">{t('modals.editEvent.fields.repeats.options.none')}</option>
+                  <option value="weekly">
+                    {t('modals.editEvent.fields.repeats.options.weekly')}
+                  </option>
+                  <option value="monthly">
+                    {t('modals.editEvent.fields.repeats.options.monthly')}
+                  </option>
+                  <option value="yearly">
+                    {t('modals.editEvent.fields.repeats.options.yearly')}
+                  </option>
+                </select>
               </div>
             </div>
-          </>
-        )}
+            {isRecurring && (
+              <div className="setting-item">
+                <div className="setting-item-info"></div>
+                <div className="setting-item-control u-flex-align-center u-gap-8px">
+                  <span>{t('modals.editEvent.fields.repeats.repeatEvery')}</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={repeatInterval}
+                    onChange={e => setRepeatInterval(parseInt(e.target.value, 10) || 1)}
+                    className="u-w-60px"
+                  />
+                  <span>
+                    {recurrenceType === 'weekly' &&
+                      (repeatInterval > 1
+                        ? t('modals.editEvent.fields.repeats.weeks')
+                        : t('modals.editEvent.fields.repeats.week'))}
+                    {recurrenceType === 'monthly' &&
+                      (repeatInterval > 1
+                        ? t('modals.editEvent.fields.repeats.months')
+                        : t('modals.editEvent.fields.repeats.month'))}
+                    {recurrenceType === 'yearly' &&
+                      (repeatInterval > 1
+                        ? t('modals.editEvent.fields.repeats.years')
+                        : t('modals.editEvent.fields.repeats.year'))}
+                  </span>
+                </div>
+              </div>
+            )}
 
-        <hr className="modal-hr" />
+            {isRecurring && (
+              <>
+                {recurrenceType === 'weekly' && (
+                  <div className="setting-item">
+                    <div className="setting-item-info">
+                      <div className="setting-item-name">
+                        {t('modals.editEvent.fields.repeats.repeatOn')}
+                      </div>
+                    </div>
+                    <div className="setting-item-control">
+                      <DaySelect value={daysOfWeek} onChange={setDaysOfWeek} />
+                    </div>
+                  </div>
+                )}
+                {recurrenceType === 'monthly' && date && (
+                  <div className="setting-item">
+                    <div className="setting-item-info"></div>
+                    <div className="setting-item-control u-display-block">
+                      <div>
+                        <input
+                          type="radio"
+                          id="monthly-day-of-month"
+                          name="monthly-mode"
+                          value="dayOfMonth"
+                          checked={monthlyMode === 'dayOfMonth'}
+                          onChange={() => setMonthlyMode('dayOfMonth')}
+                        />
+                        <label htmlFor="monthly-day-of-month">
+                          {' '}
+                          {t('modals.editEvent.fields.repeats.onDay', {
+                            day: DateTime.fromISO(date).day
+                          })}
+                        </label>
+                      </div>
+                      <div className="u-flex-align-center u-gap-8px u-mt-8px">
+                        <input
+                          type="radio"
+                          id="monthly-on-the"
+                          name="monthly-mode"
+                          value="onThe"
+                          checked={monthlyMode === 'onThe'}
+                          onChange={() => setMonthlyMode('onThe')}
+                        />
+                        <label htmlFor="monthly-on-the">
+                          {t('modals.editEvent.fields.repeats.onThe')}
+                        </label>
+                        <select
+                          value={repeatOnWeek}
+                          onChange={e => setRepeatOnWeek(parseInt(e.target.value, 10))}
+                          disabled={monthlyMode !== 'onThe'}
+                        >
+                          <option value="1">
+                            {t('modals.editEvent.fields.repeats.ordinal.first')}
+                          </option>
+                          <option value="2">
+                            {t('modals.editEvent.fields.repeats.ordinal.second')}
+                          </option>
+                          <option value="3">
+                            {t('modals.editEvent.fields.repeats.ordinal.third')}
+                          </option>
+                          <option value="4">
+                            {t('modals.editEvent.fields.repeats.ordinal.fourth')}
+                          </option>
+                          <option value="-1">
+                            {t('modals.editEvent.fields.repeats.ordinal.last')}
+                          </option>
+                        </select>
+                        <select
+                          value={repeatOnWeekday}
+                          onChange={e => setRepeatOnWeekday(parseInt(e.target.value, 10))}
+                          disabled={monthlyMode !== 'onThe'}
+                        >
+                          {[
+                            t('settings.weekdays.sunday'),
+                            t('settings.weekdays.monday'),
+                            t('settings.weekdays.tuesday'),
+                            t('settings.weekdays.wednesday'),
+                            t('settings.weekdays.thursday'),
+                            t('settings.weekdays.friday'),
+                            t('settings.weekdays.saturday')
+                          ].map((day, index) => (
+                            <option key={index} value={index}>
+                              {day}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {recurrenceType === 'yearly' && date && (
+                  <div className="setting-item">
+                    <div className="setting-item-info"></div>
+                    <div className="setting-item-control">
+                      {t('modals.editEvent.fields.repeats.yearlyText', {
+                        date: DateTime.fromISO(date).toFormat('MMMM d')
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="setting-item">
+                  <div className="setting-item-info">
+                    <div className="setting-item-name">
+                      {t('modals.editEvent.fields.repeats.endRepeat')}
+                    </div>
+                  </div>
+                  <div className="setting-item-control">
+                    <input
+                      type="date"
+                      value={endRecur || ''}
+                      onChange={e => setEndRecur(e.target.value || undefined)}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </details>
 
         <div className="modal-footer">
           <div className="footer-actions-left">
             {deleteEvent && (
               <button type="button" className="mod-warning" onClick={() => void deleteEvent()}>
-                Delete
+                {t('modals.editEvent.buttons.delete') || 'Delete'}
               </button>
             )}
           </div>
           <div className="footer-actions-right">
             <button type="submit" className="mod-cta">
-              Save Event
+              {t('modals.editEvent.buttons.save') || 'Save Event'}
             </button>
           </div>
         </div>

@@ -1036,8 +1036,11 @@
         "new": "Nuovo Evento",
         "edit": "Modifica Evento"
       },
+      "advancedOptions": "Opzioni avanzate",
       "buttons": {
-        "openNote": "Apri Nota"
+        "openNote": "Apri Nota",
+        "delete": "Elimina",
+        "save": "Salva evento"
       },
       "errors": {
         "createNoCalendars": "Impossibile creare l'evento: non sono disponibili calendari scrivibili.",
@@ -1057,15 +1060,14 @@
       },
       "fields": {
         "title": {
-          "label": "Titolo",
           "placeholder": "Titolo Evento"
         },
         "category": {
-          "label": "Categoria",
           "placeholder": "Categoria (opzionale)"
         },
         "display": {
           "label": "Visualizzazione",
+          "tooltip": "Scegli come questo evento appare sul calendario",
           "options": {
             "auto": "Evento normale",
             "background": "Evento di sfondo",
@@ -1088,9 +1090,9 @@
           "completed": "Completato"
         },
         "notification": {
-          "label": "Notifica:",
-          "mins": "Min",
+          "label": "Notifica",
           "select": "Seleziona...",
+          "mins": "Min.",
           "presets": {
             "30m": "30 min",
             "1h": "1 ora",
@@ -1126,11 +1128,18 @@
           },
           "yearlyText": "Ripete ogni anno il {{date}}.",
           "endRepeat": "Termina ripetizione"
+        },
+        "location": {
+          "placeholder": "Aggiungi luogo..."
+        },
+        "description": {
+          "placeholder": "Aggiungi descrizione..."
         }
       },
       "tooltips": {
         "recurringTaskCompletion": "Il completamento dei task ricorrenti può essere attivato sulle singole istanze nella vista calendario.",
-        "dailyNoteRecurring": "Gli eventi ricorrenti non sono supportati nelle Note Giornaliere. Usa invece un calendario 'Nota completa'."
+        "dailyNoteRecurring": "Gli eventi ricorrenti non sono supportati nelle Note Giornaliere. Usa invece un calendario 'Nota completa'.",
+        "inheritedProperty": "Questa proprietà è ereditata. Clicca per modificare l'evento ricorrente genitore."
       }
     },
     "deleteRecurring": {

@@ -1041,8 +1041,11 @@
         "new": "New Event",
         "edit": "Edit Event"
       },
+      "advancedOptions": "Advanced Options",
       "buttons": {
-        "openNote": "Open Note"
+        "openNote": "Open Note",
+        "delete": "Delete",
+        "save": "Save Event"
       },
       "errors": {
         "createNoCalendars": "Cannot create event: No writable calendars are available.",
@@ -1062,15 +1065,20 @@
       },
       "fields": {
         "title": {
-          "label": "Title",
           "placeholder": "Event Title"
         },
         "category": {
-          "label": "Category",
           "placeholder": "Category (optional)"
+        },
+        "location": {
+          "placeholder": "Add location..."
+        },
+        "description": {
+          "placeholder": "Add description..."
         },
         "display": {
           "label": "Display",
+          "tooltip": "Choose how this event appears on the calendar",
           "options": {
             "auto": "Normal event",
             "background": "Background event",
@@ -1093,11 +1101,11 @@
           "completed": "Completed"
         },
         "notification": {
-          "label": "Notify:",
-          "mins": "Mins",
+          "label": "Notify",
           "select": "Select...",
+          "mins": "Mins",
           "presets": {
-            "30m": "30 min",
+            "30m": "30 minutes",
             "1h": "1 hour",
             "6h": "6 hours",
             "12h": "12 hours",
@@ -1135,7 +1143,8 @@
       },
       "tooltips": {
         "recurringTaskCompletion": "Completion for recurring tasks can be toggled on individual instances in the calendar view.",
-        "dailyNoteRecurring": "Recurring events are not supported in Daily Notes. Please use a 'Full Note' calendar instead."
+        "dailyNoteRecurring": "Recurring events are not supported in Daily Notes. Please use a 'Full Note' calendar instead.",
+        "inheritedProperty": "This property is inherited. Click to edit the parent recurring event."
       }
     },
     "deleteRecurring": {

@@ -18,9 +18,13 @@
 
 Creates one-note-per-event records, supports full CRUD, and uses robust filename collision handling to avoid destructive overwrites.
 
+**Location & Description Mapping**: Parses and writes `location` (geographic/logical address) and `description` (multiline text) dynamically inside the note's YAML frontmatter block.
+
 ### Daily Note Provider
 
 Parses list items under configured heading and performs line-targeted updates. Implements a persistent locally-allocated `uid` mechanism (`[uid:: N]`) instead of legacy deduplication matching, enabling deterministic title edits and O(1) hinted line lookups during sync updates.
+
+**Location & Description Mapping**: Serializes `location` and `description` into Dataview inline attribute format (`[location:: My Location]  [description:: My Description]`) within the daily note bullet list items.
 
 Timed-event serialization is source-configured and provider-owned:
 
@@ -55,6 +59,8 @@ Uses direct `REPORT`/`GET` flow with robust XML namespace handling and fallback 
 ### Google Provider
 
 Uses OAuth-backed authenticated requests, handles recurrence cancellation edge cases (`cancelled` instances merged into skip dates), and keeps provider-facing payload conversion isolated in parser/auth modules.
+
+**Location & Description Mapping**: Directly maps the canonical `location` and `description` string properties to/from Google's native API event resource fields.
 
 For token and permission boundaries, see [API Architecture](../system/api-architecture.md).
 

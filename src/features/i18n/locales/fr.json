@@ -1036,8 +1036,11 @@
         "new": "Nouvel événement",
         "edit": "Modifier l'événement"
       },
+      "advancedOptions": "Options avancées",
       "buttons": {
-        "openNote": "Ouvrir la note"
+        "openNote": "Ouvrir la note",
+        "delete": "Supprimer",
+        "save": "Enregistrer l'événement"
       },
       "errors": {
         "createNoCalendars": "Impossible de créer l'événement : aucun calendrier en écriture n'est disponible.",
@@ -1057,15 +1060,14 @@
       },
       "fields": {
         "title": {
-          "label": "Titre",
           "placeholder": "Titre de l'événement"
         },
         "category": {
-          "label": "Catégorie",
           "placeholder": "Catégorie (optionnel)"
         },
         "display": {
           "label": "Affichage",
+          "tooltip": "Choisissez comment cet événement apparaît sur le calendrier",
           "options": {
             "auto": "Événement normal",
             "background": "Événement en arrière-plan",
@@ -1088,9 +1090,9 @@
           "completed": "Terminée"
         },
         "notification": {
-          "label": "Notifier :",
-          "mins": "Min",
+          "label": "Notifier",
           "select": "Sélectionner...",
+          "mins": "Min.",
           "presets": {
             "30m": "30 min",
             "1h": "1 heure",
@@ -1126,11 +1128,18 @@
           },
           "yearlyText": "Répète chaque année le {{date}}.",
           "endRepeat": "Fin de la répétition"
+        },
+        "location": {
+          "placeholder": "Ajouter un lieu..."
+        },
+        "description": {
+          "placeholder": "Ajouter une description..."
         }
       },
       "tooltips": {
         "recurringTaskCompletion": "La complétion des tâches récurrentes peut être activée sur chaque instance dans la vue calendrier.",
-        "dailyNoteRecurring": "Les événements récurrents ne sont pas pris en charge dans les notes quotidiennes. Veuillez utiliser un calendrier 'Note complète' à la place."
+        "dailyNoteRecurring": "Les événements récurrents ne sont pas pris en charge dans les notes quotidiennes. Veuillez utiliser un calendrier 'Note complète' à la place.",
+        "inheritedProperty": "Cette propriété est héritée. Cliquez pour modifier l'événement récurrent parent."
       }
     },
     "deleteRecurring": {

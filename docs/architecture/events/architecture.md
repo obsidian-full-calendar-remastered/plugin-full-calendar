@@ -8,6 +8,7 @@ This page describes how event logic is organized.
 - Event indexing and lookup: `src/core/EventStore.ts`
 - Event normalization pipeline: `src/core/EventEnhancer.ts`
 - Recurrence behavior: `src/features/recur_events/`
+- Event modal and edit form UI: `src/ui/modals/EditEvent.tsx` (implemented as a clean, divider-free layout with collapsible Advanced Options via HTML5 details)
 
 ## Design Boundaries
 

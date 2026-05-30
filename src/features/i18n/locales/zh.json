@@ -1036,8 +1036,11 @@
         "new": "新建事件",
         "edit": "编辑事件"
       },
+      "advancedOptions": "高级选项",
       "buttons": {
-        "openNote": "打开笔记"
+        "openNote": "打开笔记",
+        "delete": "删除",
+        "save": "保存事件"
       },
       "errors": {
         "createNoCalendars": "无法创建事件：没有可写的日历。",
@@ -1057,15 +1060,14 @@
       },
       "fields": {
         "title": {
-          "label": "标题",
           "placeholder": "事件标题"
         },
         "category": {
-          "label": "分类",
           "placeholder": "分类（可选）"
         },
         "display": {
           "label": "显示",
+          "tooltip": "选择此事件在日历上的显示方式",
           "options": {
             "auto": "普通事件",
             "background": "背景事件",
@@ -1088,9 +1090,9 @@
           "completed": "已完成"
         },
         "notification": {
-          "label": "通知：",
-          "mins": "分钟",
+          "label": "通知",
           "select": "选择...",
+          "mins": "分钟",
           "presets": {
             "30m": "30 分钟",
             "1h": "1 小时",
@@ -1126,11 +1128,18 @@
           },
           "yearlyText": "每年在 {{date}} 重复。",
           "endRepeat": "结束重复"
+        },
+        "location": {
+          "placeholder": "添加地点..."
+        },
+        "description": {
+          "placeholder": "添加描述..."
         }
       },
       "tooltips": {
         "recurringTaskCompletion": "重复任务的完成状态可以在日历视图中切换单个实例。",
-        "dailyNoteRecurring": "日记不支持重复事件。请改用 \"Full Note\" 日历。"
+        "dailyNoteRecurring": "日记不支持重复事件。请改用 \"Full Note\" 日历。",
+        "inheritedProperty": "此属性是继承的。点击编辑父重复事件。"
       }
     },
     "deleteRecurring": {

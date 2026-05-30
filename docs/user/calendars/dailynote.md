@@ -27,8 +27,8 @@ If a heading does not exist in a daily note, it will be appended to the end of t
 
 Timed events support two write formats:
 
-- Default: `- Learning - Reading - Grocery Run [uid:: 2]  [timezone:: Europe/Budapest]  [startTime:: 02:30]  [endTime:: 03:30]`
-- DayPlanner Format: `- 02:30 - 03:30 Learning - Reading - Grocery Run [uid:: 2]  [timezone:: Europe/Budapest]`
+- Default: `- Learning - Reading - Grocery Run [uid:: 2]  [timezone:: Europe/Budapest]  [startTime:: 02:30]  [endTime:: 03:30]  [location:: Library]  [description:: Bring library card]`
+- DayPlanner Format: `- 02:30 - 03:30 Learning - Reading - Grocery Run [uid:: 2]  [timezone:: Europe/Budapest]  [location:: Library]  [description:: Bring library card]`
 
 The default format remains the inline-field layout.
 

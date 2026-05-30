@@ -20,6 +20,22 @@ The note's filename is also managed by the plugin to ensure it's easy to find, t
 
 ![Add Full Note Calendar](../../assets/calendars/add-calendar-source.gif)
 
+## Frontmatter Schema
+
+When you create or edit an event note, the plugin manages its YAML frontmatter. The standard schema supports the following fields:
+
+| Key | Type | Description |
+| --- | --- | --- |
+| `title` | String | The clean title of the event (excluding any category prefixes). |
+| `category` | String | The optional category tag. |
+| `location` | String | The optional location or address string (e.g., `Office Room 4B`). |
+| `description` | String | A multiline description/notes block. |
+| `allDay` | Boolean | True for all-day events. |
+| `date` | Date | The event date in `YYYY-MM-DD` format. |
+| `startTime` | Time | Start time for timed events (`HH:mm`). |
+| `endTime` | Time | End time for timed events (`HH:mm`). |
+| `timezone` | String | The source timezone anchor (e.g., `America/New_York`). |
+
 ---
 
 ## Filename conventions and duplicates

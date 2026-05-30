@@ -1036,8 +1036,11 @@
         "new": "Neues Ereignis",
         "edit": "Ereignis bearbeiten"
       },
+      "advancedOptions": "Erweiterte Optionen",
       "buttons": {
-        "openNote": "Notiz öffnen"
+        "openNote": "Notiz öffnen",
+        "delete": "Löschen",
+        "save": "Ereignis speichern"
       },
       "errors": {
         "createNoCalendars": "Ereignis kann nicht erstellt werden: Es sind keine beschreibbaren Kalender verfügbar.",
@@ -1057,15 +1060,14 @@
       },
       "fields": {
         "title": {
-          "label": "Titel",
           "placeholder": "Ereignistitel"
         },
         "category": {
-          "label": "Kategorie",
           "placeholder": "Kategorie (optional)"
         },
         "display": {
           "label": "Anzeige",
+          "tooltip": "Wählen Sie aus, wie dieses Ereignis im Kalender angezeigt wird",
           "options": {
             "auto": "Normales Ereignis",
             "background": "Hintergrundereignis",
@@ -1088,9 +1090,9 @@
           "completed": "Abgeschlossen"
         },
         "notification": {
-          "label": "Benachrichtigen:",
-          "mins": "Min.",
+          "label": "Benachrichtigen",
           "select": "Auswählen...",
+          "mins": "Min.",
           "presets": {
             "30m": "30 Min.",
             "1h": "1 Stunde",
@@ -1126,11 +1128,18 @@
           },
           "yearlyText": "Wiederholt sich jedes Jahr am {{date}}.",
           "endRepeat": "Wiederholung beenden"
+        },
+        "location": {
+          "placeholder": "Ort hinzufügen..."
+        },
+        "description": {
+          "placeholder": "Beschreibung hinzufügen..."
         }
       },
       "tooltips": {
         "recurringTaskCompletion": "Die Fertigstellung für wiederkehrende Aufgaben kann für einzelne Instanzen in der Kalenderansicht umgeschaltet werden.",
-        "dailyNoteRecurring": "Wiederkehrende Ereignisse werden in Tagesnotizen nicht unterstützt. Bitte verwenden Sie stattdessen einen 'Vollständige Notiz'-Kalender."
+        "dailyNoteRecurring": "Wiederkehrende Ereignisse werden in Tagesnotizen nicht unterstützt. Bitte verwenden Sie stattdessen einen 'Vollständige Notiz'-Kalender.",
+        "inheritedProperty": "Diese Eigenschaft wird vererbt. Klicken Sie, um das übergeordnete wiederkehrende Ereignis zu bearbeiten."
       }
     },
     "deleteRecurring": {

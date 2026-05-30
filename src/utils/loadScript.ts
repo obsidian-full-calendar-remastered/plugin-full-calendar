@@ -65,10 +65,12 @@ export async function loadCachedScript(app: App, filename: string, cdnUrl: strin
     }
   }
 
-  // 3. Inject script safely in popout window context
+  // 3. Inject script safely in popout window context with startup compatibility
   return new Promise<void>((resolve, reject) => {
+    const doc =
+      typeof activeDocument !== 'undefined' && activeDocument ? activeDocument : window.document;
     const scriptId = `ofc-script-${filename.replace(/\.[^/.]+$/, '')}`;
-    const existing = activeDocument.getElementById(scriptId) as LoadedScriptElement | null;
+    const existing = doc.getElementById(scriptId) as LoadedScriptElement | null;
     if (existing) {
       if (existing.loaded) {
         resolve();
@@ -82,11 +84,11 @@ export async function loadCachedScript(app: App, filename: string, cdnUrl: strin
     }
 
     try {
-      const script = activeDocument.createElement('script') as LoadedScriptElement;
+      const script = doc.createElement('script') as LoadedScriptElement;
       script.id = scriptId;
       script.textContent = scriptCode;
       script.loaded = true;
-      (activeDocument.head || activeDocument.body).appendChild(script);
+      (doc.head || doc.body).appendChild(script);
       resolve();
     } catch (err) {
       reject(err instanceof Error ? err : new Error(`Failed to inject script: ${String(err)}`));

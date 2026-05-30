@@ -37,8 +37,8 @@ export async function ensureHolidaysLoaded(app: App): Promise<void> {
   }
 
   holidaysPromise = (async () => {
-    const filename = 'date-holidays-3.30.1.min.js';
-    const cdnUrl = 'https://unpkg.com/date-holidays@3.30.1/dist/date-holidays.min.js';
+    const filename = 'date-holidays-3.30.1.umd.min.js';
+    const cdnUrl = 'https://cdn.jsdelivr.net/npm/date-holidays@3.30.1/dist/umd.min.js';
     try {
       await loadCachedScript(app, filename, cdnUrl);
     } catch (err) {
@@ -57,18 +57,40 @@ export async function ensureHolidaysLoaded(app: App): Promise<void> {
   return holidaysPromise;
 }
 
+// Define explicit types to satisfy ESLint typescript rules
+type HolidaysConstructor = new (...args: unknown[]) => HolidaysType;
+interface HolidaysModule {
+  default?: HolidaysConstructor;
+}
+
 /**
  * Transparent proxy for the Holidays constructor class.
  * Intercepts calls to new Holidays() and instantiates the global window.Holidays class dynamically.
  */
 export const HolidaysProxy = new Proxy(function () {} as unknown as typeof HolidaysType, {
   construct(target, argumentsList) {
-    const GlobalHolidays = window.Holidays;
-    if (!GlobalHolidays) {
+    const rawHolidays = window.Holidays as unknown as
+      | HolidaysConstructor
+      | HolidaysModule
+      | undefined;
+    if (!rawHolidays) {
       throw new Error(
         'date-holidays library is not loaded yet! Please await ensureHolidaysLoaded() first.'
       );
     }
-    return Reflect.construct(GlobalHolidays, argumentsList) as object;
+
+    // Handle UMD module object with .default export vs direct global constructor safely
+    let GlobalHolidays: HolidaysConstructor | undefined;
+    if (typeof rawHolidays === 'function') {
+      GlobalHolidays = rawHolidays;
+    } else if (rawHolidays && typeof (rawHolidays as HolidaysModule).default === 'function') {
+      GlobalHolidays = (rawHolidays as HolidaysModule).default;
+    }
+
+    if (!GlobalHolidays) {
+      throw new Error('Holidays constructor is not a valid class/constructor function.');
+    }
+
+    return Reflect.construct(GlobalHolidays, argumentsList);
   }
 });

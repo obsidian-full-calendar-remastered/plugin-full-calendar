@@ -69,10 +69,10 @@ export async function getMilestoneTemplate(app: App, pluginId: string): Promise<
   }
 
   // Try downloading from CDN
-  const downloaded = await downloadMilestoneTemplate(app, pluginId);
-  if (downloaded) {
-    return downloaded;
-  }
+  // const downloaded = await downloadMilestoneTemplate(app, pluginId);
+  // if (downloaded) {
+  //   return downloaded;
+  // }
 
   // Fallback to minimal, lightweight template to prevent source bloat
   return getFallbackTemplate();

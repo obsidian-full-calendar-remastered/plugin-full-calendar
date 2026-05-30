@@ -2,7 +2,7 @@ import { App } from 'obsidian';
 // import { refreshCachedChronoDemoAsset } from '../../chrono_analyser/data/demoRemoteAsset';
 import { refreshCurrentI18nLocaleForVersionUpdate } from '../i18n/i18n';
 import { refreshCurrentNLPPayloadForVersionUpdate } from '../nlp/loader';
-import { downloadMilestoneTemplate } from '../milestones/monthlyReport';
+// import { downloadMilestoneTemplate } from '../milestones/monthlyReport';
 
 export type VersionedAssetRefreshStatus = 'refreshed' | 'skipped' | 'failed';
 
@@ -58,13 +58,13 @@ export async function refreshRemoteAssetsForVersionUpdate(
     {
       id: 'nlp-current-locale',
       refresh: () => refreshCurrentNLPPayloadForVersionUpdate(app, pluginId)
-    },
-    {
-      id: 'milestones-template',
-      refresh: async () => {
-        const text = await downloadMilestoneTemplate(app, pluginId);
-        return text.length > 0;
-      }
     }
+    // {
+    //   id: 'milestones-template',
+    //   refresh: async () => {
+    //     const text = await downloadMilestoneTemplate(app, pluginId);
+    //     return text.length > 0;
+    //   }
+    // }
   ]);
 }

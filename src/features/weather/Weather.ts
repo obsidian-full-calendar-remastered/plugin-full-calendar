@@ -92,6 +92,24 @@ export function clearWeatherCache(): void {
 }
 
 /**
+ * Converts a temperature from Celsius to Fahrenheit if the unit is 'F'.
+ * Formats the rounded temperature value with the unit suffix.
+ */
+export function formatTemp(temp: number, unit: 'C' | 'F'): string {
+  const rounded = Math.round(unit === 'F' ? (temp * 9) / 5 + 32 : temp);
+  return `${rounded}°${unit}`;
+}
+
+/**
+ * Formats a temperature range dynamically converting to the desired unit.
+ */
+export function formatTempRange(minTemp: number, maxTemp: number, unit: 'C' | 'F'): string {
+  const roundedMin = Math.round(unit === 'F' ? (minTemp * 9) / 5 + 32 : minTemp);
+  const roundedMax = Math.round(unit === 'F' ? (maxTemp * 9) / 5 + 32 : maxTemp);
+  return `${roundedMin}-${roundedMax}°${unit}`;
+}
+
+/**
  * Fetches the daily weather forecast for a range of dates.
  * Results are cached in memory to avoid redundant API queries.
  */

@@ -321,6 +321,12 @@
           "label": "Hide weather forecast in calendar UI",
           "description": "Turn this on to completely hide weather forecasts from daily, weekly, and monthly calendar views."
         },
+        "unit": {
+          "label": "Temperature unit",
+          "description": "Choose whether to display temperatures in Celsius or Fahrenheit.",
+          "celsius": "Celsius (°C)",
+          "fahrenheit": "Fahrenheit (°F)"
+        },
         "inputMode": {
           "label": "Location input mode",
           "description": "Choose whether to enter a city/region name (resolved via Open-Meteo) or specify exact coordinates directly.",

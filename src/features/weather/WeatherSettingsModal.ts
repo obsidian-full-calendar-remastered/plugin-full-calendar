@@ -37,6 +37,22 @@ export class WeatherSettingsModal extends Modal {
         });
       });
 
+    // 1.5. Temperature Unit dropdown (Celsius or Fahrenheit)
+    new Setting(this.contentEl)
+      .setName(t('settings.weather.modal.unit.label'))
+      .setDesc(t('settings.weather.modal.unit.description'))
+      .addDropdown(dropdown => {
+        dropdown
+          .addOption('C', t('settings.weather.modal.unit.celsius'))
+          .addOption('F', t('settings.weather.modal.unit.fahrenheit'))
+          .setValue(PluginState.getSettings().weatherUnit || 'C')
+          .onChange(async value => {
+            PluginState.getSettings().weatherUnit = value as 'C' | 'F';
+            await PluginState.saveSettings();
+            this.onChange();
+          });
+      });
+
     // 2. Location Input Mode (Dropdown: City or Coords)
     new Setting(this.contentEl)
       .setName(t('settings.weather.modal.inputMode.label'))

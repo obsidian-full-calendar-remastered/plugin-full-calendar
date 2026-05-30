@@ -5,9 +5,10 @@
  */
 
 import { App, Modal } from 'obsidian';
-import { WeatherInfo } from './Weather';
+import { WeatherInfo, formatTemp } from './Weather';
 import { t } from '../i18n/i18n';
 import { renderFooter } from '../../ui/settings/sections/calendars/renderFooter';
+import { PluginState } from '../../core/PluginState';
 
 export class WeatherDetailModal extends Modal {
   constructor(
@@ -22,6 +23,10 @@ export class WeatherDetailModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     this.modalEl.addClass('ofc-weather-detail-modal');
+
+    // Get current weather unit setting
+    const currentSettings = PluginState.getSettings();
+    const unit = currentSettings?.weatherUnit === 'F' ? 'F' : 'C';
 
     // Date formatting (in local timezone)
     let formattedDate = this.dateStr;
@@ -56,7 +61,7 @@ export class WeatherDetailModal extends Modal {
     infoContainer
       .createDiv({ cls: 'ofc-weather-detail-summary-temp' })
       .setText(
-        `${Math.round(this.weatherInfo.maxTemp)}°C / ${Math.round(this.weatherInfo.minTemp)}°C`
+        `${formatTemp(this.weatherInfo.maxTemp, unit)} / ${formatTemp(this.weatherInfo.minTemp, unit)}`
       );
 
     // --- 2. Hourly Forecast Title ---
@@ -81,12 +86,17 @@ export class WeatherDetailModal extends Modal {
         // Temp & apparent
         card
           .createDiv({ cls: 'ofc-weather-detail-hour-temp' })
-          .setText(`${Math.round(hour.temp)}°C`);
-        card
-          .createDiv({ cls: 'ofc-weather-detail-hour-feels' })
-          .setText(
-            t('settings.weather.detailModal.apparentTemp', { temp: Math.round(hour.apparentTemp) })
-          );
+          .setText(formatTemp(hour.temp, unit));
+
+        // Format apparent temperature and handle localized unit strings by replacing C with F if necessary
+        const apparentTempVal = Math.round(
+          unit === 'F' ? (hour.apparentTemp * 9) / 5 + 32 : hour.apparentTemp
+        );
+        const apparentText = t('settings.weather.detailModal.apparentTemp', {
+          temp: apparentTempVal
+        }).replace('°C', `°${unit}`);
+
+        card.createDiv({ cls: 'ofc-weather-detail-hour-feels' }).setText(apparentText);
 
         // Parameters Grid inside card
         const grid = card.createDiv({ cls: 'ofc-weather-detail-hour-grid' });

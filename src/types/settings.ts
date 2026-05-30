@@ -201,6 +201,7 @@ export interface FullCalendarSettings {
   weatherLongitude: number | null;
   weatherHide: boolean;
   weatherInputMode: 'city' | 'coords';
+  weatherUnit?: 'C' | 'F';
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
@@ -292,6 +293,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   weatherLongitude: null,
   weatherHide: false,
   weatherInputMode: 'city',
+  weatherUnit: 'C',
   linkedNoteTemplate:
     '# {{title}}\n\n**Date**: {{date}}\n**Time**: {{timeString}}\n**Location**: {{location}}\n**Calendar**: {{calendarName}}\n\n## Description\n{{description}}\n\n## Notes\n- '
 };

@@ -8,8 +8,8 @@ The Weather Forecast Integration brings live weather conditions and temperature 
 
 | View | Placement | Display Detail |
 |---|---|---|
-| **Day View** | Column Header | Full details: Weather conditions emoji, max daily temperature, and condition description. |
-| **Week View** | Column Header | Full details: Weather conditions emoji, max daily temperature, and condition description. |
+| **Day View** | Column Header | Full details: Weather conditions emoji, low-high daily temperature range (e.g. `12-22°C` or `54-72°F`), and condition description. |
+| **Week View** | Column Header | Full details: Weather conditions emoji, low-high daily temperature range (e.g. `12-22°C` or `54-72°F`), and condition description. |
 | **Month View** | Day Cell | Minimal footprint: Compact conditions emoji aligned to the top-left of each day cell. |
 
 ---
@@ -53,6 +53,8 @@ The Weather Forecast Integration brings live weather conditions and temperature 
 |                                                             |
 | Hide weather forecast in calendar UI     [ ]                |
 |                                                             |
+| Temperature unit                         [ Celsius (ºC)   ] |
+|                                                             |
 | Location Input Mode                      [ City / Region  ] |
 |                                                             |
 | Weather city / region                    [ Prague         ] |
@@ -60,7 +62,10 @@ The Weather Forecast Integration brings live weather conditions and temperature 
 +-------------------------------------------------------------+
 ```
 
-### Step 3: Set Location
+### Step 3: Set Temperature Unit
+- Select your preferred **Temperature unit** (either **Celsius (°C)** or **Fahrenheit (°F)**) using the dropdown menu. This will instantly convert and update all weather displays across your calendar.
+
+### Step 4: Set Location
 - **City / Region Mode (Recommended):**
   - Enter your place name (e.g., `Prague` or `London, UK`) in the **Weather city / region** text box.
   - The plugin will automatically run a debounced geocoding search.

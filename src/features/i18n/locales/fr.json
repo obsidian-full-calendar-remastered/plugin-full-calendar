@@ -974,6 +974,12 @@
             "empty": "No location set.",
             "resolving": "Resolving location..."
           }
+        },
+        "unit": {
+          "label": "Temperature unit",
+          "description": "Choose whether to display temperatures in Celsius or Fahrenheit.",
+          "celsius": "Celsius (°C)",
+          "fahrenheit": "Fahrenheit (°F)"
         }
       },
       "detailModal": {

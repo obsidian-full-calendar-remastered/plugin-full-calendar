@@ -4,7 +4,13 @@
  * @license See LICENSE.md
  */
 
-import { fetchWeatherForecast, clearWeatherCache, WEATHER_MAP } from './Weather';
+import {
+  fetchWeatherForecast,
+  clearWeatherCache,
+  WEATHER_MAP,
+  formatTemp,
+  formatTempRange
+} from './Weather';
 import { requestUrl } from 'obsidian';
 import { initializeI18n } from '../i18n/i18n';
 
@@ -162,5 +168,31 @@ describe('Weather Service Feature', () => {
 
     const forecast = await fetchWeatherForecast(50.08, 14.43, '2026-05-29', '2026-05-29');
     expect(forecast).toBeNull();
+  });
+
+  describe('Temperature Formatting & Conversion utilities', () => {
+    it('formats Celsius correctly', () => {
+      expect(formatTemp(0, 'C')).toBe('0°C');
+      expect(formatTemp(22.4, 'C')).toBe('22°C');
+      expect(formatTemp(22.6, 'C')).toBe('23°C');
+      expect(formatTemp(-5.2, 'C')).toBe('-5°C');
+    });
+
+    it('formats Fahrenheit correctly', () => {
+      expect(formatTemp(0, 'F')).toBe('32°F');
+      expect(formatTemp(20, 'F')).toBe('68°F');
+      expect(formatTemp(100, 'F')).toBe('212°F');
+      expect(formatTemp(-10, 'F')).toBe('14°F');
+    });
+
+    it('formats Celsius temperature ranges correctly', () => {
+      expect(formatTempRange(12.0, 22.5, 'C')).toBe('12-23°C');
+      expect(formatTempRange(-5.0, 5.0, 'C')).toBe('-5-5°C');
+    });
+
+    it('formats Fahrenheit temperature ranges correctly', () => {
+      expect(formatTempRange(12.0, 22.5, 'F')).toBe('54-73°F');
+      expect(formatTempRange(-5.0, 5.0, 'F')).toBe('23-41°F');
+    });
   });
 });

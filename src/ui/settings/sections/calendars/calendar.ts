@@ -31,7 +31,11 @@ import {
   type RRulePluginLike
 } from '../../../../features/timezone/Timezone';
 import { PluginState } from '../../../../core/PluginState';
-import { fetchWeatherForecast, type WeatherInfo } from '../../../../features/weather/Weather';
+import {
+  fetchWeatherForecast,
+  type WeatherInfo,
+  formatTempRange
+} from '../../../../features/weather/Weather';
 import { WeatherDetailModal } from '../../../../features/weather/WeatherDetailModal';
 
 interface ExtraRenderProps {
@@ -545,12 +549,17 @@ export async function renderCalendar(
       return;
     }
 
+    const currentSettings = PluginState.getSettings();
+    const unit = currentSettings?.weatherUnit === 'F' ? 'F' : 'C';
+
     const innerEl = el.querySelector('.fc-scrollgrid-sync-inner') || el;
     const panelEl = innerEl.createDiv({ cls: 'ofc-weather-panel' });
 
     const emojiTempEl = panelEl.createDiv({ cls: 'ofc-weather-emoji-temp' });
     emojiTempEl.createSpan({ cls: 'ofc-weather-emoji' }).setText(data.emoji);
-    emojiTempEl.createSpan({ cls: 'ofc-weather-temp' }).setText(`${Math.round(data.maxTemp)}°C`);
+    emojiTempEl
+      .createSpan({ cls: 'ofc-weather-temp' })
+      .setText(formatTempRange(data.minTemp, data.maxTemp, unit));
 
     panelEl.createDiv({ cls: 'ofc-weather-desc' }).setText(data.desc);
 

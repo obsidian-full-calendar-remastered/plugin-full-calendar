@@ -128,7 +128,7 @@ describe('GoogleProvider createLinkedNote', () => {
     expect(file!.path).toBe('Calendar/Notes/Test Dynamic Note Event.md');
     expect(file!.content).toContain('# Test Dynamic Note Event');
     expect(file!.content).toContain('**Calendar**: My Google Calendar');
-    expect(file!.content).toContain('fc-event-uid: google-uid-123');
+    expect(file!.content).toContain('fc-event-uid: "google-uid-123"');
   });
 
   it('should use custom template when linkedNoteTemplate setting is provided', async () => {

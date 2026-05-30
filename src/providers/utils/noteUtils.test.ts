@@ -106,7 +106,19 @@ describe('noteUtils', () => {
         active: true
       };
       const yaml = serializeFrontmatter(fields);
-      expect(yaml).toBe('fc-event-uid: 12345\nfc-calendar-id: cal-1\nactive: true');
+      expect(yaml).toBe('fc-event-uid: "12345"\nfc-calendar-id: "cal-1"\nactive: true');
+    });
+
+    it('should quote and escape string values so identifiers stay strings', () => {
+      const yaml = serializeFrontmatter({
+        'fc-event-uid': '12345',
+        title: 'Quote "heavy" task',
+        path: 'Folder\\Note'
+      });
+
+      expect(yaml).toBe(
+        'fc-event-uid: "12345"\ntitle: "Quote \\"heavy\\" task"\npath: "Folder\\\\Note"'
+      );
     });
   });
 

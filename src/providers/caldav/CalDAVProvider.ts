@@ -19,7 +19,10 @@ import { obsidianFetch } from './obsidian-fetch_caldav';
 import { createBasicAuthHeader } from './auth_caldav';
 import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
 import { TFile } from 'obsidian';
-import { createLinkedNoteForProvider } from '../../features/linked-notes/linkedNotes';
+import {
+  createLinkedNoteForProvider,
+  openOrCreateLinkedNote
+} from '../../features/linked-notes/linkedNotes';
 import { parseTimezoneAwareString } from '../../features/timezone/Timezone';
 import { PluginState } from '../../core/PluginState';
 
@@ -932,13 +935,7 @@ export class CalDAVProvider
       return;
     }
 
-    const file = await this.createLinkedNoteForTask(task);
-    if (!file) {
-      return;
-    }
-
-    const leaf = this.plugin.app.workspace.getLeaf(false);
-    await leaf.openFile(file);
+    await openOrCreateLinkedNote(this.plugin, this.source.id, taskToLinkedNoteEvent(task), false);
   }
 
   private toTaskBacklogItem(task: CalDAVTaskInboxItem): TaskBacklogItem {

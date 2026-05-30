@@ -881,7 +881,7 @@ END:VCALENDAR
       expect(file!.path).toBe('Calendar/Notes/CalDAV Linked Note Event.md');
       expect(file!.content).toContain('# CalDAV Linked Note Event');
       expect(file!.content).toContain('**Calendar**: Test Calendar');
-      expect(file!.content).toContain('fc-event-uid: caldav-uid-999');
+      expect(file!.content).toContain('fc-event-uid: "caldav-uid-999"');
     });
 
     it('should use custom template when linkedNoteTemplate setting is provided', async () => {

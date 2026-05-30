@@ -87,7 +87,7 @@ describe('ICSProvider createLinkedNote', () => {
     expect(file!.path).toBe('Calendar/Notes/ICS Linked Note Event.md');
     expect(file!.content).toContain('# ICS Linked Note Event');
     expect(file!.content).toContain('**Calendar**: Remote Calendar (ICS)');
-    expect(file!.content).toContain('fc-event-uid: ics-uid-123');
+    expect(file!.content).toContain('fc-event-uid: "ics-uid-123"');
   });
 
   it('should use custom template when linkedNoteTemplate setting is provided', async () => {

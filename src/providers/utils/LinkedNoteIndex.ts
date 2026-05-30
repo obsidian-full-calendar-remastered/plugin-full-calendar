@@ -6,6 +6,7 @@ export class LinkedNoteIndex {
   private calendarId: string;
   private index = new Map<string, TFile>(); // uid -> TFile
   private eventRefs: EventRef[] = [];
+  private hydrationWaiters: (() => void)[] = [];
   private revision = 0;
   private startupHydrationPending = false;
 
@@ -54,15 +55,12 @@ export class LinkedNoteIndex {
     }
 
     const unresolvedFiles = this.scanDirectory();
-    if (this.index.size > 0) {
-      this.completeStartupHydration(revision);
-      return;
-    }
-
     if (unresolvedFiles.length > 0) {
       void this.backfillUnresolvedFiles(unresolvedFiles, revision);
       return;
     }
+
+    this.completeStartupHydration(revision);
   }
 
   private completeStartupHydration(revision: number): void {
@@ -71,6 +69,7 @@ export class LinkedNoteIndex {
     }
 
     this.startupHydrationPending = false;
+    this.resolveHydrationWaiters();
   }
 
   private scheduleLayoutReadyRescan(revision: number): void {
@@ -94,8 +93,57 @@ export class LinkedNoteIndex {
     return this.index.get(eventUid) || null;
   }
 
+  public async getFileForEventAfterHydration(
+    eventUid: string,
+    recurrenceId?: string
+  ): Promise<TFile | null> {
+    const existingFile = this.getFileForEvent(eventUid, recurrenceId);
+    if (existingFile) {
+      return existingFile;
+    }
+
+    await this.waitForStartupHydration();
+    return this.getFileForEvent(eventUid, recurrenceId);
+  }
+
+  public async waitForStartupHydration(timeoutMs = 1500): Promise<void> {
+    if (!this.startupHydrationPending) {
+      return;
+    }
+
+    const revision = this.revision;
+    this.reconcileStartupHydration(revision);
+    if (!this.startupHydrationPending || revision !== this.revision) {
+      return;
+    }
+
+    await new Promise<void>(resolve => {
+      const resolveOnce = () => {
+        window.clearTimeout(timeout);
+        resolve();
+      };
+      const timeout = window.setTimeout(() => {
+        this.hydrationWaiters = this.hydrationWaiters.filter(waiter => waiter !== resolveOnce);
+        resolve();
+      }, timeoutMs);
+
+      this.hydrationWaiters.push(resolveOnce);
+    });
+  }
+
   private getDirectory(): string {
     return PluginState.getSettings().linkedNotesDirectory || '';
+  }
+
+  private frontmatterString(value: unknown): string | null {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed ? trimmed : null;
+    }
+    if (typeof value === 'number' || typeof value === 'bigint') {
+      return value.toString();
+    }
+    return null;
   }
 
   private isFileInDirectory(file: TFile): boolean {
@@ -169,15 +217,12 @@ export class LinkedNoteIndex {
       return this.removePathFromIndex(file.path, triggerReload);
     }
 
-    const calId = frontmatter['fc-calendar-id'] as unknown;
-    const eventUid = frontmatter['fc-event-uid'] as unknown;
-    const recurrenceId = frontmatter['fc-event-recurrence-id'] as unknown;
+    const calId = this.frontmatterString(frontmatter['fc-calendar-id']);
+    const eventUid = this.frontmatterString(frontmatter['fc-event-uid']);
+    const recurrenceId = this.frontmatterString(frontmatter['fc-event-recurrence-id']);
 
-    if (calId === this.calendarId && typeof eventUid === 'string' && eventUid.trim() !== '') {
-      const recurrenceSuffix =
-        typeof recurrenceId === 'string' && recurrenceId.trim() !== ''
-          ? `::${recurrenceId.trim()}`
-          : '';
+    if (calId === this.calendarId && eventUid) {
+      const recurrenceSuffix = recurrenceId ? `::${recurrenceId}` : '';
       const key = `${eventUid}${recurrenceSuffix}`;
 
       // Clean up any stale mappings in the index map that point to the same file path but have a different key
@@ -275,6 +320,7 @@ export class LinkedNoteIndex {
   public destroy(): void {
     this.revision += 1;
     this.startupHydrationPending = false;
+    this.resolveHydrationWaiters();
     for (const ref of this.eventRefs) {
       // metadataCache and vault can offref their listeners
       this.app.metadataCache.offref(ref);
@@ -282,5 +328,13 @@ export class LinkedNoteIndex {
     }
     this.eventRefs = [];
     this.index.clear();
+  }
+
+  private resolveHydrationWaiters(): void {
+    const waiters = this.hydrationWaiters;
+    this.hydrationWaiters = [];
+    for (const resolve of waiters) {
+      resolve();
+    }
   }
 }

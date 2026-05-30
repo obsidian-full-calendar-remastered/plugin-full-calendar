@@ -348,6 +348,12 @@
           }
         }
       },
+      "detailModal": {
+        "title": "Detailed Weather - {{date}}",
+        "hourlyHeader": "Hourly Forecast",
+        "apparentTemp": "Apparent: {{temp}}°C",
+        "noHourly": "No hourly forecast data available."
+      },
       "conditions": {
         "unknown": "Unknown",
         "clearSky": "Clear sky",

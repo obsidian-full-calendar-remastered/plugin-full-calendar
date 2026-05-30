@@ -975,6 +975,12 @@
           }
         }
       },
+      "detailModal": {
+        "title": "Meteo Dettagliato - {{date}}",
+        "hourlyHeader": "Previsioni Orarie",
+        "apparentTemp": "Percepita: {{temp}}°C",
+        "noHourly": "Nessun dato di previsione oraria disponibile."
+      },
       "conditions": {
         "unknown": "Unknown",
         "clearSky": "Clear sky",

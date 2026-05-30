@@ -975,6 +975,12 @@
           }
         }
       },
+      "detailModal": {
+        "title": "Pronóstico Detallado - {{date}}",
+        "hourlyHeader": "Pronóstico por Hora",
+        "apparentTemp": "Sensación térmica: {{temp}}°C",
+        "noHourly": "No hay datos de pronóstico por hora disponibles."
+      },
       "conditions": {
         "unknown": "Unknown",
         "clearSky": "Clear sky",

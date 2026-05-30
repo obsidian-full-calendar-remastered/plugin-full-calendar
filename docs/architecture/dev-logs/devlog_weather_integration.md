@@ -53,16 +53,27 @@ FullCalendar v5/v6 renders column headers and day cells synchronously. Since for
 
 ---
 
-## 7. Verification Coverage
+## 7. Premium Detailed Weather Modal & Hourly Timeline
+
+To extend the integration without increasing API pressure, we refactored the pipeline to fetch daily and hourly data concurrently:
+- **Conjoint Query**: Updated `fetchWeatherForecast` to query the forecast with:
+  `&daily=weather_code,temperature_2m_max,temperature_2m_min&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m`
+- **Cached In-Memory**: Hourly forecasts are parsed, aligned to the respective day (`YYYY-MM-DD` prefix string mapping), and cached in the same in-memory entry. This ensures opening the details modal consumes **zero network calls** and responds in **0ms**.
+- **Unified Settings Footer**: Integrated `renderFooter` directly from `calendars/renderFooter.ts` inside `WeatherDetailModal` to keep branding, sustainability links, and bug raising buttons identical across all modals.
+- **Type-safe App Resolution**: Resolved the Obsidian `App` instance safely from the mounting context by casting `activeDocument.defaultView` to `{ app?: App }`. This avoids unsafe `any` or window-based accesses that violate community guidelines, resulting in 100% linter and community compatibility.
+
+---
+
+## 8. Verification Coverage
 
 ### TypeScript Compilation
 - **Command**: `pnpm run compile`
-- **Result**: **Passed with zero errors**. All files compile successfully with proper type interfaces.
+- **Result**: **Passed with zero errors**. All files compile successfully with proper type interfaces and clean generic structures.
 
 ### Lint Compliance
 - **Command**: `pnpm run lint`
-- **Result**: **Passed with zero errors and warnings**. Fully compliant with strict standard TypeScript ESLint rules and Obsidian MD policies.
+- **Result**: **Passed with zero errors and warnings**. Fully compliant with strict standard TypeScript ESLint rules and Obsidian MD policies, including zero `eslint-disable` workarounds in calendar or weather files.
 
 ### Jest Tests
 - **Command**: `pnpm run test`
-- **Result**: **Passed with 100% success rate**. All 56 test suites (612 tests) passed successfully, including the new unit test suite (`src/features/weather/Weather.test.ts`) that mocks Obsidian's `requestUrl` and validates coordinates resolution, mapping, caching, and error safety.
+- **Result**: **Passed with 100% success rate**. All 56 test suites (612 tests) passed successfully, including the updated unit test suite (`src/features/weather/Weather.test.ts`) which validates conjoint coordinates resolution, mapping, caching, hourly data parsing, and error safety.

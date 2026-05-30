@@ -918,12 +918,19 @@
   text-overflow: ellipsis;
 }
 
+/* Fix grayed out monthly view other-month cells (keep them fully bright and ungrayed) */
+.fc .fc-day-other {
+  opacity: 1 !important;
+}
+
 .ofc-weather-month-emoji {
   font-size: 1.25em;
   margin-right: 4px;
-  opacity: 0.9;
-  cursor: default;
+  opacity: 1; /* Ensure 100% brightness */
+  cursor: pointer;
   transition: transform 0.15s ease;
+  position: relative;
+  z-index: 5; /* Sit on top of day cell overlays to be clickable */
 }
 
 .ofc-weather-month-emoji:hover {
@@ -962,5 +969,175 @@
 .ofc-weather-status.is-accent {
   color: var(--text-accent);
   font-weight: bold;
+}
+
+/* Weather Detail Modal Premium Styling */
+
+.ofc-weather-detail-modal {
+  width: min(650px, 95vw);
+  max-width: 650px;
+}
+
+.ofc-weather-detail-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-5);
+  padding: var(--size-4-5);
+  background: linear-gradient(135deg, var(--background-secondary-alt), var(--background-secondary));
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-l);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  margin-bottom: var(--size-4-6);
+}
+
+.ofc-weather-detail-summary-emoji-wrap {
+  font-size: 3.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  animation: ofc-weather-float 4s ease-in-out infinite;
+}
+
+.ofc-weather-detail-summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+}
+
+.ofc-weather-detail-summary-desc {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+.ofc-weather-detail-summary-temp {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+}
+
+.ofc-weather-detail-hourly-title {
+  margin-top: var(--size-4-4);
+  margin-bottom: var(--size-4-3);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ofc-weather-detail-hourly-timeline {
+  display: flex;
+  gap: var(--size-4-3);
+  overflow-x: auto;
+  padding: var(--size-4-2) 0 var(--size-4-4);
+  margin-bottom: var(--size-4-6);
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scrollbar styling for a cleaner horizontal look */
+.ofc-weather-detail-hourly-timeline::-webkit-scrollbar {
+  height: 6px;
+}
+.ofc-weather-detail-hourly-timeline::-webkit-scrollbar-track {
+  background: var(--background-secondary-alt);
+  border-radius: 999px;
+}
+.ofc-weather-detail-hourly-timeline::-webkit-scrollbar-thumb {
+  background: var(--background-modifier-border);
+  border-radius: 999px;
+}
+.ofc-weather-detail-hourly-timeline::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.ofc-weather-detail-hourly-card {
+  flex: 0 0 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--size-4-3) var(--size-4-2);
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  cursor: default;
+}
+
+.ofc-weather-detail-hourly-card:hover {
+  transform: translateY(-4px);
+  background-color: var(--background-secondary);
+  border-color: var(--interactive-accent);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.ofc-weather-detail-hour-time {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ofc-weather-detail-hour-emoji {
+  font-size: 1.8rem;
+  margin: var(--size-4-2) 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+.ofc-weather-detail-hour-temp {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+}
+
+.ofc-weather-detail-hour-feels {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  margin-top: 1px;
+}
+
+.ofc-weather-detail-hour-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--size-4-1);
+  margin-top: var(--size-4-3);
+  width: 100%;
+  border-top: 1px dashed var(--background-modifier-border);
+  padding-top: var(--size-4-2);
+}
+
+.ofc-weather-detail-hour-grid-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--size-4-1);
+}
+
+.ofc-weather-grid-icon {
+  font-size: 0.85rem;
+}
+
+.ofc-weather-grid-val {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.ofc-weather-detail-no-hourly {
+  padding: var(--size-4-6);
+  text-align: center;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  border-radius: var(--radius-m);
+  border: 1px dashed var(--background-modifier-border);
+  margin-bottom: var(--size-4-6);
+}
+
+@keyframes ofc-weather-float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
 }
 

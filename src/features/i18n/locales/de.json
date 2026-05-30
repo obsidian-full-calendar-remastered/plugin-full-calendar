@@ -975,6 +975,12 @@
           }
         }
       },
+      "detailModal": {
+        "title": "Detailliertes Wetter - {{date}}",
+        "hourlyHeader": "Stündliche Vorhersage",
+        "apparentTemp": "Gefühlt: {{temp}}°C",
+        "noHourly": "Keine stündlichen Vorhersagedaten verfügbar."
+      },
       "conditions": {
         "unknown": "Unknown",
         "clearSky": "Clear sky",

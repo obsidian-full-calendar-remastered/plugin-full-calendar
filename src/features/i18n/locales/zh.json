@@ -975,6 +975,12 @@
           }
         }
       },
+      "detailModal": {
+        "title": "详细天气 - {{date}}",
+        "hourlyHeader": "每小时预报",
+        "apparentTemp": "体感温度: {{temp}}°C",
+        "noHourly": "暂无每小时预报数据。"
+      },
       "conditions": {
         "unknown": "Unknown",
         "clearSky": "Clear sky",

@@ -70,7 +70,9 @@ The Weather Forecast Integration brings live weather conditions and temperature 
   - Enter your target **Latitude** and **Longitude** values directly in the fields (e.g., `50.088` and `14.4208`).
   - Values are automatically parsed and saved when you focus out or press enter.
 
-### Step 4: Hide/Show Control
+---
+
+## Step 4: Hide/Show Control
 - To completely hide weather forecasts from all calendar views, turn on the **Hide weather forecast in calendar UI** toggle.
 
 ---
@@ -83,3 +85,17 @@ The Weather Forecast Integration brings live weather conditions and temperature 
 > `🌤️❓ Set weather location / Click to configure`
 > 
 > Clicking this placeholder will **automatically open** the Full Calendar settings panel to guide you directly to the configuration modal!
+
+### Premium Detailed Weather & Hourly Timeline Modal
+
+Once configured, the weather thumbnails on the calendar views become fully interactive:
+- **How to Open**: Click directly on the weather card (in **Day/Week Views**) or the weather emoji (in **Month View**). The hover state highlights the thumbnail with a pointer cursor.
+- **Vibrant Summary**: Displays a responsive summary card with a large floating condition emoji, text description, and the day's temperature range.
+- **Hourly Forecast Timeline**: A beautiful, horizontally scrollable swipe-enabled timeline that showcases conditions for each hour of the day:
+  - **Condition Emoji & Time**: Clear visual timeline markers.
+  - **Apparent Temperature**: Tells you what the temperature actually feels like.
+  - **Precipitation Probability (💧)**: Shows real-time rain/snow chance percentage.
+  - **Relative Humidity (💦)**: Shows current air moisture.
+  - **Wind Speed (💨)**: Shows wind velocity in km/h.
+- **Zero API Overhead**: Because the plugin fetches and caches both daily and hourly forecasts in a single background query during navigation, opening the modal takes **0ms and makes zero additional network requests**.
+- **Community Footer**: The bottom of the detailed modal features a unified footer allowing you to directly *suggest a feature*, *raise an issue*, or *buy the creators a coffee*.

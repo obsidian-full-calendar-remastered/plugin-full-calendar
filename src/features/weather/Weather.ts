@@ -7,11 +7,23 @@
 import { requestUrl } from 'obsidian';
 import { t } from '../i18n/i18n';
 
+export interface HourlyForecast {
+  time: string;
+  temp: number;
+  apparentTemp: number;
+  humidity: number;
+  precipProb: number;
+  windSpeed: number;
+  emoji: string;
+  desc: string;
+}
+
 export interface WeatherInfo {
   emoji: string;
   desc: string;
   maxTemp: number;
   minTemp: number;
+  hourly?: HourlyForecast[];
 }
 
 interface DailyForecastData {
@@ -21,8 +33,19 @@ interface DailyForecastData {
   temperature_2m_min: number[];
 }
 
+interface HourlyForecastData {
+  time: string[];
+  temperature_2m: number[];
+  relative_humidity_2m: number[];
+  apparent_temperature: number[];
+  precipitation_probability: number[];
+  weather_code: number[];
+  wind_speed_10m: number[];
+}
+
 interface ForecastResponse {
   daily?: DailyForecastData;
+  hourly?: HourlyForecastData;
 }
 
 // WMO Weather Interpretation Codes (WW)
@@ -84,13 +107,63 @@ export async function fetchWeatherForecast(
   }
 
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&start_date=${startDateStr}&end_date=${endDateStr}`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m&timezone=auto&start_date=${startDateStr}&end_date=${endDateStr}`;
     const response = await requestUrl(url);
     const data = response.json as ForecastResponse;
     const daily = data?.daily;
 
     if (!daily || !daily.time) {
       return null;
+    }
+
+    // Group hourly forecasts by date (YYYY-MM-DD)
+    const hourlyForecastsByDate: Record<string, HourlyForecast[]> = {};
+    if (data.hourly && data.hourly.time) {
+      const hourly = data.hourly;
+      for (let j = 0; j < hourly.time.length; j++) {
+        const fullTimeStr = hourly.time[j];
+        if (!fullTimeStr) continue;
+        const datePart = fullTimeStr.substring(0, 10); // YYYY-MM-DD
+        const timePart = fullTimeStr.substring(11, 16); // HH:mm
+
+        const temp = hourly.temperature_2m[j];
+        const apparentTemp = hourly.apparent_temperature[j];
+        const humidity = hourly.relative_humidity_2m[j];
+        const precipProb = hourly.precipitation_probability[j];
+        const wCode = hourly.weather_code[j];
+        const windSpeed = hourly.wind_speed_10m[j];
+
+        if (
+          temp === undefined ||
+          apparentTemp === undefined ||
+          humidity === undefined ||
+          precipProb === undefined ||
+          wCode === undefined ||
+          windSpeed === undefined
+        ) {
+          continue;
+        }
+
+        const hourlyMapInfo = WEATHER_MAP[wCode];
+        const hourlyDesc = hourlyMapInfo
+          ? t(hourlyMapInfo.i18nKey)
+          : t('settings.weather.conditions.unknown');
+        const hourlyEmoji = hourlyMapInfo?.emoji || '❓';
+
+        if (!hourlyForecastsByDate[datePart]) {
+          hourlyForecastsByDate[datePart] = [];
+        }
+        hourlyForecastsByDate[datePart].push({
+          time: timePart,
+          temp,
+          apparentTemp,
+          humidity,
+          precipProb,
+          windSpeed,
+          emoji: hourlyEmoji,
+          desc: hourlyDesc
+        });
+      }
     }
 
     const forecast: Record<string, WeatherInfo> = {};
@@ -112,11 +185,13 @@ export async function fetchWeatherForecast(
       const weatherInfo = WEATHER_MAP[code];
       const desc = weatherInfo ? t(weatherInfo.i18nKey) : t('settings.weather.conditions.unknown');
       const emoji = weatherInfo?.emoji || '❓';
+
       forecast[dateStr] = {
         emoji,
         desc,
         maxTemp,
-        minTemp
+        minTemp,
+        hourly: hourlyForecastsByDate[dateStr]
       };
     }
 

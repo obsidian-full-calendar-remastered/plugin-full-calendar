@@ -920,7 +920,7 @@
 
 /* Fix grayed out monthly view other-month cells (keep them fully bright and ungrayed) */
 .fc .fc-day-other {
-  opacity: 1 !important;
+  opacity: 1;
 }
 
 .ofc-weather-month-emoji {

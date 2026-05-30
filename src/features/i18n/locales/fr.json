@@ -212,7 +212,8 @@
     "configureLinkedNotesDirFirst": "Veuillez d'abord configurer un répertoire de notes liées dans les paramètres.",
     "failedToCreateLinkedNote": "Échec de la création de la note liée.",
     "fcrReminderSynced": "FCR Reminder Companion synchronisé avec succès.",
-    "fcrReminderCompanionOfflineBold": "ATTENTION : Le démon FCR Reminder Companion est hors ligne. Vous NE recevrez PAS de notifications de bureau natives tant qu'il n'est pas démarré."
+    "fcrReminderCompanionOfflineBold": "ATTENTION : Le démon FCR Reminder Companion est hors ligne. Vous NE recevrez PAS de notifications de bureau natives tant qu'il n'est pas démarré.",
+    "chronoAnalyserChartLoadFailed": "Failed to load charting library. Please check your internet connection."
   },
   "eventCache": {
     "calendarNotFound": "Impossible d'ajouter l'événement : calendrier avec l'ID {{calendarId}} introuvable.",

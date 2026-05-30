@@ -15,7 +15,8 @@
  * @license See LICENSE.md
  */
 
-import Holidays, { HolidaysTypes } from 'date-holidays';
+import { HolidaysProxy as Holidays, ensureHolidaysLoaded } from './holidays-custom';
+import type { HolidaysTypes } from 'date-holidays';
 import * as React from 'react';
 
 import { OFCEvent, EventLocation } from '../../types';
@@ -118,6 +119,9 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
     if (!this.config.country) {
       return [];
     }
+
+    // Dynamic load from CDN (fully offline cached via localstorage on subsequent requests)
+    await ensureHolidaysLoaded(this.app);
 
     const years = this._getYearsForRange(range);
     const allEvents: [OFCEvent, EventLocation | null][] = [];

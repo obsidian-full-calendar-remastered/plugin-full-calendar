@@ -557,8 +557,13 @@ export async function renderCalendar(
     panelEl.setCssProps({ cursor: 'pointer' });
     panelEl.addEventListener('click', e => {
       e.stopPropagation();
-      const doc = el.ownerDocument;
-      const activeApp = (doc.defaultView as unknown as { app?: App })?.app;
+      const doc = el?.ownerDocument || activeDocument;
+      interface PopoutWindow {
+        app: App;
+      }
+      const activeApp =
+        (doc?.defaultView as unknown as PopoutWindow | null)?.app ||
+        (window as unknown as PopoutWindow).app;
       if (activeApp) {
         new WeatherDetailModal(activeApp, dateStr, data).open();
       }
@@ -587,12 +592,13 @@ export async function renderCalendar(
     panelEl.setCssProps({ cursor: 'pointer' });
     panelEl.addEventListener('click', e => {
       e.stopPropagation();
-      const doc = el.ownerDocument;
-      const activeApp = (
-        doc.defaultView as unknown as {
-          app?: App & { setting?: { open: () => void; openTabById: (id: string) => void } };
-        }
-      )?.app;
+      const doc = el?.ownerDocument || activeDocument;
+      interface ObsidianAppWindow {
+        app: App & { setting?: { open: () => void; openTabById: (id: string) => void } };
+      }
+      const activeApp =
+        (doc?.defaultView as unknown as ObsidianAppWindow | null)?.app ||
+        (window as unknown as ObsidianAppWindow).app;
       if (activeApp && activeApp.setting) {
         activeApp.setting.open();
         activeApp.setting.openTabById('full-calendar-remastered');
@@ -616,8 +622,13 @@ export async function renderCalendar(
     // Stop click bubbling and open the weather modal
     emojiEl.addEventListener('click', e => {
       e.stopPropagation();
-      const doc = el.ownerDocument;
-      const activeApp = (doc.defaultView as unknown as { app?: App })?.app;
+      const doc = el?.ownerDocument || activeDocument;
+      interface PopoutWindow {
+        app: App;
+      }
+      const activeApp =
+        (doc?.defaultView as unknown as PopoutWindow | null)?.app ||
+        (window as unknown as PopoutWindow).app;
       if (activeApp) {
         new WeatherDetailModal(activeApp, dateStr, data).open();
       }

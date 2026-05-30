@@ -172,6 +172,7 @@
     "chronoAnalyserMobileDisabled": "The ChronoAnalyser feature is only available on the desktop version of Obsidian.",
     "chronoAnalyserInitializing": "ChronoAnalyser: Initializing event cache...",
     "chronoAnalyserLoadFailed": "Failed to load ChronoAnalyser. Please check the console.",
+    "chronoAnalyserChartLoadFailed": "Failed to load charting library. Please check your internet connection.",
     "chronoAnalyserConfigureFirst": "Please configure your Insight Groups first using the ⚙️ icon.",
     "chronoAnalyserGeneratingInsights": "Generating insights (this may take a moment)...",
     "chronoAnalyserInsightsFailed": "Failed to generate insights. Check the developer console for errors.",

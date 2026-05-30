@@ -212,7 +212,8 @@
     "configureLinkedNotesDirFirst": "Bitte konfigurieren Sie zuerst ein Verzeichnis für verknüpfte Notizen in den Einstellungen.",
     "failedToCreateLinkedNote": "Verknüpfte Notiz konnte nicht erstellt werden.",
     "fcrReminderSynced": "FCR Reminder Companion erfolgreich synchronisiert.",
-    "fcrReminderCompanionOfflineBold": "WARNUNG: Der FCR Reminder Companion-Daemon ist offline. Sie erhalten KEINE nativen Desktop-Benachrichtigungen, bis er gestartet ist."
+    "fcrReminderCompanionOfflineBold": "WARNUNG: Der FCR Reminder Companion-Daemon ist offline. Sie erhalten KEINE nativen Desktop-Benachrichtigungen, bis er gestartet ist.",
+    "chronoAnalyserChartLoadFailed": "Failed to load charting library. Please check your internet connection."
   },
   "eventCache": {
     "calendarNotFound": "Ereignis kann nicht hinzugefügt werden: Kalender mit der ID {{calendarId}} nicht gefunden.",

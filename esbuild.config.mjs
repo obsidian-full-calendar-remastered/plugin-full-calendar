@@ -27,6 +27,8 @@ async function build() {
     external: [
       "obsidian",
       "electron",
+      "plotly.js",
+      "date-holidays",
       "@codemirror/autocomplete",
       "@codemirror/closebrackets",
       "@codemirror/collab",

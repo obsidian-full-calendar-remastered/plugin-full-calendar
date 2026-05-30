@@ -212,7 +212,8 @@
     "configureLinkedNotesDirFirst": "请先在设置中配置一个链接笔记目录。",
     "failedToCreateLinkedNote": "创建链接笔记失败。",
     "fcrReminderSynced": "FCR Reminder Companion 已成功同步。",
-    "fcrReminderCompanionOfflineBold": "警告：FCR Reminder Companion 守护进程处于离线状态。在启动之前，您将无法收到本地桌面通知。"
+    "fcrReminderCompanionOfflineBold": "警告：FCR Reminder Companion 守护进程处于离线状态。在启动之前，您将无法收到本地桌面通知。",
+    "chronoAnalyserChartLoadFailed": "Failed to load charting library. Please check your internet connection."
   },
   "eventCache": {
     "calendarNotFound": "无法添加事件：未找到 ID 为 {{calendarId}} 的日历。",

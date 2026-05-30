@@ -11,6 +11,7 @@ import { TimeRecord } from './data/types';
 import { InsightsEngine } from './data/InsightsEngine';
 import { InsightConfigModal, InsightsConfig } from './ui/ui';
 import { t } from '../features/i18n/i18n';
+import { ensurePlotlyLoaded } from './ui/plotly-custom';
 
 export class AnalysisController {
   public uiService: UIService;
@@ -106,6 +107,17 @@ export class AnalysisController {
 
   public async initialize(): Promise<void> {
     await this.uiService.initialize();
+
+    // Pre-load Plotly charting library asynchronously
+    try {
+      await ensurePlotlyLoaded(this.app);
+    } catch (err) {
+      console.error('[ChronoAnalyzer] Failed to load charting library from CDN:', err);
+      showNotice(
+        t('notices.chronoAnalyserChartLoadFailed') ||
+          'Failed to load charting library from CDN. Please check your internet connection.'
+      );
+    }
 
     if (this.shouldOpenDemoMode()) {
       try {

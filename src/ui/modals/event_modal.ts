@@ -262,7 +262,7 @@ export function launchEventDetailsModal(
   const provider = PluginState.getProviderRegistry().getInstance(calendarId);
   if (provider && 'linkedNoteIndex' in provider && provider.linkedNoteIndex) {
     const linkedFile = (provider.linkedNoteIndex as LinkedNoteIndex).getFileForEvent(
-      event.uid || '',
+      event.uid || event.id || '',
       instanceDate
     );
     if (linkedFile) {
@@ -278,14 +278,24 @@ export function launchEventDetailsModal(
     };
     const hasCreateLinkedNote =
       linkedNoteProvider && typeof linkedNoteProvider.createLinkedNote === 'function';
-    const onCreateLinkedNote = hasCreateLinkedNote
-      ? () => {
-          void (async () => {
-            closeModal();
-            await openOrCreateLinkedNote(plugin, calendarId, event, false, instanceDate);
-          })();
-        }
-      : undefined;
+
+    const onOpenNote =
+      hasCreateLinkedNote || location
+        ? () => {
+            void (async () => {
+              closeModal();
+              if (location) {
+                const file = plugin.app.vault.getAbstractFileByPath(location.path);
+                if (file instanceof TFile) {
+                  const leaf = plugin.app.workspace.getLeaf(true);
+                  await leaf.openFile(file);
+                }
+              } else if (hasCreateLinkedNote) {
+                await openOrCreateLinkedNote(plugin, calendarId, event, false, instanceDate);
+              }
+            })();
+          }
+        : undefined;
 
     return Promise.resolve(
       React.createElement(EventDetails, {
@@ -293,19 +303,7 @@ export function launchEventDetailsModal(
         calendarName,
         location,
         onClose: () => closeModal(),
-        onOpenNote: location
-          ? () => {
-              void (async () => {
-                const file = plugin.app.vault.getAbstractFileByPath(location.path);
-                if (file instanceof TFile) {
-                  const leaf = plugin.app.workspace.getLeaf(true);
-                  await leaf.openFile(file);
-                }
-                closeModal();
-              })();
-            }
-          : undefined,
-        onCreateLinkedNote
+        onOpenNote
       })
     );
   }).open();

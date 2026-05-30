@@ -443,7 +443,10 @@ export const EditEvent = ({
                 onChange={e => setEndTime(e.target.value)}
               />
             </div>
-            <label className="all-day-toggle-label" title={isChildOverride ? disabledTooltip : ''}>
+            <label
+              className={`all-day-toggle-label ${allDay ? 'is-checked' : ''}`}
+              title={isChildOverride ? disabledTooltip : ''}
+            >
               <input
                 type="checkbox"
                 checked={allDay}

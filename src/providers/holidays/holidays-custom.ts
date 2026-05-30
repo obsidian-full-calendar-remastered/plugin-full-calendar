@@ -83,8 +83,8 @@ export const HolidaysProxy = new Proxy(function () {} as unknown as typeof Holid
     let GlobalHolidays: HolidaysConstructor | undefined;
     if (typeof rawHolidays === 'function') {
       GlobalHolidays = rawHolidays;
-    } else if (rawHolidays && typeof (rawHolidays as HolidaysModule).default === 'function') {
-      GlobalHolidays = (rawHolidays as HolidaysModule).default;
+    } else if (rawHolidays && typeof rawHolidays.default === 'function') {
+      GlobalHolidays = rawHolidays.default;
     }
 
     if (!GlobalHolidays) {

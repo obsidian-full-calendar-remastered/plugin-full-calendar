@@ -24,6 +24,9 @@ import { CalendarProvider, CalendarProviderCapabilities, SyncKeyProvider } from 
 import { EventHandle, FCReactComponent, ProviderConfigContext } from '../typesProvider';
 import { HolidayProviderConfig, getHolidayTypesForFilter } from './typesHoliday';
 import { HolidayConfigComponent } from './ui/HolidayConfigComponent';
+import { TFile } from 'obsidian';
+import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
+import { createLinkedNoteForProvider } from '../../features/linked-notes/linkedNotes';
 
 // ─── Cache constants ───────────────────────────────────────────────────────────
 
@@ -94,11 +97,32 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
   private config: HolidayProviderConfig;
   private configHash: string;
   private app: import('obsidian').App;
+  public readonly linkedNoteIndex: LinkedNoteIndex;
 
   constructor(config: HolidayProviderConfig, plugin: import('../../main').default) {
     this.config = config;
     this.configHash = this._computeConfigHash(config);
     this.app = plugin.app;
+    this.linkedNoteIndex = new LinkedNoteIndex(plugin.app, config.id);
+  }
+
+  initialize(): void {
+    this.linkedNoteIndex.initialize();
+  }
+
+  teardown(): void {
+    this.linkedNoteIndex.destroy();
+  }
+
+  async createLinkedNote(event: OFCEvent, instanceDate?: string): Promise<TFile | null> {
+    return createLinkedNoteForProvider({
+      app: this.app,
+      event,
+      calendarId: this.config.id,
+      calendarName: this.displayName,
+      linkedNoteIndex: this.linkedNoteIndex,
+      instanceDate
+    });
   }
 
   // ─── Capabilities ────────────────────────────────────────────────────────────
@@ -133,7 +157,11 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
       const cached = this._readCache(year);
       if (cached && cached.length > 0) {
         for (const event of cached) {
-          allEvents.push([event, null]);
+          const linkedFile = this.linkedNoteIndex.getFileForEvent(event.uid || event.id || '');
+          const location = linkedFile
+            ? { file: { path: linkedFile.path }, lineNumber: undefined }
+            : null;
+          allEvents.push([event, location]);
         }
         continue;
       }
@@ -141,7 +169,11 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
       const events = this._fetchHolidaysForYear(year);
       this._writeCache(year, events);
       for (const event of events) {
-        allEvents.push([event, null]);
+        const linkedFile = this.linkedNoteIndex.getFileForEvent(event.uid || event.id || '');
+        const location = linkedFile
+          ? { file: { path: linkedFile.path }, lineNumber: undefined }
+          : null;
+        allEvents.push([event, location]);
       }
     }
 
@@ -211,6 +243,7 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
       date: dateStr,
       endDate: null,
       id,
+      uid: id,
       ...(this.config.display ? { display: this.config.display } : {})
     };
 
@@ -238,7 +271,7 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
         entry.configHash !== this.configHash ||
         Date.now() - entry.cachedAt > CACHE_TTL_MS
       ) {
-        (this.app.saveLocalStorage as (key: string, val: string) => void)(key, '');
+        this.app.saveLocalStorage(key, '');
         return null;
       }
       HolidayProvider.memoryCache[key] = entry.events;
@@ -258,7 +291,7 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
         events,
         cachedAt: Date.now()
       };
-      (this.app.saveLocalStorage as (key: string, val: string) => void)(key, JSON.stringify(entry));
+      this.app.saveLocalStorage(key, JSON.stringify(entry));
     } catch {
       // localStorage might be full or unavailable — silently skip caching.
     }

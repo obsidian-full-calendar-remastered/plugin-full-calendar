@@ -11,7 +11,6 @@ interface EventDetailsProps {
   location?: { path: string; lineNumber?: number } | null;
   onClose: () => void;
   onOpenNote?: () => void;
-  onCreateLinkedNote?: () => void;
 }
 
 const Icon = ({ name }: { name: string }) => {
@@ -29,8 +28,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
   calendarName,
   location,
   onClose,
-  onOpenNote,
-  onCreateLinkedNote
+  onOpenNote
 }) => {
   const [showInstances, setShowInstances] = React.useState(false);
   const [instances, setInstances] = React.useState<Date[]>([]);
@@ -91,11 +89,18 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
 
   return (
     <div className="full-calendar-event-details">
-      <div className="event-details-header">
-        <div className="event-details-icon-box">
-          <Icon name="calendar" />
+      <div className="modal-header event-details-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="event-details-icon-box">
+            <Icon name="calendar" />
+          </div>
+          <h2 className="event-details-title">{event.title || t('modals.editEvent.title.edit')}</h2>
         </div>
-        <h2 className="event-details-title">{event.title || t('modals.editEvent.title.edit')}</h2>
+        {onOpenNote && (
+          <button type="button" className="mod-subtle fc-open-note-btn" onClick={onOpenNote}>
+            {t('modals.editEvent.buttons.openNote')}
+          </button>
+        )}
       </div>
 
       <div className="event-details-row">
@@ -178,17 +183,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
       <hr className="modal-hr" />
 
       <div className="modal-footer">
-        {onCreateLinkedNote && !location && (
-          <button
-            type="button"
-            className="mod-cta fc-create-linked-note-btn"
-            onClick={onCreateLinkedNote}
-            style={{ marginRight: 'auto' }}
-          >
-            Create Linked Note
-          </button>
-        )}
-        <div className="footer-actions-right">
+        <div className="footer-actions-right" style={{ marginLeft: 'auto' }}>
           <button type="button" className="mod-cta" onClick={onClose}>
             Close
           </button>

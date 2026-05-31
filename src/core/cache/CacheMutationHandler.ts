@@ -4,7 +4,7 @@ import { OFCEvent } from '../../types';
 
 import { t } from '../../features/i18n/i18n';
 import { CacheEntry } from './types';
-import { CalendarProvider } from '../../providers/Provider';
+import { CalendarProvider, TaskBacklogProvider } from '../../providers/Provider';
 import { CacheContext } from './CacheSyncHandler';
 import { EventPathLocation } from '../EventStore';
 import { DateTime } from 'luxon';
@@ -481,8 +481,29 @@ export class CacheMutationHandler {
 
     await provider.scheduleTask(taskId, date, allDay);
 
-    // Refresh views and reload if provider demands it
-    PluginState.getProviderRegistry().reloadProviderNow(provider.getTaskBacklogInfo().id);
+    const events = await provider.getEvents();
+    PluginState.getCache()?.syncCalendar(provider.getTaskBacklogInfo().id, events);
+    PluginState.getProviderRegistry().refreshBacklogViews();
+    PluginState.getProviderRegistry().refreshCalDAVTaskInboxViews();
+  }
+
+  public async unscheduleTaskEvent(eventId: string): Promise<void> {
+    const details = this.ctx.store.getEventDetails(eventId);
+    if (!details?.event.uid) {
+      throw new Error(`No scheduled task found for event ID: ${eventId}`);
+    }
+
+    const provider = this.ctx.calendars.get(details.calendarId) as
+      | (CalendarProvider<unknown> & TaskBacklogProvider)
+      | undefined;
+    if (!provider?.unscheduleTask) {
+      throw new Error(`Task provider does not support returning tasks to the backlog.`);
+    }
+
+    await provider.unscheduleTask(details.event.uid);
+
+    const events = await provider.getEvents();
+    PluginState.getCache()?.syncCalendar(details.calendarId, events);
     PluginState.getProviderRegistry().refreshBacklogViews();
     PluginState.getProviderRegistry().refreshCalDAVTaskInboxViews();
   }

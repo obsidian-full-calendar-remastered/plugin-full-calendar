@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # Use a more recent version of checkout
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 

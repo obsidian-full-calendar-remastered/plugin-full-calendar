@@ -384,6 +384,48 @@ describe('TasksPluginProvider', () => {
       await expect(provider.getUndatedTasks()).resolves.toEqual([]);
     });
 
+    it('returns scheduled tasks to the backlog by clearing the configured display date and time', async () => {
+      const file = { path: 'Daily.md' };
+      mockApp.getFileByPath.mockReturnValue(file);
+      mockApp.rewrite.mockImplementation((_file: unknown, update: (content: string) => string) => {
+        const updated = update('- [ ] Backlog task (9:00-10:00) 📅 2026-05-02');
+        expect(updated).toBe('- [ ] Backlog task');
+        return Promise.resolve();
+      });
+      mockPlugin.settings.tasksIntegration = {
+        backlogDateTarget: 'dueDate',
+        calendarDisplayDateTarget: 'dueDate',
+        openEditModalAfterBacklogDrop: false,
+        taskDisplayFormat: 'standard'
+      };
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Daily.md',
+                  description: 'Backlog task (9:00-10:00)',
+                  taskLocation: { lineNumber: 0 },
+                  dueDate: { toDate: () => new Date('2026-05-02T00:00:00') },
+                  originalMarkdown: '- [ ] Backlog task (9:00-10:00) 📅 2026-05-02',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      await provider.getEvents();
+      await provider.unscheduleTask('Daily.md::0');
+
+      await expect(provider.getUndatedTasks()).resolves.toEqual([
+        expect.objectContaining({ title: 'Backlog task' })
+      ]);
+    });
+
     it('filters backlog tasks by the configured Tasks date field', async () => {
       mockPlugin.settings.tasksIntegration = {
         backlogDateTarget: 'dueDate',
@@ -421,6 +463,74 @@ describe('TasksPluginProvider', () => {
       await expect(provider.getUndatedTasks()).resolves.toEqual([
         expect.objectContaining({ title: 'Scheduled only' })
       ]);
+    });
+
+    it('marks backlog tasks complete through the backlog checkbox action', async () => {
+      const file = { path: 'Daily.md' };
+      mockApp.getFileByPath.mockReturnValue(file);
+      mockApp.rewrite.mockImplementation((_file: unknown, update: (content: string) => string) => {
+        const updated = update('- [ ] Backlog task');
+        expect(updated).toMatch(/^- \[x\] Backlog task ✅ \d{4}-\d{2}-\d{2}$/);
+        return Promise.resolve();
+      });
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Daily.md',
+                  description: 'Backlog task',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Backlog task',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      await provider.getUndatedTasks();
+      await expect(provider.setTaskBacklogItemComplete('Daily.md::0', true)).resolves.toBe(true);
+
+      expect(mockPlugin.providerRegistry.refreshBacklogViews).toHaveBeenCalled();
+      await expect(provider.getUndatedTasks()).resolves.toEqual([]);
+    });
+
+    it('deletes backlog tasks through the backlog context menu action', async () => {
+      const file = { path: 'Daily.md' };
+      mockApp.getFileByPath.mockReturnValue(file);
+      mockApp.rewrite.mockImplementation((_file: unknown, update: (content: string) => string) => {
+        const updated = update('- [ ] Backlog task');
+        expect(updated).toBe('');
+        return Promise.resolve();
+      });
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Daily.md',
+                  description: 'Backlog task',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Backlog task',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      await provider.getUndatedTasks();
+      await provider.deleteTaskBacklogItem('Daily.md::0');
+
+      expect(mockPlugin.providerRegistry.refreshBacklogViews).toHaveBeenCalled();
+      await expect(provider.getUndatedTasks()).resolves.toEqual([]);
     });
 
     it('opens the Tasks edit modal after backlog drops only when enabled', async () => {

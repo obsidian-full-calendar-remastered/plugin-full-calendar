@@ -15,7 +15,7 @@ import { showNotice } from '../../utils/showNotice';
  */
 
 import { PluginState } from '../../core/PluginState';
-import { EventRef, TFile } from 'obsidian';
+import { EventRef, MarkdownView, TFile } from 'obsidian';
 import FullCalendarPlugin from '../../main';
 import { ObsidianInterface } from '../../ObsidianAdapter';
 import { OFCEvent, EventLocation } from '../../types';
@@ -120,6 +120,10 @@ export function updateTimeInLine(
   }
 
   return result;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -711,6 +715,57 @@ export class TasksPluginProvider
     }));
   }
 
+  public async setTaskBacklogItemComplete(taskId: string, isDone: boolean): Promise<boolean> {
+    try {
+      const task = this.allTasks.find(t => t.id === taskId);
+      if (!task) {
+        throw new Error(`Task with persistent ID ${taskId} not found in provider cache.`);
+      }
+
+      const newLine = this.setDoneState(task.originalMarkdown, isDone);
+      if (newLine === task.originalMarkdown) {
+        return true;
+      }
+
+      await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
+      task.originalMarkdown = newLine;
+      task.isDone = isDone;
+      PluginState.getProviderRegistry().refreshBacklogViews();
+      return true;
+    } catch (e) {
+      if (e instanceof Error) {
+        console.error('Error toggling backlog task completion:', e);
+        showNotice(e.message);
+      }
+      return false;
+    }
+  }
+
+  public async openTaskBacklogItem(taskId: string): Promise<void> {
+    const [filePath, lineNumberStr] = taskId.split('::');
+    const lineNumber = Number.parseInt(lineNumberStr, 10);
+    if (!filePath || !Number.isFinite(lineNumber)) {
+      throw new Error('Invalid task handle format. Expected "filePath::lineNumber".');
+    }
+
+    const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile)) {
+      throw new Error(`Task file not found: ${filePath}`);
+    }
+
+    const leaf = this.plugin.app.workspace.getLeaf(true);
+    await leaf.openFile(file);
+    if (leaf.view instanceof MarkdownView) {
+      leaf.view.editor.setCursor({ line: lineNumber, ch: 0 });
+    }
+  }
+
+  public async deleteTaskBacklogItem(taskId: string): Promise<void> {
+    await this.deleteEvent({ persistentId: taskId });
+    this.allTasks = this.allTasks.filter(task => task.id !== taskId);
+    PluginState.getProviderRegistry().refreshBacklogViews();
+  }
+
   public getEventsInFile(file: TFile): Promise<EditableEventResponse[]> {
     const events: EditableEventResponse[] = [];
     // Filter the live cache for tasks in the specified file. This is very fast.
@@ -759,7 +814,7 @@ export class TasksPluginProvider
     }
   }
 
-  private setTaskDate(task: CalendarTask, target: TasksDateTarget, date: Date): void {
+  private setTaskDate(task: CalendarTask, target: TasksDateTarget, date: Date | null): void {
     switch (target) {
       case 'startDate':
         task.startDate = date;
@@ -813,6 +868,23 @@ export class TasksPluginProvider
       return `${contentWithoutBlockLink.trim()} ${newDateComponent}${blockLinkMatch[1]}`;
     }
     return `${originalMarkdown.trim()} ${newDateComponent}`;
+  }
+
+  private clearTaskDateLine(
+    originalMarkdown: string,
+    target: TasksDateTarget = 'scheduledDate'
+  ): string {
+    const dateSymbol = this.getDateTargetEmoji(target);
+    const dateRegex = new RegExp(`\\s*${escapeRegExp(dateSymbol)}\\s*\\d{4}-\\d{2}-\\d{2}`, 'u');
+    const withoutTime = updateTimeInLine(
+      originalMarkdown,
+      null,
+      null,
+      PluginState.getSettings().timeFormat24h,
+      dateSymbol,
+      PluginState.getSettings().tasksIntegration.taskDisplayFormat ?? 'dayPlanner'
+    );
+    return withoutTime.replace(dateRegex, '').trimEnd();
   }
 
   // --- REPLACE createEvent and updateEvent with new versions ---
@@ -978,6 +1050,21 @@ export class TasksPluginProvider
     ) {
       showNotice(t('notices.tasks.scheduledNoModal'));
     }
+  }
+
+  public async unscheduleTask(taskId: string): Promise<void> {
+    const task = this.allTasks.find(t => t.id === taskId);
+    if (!task) {
+      throw new Error(`Cannot find original task to unschedule at ${taskId}`);
+    }
+
+    const dateTarget = PluginState.getSettings().tasksIntegration.calendarDisplayDateTarget;
+    const newLine = this.clearTaskDateLine(task.originalMarkdown, dateTarget);
+    await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
+    task.originalMarkdown = newLine;
+    this.setTaskDate(task, dateTarget, null);
+    task.startTime = null;
+    task.endTime = null;
   }
 
   public async editInProviderUI(eventId: string): Promise<void> {

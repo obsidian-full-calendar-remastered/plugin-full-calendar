@@ -53,6 +53,7 @@ interface ExtraRenderProps {
   getRecurringInstanceState?: (event: EventApi) => Promise<RecurringInstanceState | null>;
   dateRightClick?: (date: Date, mouseEvent: MouseEvent) => void;
   viewRightClick?: (mouseEvent: MouseEvent, calendar: Calendar) => void;
+  eventDragStop?: (event: EventApi, mouseEvent: MouseEvent) => void;
   forceNarrow?: boolean;
   resources?: { id: string; title: string; eventColor?: string }[];
   onViewChange?: () => void; // Add view change callback
@@ -143,6 +144,7 @@ export async function renderCalendar(
     getRecurringInstanceState,
     dateRightClick,
     viewRightClick,
+    eventDragStop,
     customButtons,
     resources,
     onViewChange,
@@ -444,11 +446,12 @@ export async function renderCalendar(
   let currentUpcomingEventIds = new Set<string>();
 
   const isEditableTarget = (target: EventTarget | null): boolean => {
-    if (!(target instanceof Element)) {
+    const element = target instanceof Node && target.instanceOf(Element) ? target : null;
+    if (!element) {
       return false;
     }
 
-    return !!target.closest(
+    return !!element.closest(
       'input, textarea, select, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"], .cm-content, .cm-editor, .markdown-source-view, .markdown-preview-view'
     );
   };
@@ -828,6 +831,11 @@ export async function renderCalendar(
     editable: modifyEvent && true,
     // Keep drag mirror anchored to the viewport, not transformed Obsidian panes.
     fixedMirrorParent: mirrorParent,
+    eventDragStop:
+      eventDragStop &&
+      (info => {
+        eventDragStop(info.event, info.jsEvent);
+      }),
     eventDrop: modifyEventCallback,
     eventResize: modifyEventCallback,
 

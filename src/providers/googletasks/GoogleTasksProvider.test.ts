@@ -5,6 +5,18 @@ import * as React from 'react';
 import { GoogleTasksProvider } from './GoogleTasksProvider';
 import FullCalendarPlugin from '../../main';
 import { GoogleTasksProviderConfig } from './typesGoogleTasks';
+import { makeAuthenticatedRequest } from '../google/auth/request';
+
+jest.mock('../google/auth/request', () => ({
+  makeAuthenticatedRequest: jest.fn(),
+  GoogleApiError: class GoogleApiError extends Error {}
+}));
+
+jest.mock('../google/auth/GoogleAuthManager', () => ({
+  GoogleAuthManager: jest.fn().mockImplementation(() => ({
+    getTokenForSource: jest.fn().mockResolvedValue('token')
+  }))
+}));
 
 describe('GoogleTasksProvider Configuration Wrapper', () => {
   let mockPlugin: FullCalendarPlugin;
@@ -51,6 +63,7 @@ describe('GoogleTasksProvider ownsTaskId', () => {
   let provider: GoogleTasksProvider;
 
   beforeEach(() => {
+    (makeAuthenticatedRequest as jest.Mock).mockReset();
     mockPlugin = {
       app: {
         vault: {},
@@ -81,5 +94,39 @@ describe('GoogleTasksProvider ownsTaskId', () => {
   it('should not own improperly formatted taskId', () => {
     expect(provider.ownsTaskId('googletasks_1')).toBe(false);
     expect(provider.ownsTaskId('googletasks_1::task_123::extra')).toBe(false);
+  });
+
+  it('returns a scheduled Google Task to the backlog by clearing its due date', async () => {
+    (makeAuthenticatedRequest as jest.Mock)
+      .mockResolvedValueOnce({
+        id: 'task_123',
+        title: 'Schedule Me',
+        status: 'needsAction',
+        due: '2026-06-15T00:00:00.000Z'
+      })
+      .mockResolvedValueOnce({});
+
+    await provider.unscheduleTask('task_123');
+
+    expect(makeAuthenticatedRequest).toHaveBeenCalledTimes(2);
+    expect(makeAuthenticatedRequest).toHaveBeenNthCalledWith(
+      2,
+      'token',
+      'https://tasks.googleapis.com/tasks/v1/lists/list_123/tasks/task_123',
+      'PUT',
+      expect.objectContaining({ due: undefined })
+    );
+  });
+
+  it('deletes a backlog Google Task by provider-prefixed task ID', async () => {
+    (makeAuthenticatedRequest as jest.Mock).mockResolvedValueOnce({});
+
+    await provider.deleteTaskBacklogItem('googletasks_1::task_123');
+
+    expect(makeAuthenticatedRequest).toHaveBeenCalledWith(
+      'token',
+      'https://tasks.googleapis.com/tasks/v1/lists/list_123/tasks/task_123',
+      'DELETE'
+    );
   });
 });

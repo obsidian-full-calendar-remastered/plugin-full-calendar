@@ -924,6 +924,68 @@ export class CalDAVProvider
     return this.toTaskBacklogItem(task);
   }
 
+  async deleteTaskBacklogItem(taskId: string): Promise<void> {
+    const parsed = parseCalDAVTaskId(taskId);
+    let taskUid = taskId;
+    if (parsed) {
+      if (parsed.calendarId !== this.source.id) {
+        throw new Error(`CalDAV task ID ${taskId} does not belong to this provider.`);
+      }
+      taskUid = parsed.uid;
+    }
+
+    await this.deleteEvent({ persistentId: taskUid });
+    this.undatedTaskCache = this.undatedTaskCache.filter(task => task.uid !== taskUid);
+    this.hasLoadedUndatedTasks = true;
+  }
+
+  async setTaskBacklogItemComplete(taskId: string, isDone: boolean): Promise<boolean> {
+    const parsed = parseCalDAVTaskId(taskId);
+    let taskUid = taskId;
+    if (parsed) {
+      if (parsed.calendarId !== this.source.id) {
+        return false;
+      }
+      taskUid = parsed.uid;
+    }
+
+    const authHeader = createBasicAuthHeader(this.source.username, this.source.password);
+    const objects = await fetchCalendarObjectsViaPropfindFallback(this.source.homeUrl, authHeader);
+
+    for (const object of objects) {
+      const vcalendar = parseVCalendar(object.ics);
+      const todo = findTodoByUid(vcalendar, taskUid);
+      if (!todo || !isUnscheduledTodo(todo)) {
+        continue;
+      }
+
+      todo.updatePropertyWithValue('status', isDone ? 'COMPLETED' : 'NEEDS-ACTION');
+      if (isDone) {
+        todo.updatePropertyWithValue('completed', ical.Time.now());
+      } else {
+        todo.removeAllProperties('completed');
+      }
+      todo.updatePropertyWithValue('last-modified', ical.Time.now());
+
+      const url = resolveCollectionObjectUrl(this.source.homeUrl, object.href);
+      await this.doRequest(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'text/calendar; charset=utf-8',
+          ...(object.etag ? { 'If-Match': object.etag } : {})
+        },
+        body: (vcalendar as unknown as { toString(): string }).toString()
+      });
+
+      this.undatedTaskCache = this.undatedTaskCache.filter(task => task.uid !== taskUid);
+      this.hasLoadedUndatedTasks = true;
+      PluginState.getProviderRegistry().refreshBacklogViews();
+      return true;
+    }
+
+    return false;
+  }
+
   async openTaskBacklogItem(taskId: string): Promise<void> {
     const parsed = parseCalDAVTaskId(taskId);
     if (!parsed || parsed.calendarId !== this.source.id) {
@@ -1142,6 +1204,56 @@ export class CalDAVProvider
     }
 
     throw new Error(`CalDAV task ${taskUid} was not found or is already scheduled.`);
+  }
+
+  async unscheduleTask(taskId: string): Promise<void> {
+    const parsed = parseCalDAVTaskId(taskId);
+    let taskUid = taskId;
+    if (parsed) {
+      if (parsed.calendarId !== this.source.id) {
+        throw new Error(`CalDAV task ID ${taskId} does not belong to this provider.`);
+      }
+      taskUid = parsed.uid;
+    }
+    const authHeader = createBasicAuthHeader(this.source.username, this.source.password);
+    const objects = await fetchCalendarObjectsViaPropfindFallback(this.source.homeUrl, authHeader);
+
+    for (const object of objects) {
+      const vcalendar = parseVCalendar(object.ics);
+      const todo = findTodoByUid(vcalendar, taskUid);
+      if (!todo) {
+        continue;
+      }
+
+      todo.removeAllProperties('dtstart');
+      todo.removeAllProperties('due');
+      todo.updatePropertyWithValue('last-modified', ical.Time.now());
+
+      const url = resolveCollectionObjectUrl(this.source.homeUrl, object.href);
+      await this.doRequest(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'text/calendar; charset=utf-8',
+          ...(object.etag ? { 'If-Match': object.etag } : {})
+        },
+        body: (vcalendar as unknown as { toString(): string }).toString()
+      });
+
+      const updatedIcs = (vcalendar as unknown as { toString(): string }).toString();
+      const unscheduledTasks = parseUnscheduledTasksFromObject(
+        { ...object, ics: updatedIcs },
+        this.source.id,
+        this.source.name
+      );
+      this.undatedTaskCache = [
+        ...this.undatedTaskCache.filter(task => task.uid !== taskUid),
+        ...unscheduledTasks
+      ];
+      this.hasLoadedUndatedTasks = true;
+      return;
+    }
+
+    throw new Error(`CalDAV task ${taskUid} was not found.`);
   }
 
   async createInstanceOverride(

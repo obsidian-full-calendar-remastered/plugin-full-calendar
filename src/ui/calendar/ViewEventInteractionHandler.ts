@@ -290,11 +290,33 @@ export class ViewEventInteractionHandler {
       showNotice(t('ui.view.success.taskScheduled'));
 
       PluginState.getProviderRegistry().refreshBacklogViews();
-      void this.ctx.refreshView();
     } catch (error) {
       console.error('Failed to schedule task:', error);
       const message = error instanceof Error ? error.message : 'Unknown error occurred';
       showNotice(t('ui.view.errors.taskScheduleFailed', { message }));
+    }
+  }
+
+  public async handleEventDragStop(eventApi: EventApi, mouseEvent: MouseEvent): Promise<void> {
+    const target = mouseEvent.view?.document.elementFromPoint(
+      mouseEvent.clientX,
+      mouseEvent.clientY
+    );
+    if (!target?.instanceOf(Element) || !target.closest('.tasks-backlog-view')) {
+      return;
+    }
+
+    try {
+      if (!PluginState.getCache()) {
+        throw new Error('Event cache not available');
+      }
+
+      await PluginState.getCache().unscheduleTaskEvent(eventApi.id);
+      showNotice('Task returned to backlog');
+    } catch (error) {
+      console.error('Failed to return task to backlog:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      showNotice(`Failed to return task to backlog: ${message}`);
     }
   }
 }

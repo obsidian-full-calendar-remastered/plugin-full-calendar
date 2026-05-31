@@ -71,7 +71,7 @@ export function renderOutlookSettings(
       .addButton(button => {
         button
           .setButtonText(t('outlook.buttons.disconnect'))
-          .setWarning()
+          .setDestructive()
           .onClick(async () => {
             await authManager.removeAccount(account.id);
             rerender();

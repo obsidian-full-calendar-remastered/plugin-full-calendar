@@ -160,7 +160,7 @@ export function renderApiAccessSettings(
       .addButton(btn => {
         btn
           .setButtonText(t('api.settings.revoke'))
-          .setWarning()
+          .setDestructive()
           .onClick(async () => {
             entries.forEach(([token]) => {
               delete tokenStore[token];

@@ -46,8 +46,12 @@ export class LazySettingsTab extends PluginSettingTab {
   }
 
   display(): void {
+    this.renderSettings();
+  }
+
+  renderSettings(): void {
     this.runWithActualTab(tab => {
-      void tab.display();
+      tab.renderSettings();
     });
   }
 

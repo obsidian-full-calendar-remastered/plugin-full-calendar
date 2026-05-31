@@ -324,6 +324,10 @@ export class FullCalendarSettingTab extends PluginSettingTab {
   }
 
   display(): void {
+    this.renderSettings();
+  }
+
+  renderSettings(): void {
     void (async () => {
       this.containerEl.empty();
       if (this.showFullChangelog) {
@@ -339,13 +343,13 @@ export class FullCalendarSettingTab extends PluginSettingTab {
   public showChangelog(): void {
     this.showFullChangelog = true;
     this.showMilestonesPage = false;
-    void this.display();
+    this.renderSettings();
   }
 
   public showMilestones(): void {
     this.showMilestonesPage = true;
     this.showFullChangelog = false;
-    void this.display();
+    this.renderSettings();
   }
 
   private async _renderFullChangelog(): Promise<void> {
@@ -355,7 +359,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
       createElement(Changelog, {
         onBack: () => {
           this.showFullChangelog = false;
-          void this.display();
+          this.renderSettings();
         }
       })
     );
@@ -385,7 +389,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
           return;
         }
         this.activeCategory = category.id;
-        void this.display();
+        this.renderSettings();
       });
     });
 
@@ -488,7 +492,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
     backButton.type = 'button';
     backButton.addEventListener('click', () => {
       this.showMilestonesPage = false;
-      void this.display();
+      this.renderSettings();
     });
 
     new Setting(header)
@@ -670,14 +674,14 @@ export class FullCalendarSettingTab extends PluginSettingTab {
 
         this._renderInitialSetupNotice(containerEl);
         renderGeneralSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         renderRemindersSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         renderWhatsNew(containerEl, () => {
           this.showFullChangelog = true;
-          void this.display();
+          this.renderSettings();
         });
         break;
       }
@@ -686,7 +690,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
           import('./sections/renderAppearance')
         ]);
         renderAppearanceSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         break;
       }
@@ -708,10 +712,10 @@ export class FullCalendarSettingTab extends PluginSettingTab {
         ]);
 
         renderWorkspaceSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         renderCategorizationSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         break;
       }
@@ -735,25 +739,25 @@ export class FullCalendarSettingTab extends PluginSettingTab {
         ]);
 
         renderActivityWatchSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         renderTasksIntegrationSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         renderTaskNotesIntegrationSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         renderFcrReminderSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         renderGoogleSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         renderOutlookSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         renderApiAccessSettings(containerEl, this.plugin, () => {
-          void this.display();
+          this.renderSettings();
         });
         break;
       }

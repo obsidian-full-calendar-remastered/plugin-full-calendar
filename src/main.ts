@@ -129,7 +129,7 @@ export default class FullCalendarPlugin extends Plugin {
 
     PluginState.setDisplaySettingsTab(() => {
       if (!openPluginSettingsTab()) {
-        this.#settingsTab?.display();
+        this.#settingsTab?.renderSettings();
       }
     });
     PluginState.setShowChangelog(() =>
@@ -395,7 +395,7 @@ export default class FullCalendarPlugin extends Plugin {
       if (params.code && params.state) {
         const { exchangeCodeForToken } = await import('./providers/google/auth/auth');
         await exchangeCodeForToken(params.code, params.state, this);
-        this.#settingsTab?.display();
+        this.#settingsTab?.renderSettings();
       } else {
         showNotice(t('notices.googleAuthFailed'));
         console.error('Google Auth Callback Error: Missing code or state.', params);

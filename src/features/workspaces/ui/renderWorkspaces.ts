@@ -116,7 +116,7 @@ export function renderWorkspaceSettings(
           button
             .setButtonText(t('settings.workspaces.buttons.delete'))
             .setIcon('trash-2')
-            .setWarning()
+            .setDestructive()
             .onClick(async () => {
               // If this workspace is currently active, clear the active workspace
               if (PluginState.getSettings().activeWorkspace === workspace.id) {

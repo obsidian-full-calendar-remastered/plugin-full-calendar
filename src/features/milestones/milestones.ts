@@ -2,7 +2,7 @@ import { PluginState } from '../../core/PluginState';
 import type { CalendarInfo } from '../../types/calendar_settings';
 import type { OFCEvent } from '../../types/schema';
 import { t } from '../i18n/i18n';
-import { activeDocument } from 'obsidian';
+// Do not import activeDocument from 'obsidian' as it is a global, not a module export at runtime.
 
 type MilestoneAction = 'created' | 'deleted' | 'updated' | 'moved';
 type ProviderType = Exclude<CalendarInfo['type'], 'FOR_TEST_ONLY'>;
@@ -518,25 +518,39 @@ const MILESTONE_DEFINITIONS: MilestoneDefinition[] = [
 ];
 
 function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): void {
+  console.log('Full Calendar: queueMilestoneToast called for', milestone.id, 'index', index);
   const delay = index * 220;
   window.setTimeout(() => {
-    if (typeof activeDocument === 'undefined') return;
-
-    const existingRoot = activeDocument.getElementById('ofc-milestone-toast-root');
-    const root = existingRoot ?? activeDocument.createDiv();
-    if (!existingRoot) {
-      root.id = 'ofc-milestone-toast-root';
-      activeDocument.body.appendChild(root);
+    // Resolve activeDocument robustly: check global scope (since it is a window global in Obsidian) or fallback to window.document
+    const doc =
+      (typeof activeDocument !== 'undefined' ? activeDocument : undefined) ??
+      (typeof window !== 'undefined' ? window.document : undefined);
+    console.log(
+      'Full Calendar: toast timeout fired. resolved document is:',
+      typeof doc !== 'undefined' ? doc : 'undefined'
+    );
+    if (!doc) {
+      console.warn('Full Calendar: activeDocument / window.document is undefined!');
+      return;
     }
 
-    const toast = activeDocument.createDiv();
+    const existingRoot = doc.getElementById('ofc-milestone-toast-root');
+    console.log('Full Calendar: existingRoot element:', existingRoot);
+    const root = existingRoot ?? doc.createElement('div');
+    if (!existingRoot) {
+      root.id = 'ofc-milestone-toast-root';
+      console.log('Full Calendar: appending root to doc.body');
+      doc.body.appendChild(root);
+    }
+
+    const toast = doc.createElement('div');
     toast.className = 'ofc-milestone-toast';
 
-    const titleEl = activeDocument.createDiv();
+    const titleEl = doc.createElement('div');
     titleEl.className = 'ofc-milestone-toast-title';
     titleEl.textContent = t('notices.milestones.unlockedTitle');
 
-    const bodyEl = activeDocument.createDiv();
+    const bodyEl = doc.createElement('div');
     bodyEl.className = 'ofc-milestone-toast-body';
     bodyEl.textContent = t('notices.milestones.unlockedBody', {
       title: milestone.title,
@@ -545,15 +559,90 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
 
     toast.appendChild(titleEl);
     toast.appendChild(bodyEl);
-    root.appendChild(toast);
 
-    window.setTimeout(() => {
-      toast.classList.add('ofc-milestone-toast-hide');
-      window.setTimeout(() => {
-        toast.remove();
-        if (!root.hasChildNodes()) root.remove();
-      }, 280);
-    }, 5200);
+    // Create Sponsorship/Ethics Support Footer
+    const footerEl = doc.createElement('div');
+    footerEl.className = 'ofc-milestone-toast-footer';
+
+    const footerDesc = doc.createElement('div');
+    footerDesc.className = 'ofc-milestone-toast-footer-desc';
+    footerDesc.textContent = 'If this plugin added value, please consider supporting the work:';
+
+    const buttonsWrap = doc.createElement('div');
+    buttonsWrap.className = 'ofc-milestone-toast-footer-buttons';
+
+    const sponsorBtn = doc.createElement('a');
+    sponsorBtn.className = 'ofc-milestone-toast-btn btn-primary';
+    sponsorBtn.textContent = 'Support Development';
+    sponsorBtn.setAttribute('href', 'https://github.com/sponsors/YouFoundJK');
+    sponsorBtn.setAttribute('target', '_blank');
+    sponsorBtn.setAttribute('rel', 'noopener noreferrer');
+
+    const goalBtn = doc.createElement('a');
+    goalBtn.className = 'ofc-milestone-toast-btn btn-secondary';
+    goalBtn.textContent = 'See Financial Goal';
+    goalBtn.setAttribute(
+      'href',
+      'https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/SustainabilityEthics/'
+    );
+    goalBtn.setAttribute('target', '_blank');
+    goalBtn.setAttribute('rel', 'noopener noreferrer');
+
+    buttonsWrap.appendChild(sponsorBtn);
+    buttonsWrap.appendChild(goalBtn);
+    footerEl.appendChild(footerDesc);
+    footerEl.appendChild(buttonsWrap);
+    toast.appendChild(footerEl);
+
+    root.appendChild(toast);
+    console.log('Full Calendar: toast appended to root:', toast);
+
+    const duration = PluginState.getSettings().milestoneNotifierDuration ?? 8000;
+    console.log('Full Calendar: toast duration will be', duration);
+
+    let closeTimeout: number | null = null;
+    let removeTimeout: number | null = null;
+
+    const startTimer = () => {
+      closeTimeout = window.setTimeout(() => {
+        console.log('Full Calendar: removing toast now after', duration);
+        toast.classList.add('ofc-milestone-toast-hide');
+        removeTimeout = window.setTimeout(() => {
+          toast.remove();
+          if (!root.hasChildNodes()) {
+            console.log('Full Calendar: root is empty, removing root');
+            root.remove();
+          }
+        }, 280);
+      }, duration);
+    };
+
+    const stopTimer = () => {
+      if (closeTimeout !== null) {
+        window.clearTimeout(closeTimeout);
+        closeTimeout = null;
+      }
+      if (removeTimeout !== null) {
+        window.clearTimeout(removeTimeout);
+        removeTimeout = null;
+      }
+      // Safely ensure the hide class is removed if mouse enters during the fade-out phase
+      toast.classList.remove('ofc-milestone-toast-hide');
+    };
+
+    // Start initial close timer
+    startTimer();
+
+    // Register hover pause listeners
+    toast.addEventListener('mouseenter', () => {
+      console.log('Full Calendar: mouse entered toast, pausing close timer.');
+      stopTimer();
+    });
+
+    toast.addEventListener('mouseleave', () => {
+      console.log('Full Calendar: mouse left toast, resuming close timer.');
+      startTimer();
+    });
   }, delay);
 }
 
@@ -687,25 +776,37 @@ export function getMilestoneCards(): MilestoneCard[] {
 }
 
 export async function triggerDevMilestoneIfActive(): Promise<void> {
+  console.log('Full Calendar: triggerDevMilestoneIfActive called');
   try {
     const settings = PluginState.getSettings();
+    console.log(
+      'Full Calendar: settings.dev value is:',
+      settings.dev,
+      'type:',
+      typeof settings.dev
+    );
     if (settings.dev === 1 || settings.dev === '1') {
+      console.log("Full Calendar: dev mode matches 1 or '1', ensuring state");
       const state = ensureMilestonesState();
-      if (!state.unlockedAt['devMilestone']) {
-        state.unlockedAt['devMilestone'] = Date.now();
-        await PluginState.persistData();
-        const definition = MILESTONE_DEFINITIONS.find(d => d.id === 'devMilestone');
-        if (definition) {
-          queueMilestoneToast(
-            {
-              id: 'devMilestone',
-              title: t(definition.titleKey),
-              description: t(definition.descriptionKey)
-            },
-            0
-          );
-        }
+      state.unlockedAt['devMilestone'] = Date.now();
+      await PluginState.persistData();
+      console.log('Full Calendar: milestone unlocked, finding definition');
+      const definition = MILESTONE_DEFINITIONS.find(d => d.id === 'devMilestone');
+      if (definition) {
+        console.log('Full Calendar: found definition, queueing toast banner');
+        queueMilestoneToast(
+          {
+            id: 'devMilestone',
+            title: t(definition.titleKey),
+            description: t(definition.descriptionKey)
+          },
+          0
+        );
+      } else {
+        console.warn('Full Calendar: definition for devMilestone not found!');
       }
+    } else {
+      console.log("Full Calendar: dev mode NOT active (settings.dev is not 1 or '1')");
     }
   } catch (error) {
     console.warn('Full Calendar: failed to trigger developer milestone.', error);

@@ -190,6 +190,7 @@ export interface FullCalendarSettings {
   authorizedTokens?: Record<string, { pluginId: string; reason: string; grantedAt: number }>;
 
   dev?: number | string;
+  milestoneNotifierDuration?: number;
 
   currentVersion: string | null;
   linkedNotesDirectory: string;
@@ -281,6 +282,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   },
   apiTokens: {},
   authorizedTokens: {},
+  milestoneNotifierDuration: 8000,
 
   enableDefaultReminder: true,
   defaultReminderMinutes: 10,

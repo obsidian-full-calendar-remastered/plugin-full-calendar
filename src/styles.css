@@ -465,63 +465,183 @@
 /* Milestone celebration toast */
 #ofc-milestone-toast-root {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   pointer-events: none;
 }
 
 .ofc-milestone-toast {
-  width: min(340px, calc(100vw - 32px));
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--interactive-accent) 45%, var(--background-modifier-border));
-  background: linear-gradient(140deg, color-mix(in srgb, var(--interactive-accent) 20%, var(--background-secondary)), var(--background-primary));
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--interactive-accent) 25%, #000000 75%);
-  padding: 11px 12px;
-  animation: ofc-milestone-toast-in 260ms ease;
+  pointer-events: auto;
+  width: 360px;
+  max-width: calc(100vw - 48px);
+  border-radius: 14px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(30, 27, 42, 0.96), rgba(15, 12, 22, 0.99));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 215, 0, 0.38);
+  box-shadow: 
+    0 12px 36px rgba(0, 0, 0, 0.55), 
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 0 24px rgba(255, 215, 0, 0.18);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  animation: ofc-milestone-toast-in 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Beautiful animated left accent bar */
+.ofc-milestone-toast::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #ffd700, #ff8c00, #ff007f);
+  box-shadow: 0 0 10px #ffd700;
+}
+
+/* Shimmer reflection sweep animation */
+.ofc-milestone-toast::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transform: skewX(-25deg);
+  animation: ofc-toast-shimmer 4s infinite ease-in-out;
 }
 
 .ofc-milestone-toast-title {
-  font-size: 0.84rem;
-  letter-spacing: 0.03em;
+  font-size: 0.9rem;
+  font-weight: 800;
   text-transform: uppercase;
-  color: var(--text-accent);
-  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ofc-milestone-toast-title::before {
+  content: '🏆';
+  font-size: 1.1rem;
+  animation: ofc-trophy-bounce 1s ease-in-out infinite alternate;
 }
 
 .ofc-milestone-toast-body {
-  margin-top: 4px;
-  color: var(--text-normal);
-  font-size: 0.93rem;
+  font-size: var(--font-ui-medium, 13px);
+  color: #e0e0ea;
+  line-height: 1.45;
+  font-weight: 500;
 }
 
 .ofc-milestone-toast-hide {
-  animation: ofc-milestone-toast-out 260ms ease forwards;
+  animation: ofc-milestone-toast-out 0.35s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
 }
 
 @keyframes ofc-milestone-toast-in {
-  from {
-    transform: translateX(12px) scale(0.98);
+  0% {
+    transform: translateX(120%) scale(0.95);
     opacity: 0;
   }
-  to {
+  100% {
     transform: translateX(0) scale(1);
     opacity: 1;
   }
 }
 
 @keyframes ofc-milestone-toast-out {
-  from {
-    transform: translateX(0);
+  0% {
+    transform: translateX(0) scale(1);
     opacity: 1;
   }
-  to {
-    transform: translateX(10px);
+  100% {
+    transform: translateX(120%) scale(0.95);
     opacity: 0;
   }
+}
+
+@keyframes ofc-toast-shimmer {
+  0% { left: -150%; }
+  30% { left: 150%; }
+  100% { left: 150%; }
+}
+
+@keyframes ofc-trophy-bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-3px); }
+}
+
+.ofc-milestone-toast-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ofc-milestone-toast-footer-desc {
+  font-size: var(--font-ui-small, 12px);
+  color: #a0a0b8;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+.ofc-milestone-toast-footer-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.ofc-milestone-toast-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: var(--font-ui-small, 12px);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.ofc-milestone-toast-btn.btn-primary {
+  background: #ffd700;
+  color: #0b0914;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.ofc-milestone-toast-btn.btn-primary:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
+}
+
+.ofc-milestone-toast-btn.btn-secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.ofc-milestone-toast-btn.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
 }
 
 .ofc-nlp-preview-description {

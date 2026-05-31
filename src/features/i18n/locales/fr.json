@@ -203,8 +203,9 @@
       "selectorUnavailable": "Le plugin TaskNotes n'est pas disponible ou n'expose pas l'intégration du sélecteur."
     },
     "milestones": {
-      "unlockedTitle": "Jalon débloqué",
-      "unlockedBody": "{{title}} - {{description}}"
+      "sponsorDesc": "If FCR added value, please consider supporting the work:",
+      "sponsorBtn": "Support Development",
+      "goalBtn": "See Financial Goal"
     },
     "chronoAnalyserDemoLoaded": "Demo ChronoAnalyser chargé.",
     "chronoAnalyserDemoLoadedFromCache": "Demo ChronoAnalyser chargé depuis le cache.",
@@ -565,6 +566,66 @@
             "title": "The Great Migration",
             "description": "Move 200 events between different calendars.",
             "target": "Objectif : 200 événements déplacés"
+          },
+          "nightOwl100": {
+            "title": "Midnight Dynamo",
+            "description": "Successfully perform 100 calendar operations during late-night hours (10 PM to 4 AM).",
+            "target": "Target: 100 late-night actions"
+          },
+          "earlyBird100": {
+            "title": "Dawn Ascendant",
+            "description": "Successfully perform 100 calendar operations during early-morning hours (5 AM to 8 AM).",
+            "target": "Target: 100 early-morning actions"
+          },
+          "weekendWarrior250": {
+            "title": "Sabbath Champion",
+            "description": "Perform 250 successful calendar operations on Saturdays and Sundays.",
+            "target": "Target: 250 weekend actions"
+          },
+          "nlpWhisperer200": {
+            "title": "NLP Conjurer",
+            "description": "Create 200 events using FCR NLP quick-add commands.",
+            "target": "Target: 200 NLP creations"
+          },
+          "superOrganizer10": {
+            "title": "Director General",
+            "description": "Maintain 10 or more active workspace configurations.",
+            "target": "Target: 10 workspaces"
+          },
+          "syncSpecialist8": {
+            "title": "Universal Connector",
+            "description": "Maintain 8 or more active remote calendars (Google/ICS/CalDAV).",
+            "target": "Target: 8 active remote calendars"
+          },
+          "createdTotal25000": {
+            "title": "Calendar Emperor",
+            "description": "Successfully create 25,000 events.",
+            "target": "Target: 25,000 created events"
+          },
+          "createdTotal100000": {
+            "title": "Time Overlord",
+            "description": "Successfully create 100,000 events.",
+            "target": "Target: 100,000 created events"
+          },
+          "habitualPlanner100": {
+            "title": "The Eternal Planner",
+            "description": "Perform calendar actions on 100 consecutive days.",
+            "target": "Target: 100-day action streak"
+          },
+          "dedicated365": {
+            "title": "Chronicle Sovereign",
+            "description": "Maintain at least 1 year (365 days) between first and latest recorded action.",
+            "target": "Target: 365-day history span"
+          },
+          "totalOps250000": {
+            "title": "Operations Sovereign",
+            "description": "Reach 250,000 total successful operations (create/delete/update/move).",
+            "target": "Target: 250,000 successful operations"
+          },
+          "totalOps1000000": {
+            "title": "Time-Space Continuum",
+            "description": "Reach 1,000,000 total successful operations.",
+            "target": "Target: 1,000,000 successful operations"
           }
         },
         "openButton": "Open milestones",

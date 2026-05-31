@@ -509,7 +509,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
 
     for (const card of cards) {
       const cardEl = content.createDiv({
-        cls: `full-calendar-change-item ${card.unlocked ? 'change-type-new' : 'change-type-improvement'}`
+        cls: `full-calendar-change-item ${card.unlocked ? 'change-type-new' : 'change-type-improvement'} ofc-milestone-card ${card.unlocked ? 'is-unlocked' : 'is-locked'}`
       });
 
       cardEl.createDiv({ text: selectMilestoneIcon(card.id, card.unlocked), cls: 'change-icon' });

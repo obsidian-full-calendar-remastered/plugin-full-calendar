@@ -506,6 +506,93 @@ const MILESTONE_DEFINITIONS: MilestoneDefinition[] = [
     }
   },
   {
+    id: 'nightOwl.100',
+    titleKey: 'settings.appearance.milestones.definitions.nightOwl100.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.nightOwl100.description',
+    targetKey: 'settings.appearance.milestones.definitions.nightOwl100.target',
+    compute: state => ({ current: getCounter(state, 'meta.nightOwlOps'), target: 100 })
+  },
+  {
+    id: 'earlyBird.100',
+    titleKey: 'settings.appearance.milestones.definitions.earlyBird100.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.earlyBird100.description',
+    targetKey: 'settings.appearance.milestones.definitions.earlyBird100.target',
+    compute: state => ({ current: getCounter(state, 'meta.earlyBirdOps'), target: 100 })
+  },
+  {
+    id: 'weekendWarrior.250',
+    titleKey: 'settings.appearance.milestones.definitions.weekendWarrior250.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.weekendWarrior250.description',
+    targetKey: 'settings.appearance.milestones.definitions.weekendWarrior250.target',
+    compute: state => ({ current: getCounter(state, 'meta.weekendWarriorOps'), target: 250 })
+  },
+  {
+    id: 'nlpWhisperer.200',
+    titleKey: 'settings.appearance.milestones.definitions.nlpWhisperer200.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.nlpWhisperer200.description',
+    targetKey: 'settings.appearance.milestones.definitions.nlpWhisperer200.target',
+    compute: state => ({ current: getCounter(state, 'meta.createdViaNlp'), target: 200 })
+  },
+  {
+    id: 'superOrganizer.10',
+    titleKey: 'settings.appearance.milestones.definitions.superOrganizer10.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.superOrganizer10.description',
+    targetKey: 'settings.appearance.milestones.definitions.superOrganizer10.target',
+    compute: _state => {
+      const workspaces = PluginState.getSettings().workspaces ?? [];
+      return { current: workspaces.length, target: 10 };
+    }
+  },
+  {
+    id: 'syncSpecialist.8',
+    titleKey: 'settings.appearance.milestones.definitions.syncSpecialist8.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.syncSpecialist8.description',
+    targetKey: 'settings.appearance.milestones.definitions.syncSpecialist8.target',
+    compute: _state => ({ current: computeRemoteActiveCount(), target: 8 })
+  },
+  {
+    id: 'created.total.25000',
+    titleKey: 'settings.appearance.milestones.definitions.createdTotal25000.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.createdTotal25000.description',
+    targetKey: 'settings.appearance.milestones.definitions.createdTotal25000.target',
+    compute: state => ({ current: getActionCounter(state, 'created', 'total'), target: 25000 })
+  },
+  {
+    id: 'created.total.100000',
+    titleKey: 'settings.appearance.milestones.definitions.createdTotal100000.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.createdTotal100000.description',
+    targetKey: 'settings.appearance.milestones.definitions.createdTotal100000.target',
+    compute: state => ({ current: getActionCounter(state, 'created', 'total'), target: 100000 })
+  },
+  {
+    id: 'habitualPlanner.100',
+    titleKey: 'settings.appearance.milestones.definitions.habitualPlanner100.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.habitualPlanner100.description',
+    targetKey: 'settings.appearance.milestones.definitions.habitualPlanner100.target',
+    compute: state => ({ current: computeActionStreakDays(state), target: 100 })
+  },
+  {
+    id: 'dedicated.365days',
+    titleKey: 'settings.appearance.milestones.definitions.dedicated365.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.dedicated365.description',
+    targetKey: 'settings.appearance.milestones.definitions.dedicated365.target',
+    compute: state => ({ current: computeDedicatedDays(state), target: 365 })
+  },
+  {
+    id: 'totalOps.250000',
+    titleKey: 'settings.appearance.milestones.definitions.totalOps250000.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.totalOps250000.description',
+    targetKey: 'settings.appearance.milestones.definitions.totalOps250000.target',
+    compute: state => ({ current: computeTotalOps(state), target: 250000 })
+  },
+  {
+    id: 'totalOps.1000000',
+    titleKey: 'settings.appearance.milestones.definitions.totalOps1000000.title',
+    descriptionKey: 'settings.appearance.milestones.definitions.totalOps1000000.description',
+    targetKey: 'settings.appearance.milestones.definitions.totalOps1000000.target',
+    compute: state => ({ current: computeTotalOps(state), target: 1000000 })
+  },
+  {
     id: 'devMilestone',
     titleKey: 'settings.appearance.milestones.definitions.devMilestone.title',
     descriptionKey: 'settings.appearance.milestones.definitions.devMilestone.description',
@@ -518,28 +605,21 @@ const MILESTONE_DEFINITIONS: MilestoneDefinition[] = [
 ];
 
 function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): void {
-  console.log('Full Calendar: queueMilestoneToast called for', milestone.id, 'index', index);
   const delay = index * 220;
   window.setTimeout(() => {
     // Resolve activeDocument robustly: check global scope (since it is a window global in Obsidian) or fallback to window.document
     const doc =
       (typeof activeDocument !== 'undefined' ? activeDocument : undefined) ??
       (typeof window !== 'undefined' ? window.document : undefined);
-    console.log(
-      'Full Calendar: toast timeout fired. resolved document is:',
-      typeof doc !== 'undefined' ? doc : 'undefined'
-    );
     if (!doc) {
       console.warn('Full Calendar: activeDocument / window.document is undefined!');
       return;
     }
 
     const existingRoot = doc.getElementById('ofc-milestone-toast-root');
-    console.log('Full Calendar: existingRoot element:', existingRoot);
     const root = existingRoot ?? doc.createElement('div');
     if (!existingRoot) {
       root.id = 'ofc-milestone-toast-root';
-      console.log('Full Calendar: appending root to doc.body');
       doc.body.appendChild(root);
     }
 
@@ -548,14 +628,11 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
 
     const titleEl = doc.createElement('div');
     titleEl.className = 'ofc-milestone-toast-title';
-    titleEl.textContent = t('notices.milestones.unlockedTitle');
+    titleEl.textContent = milestone.title;
 
     const bodyEl = doc.createElement('div');
     bodyEl.className = 'ofc-milestone-toast-body';
-    bodyEl.textContent = t('notices.milestones.unlockedBody', {
-      title: milestone.title,
-      description: milestone.description
-    });
+    bodyEl.textContent = milestone.description;
 
     toast.appendChild(titleEl);
     toast.appendChild(bodyEl);
@@ -566,21 +643,21 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
 
     const footerDesc = doc.createElement('div');
     footerDesc.className = 'ofc-milestone-toast-footer-desc';
-    footerDesc.textContent = 'If this plugin added value, please consider supporting the work:';
+    footerDesc.textContent = t('notices.milestones.sponsorDesc');
 
     const buttonsWrap = doc.createElement('div');
     buttonsWrap.className = 'ofc-milestone-toast-footer-buttons';
 
     const sponsorBtn = doc.createElement('a');
     sponsorBtn.className = 'ofc-milestone-toast-btn btn-primary';
-    sponsorBtn.textContent = 'Support Development';
-    sponsorBtn.setAttribute('href', 'https://github.com/sponsors/YouFoundJK');
+    sponsorBtn.textContent = t('notices.milestones.sponsorBtn');
+    sponsorBtn.setAttribute('href', 'https://ko-fi.com/youfoundjk');
     sponsorBtn.setAttribute('target', '_blank');
     sponsorBtn.setAttribute('rel', 'noopener noreferrer');
 
     const goalBtn = doc.createElement('a');
     goalBtn.className = 'ofc-milestone-toast-btn btn-secondary';
-    goalBtn.textContent = 'See Financial Goal';
+    goalBtn.textContent = t('notices.milestones.goalBtn');
     goalBtn.setAttribute(
       'href',
       'https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/SustainabilityEthics/'
@@ -595,22 +672,18 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
     toast.appendChild(footerEl);
 
     root.appendChild(toast);
-    console.log('Full Calendar: toast appended to root:', toast);
 
     const duration = PluginState.getSettings().milestoneNotifierDuration ?? 8000;
-    console.log('Full Calendar: toast duration will be', duration);
 
     let closeTimeout: number | null = null;
     let removeTimeout: number | null = null;
 
     const startTimer = () => {
       closeTimeout = window.setTimeout(() => {
-        console.log('Full Calendar: removing toast now after', duration);
         toast.classList.add('ofc-milestone-toast-hide');
         removeTimeout = window.setTimeout(() => {
           toast.remove();
           if (!root.hasChildNodes()) {
-            console.log('Full Calendar: root is empty, removing root');
             root.remove();
           }
         }, 280);
@@ -635,12 +708,10 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
 
     // Register hover pause listeners
     toast.addEventListener('mouseenter', () => {
-      console.log('Full Calendar: mouse entered toast, pausing close timer.');
       stopTimer();
     });
 
     toast.addEventListener('mouseleave', () => {
-      console.log('Full Calendar: mouse left toast, resuming close timer.');
       startTimer();
     });
   }, delay);
@@ -776,24 +847,14 @@ export function getMilestoneCards(): MilestoneCard[] {
 }
 
 export async function triggerDevMilestoneIfActive(): Promise<void> {
-  console.log('Full Calendar: triggerDevMilestoneIfActive called');
   try {
     const settings = PluginState.getSettings();
-    console.log(
-      'Full Calendar: settings.dev value is:',
-      settings.dev,
-      'type:',
-      typeof settings.dev
-    );
     if (settings.dev === 1 || settings.dev === '1') {
-      console.log("Full Calendar: dev mode matches 1 or '1', ensuring state");
       const state = ensureMilestonesState();
       state.unlockedAt['devMilestone'] = Date.now();
       await PluginState.persistData();
-      console.log('Full Calendar: milestone unlocked, finding definition');
       const definition = MILESTONE_DEFINITIONS.find(d => d.id === 'devMilestone');
       if (definition) {
-        console.log('Full Calendar: found definition, queueing toast banner');
         queueMilestoneToast(
           {
             id: 'devMilestone',
@@ -805,8 +866,6 @@ export async function triggerDevMilestoneIfActive(): Promise<void> {
       } else {
         console.warn('Full Calendar: definition for devMilestone not found!');
       }
-    } else {
-      console.log("Full Calendar: dev mode NOT active (settings.dev is not 1 or '1')");
     }
   } catch (error) {
     console.warn('Full Calendar: failed to trigger developer milestone.', error);

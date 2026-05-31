@@ -1261,3 +1261,15 @@
   100% { transform: translateY(0px); }
 }
 
+/* Gray out unachieved milestones in the settings page */
+.ofc-milestone-card.is-locked {
+  opacity: 0.6;
+  filter: grayscale(100%);
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.ofc-milestone-card.is-locked:hover {
+  opacity: 0.85;
+  filter: grayscale(40%);
+}
+

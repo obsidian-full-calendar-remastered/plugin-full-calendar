@@ -32,7 +32,20 @@ Whether you're scheduling in [Local](../calendars/local.md) or [Daily Note](../c
 
 ## Achievement Notifications
 
-When your hard work pays off and a milestone unlocks, you will be celebrated with a non-blocking toast notification. If you unlock multiple milestones simultaneously, they elegantly queue and display in sequence, ensuring you never miss a reward.
+When your hard work pays off and a milestone unlocks, you will be celebrated with a premium glassmorphic toast notification. 
+- **Actual Milestone Title**: The toast displays the unlocked milestone's custom title on the first line and its description on the second line.
+- **Smart Timer**: Achievements stay on screen for 8 seconds.
+- **Pause-on-Hover**: Hovering your cursor over the toast pauses the auto-dismiss timer, letting you read or click at your own pace. Moving the cursor away resumes the countdown.
+- **Support Footer**: A conversion-optimized footer is embedded inside each toast with quick actions to "Sponsor" FCR or "See Financial Goal" on our sustainability page.
+- **Queue System**: If you unlock multiple milestones concurrently, they queue and display in clean succession.
+
+## Advanced Milestone Tiers & Locked Visuals
+
+To support long-term productivity and cover the entire development lifecycle, the plugin comes equipped with 12 advanced, high-tier milestone achievements (such as *Sabbath Champion*, *Time Overlord*, *Chronicle Sovereign*, etc.) alongside early-tier challenges.
+
+To make progress clear:
+- **Grayed-out Unachieved Goals**: Milestone cards that you have not yet achieved are visually grayed out with a `0.6` opacity and grayscale filter to declutter your dashboard.
+- **Interactive Previews**: Hovering over any locked milestone card smoothly restores its color and raises opacity, allowing you to easily read the targets and descriptions.
 
 !!! note "Under the Hood"
     Milestones are strictly read-only from the UI. Your unlock states and counters safely persist within the plugin's settings data, and your progress is dynamically computed from this secure state every time the dashboard renders. For technical details, see the [Milestones Architecture](../../architecture/system/features/milestones-architecture.md).

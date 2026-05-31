@@ -32,8 +32,9 @@ In accordance with SOLID and DRY principles, **[NotificationManager](reminders-a
 ## Synchronization Protocol
 
 ### Debouncing and Gates
+* **Global Master Toggle Gating**: The synchronization pipeline is strictly gated by both the global master reminders toggle (`settings.enableReminders`) and the companion-specific toggle (`fcrReminderCompanion.enabled`). If reminders are disabled globally, the companion sync pipeline is completely shut down.
 * **Offline Resiliency**: `FcrReminderManager` queries `/status` on the daemon loopback address before attempting a sync. If offline, the sync is gracefully skipped to avoid network overhead.
-* **Startup Liveness Retries**: Upon startup or activation, if the daemon is not immediately reachable, `FcrReminderManager` performs up to 5 status checks spaced 3 seconds apart to accommodate slow daemon startup times. If all attempts fail, it displays a bold warning toast surviving for 15 seconds to notify the user.
+* **Startup Liveness Retries and In-flight Aborts**: Upon startup or activation, if the daemon is not immediately reachable, `FcrReminderManager` performs up to 5 status checks spaced 3 seconds apart to accommodate slow daemon startup times. The background retry loop checks the active state before each attempt; if the integration is disabled or reminders are turned off mid-loop, the retry process is immediately aborted, blocking any eventual payload synchronization. If all active attempts fail, it displays a bold warning toast surviving for 15 seconds to notify the user.
 * **Debounced Syncing**: To prevent system lag during rapid file updates, cache-change triggers are debounced by `800ms`.
 
 ### The Synchronization Payload

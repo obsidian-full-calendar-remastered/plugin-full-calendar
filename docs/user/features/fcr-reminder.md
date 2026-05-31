@@ -43,7 +43,7 @@ Once configured, the synchronization happens completely in the background:
 - **Automatic Sync**: Full Calendar automatically synchronizes any event starting or triggering within the next 24 hours.
 - **Debounced Updates**: Whenever you create, modify, or delete events, the plugin debounces the update by `800ms` and pushes the updated reminder list to the daemon.
 - **Zero Configuration Reminders**: The daemon respects both your custom per-event reminders (`notify` frontmatter) and global default reminder time settings.
-- **Startup Checks & Retries**: When Obsidian loads or when you enable the companion, Full Calendar performs up to 5 status checks spaced 3 seconds apart. If the daemon remains offline after all attempts, a prominent, bold warning notification is displayed to inform you that native alerts will not fire.
+- **Startup Checks & Retries**: When Obsidian loads or when you enable the companion, Full Calendar performs up to 5 status checks spaced 3 seconds apart. If the companion integration is disabled or global reminders are turned off mid-run, background liveness checks and synchronization tasks are immediately and cleanly aborted. If the daemon remains offline after all attempts and the integration is still active, a prominent, bold warning notification is displayed to inform you that native alerts will not fire.
 
 ---
 

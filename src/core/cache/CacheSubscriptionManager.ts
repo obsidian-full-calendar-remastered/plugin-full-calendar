@@ -45,16 +45,20 @@ export class CacheSubscriptionManager {
     callback: UpdateViewCallback | ((state: TimeState) => void)
   ): void {
     switch (eventType) {
-      case 'update':
-        (
-          this.updateViewCallbacks as unknown as { remove: (cb: UpdateViewCallback) => void }
-        ).remove(callback as UpdateViewCallback);
+      case 'update': {
+        const index = this.updateViewCallbacks.indexOf(callback as UpdateViewCallback);
+        if (index > -1) {
+          this.updateViewCallbacks.splice(index, 1);
+        }
         break;
-      case 'time-tick':
-        (
-          this.timeTickCallbacks as unknown as { remove: (cb: (state: TimeState) => void) => void }
-        ).remove(callback as (state: TimeState) => void);
+      }
+      case 'time-tick': {
+        const index = this.timeTickCallbacks.indexOf(callback as (state: TimeState) => void);
+        if (index > -1) {
+          this.timeTickCallbacks.splice(index, 1);
+        }
         break;
+      }
     }
   }
 

@@ -96,7 +96,8 @@ export class FcrReminderManager {
 
   public update(settings: FullCalendarSettings): void {
     const companionSettings = this.getCompanionSettings();
-    const shouldBeRunning = companionSettings.enabled;
+    // Rigorously gate by both global reminders toggle and companion toggle
+    const shouldBeRunning = settings.enableReminders && companionSettings.enabled;
     const isRunning = this.updateCallback !== null;
 
     if (shouldBeRunning && !isRunning) {
@@ -110,6 +111,8 @@ export class FcrReminderManager {
         let online = false;
 
         for (let i = 0; i < attempts; i++) {
+          // Double-check active state before each check to abort early if disabled
+          if (!this.updateCallback) return;
           online = await this.checkDaemonStatus();
           if (online) {
             break;
@@ -119,9 +122,10 @@ export class FcrReminderManager {
           }
         }
 
-        if (online) {
+        // Final active state assertion before syncing
+        if (online && this.updateCallback) {
           await this.syncToCompanion();
-        } else {
+        } else if (!online && this.updateCallback) {
           const message =
             t('notices.fcrReminderCompanionOfflineBold') ||
             'WARNING: FCR Reminder Companion daemon is offline. You will NOT receive native desktop notifications.';
@@ -150,8 +154,11 @@ export class FcrReminderManager {
   }
 
   public async syncToCompanion(): Promise<void> {
+    const settings = this.getSettings();
     const companionSettings = this.getCompanionSettings();
-    if (!companionSettings.enabled) return;
+
+    // Rigorously gate sync by both general reminders and companion toggles
+    if (!settings.enableReminders || !companionSettings.enabled) return;
 
     // Check online status first
     const online = await this.checkDaemonStatus();

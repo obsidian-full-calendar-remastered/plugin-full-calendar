@@ -304,6 +304,9 @@ export class CalendarView extends ItemView implements ViewContext {
           }
           this.dateNavigation?.showViewContextMenu(mouseEvent, calendar);
         },
+        eventDragStop: (eventApi, mouseEvent) => {
+          void this.interactionHandler.handleEventDragStop(eventApi, mouseEvent);
+        },
         drop: (taskId, date, allDay) => this.interactionHandler.handleDrop(taskId, date, allDay)
       });
 

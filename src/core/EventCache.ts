@@ -328,6 +328,10 @@ export default class EventCache {
     return this.mutationHandler.scheduleTask(taskId, date, allDay);
   }
 
+  unscheduleTaskEvent(eventId: string): Promise<void> {
+    return this.mutationHandler.unscheduleTaskEvent(eventId);
+  }
+
   validateTaskSchedule(taskId: string, date: Date): Promise<{ isValid: boolean; reason?: string }> {
     return this.mutationHandler.validateTaskSchedule(taskId, date);
   }

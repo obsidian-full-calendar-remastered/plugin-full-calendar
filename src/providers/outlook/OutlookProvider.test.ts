@@ -130,7 +130,7 @@ describe('OutlookProvider createLinkedNote', () => {
     expect(file!.path).toBe('Calendar/Notes/Outlook Linked Note Event.md');
     expect(file!.content).toContain('# Outlook Linked Note Event');
     expect(file!.content).toContain('**Calendar**: My Outlook Calendar');
-    expect(file!.content).toContain('fc-event-uid: outlook-uid-123');
+    expect(file!.content).toContain('fc-event-uid: "outlook-uid-123"');
   });
 
   it('should use custom template when linkedNoteTemplate setting is provided', async () => {

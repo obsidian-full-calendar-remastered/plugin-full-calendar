@@ -34,10 +34,13 @@ export interface TaskBacklogProvider {
   getTaskBacklogInfo(): TaskBacklogInfo;
   getTaskBacklogItems(): Promise<TaskBacklogItem[]>;
   createTaskBacklogItem?(title: string): Promise<TaskBacklogItem>;
+  setTaskBacklogItemComplete?(taskId: string, isDone: boolean): Promise<boolean>;
   openTaskBacklogItem?(taskId: string): Promise<void>;
+  deleteTaskBacklogItem?(taskId: string): Promise<void>;
   refreshTaskBacklogItems?(): Promise<TaskBacklogItem[]>;
   ownsTaskId(taskId: string): boolean;
   scheduleTask(taskId: string, date: Date, allDay?: boolean): Promise<void>;
+  unscheduleTask?(taskId: string): Promise<void>;
   validateTaskSchedule?(taskId: string, date: Date): Promise<{ isValid: boolean; reason?: string }>;
 }
 

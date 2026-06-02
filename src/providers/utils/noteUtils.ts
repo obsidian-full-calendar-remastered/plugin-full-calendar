@@ -120,10 +120,15 @@ type PrintableAtom =
   | boolean
   | null;
 
+function escapeYamlString(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
 function stringifyYamlLine(k: string, v: PrintableAtom): string {
   if (v === null) return `${k}:`;
   if (Array.isArray(v)) return `${k}: [${v.join(',')}]`;
   if (typeof v === 'object') return `${k}: ${JSON.stringify(v)}`;
+  if (typeof v === 'string') return `${k}: ${escapeYamlString(v)}`;
   return `${k}: ${v}`;
 }
 

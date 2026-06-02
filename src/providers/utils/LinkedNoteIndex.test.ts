@@ -225,6 +225,93 @@ describe('LinkedNoteIndex', () => {
     expect(index.getFileForEvent('uid-resolved')).toBe(file);
   });
 
+  it('waits for startup hydration before resolving a linked note file', async () => {
+    const file = createMockFile('events/async-resolved-note.md');
+    let metadataReady = false;
+
+    mockWorkspace.onLayoutReady.mockImplementation(() => undefined);
+    mockWaitForMetadata.mockImplementation(() => new Promise(() => undefined));
+    mockVault.getMarkdownFiles.mockReturnValue([file]);
+
+    mockMetadataCache.getFileCache.mockImplementation(() => {
+      if (!metadataReady) {
+        return null;
+      }
+      return {
+        frontmatter: {
+          'fc-calendar-id': calendarId,
+          'fc-event-uid': 'uid-async-resolved'
+        }
+      };
+    });
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    let resolved = false;
+    const filePromise = index.getFileForEventAfterHydration('uid-async-resolved').then(result => {
+      resolved = true;
+      return result;
+    });
+    await Promise.resolve();
+
+    expect(resolved).toBe(false);
+
+    metadataReady = true;
+    triggerEvent('resolved');
+
+    await expect(filePromise).resolves.toBe(file);
+    expect(resolved).toBe(true);
+  });
+
+  it('does not treat the index as hydrated while any linked-note files are unresolved', async () => {
+    const indexedFile = createMockFile('events/indexed-note.md');
+    const delayedFile = createMockFile('events/delayed-note.md');
+    let delayedMetadataReady = false;
+
+    mockWorkspace.onLayoutReady.mockImplementation(() => undefined);
+    mockWaitForMetadata.mockImplementation(() => new Promise(() => undefined));
+    mockVault.getMarkdownFiles.mockReturnValue([indexedFile, delayedFile]);
+    mockMetadataCache.getFileCache.mockImplementation((file: TFile) => {
+      if (file.path === indexedFile.path) {
+        return {
+          frontmatter: {
+            'fc-calendar-id': calendarId,
+            'fc-event-uid': 'uid-indexed'
+          }
+        };
+      }
+      if (file.path === delayedFile.path && delayedMetadataReady) {
+        return {
+          frontmatter: {
+            'fc-calendar-id': calendarId,
+            'fc-event-uid': 'uid-delayed'
+          }
+        };
+      }
+      return null;
+    });
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    let resolved = false;
+    const filePromise = index.getFileForEventAfterHydration('uid-delayed').then(result => {
+      resolved = true;
+      return result;
+    });
+    await Promise.resolve();
+
+    expect(index.getFileForEvent('uid-indexed')).toBe(indexedFile);
+    expect(resolved).toBe(false);
+
+    delayedMetadataReady = true;
+    triggerEvent('resolved');
+
+    await expect(filePromise).resolves.toBe(delayedFile);
+    expect(resolved).toBe(true);
+  });
+
   it('indexes linked-note files created in the watched directory', () => {
     const index = new LinkedNoteIndex(mockApp, calendarId);
     index.initialize();
@@ -326,6 +413,23 @@ describe('LinkedNoteIndex', () => {
     expect(index.getFileForEvent('uid-recur', '2026-05-21')).toBe(fileMaster);
     // query with no instance should match the master note
     expect(index.getFileForEvent('uid-recur')).toBe(fileMaster);
+  });
+
+  it('indexes existing linked notes whose UID frontmatter was parsed as a number', () => {
+    const file = createMockFile('events/numeric-uid.md');
+
+    mockVault.getMarkdownFiles.mockReturnValue([file]);
+    mockMetadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        'fc-calendar-id': calendarId,
+        'fc-event-uid': 1234567890
+      }
+    });
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    expect(index.getFileForEvent('1234567890')).toBe(file);
   });
 
   it('should scrub stale mappings pointing to the same path but a different key during reactive updates', () => {

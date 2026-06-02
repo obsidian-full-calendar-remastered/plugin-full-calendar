@@ -416,6 +416,35 @@ export class GoogleTasksProvider
     };
   }
 
+  async deleteTaskBacklogItem(taskId: string): Promise<void> {
+    const parts = taskId.split('::');
+    const taskUid = parts.length === 2 ? parts[1] : taskId;
+    await this.deleteEvent({ persistentId: taskUid });
+  }
+
+  async setTaskBacklogItemComplete(taskId: string, isDone: boolean): Promise<boolean> {
+    const parts = taskId.split('::');
+    const taskUid = parts[1];
+    const token = await this.getToken();
+    if (!token || !taskUid) return false;
+
+    try {
+      const getUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+      const task = await makeAuthenticatedRequest<GoogleTaskApiItem>(token, getUrl);
+
+      task.status = isDone ? 'completed' : 'needsAction';
+      task.completed = isDone ? DateTime.now().toISO() : undefined;
+
+      const putUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+      await makeAuthenticatedRequest(token, putUrl, 'PUT', task);
+      PluginState.getProviderRegistry().refreshBacklogViews();
+      return true;
+    } catch (e) {
+      console.error('Error toggling Google Tasks backlog item completion state:', e);
+      return false;
+    }
+  }
+
   ownsTaskId(taskId: string): boolean {
     const parts = taskId.split('::');
     return parts.length === 2 && parts[0] === this.source.id;
@@ -434,6 +463,20 @@ export class GoogleTasksProvider
     const task = await makeAuthenticatedRequest<GoogleTaskApiItem>(token, getUrl);
 
     task.due = dueString;
+
+    const putUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+    await makeAuthenticatedRequest(token, putUrl, 'PUT', task);
+  }
+
+  async unscheduleTask(taskId: string): Promise<void> {
+    const parts = taskId.split('::');
+    const taskUid = parts.length === 2 ? parts[1] : taskId;
+    const token = await this.getToken();
+    if (!token) throw new Error('Cannot unschedule Google Task: not authenticated.');
+
+    const getUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
+    const task = await makeAuthenticatedRequest<GoogleTaskApiItem>(token, getUrl);
+    task.due = undefined;
 
     const putUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
     await makeAuthenticatedRequest(token, putUrl, 'PUT', task);

@@ -15,16 +15,15 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: "22.x"
 
-            - uses: pnpm/action-setup@v2
+            - uses: pnpm/action-setup@v6
               with:
-                  version: 11
                   run_install: false
 
             - name: Install dependencies

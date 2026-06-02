@@ -455,6 +455,73 @@ END:VCALENDAR`;
     expect(body).not.toContain('VALUE=DATE:20260615');
   });
 
+  it('returns a scheduled CalDAV task to the backlog by removing dates', async () => {
+    const mockInboxPropfind = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/task-1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const mockIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-1
+SUMMARY:Schedule Me
+STATUS:NEEDS-ACTION
+DTSTART;TZID=Europe/Amsterdam:20260615T143000
+DUE;TZID=Europe/Amsterdam:20260615T153000
+END:VTODO
+END:VCALENDAR`;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockInboxPropfind)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () => Promise.resolve(mockIcs)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 204,
+        statusText: 'No Content'
+      } as Response);
+
+    await provider.unscheduleTask('task-1');
+
+    const body = mockObsidianFetch.mock.calls[2][1]?.body;
+    if (typeof body !== 'string') {
+      throw new Error('Expected CalDAV PUT body to be a string');
+    }
+    expect(body).not.toContain('DTSTART');
+    expect(body).not.toContain('DUE');
+    await expect(provider.getUndatedTasks()).resolves.toEqual([
+      expect.objectContaining({ uid: 'task-1', title: 'Schedule Me' })
+    ]);
+  });
+
+  it('deletes an unscheduled CalDAV backlog task', async () => {
+    mockObsidianFetch.mockResolvedValueOnce({
+      status: 204,
+      statusText: 'No Content'
+    } as Response);
+
+    await provider.deleteTaskBacklogItem('caldav::caldav_1::task-1');
+
+    expect(mockObsidianFetch).toHaveBeenCalledWith(
+      'https://example.com/caldav/user/calendar/events/task-1.ics',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
   it('should preserve unique sync keys for recurring series and recurrence exceptions', async () => {
     const mockPropfindResponse = `
       <d:multistatus xmlns:d="DAV:">
@@ -881,7 +948,7 @@ END:VCALENDAR
       expect(file!.path).toBe('Calendar/Notes/CalDAV Linked Note Event.md');
       expect(file!.content).toContain('# CalDAV Linked Note Event');
       expect(file!.content).toContain('**Calendar**: Test Calendar');
-      expect(file!.content).toContain('fc-event-uid: caldav-uid-999');
+      expect(file!.content).toContain('fc-event-uid: "caldav-uid-999"');
     });
 
     it('should use custom template when linkedNoteTemplate setting is provided', async () => {

@@ -1,4 +1,4 @@
-import { ItemView, setIcon, WorkspaceLeaf } from 'obsidian';
+import { ItemView, Menu, setIcon, WorkspaceLeaf } from 'obsidian';
 import { Draggable } from '@fullcalendar/interaction';
 import FullCalendarPlugin from '../../main';
 import { PluginState } from '../../core/PluginState';
@@ -150,10 +150,16 @@ export class TaskBacklogView extends ItemView {
   }
 
   private updateDisplayedTasks(): void {
-    this.filteredTasks = this.filterTasks(this.tasks, this.searchQuery);
+    this.filteredTasks = this.filterTasks(this.getOpenTasks(), this.searchQuery);
+    const totalPages = Math.max(1, Math.ceil(this.filteredTasks.length / this.TASKS_PER_PAGE));
+    this.currentPage = Math.min(this.currentPage, totalPages);
     const startIndex = (this.currentPage - 1) * this.TASKS_PER_PAGE;
     const endIndex = startIndex + this.TASKS_PER_PAGE;
     this.displayedTasks = this.filteredTasks.slice(startIndex, endIndex);
+  }
+
+  private getOpenTasks(): ProviderTaskBacklogItem[] {
+    return this.tasks.filter(task => !task.completed);
   }
 
   private filterTasks(tasks: ProviderTaskBacklogItem[], query: string): ProviderTaskBacklogItem[] {
@@ -199,9 +205,10 @@ export class TaskBacklogView extends ItemView {
     }
     this.renderSearchBar(header);
 
+    const openTaskCount = this.getOpenTasks().length;
     const countText = this.searchQuery.trim()
-      ? `${this.filteredTasks.length} of ${this.tasks.length} unscheduled tasks`
-      : `${this.tasks.length} unscheduled ${this.tasks.length === 1 ? 'task' : 'tasks'}`;
+      ? `${this.filteredTasks.length} of ${openTaskCount} unscheduled tasks`
+      : `${openTaskCount} unscheduled ${openTaskCount === 1 ? 'task' : 'tasks'}`;
     header.createDiv({
       text: countText,
       cls: 'tasks-backlog-count'
@@ -442,6 +449,9 @@ export class TaskBacklogView extends ItemView {
           'data-task-id': task.id
         }
       });
+      taskItem.addEventListener('contextmenu', event => {
+        this.showTaskContextMenu(event, task);
+      });
 
       const titleRow = taskItem.createDiv({ cls: 'tasks-backlog-title-row' });
       const checkbox = titleRow.createEl('input', {
@@ -449,7 +459,14 @@ export class TaskBacklogView extends ItemView {
         attr: { type: 'checkbox' }
       });
       checkbox.checked = task.completed;
-      checkbox.disabled = true;
+      checkbox.disabled = typeof task.provider.setTaskBacklogItemComplete !== 'function';
+      checkbox.addEventListener('click', event => {
+        event.stopPropagation();
+      });
+      checkbox.addEventListener('change', event => {
+        event.stopPropagation();
+        void this.setTaskCompleted(task, checkbox);
+      });
 
       titleRow.createSpan({
         text: task.title,
@@ -481,6 +498,89 @@ export class TaskBacklogView extends ItemView {
     this.draggable = new Draggable(tasksList, {
       itemSelector: '.tasks-backlog-item'
     });
+  }
+
+  private showTaskContextMenu(event: MouseEvent, task: ProviderTaskBacklogItem): void {
+    event.preventDefault();
+    const menu = new Menu();
+    let hasActions = false;
+
+    if (task.provider.openTaskBacklogItem) {
+      menu.addItem(item => {
+        item
+          .setTitle(t('ui.view.contextMenu.goToNote'))
+          .setIcon('file-text')
+          .onClick(() => {
+            void task.provider.openTaskBacklogItem?.(task.id);
+          });
+      });
+      hasActions = true;
+    }
+
+    if (task.provider.deleteTaskBacklogItem) {
+      menu.addItem(item => {
+        item
+          .setTitle(t('ui.view.contextMenu.delete'))
+          .setIcon('trash-2')
+          .onClick(() => {
+            void this.deleteTask(task);
+          });
+      });
+      hasActions = true;
+    }
+
+    if (!hasActions) {
+      menu.addItem(item => {
+        item.setTitle(t('ui.view.contextMenu.noActions')).setIcon('info').setDisabled(true);
+      });
+    }
+
+    menu.showAtMouseEvent(event);
+  }
+
+  private async deleteTask(task: ProviderTaskBacklogItem): Promise<void> {
+    if (!task.provider.deleteTaskBacklogItem) {
+      return;
+    }
+
+    try {
+      await task.provider.deleteTaskBacklogItem(task.id);
+      await this.loadTasks();
+      this.render();
+    } catch (err) {
+      console.warn('[TaskBacklogView] Failed to delete task.', err);
+    }
+  }
+
+  private async setTaskCompleted(
+    task: ProviderTaskBacklogItem,
+    checkbox: HTMLInputElement
+  ): Promise<void> {
+    if (!task.provider.setTaskBacklogItemComplete) {
+      checkbox.checked = task.completed;
+      return;
+    }
+
+    checkbox.disabled = true;
+    const nextCompleted = checkbox.checked;
+    const previousCompleted = task.completed;
+
+    try {
+      const success = await task.provider.setTaskBacklogItemComplete(task.id, nextCompleted);
+      if (!success) {
+        checkbox.checked = previousCompleted;
+        checkbox.disabled = false;
+        return;
+      }
+
+      task.completed = nextCompleted;
+      await this.loadTasks();
+      this.render();
+    } catch (err) {
+      console.warn('[TaskBacklogView] Failed to update task completion.', err);
+      checkbox.checked = previousCompleted;
+      checkbox.disabled = false;
+    }
   }
 
   private renderPaginationControls(container: HTMLElement): void {

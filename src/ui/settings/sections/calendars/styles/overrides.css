@@ -11,7 +11,7 @@
 }
 
 .is-phone .fc {
-    height: calc(100% - 4rem);
+    height: 100%;
 }
 
 .is-phone .ofc-calendar-shell .fc .fc-scrollgrid,

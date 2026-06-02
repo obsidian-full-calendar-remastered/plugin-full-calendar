@@ -49,7 +49,7 @@ If this project has helped you consider supporting:
 
 ## Installation
 
-Add to your obsidian wall from the [Obsidian Plugin Store](https://community.obsidian.md/plugins/full-calendar-remastered).
+Add to your obsidian vault from the [Obsidian Plugin Store](https://community.obsidian.md/plugins/full-calendar-remastered).
 
 
 ## Contributors ✨

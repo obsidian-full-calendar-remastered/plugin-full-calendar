@@ -707,7 +707,10 @@
 /* Live Preview Event Decorations styling */
 
 /* Override CodeMirror/Obsidian list indent styles to allow full event pill alignment without double checkboxes/bullets */
-.fc-lp-line-override {
+.markdown-source-view.mod-cm6 .cm-content .cm-line.fc-lp-line-override {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding-left: 0;
   /* text-indent: 0; */
   margin-left: 0;
@@ -720,7 +723,7 @@
 }
 
 .fc-lp-inline-event-wrapper {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   background-color: var(--background-secondary-alt);
@@ -730,12 +733,18 @@
   padding: 4px 10px;
   margin: 0;
   width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   box-sizing: border-box;
   font-family: inherit;
   line-height: 1.3;
   vertical-align: top;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   cursor: pointer;
+}
+
+.markdown-source-view.mod-cm6 .cm-content .fc-lp-hidden-text {
+  display: none;
 }
 
 .fc-lp-inline-event-wrapper:hover {

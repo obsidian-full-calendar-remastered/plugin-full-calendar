@@ -161,7 +161,7 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
             completed = event.event.completed !== false;
           }
 
-          const widget = Decoration.replace({
+          const widget = Decoration.widget({
             widget: new InlineEventWidget(
               line.text,
               event.id,
@@ -186,7 +186,12 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
               () => {
                 launchEditModal(PluginState.getPlugin(), event.id);
               }
-            )
+            ),
+            side: -1
+          });
+
+          const hideTextMark = Decoration.mark({
+            class: 'fc-lp-hidden-text'
           });
 
           // Collect line-level override decoration
@@ -195,17 +200,22 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
             to: line.from,
             value: Decoration.line({
               attributes: {
-                class: 'fc-lp-line-override',
-                style:
-                  'padding-left: 0px !important; text-indent: 0px !important; margin-left: 0px !important; margin-top: 0px !important; margin-bottom: 0px !important; padding-top: 0px !important; padding-bottom: 0px !important; min-height: 0px !important; line-height: 1.2 !important;'
+                class: 'fc-lp-line-override'
               }
             })
           });
 
-          // Collect the replace decoration
+          // Collect the mark decoration to hide original text
           decos.push({
             from: line.from,
             to: line.to,
+            value: hideTextMark
+          });
+
+          // Collect the widget decoration for the event card
+          decos.push({
+            from: line.from,
+            to: line.from,
             value: widget
           });
         }

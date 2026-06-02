@@ -38,14 +38,10 @@ export async function createLinkedNoteForProvider({
   linkedNoteIndex: LinkedNoteIndex;
   instanceDate?: string;
 }): Promise<TFile | null> {
-<<<<<<< HEAD
-  const existingFile = linkedNoteIndex.getFileForEvent(event.uid || event.id || '', instanceDate);
-=======
   const existingFile = await linkedNoteIndex.getFileForEventAfterHydration(
-    event.uid || '',
+    event.uid || event.id || '',
     instanceDate
   );
->>>>>>> origin/main
   if (existingFile) {
     return existingFile;
   }
@@ -144,13 +140,8 @@ export async function openOrCreateLinkedNote(
 
   // 2. Check if note already exists
   if (linkedNoteProvider.linkedNoteIndex) {
-<<<<<<< HEAD
-    const existingFile = linkedNoteProvider.linkedNoteIndex.getFileForEvent(
-      event.uid || event.id || '',
-=======
     const existingFile = await linkedNoteProvider.linkedNoteIndex.getFileForEventAfterHydration(
-      event.uid || '',
->>>>>>> origin/main
+      event.uid || event.id || '',
       instanceDate
     );
     if (existingFile) {

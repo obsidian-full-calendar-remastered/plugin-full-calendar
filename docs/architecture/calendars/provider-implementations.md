@@ -58,7 +58,7 @@ Uses direct `REPORT`/`GET` flow with robust XML namespace handling and fallback 
 
 ### Google Provider
 
-Uses OAuth-backed authenticated requests, handles recurrence cancellation edge cases (`cancelled` instances merged into skip dates), and keeps provider-facing payload conversion isolated in parser/auth modules.
+Uses OAuth-backed authenticated requests, handles recurrence exception/override edge cases (both modified and cancelled instances, for both timed and all-day occurrences, are parsed and merged into the master event's `skipDates`), and keeps provider-facing payload conversion isolated in parser/auth modules.
 
 **Location & Description Mapping**: Directly maps the canonical `location` and `description` string properties to/from Google's native API event resource fields.
 

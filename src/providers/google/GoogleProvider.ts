@@ -164,25 +164,29 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
       );
       if (!Array.isArray(data.items)) return [];
 
-      const cancellations = new Map<string, Set<string>>();
+      const skipDatesMap = new Map<string, Set<string>>();
       for (const gEvent of data.items) {
         if (
-          gEvent.status === 'cancelled' &&
           gEvent.recurringEventId &&
           gEvent.originalStartTime &&
-          gEvent.originalStartTime.dateTime
+          (gEvent.originalStartTime.dateTime || gEvent.originalStartTime.date)
         ) {
           const parentId = gEvent.recurringEventId;
-          if (!cancellations.has(parentId)) {
-            cancellations.set(parentId, new Set());
+          if (!skipDatesMap.has(parentId)) {
+            skipDatesMap.set(parentId, new Set());
           }
-          const cancelledDate = DateTime.fromISO(gEvent.originalStartTime.dateTime, {
-            zone: gEvent.originalStartTime.timeZone || 'utc'
-          }).toISODate();
-          if (cancelledDate) {
-            const parentCancellations = cancellations.get(parentId);
-            if (parentCancellations) {
-              parentCancellations.add(cancelledDate);
+          let skipDate: string | null = null;
+          if (gEvent.originalStartTime.dateTime) {
+            skipDate = DateTime.fromISO(gEvent.originalStartTime.dateTime, {
+              zone: gEvent.originalStartTime.timeZone || 'utc'
+            }).toISODate();
+          } else if (gEvent.originalStartTime.date) {
+            skipDate = gEvent.originalStartTime.date;
+          }
+          if (skipDate) {
+            const parentSkipDates = skipDatesMap.get(parentId);
+            if (parentSkipDates) {
+              parentSkipDates.add(skipDate);
             }
           }
         }
@@ -197,9 +201,9 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
           if (
             (rawEvent.type === 'rrule' || rawEvent.type === 'recurring') &&
             rawEvent.uid &&
-            cancellations.has(rawEvent.uid)
+            skipDatesMap.has(rawEvent.uid)
           ) {
-            const datesToSkip = cancellations.get(rawEvent.uid);
+            const datesToSkip = skipDatesMap.get(rawEvent.uid);
             if (!datesToSkip) {
               return null;
             }

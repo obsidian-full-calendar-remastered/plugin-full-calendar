@@ -147,6 +147,7 @@ nav:
                 - Interactions and Gestures: user/features/interactions.md
                 - Milestones and Progress: user/features/milestones.md
                 - Reminders and Notifications: user/features/reminders.md
+                - Weather Forecasts: user/features/weather.md
                 - Status Bar Integration: user/features/statusbar.md
                 - Internationalization: user/features/i18n.md
                 - Link Notes to Remote Events: user/features/event-linked-notes.md
@@ -217,6 +218,7 @@ nav:
                 - RRULE Timezone Date-Shift Fix: architecture/dev-logs/devlog_rrule_timezone_patch.md
     - Reference:
           - Data Integrity and File Modifications: user/reference/data_integrity.md
+          - Outbound Network Requests: user/reference/network_requests.md
     - Privacy and Terms:
           - Privacy Policy: user/legal/privacy-policy.md
           - Terms of Service: user/legal/terms-of-service.md

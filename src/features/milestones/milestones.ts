@@ -1,3 +1,4 @@
+import { setIcon } from 'obsidian';
 import { PluginState } from '../../core/PluginState';
 import type { CalendarInfo } from '../../types/calendar_settings';
 import type { OFCEvent } from '../../types/schema';
@@ -626,6 +627,11 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
     const toast = doc.createElement('div');
     toast.className = 'ofc-milestone-toast';
 
+    const closeBtn = doc.createElement('button');
+    closeBtn.className = 'ofc-milestone-toast-close';
+    closeBtn.setAttribute('aria-label', 'Close notification');
+    setIcon(closeBtn, 'x');
+
     const titleEl = doc.createElement('div');
     titleEl.className = 'ofc-milestone-toast-title';
     titleEl.textContent = milestone.title;
@@ -634,6 +640,7 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
     bodyEl.className = 'ofc-milestone-toast-body';
     bodyEl.textContent = milestone.description;
 
+    toast.appendChild(closeBtn);
     toast.appendChild(titleEl);
     toast.appendChild(bodyEl);
 
@@ -677,16 +684,25 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
 
     let closeTimeout: number | null = null;
     let removeTimeout: number | null = null;
+    let isClosing = false;
+
+    const closeToast = () => {
+      if (isClosing) return;
+      isClosing = true;
+      stopTimer();
+      toast.classList.add('ofc-milestone-toast-hide');
+      removeTimeout = window.setTimeout(() => {
+        toast.remove();
+        if (!root.hasChildNodes()) {
+          root.remove();
+        }
+      }, 280);
+    };
 
     const startTimer = () => {
+      if (isClosing) return;
       closeTimeout = window.setTimeout(() => {
-        toast.classList.add('ofc-milestone-toast-hide');
-        removeTimeout = window.setTimeout(() => {
-          toast.remove();
-          if (!root.hasChildNodes()) {
-            root.remove();
-          }
-        }, 280);
+        closeToast();
       }, duration);
     };
 
@@ -695,12 +711,14 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
         window.clearTimeout(closeTimeout);
         closeTimeout = null;
       }
-      if (removeTimeout !== null) {
+      if (removeTimeout !== null && !isClosing) {
         window.clearTimeout(removeTimeout);
         removeTimeout = null;
       }
       // Safely ensure the hide class is removed if mouse enters during the fade-out phase
-      toast.classList.remove('ofc-milestone-toast-hide');
+      if (!isClosing) {
+        toast.classList.remove('ofc-milestone-toast-hide');
+      }
     };
 
     // Start initial close timer
@@ -708,11 +726,19 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
 
     // Register hover pause listeners
     toast.addEventListener('mouseenter', () => {
+      if (isClosing) return;
       stopTimer();
     });
 
     toast.addEventListener('mouseleave', () => {
+      if (isClosing) return;
       startTimer();
+    });
+
+    // Close button event listener
+    closeBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      closeToast();
     });
   }, delay);
 }

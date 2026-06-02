@@ -478,17 +478,12 @@
   pointer-events: auto;
   width: 360px;
   max-width: calc(100vw - 48px);
-  border-radius: 14px;
-  padding: 16px 18px;
-  background: linear-gradient(135deg, rgba(30, 27, 42, 0.96), rgba(15, 12, 22, 0.99));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 215, 0, 0.38);
-  box-shadow: 
-    0 12px 36px rgba(0, 0, 0, 0.55), 
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-    0 0 24px rgba(255, 215, 0, 0.18);
-  color: #ffffff;
+  border-radius: 8px;
+  padding: 16px 36px 16px 18px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: var(--shadow-l);
+  color: var(--text-normal);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -506,8 +501,7 @@
   left: 0;
   width: 4px;
   height: 100%;
-  background: linear-gradient(180deg, #ffd700, #ff8c00, #ff007f);
-  box-shadow: 0 0 10px #ffd700;
+  background: linear-gradient(180deg, var(--text-accent), var(--interactive-accent));
 }
 
 /* Shimmer reflection sweep animation */
@@ -518,7 +512,7 @@
   left: -150%;
   width: 50%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
   transform: skewX(-25deg);
   animation: ofc-toast-shimmer 4s infinite ease-in-out;
 }
@@ -528,8 +522,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  color: #ffd700;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+  color: var(--text-accent);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -543,9 +536,30 @@
 
 .ofc-milestone-toast-body {
   font-size: var(--font-ui-medium, 13px);
-  color: #e0e0ea;
+  color: var(--text-normal);
   line-height: 1.45;
   font-weight: 500;
+}
+
+.ofc-milestone-toast-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.ofc-milestone-toast-close:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
 }
 
 .ofc-milestone-toast-hide {
@@ -588,7 +602,7 @@
 .ofc-milestone-toast-footer {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--background-modifier-border);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -596,7 +610,7 @@
 
 .ofc-milestone-toast-footer-desc {
   font-size: var(--font-ui-small, 12px);
-  color: #a0a0b8;
+  color: var(--text-muted);
   line-height: 1.35;
   font-weight: 500;
 }
@@ -621,27 +635,23 @@
 }
 
 .ofc-milestone-toast-btn.btn-primary {
-  background: #ffd700;
-  color: #0b0914;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .ofc-milestone-toast-btn.btn-primary:hover {
-  background: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
+  background: var(--interactive-accent-hover);
 }
 
 .ofc-milestone-toast-btn.btn-secondary {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: var(--btn-background, var(--background-secondary-alt));
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
 }
 
 .ofc-milestone-toast-btn.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.35);
-  transform: translateY(-1px);
+  background: var(--btn-background-hover, var(--background-secondary));
+  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
 }
 
 .ofc-nlp-preview-description {

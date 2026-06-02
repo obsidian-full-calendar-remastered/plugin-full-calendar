@@ -8,17 +8,18 @@ import { PluginState } from '../../../core/PluginState';
 import { createElement } from 'react';
 import { Setting, Modal } from 'obsidian';
 import * as ReactDOM from 'react-dom/client';
-import FullCalendarPlugin from '../../../main';
 import { CategorySettingsManager } from './CategorySetting';
 import { bulkUpdateCategories, bulkRemoveCategories } from '../bulkCategorization';
 import { t } from '../../i18n/i18n';
 import { createDescWithDocs } from '../../../ui/settings/docsLinks';
+import { FullCalendarSettingTab } from '../../../ui/settings/SettingsTab';
 
 export function renderCategorizationSettings(
   containerEl: HTMLElement,
-  plugin: FullCalendarPlugin,
+  tab: FullCalendarSettingTab,
   rerender: () => void
 ): void {
+  const plugin = tab.plugin;
   new Setting(containerEl)
     .setName(t('settings.categorization.title'))
     .setHeading()
@@ -96,6 +97,7 @@ export function renderCategorizationSettings(
   if (PluginState.getSettings().enableAdvancedCategorization) {
     const categoryDiv = containerEl.createDiv();
     const categoryRoot = ReactDOM.createRoot(categoryDiv);
+    tab.registerReactRoot(categoryRoot);
 
     const allCategoriesInVault = PluginState.getCache().getAllCategories();
     const configuredCategoryNames = new Set(

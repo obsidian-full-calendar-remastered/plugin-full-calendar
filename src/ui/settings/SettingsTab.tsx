@@ -316,6 +316,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
   private calendarSettingsRef: React.RefObject<CalendarSettingsRef | null> =
     createRef<CalendarSettingsRef>();
   registry: ProviderRegistry;
+  private reactRoots: ReactDOM.Root[] = [];
 
   constructor(app: App, plugin: FullCalendarPlugin, registry: ProviderRegistry) {
     super(app, plugin);
@@ -323,11 +324,27 @@ export class FullCalendarSettingTab extends PluginSettingTab {
     this.registry = registry;
   }
 
+  public registerReactRoot(root: ReactDOM.Root): void {
+    this.reactRoots.push(root);
+  }
+
+  public unmountReactRoots(): void {
+    this.reactRoots.forEach(root => {
+      try {
+        root.unmount();
+      } catch (e) {
+        console.warn('Full Calendar: Failed to unmount React root', e);
+      }
+    });
+    this.reactRoots = [];
+  }
+
   display(): void {
     this.renderSettings();
   }
 
   renderSettings(): void {
+    this.unmountReactRoots();
     void (async () => {
       this.containerEl.empty();
       if (this.showFullChangelog) {
@@ -354,6 +371,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
 
   private async _renderFullChangelog(): Promise<void> {
     const root = ReactDOM.createRoot(this.containerEl);
+    this.registerReactRoot(root);
     const { Changelog } = await import('./changelogs/Changelog');
     root.render(
       createElement(Changelog, {
@@ -679,7 +697,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
         renderRemindersSettings(containerEl, this.plugin, () => {
           this.renderSettings();
         });
-        renderWhatsNew(containerEl, () => {
+        renderWhatsNew(containerEl, this, () => {
           this.showFullChangelog = true;
           this.renderSettings();
         });
@@ -700,7 +718,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
         ]);
         renderCalendarManagement(
           containerEl,
-          this.plugin,
+          this,
           this.calendarSettingsRef as unknown as React.RefObject<CalendarSettingsRef>
         );
         break;
@@ -714,7 +732,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
         renderWorkspaceSettings(containerEl, this.plugin, () => {
           this.renderSettings();
         });
-        renderCategorizationSettings(containerEl, this.plugin, () => {
+        renderCategorizationSettings(containerEl, this, () => {
           this.renderSettings();
         });
         break;

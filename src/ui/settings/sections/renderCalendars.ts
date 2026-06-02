@@ -8,8 +8,7 @@ import { PluginState } from '../../../core/PluginState';
 import { Setting, TFolder } from 'obsidian';
 import * as ReactDOM from 'react-dom/client';
 import React, { createElement, RefObject } from 'react';
-import FullCalendarPlugin from '../../../main';
-import { addCalendarButton } from '../SettingsTab';
+import { addCalendarButton, FullCalendarSettingTab } from '../SettingsTab';
 import { CalendarSettings, CalendarSettingsRef } from './calendars/CalendarSetting';
 import { CalendarInfo } from '../../../types/calendar_settings';
 import { t } from '../../../features/i18n/i18n';
@@ -17,9 +16,10 @@ import { createDescWithDocs, createDocsLinksFragment } from '../docsLinks';
 
 export function renderCalendarManagement(
   containerEl: HTMLElement,
-  plugin: FullCalendarPlugin,
+  tab: FullCalendarSettingTab,
   calendarSettingsRef: RefObject<CalendarSettingsRef>
 ): void {
+  const plugin = tab.plugin;
   new Setting(containerEl)
     .setName(t('settings.calendars.linkedNotes.title'))
     .setHeading()
@@ -85,6 +85,7 @@ export function renderCalendarManagement(
   containerEl.createEl('hr', { cls: 'settings-view-new-divider' });
   const sourcesDiv = containerEl.createDiv();
   const root = ReactDOM.createRoot(sourcesDiv);
+  tab.registerReactRoot(root);
   root.render(
     createElement(CalendarSettings, {
       ref: calendarSettingsRef as React.Ref<CalendarSettings>,

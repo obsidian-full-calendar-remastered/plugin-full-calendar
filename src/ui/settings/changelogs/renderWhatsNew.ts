@@ -14,6 +14,7 @@ import { WhatsNewModal } from '../../modals/WhatsNewModal';
 import * as ReactDOM from 'react-dom/client';
 import { createElement } from 'react';
 import { VersionSection } from './Changelog';
+import { FullCalendarSettingTab } from '../SettingsTab';
 
 /**
  * Checks if the plugin version has changed and displays the "What's New" modal if necessary.
@@ -40,7 +41,11 @@ export function checkAndShowWhatsNew(plugin: FullCalendarPlugin): void {
   });
 }
 
-export function renderWhatsNew(containerEl: HTMLElement, onShowChangelog: () => void): void {
+export function renderWhatsNew(
+  containerEl: HTMLElement,
+  tab: FullCalendarSettingTab,
+  onShowChangelog: () => void
+): void {
   const whatsNewContainer = containerEl.createDiv('full-calendar-whats-new-container');
   const latestVersion = changelogData[0];
 
@@ -60,6 +65,7 @@ export function renderWhatsNew(containerEl: HTMLElement, onShowChangelog: () => 
 
   const whatsNewList = whatsNewContainer.createDiv('full-calendar-whats-new-list');
   const root = ReactDOM.createRoot(whatsNewList);
+  tab.registerReactRoot(root);
   root.render(
     createElement(VersionSection, {
       version: latestVersion,

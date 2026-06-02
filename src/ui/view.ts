@@ -142,7 +142,6 @@ export class CalendarView extends ItemView implements ViewContext {
    */
   onOpen(): Promise<void> {
     return (async () => {
-      await PluginState.loadSettings();
       if (!PluginState.getCache()) {
         showNotice(t('ui.view.errors.cacheNotLoaded'));
         return;

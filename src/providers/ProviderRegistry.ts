@@ -243,34 +243,6 @@ export class ProviderRegistry {
       if (instance.initialize) {
         instance.initialize();
       }
-
-      // Fetch events from the newly added provider and add them to cache
-      if (this.cache && this.cache.initialized) {
-        try {
-          const rawEvents = await instance.getEvents();
-
-          // Add events to cache
-          for (const [rawEvent, location] of rawEvents) {
-            const event = this.cache.enhancer.enhance(rawEvent);
-            const id = this.generateId();
-            this.cache.store.add({
-              calendarId: settingsId,
-              location,
-              id,
-              event
-            });
-            this.addMapping(event, settingsId, id);
-          }
-
-          // Add the provider to cache.calendars so getAllEvents() can see it
-          this.cache.calendars.set(settingsId, instance);
-
-          // Trigger cache resync to update UI
-          this.cache.resync();
-        } catch (error) {
-          console.error(`Full Calendar: Failed to fetch events from new provider:`, error);
-        }
-      }
     }
   }
 

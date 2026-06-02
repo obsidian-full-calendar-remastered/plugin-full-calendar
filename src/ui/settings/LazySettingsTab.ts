@@ -57,6 +57,7 @@ export class LazySettingsTab extends PluginSettingTab {
 
   hide(): void {
     // Only call hide if the tab has been loaded
+    this.actualTab?.unmountReactRoots();
     this.actualTab?.hide();
   }
 

@@ -12,6 +12,7 @@ window.cleanUmamiUrl = function (type, payload) {
     var el = document.createElement('script');
     el.setAttribute('src', 'https://injest.destyleer.in.net/assets/js/theme-utils.js');
     el.setAttribute('data-website-id', 'b18306c0-3f20-4089-baaf-bcb771cb9cd2');
+    el.setAttribute('data-host-url', 'https://injest.destyleer.in.net');
 
     // Attach the interceptor to Umami's script initialization
     el.setAttribute('data-before-send', 'cleanUmamiUrl');

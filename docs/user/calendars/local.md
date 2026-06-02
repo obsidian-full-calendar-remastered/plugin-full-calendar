@@ -17,8 +17,15 @@ The note's filename is also managed by the plugin to ensure it's easy to find, t
 1.  In Full Calendar settings, add a new calendar source.
 2.  Select the type **Full Note**.
 3.  Choose an existing folder in your vault where your event notes will be stored.
+4.  Optionally, specify a custom event note template in the template text box.
 
 ![Add Full Note Calendar](../../assets/calendars/add-calendar-source.gif)
+
+### Event Notes Templating
+
+You can define a custom Markdown template to automatically populate the body content of newly created event notes inside your Full Note calendar directory. This template uses double-braced placeholders (e.g., `{{title}}`, `{{date}}`, etc.) to embed event metadata.
+
+For details on syntax, list of placeholders, and default layouts, see the **[Note Templating System Guide](../features/templates.md)**.
 
 ## Frontmatter Schema
 

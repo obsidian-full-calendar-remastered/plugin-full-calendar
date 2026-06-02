@@ -41,7 +41,7 @@ Instead of the core mapping files to events:
 To avoid vault contamination and ensure data cleanliness:
 * The frontmatter of the linked note remains **minimal** (e.g., storing only identifiers like `fc-event-uid` and `fc-calendar-id`).
 * All rich metadata (title, formatted date, times, location, description, and source calendar name) is rendered directly inside the **body** of the note.
-* `TemplateEngine` is a pure utility that parses double-braced expressions (e.g., `{{title}}`, `{{timeString}}`, `{{location}}`) inside customizable layouts, and operates independently of Obsidian's storage or settings UI layers.
+* Note body template rendering is handled by the pure `TemplateEngine` component. For a detailed breakdown of the templating engine's architecture, see **[Note Templating Architecture](templates.md)**.
 
 ### 3️⃣ Reactive Indexing
 Rather than executing expensive, repetitive full-vault scans on every calendar load:

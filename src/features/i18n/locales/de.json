@@ -663,6 +663,10 @@
         "directory": {
           "label": "Verzeichnis",
           "description": "Verzeichnis zum Speichern von Ereignisnotizen"
+        },
+        "template": {
+          "label": "Benutzerdefinierte Vorlage",
+          "description": "Definieren Sie die Vorlage, die zum Erstellen neuer Ereignisse in diesem Kalender verwendet wird. Unterstützt: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
         }
       },
       "dailyNote": {

@@ -3,6 +3,7 @@ import { DirectorySelect } from '../../ui/components/forms/DirectorySelect';
 import { FullNoteProviderConfig } from './typesLocal';
 import { ProviderConfigContext } from '../typesProvider';
 import { t } from '../../features/i18n/i18n';
+import { TemplateEngine } from '../../features/linked-notes/TemplateEngine';
 
 interface FullNoteConfigComponentProps {
   config: Partial<FullNoteProviderConfig>;
@@ -20,6 +21,7 @@ export const FullNoteConfigComponent: React.FC<FullNoteConfigComponentProps> = (
   onClose: _onClose // Destructuring the new prop
 }) => {
   const [directory, setDirectory] = React.useState(config.directory || '');
+  const [template, setTemplate] = React.useState(config.template || '');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -27,7 +29,7 @@ export const FullNoteConfigComponent: React.FC<FullNoteConfigComponentProps> = (
     if (!directory) return;
 
     setIsSubmitting(true);
-    onSave({ ...config, id: config.id || '', directory });
+    onSave({ ...config, id: config.id || '', directory, template });
   };
 
   return (
@@ -49,6 +51,28 @@ export const FullNoteConfigComponent: React.FC<FullNoteConfigComponentProps> = (
               onConfigChange({ ...config, directory: newValue });
             }}
             directories={context.allDirectories}
+          />
+        </div>
+      </div>
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">{t('settings.calendars.fullNote.template.label')}</div>
+          <div className="setting-item-description">
+            {t('settings.calendars.fullNote.template.description')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <textarea
+            value={template}
+            placeholder={TemplateEngine.DEFAULT_TEMPLATE}
+            onChange={e => {
+              const newValue = e.target.value;
+              setTemplate(newValue);
+              onConfigChange({ ...config, template: newValue });
+            }}
+            rows={8}
+            cols={50}
+            style={{ width: '100%' }}
           />
         </div>
       </div>

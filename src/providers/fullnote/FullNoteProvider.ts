@@ -19,6 +19,7 @@ import {
 } from '../utils/noteUtils';
 import { FrontmatterCardDecorator } from './codemirror/FrontmatterCardDecorator';
 import { LivePreviewDecorator } from '../../features/livepreview/LivePreviewDecorator';
+import { TemplateEngine } from '../../features/linked-notes/TemplateEngine';
 
 export type EditableEventResponse = [OFCEvent, EventLocation | null];
 
@@ -212,8 +213,14 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
     const baseFilename = basenameFromEvent(event, PluginState.getSettings());
     const path = findUniquePath(this.app, this.source.directory, baseFilename);
 
+    // Render event body using template if defined, otherwise empty body
+    const template = this.source.template || '';
+    const bodyContent = template
+      ? TemplateEngine.render(template, event, this.source.name || this.displayName)
+      : '';
+
     // The frontmatter is generated from the clean `event` object, so the title remains unsuffixed.
-    const newPage = replaceFrontmatter('', newFrontmatter(event));
+    const newPage = replaceFrontmatter(bodyContent, newFrontmatter(event));
     const file = await this.app.create(path, newPage);
 
     // The authoritative event object returned to the cache must contain the

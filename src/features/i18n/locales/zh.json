@@ -663,6 +663,10 @@
         "directory": {
           "label": "目录",
           "description": "存储事件笔记的目录"
+        },
+        "template": {
+          "label": "自定义模板",
+          "description": "定义在此日历中创建新事件时使用的模板。支持：{{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
         }
       },
       "dailyNote": {

@@ -38,33 +38,9 @@ Go to [Settings → Calendars](../settings/sources.md) to set up the default beh
 Choose the folder inside your Obsidian vault where all newly created event notes will be stored (e.g., `Meetings` or `Inbox/Calendar`). Use the folder dropdown to select an existing folder. If the folder does not exist, it will be automatically created upon the first note generation.
 
 ### 2️⃣ Linked Note Template
-Write a custom template that will populate the body of every new note. You can use standard markdown and insert the following double-braced dynamic placeholders:
+Write a custom template that will populate the body of every new note. You can use standard Markdown syntax along with dynamic placeholders (e.g., `{{title}}`, `{{date}}`, etc.). 
 
-| Placeholder | Replaced With | Example Output |
-|---|---|---|
-| `{{title}}` | The title of the calendar event | `Brainstorming Session` |
-| `{{date}}` | Localized long-form date | `Wednesday, May 20, 2026` |
-| `{{timeString}}` | Start & end time or "All Day" | `10:00 AM - 11:30 AM` or `All Day` |
-| `{{location}}` | The location of the event | `Meeting Room A` or `https://zoom.us/j/123...` |
-| `{{url}}` | The primary URL link associated with the event | `https://zoom.us/j/123456789` |
-| `{{description}}` | The full description / notes of the event | `Discuss next major features and UI remastering.` |
-| `{{calendarName}}` | The name of the calendar source in Obsidian | `Work Calendar` |
-
-#### Default Template Example
-```markdown
-# {{title}}
-
-**Date**: {{date}}
-**Time**: {{timeString}}
-**Location**: {{location}}
-**Calendar**: {{calendarName}}
-
-## Description
-{{description}}
-
-## Notes
-- 
-```
+For a complete list of supported placeholders, configurations, and a default template example, refer to the **[Note Templating System Guide](templates.md)**.
 
 ---
 

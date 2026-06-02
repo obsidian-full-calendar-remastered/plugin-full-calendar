@@ -663,6 +663,10 @@
         "directory": {
           "label": "Répertoire",
           "description": "Répertoire pour stocker les notes d'événement"
+        },
+        "template": {
+          "label": "Modèle personnalisé",
+          "description": "Définissez le modèle utilisé pour créer de nouveaux événements dans ce calendrier. Prend en charge : {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
         }
       },
       "dailyNote": {

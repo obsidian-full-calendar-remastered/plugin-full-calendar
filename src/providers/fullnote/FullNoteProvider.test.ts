@@ -258,6 +258,50 @@ describe('FullNoteCalendar Tests', () => {
     expect(content).toContain('category: Work');
   });
 
+  it('creates an event using a custom template', async () => {
+    const obsidian = makeApp(MockAppBuilder.make().done());
+
+    const calendar = new FullNoteProvider(
+      {
+        directory: dirName,
+        id: 'local_1',
+        name: 'Work Calendar',
+        template: '# {{title}}\n\nLocation: {{location}}\nDescription: {{description}}'
+      },
+      makePlugin(),
+      obsidian
+    );
+
+    const event = {
+      title: 'Interview Candidate',
+      date: '2026-06-02',
+      allDay: true,
+      location: 'Zoom',
+      description: 'Discussing role expectations.'
+    };
+
+    const mockObsidian = obsidian as unknown as MockObsidian;
+
+    mockObsidian.create.mockReturnValue({
+      path: `${dirName}/2026-06-02 Interview Candidate.md`
+    });
+
+    await calendar.createEvent(parseEvent(event));
+
+    expect(mockObsidian.create).toHaveBeenCalledTimes(1);
+    const mockCreate = mockObsidian.create;
+    const [path, content] = mockCreate.mock.calls[0] as [string, string];
+
+    expect(path).toBe('events/2026-06-02 Interview Candidate.md');
+    expect(content).toContain('title: Interview Candidate');
+    expect(content).toContain('location: Zoom');
+
+    // Check that the template was rendered into the body of the note
+    expect(content).toContain('# Interview Candidate');
+    expect(content).toContain('Location: Zoom');
+    expect(content).toContain('Description: Discussing role expectations.');
+  });
+
   it('waits for metadata before skipping a local note during startup scan', async () => {
     const startupFilePath = 'events/2022-01-01 Startup Event.md';
     const app = MockAppBuilder.make()

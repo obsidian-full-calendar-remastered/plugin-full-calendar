@@ -663,6 +663,10 @@
         "directory": {
           "label": "Cartella",
           "description": "Directory dove salvare le note evento"
+        },
+        "template": {
+          "label": "Modello personalizzato",
+          "description": "Definisci il modello utilizzato per creare nuovi eventi in questo calendario. Supporta: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
         }
       },
       "dailyNote": {

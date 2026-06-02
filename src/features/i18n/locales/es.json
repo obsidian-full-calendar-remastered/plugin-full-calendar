@@ -663,6 +663,10 @@
         "directory": {
           "label": "Directorio",
           "description": "Directorio para almacenar notas de eventos"
+        },
+        "template": {
+          "label": "Plantilla personalizada",
+          "description": "Defina la plantilla utilizada para crear nuevos eventos en este calendario. Admite: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
         }
       },
       "dailyNote": {

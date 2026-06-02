@@ -23,7 +23,13 @@ import {
 
 // New flattened schemas for each calendar type
 const calendarOptionsSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('local'), id: z.string(), name: z.string(), directory: z.string() }),
+  z.object({
+    type: z.literal('local'),
+    id: z.string(),
+    name: z.string(),
+    directory: z.string(),
+    template: z.string().optional()
+  }),
   z.object({
     type: z.literal('dailynote'),
     id: z.string(),

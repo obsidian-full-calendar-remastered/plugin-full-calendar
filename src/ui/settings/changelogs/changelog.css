@@ -85,20 +85,20 @@
     border-left: 3px solid;
 }
 
-.change-type-new { border-color: var(--color-green); }
-.change-type-improvement { border-color: var(--color-blue); }
-.change-type-fix { border-color: var(--color-orange); }
+.full-calendar-change-type-new { border-color: var(--color-green); }
+.full-calendar-change-type-improvement { border-color: var(--color-blue); }
+.full-calendar-change-type-fix { border-color: var(--color-orange); }
 
-.change-icon {
+.full-calendar-change-icon {
     font-size: var(--font-ui-large);
 }
 
-.change-title {
+.full-calendar-change-title {
     font-weight: bold;
     margin-bottom: var(--size-4-1);
 }
 
-.change-description {
+.full-calendar-change-description {
     font-size: var(--font-ui-small);
     color: var(--text-muted);
 }
@@ -160,7 +160,7 @@
     border-color: var(--background-modifier-border);
 }
 
-.settings-footer {
+.full-calendar-settings-footer {
     margin-top: 1em;
     padding: var(--size-4-4);
     text-align: center;
@@ -169,20 +169,20 @@
     border: 1px solid var(--background-modifier-border);
 }
 
-.settings-footer-text {
+.full-calendar-settings-footer-text {
     font-size: var(--font-ui-medium);
     color: var(--text-normal);
     margin-top: var(--size-8-4);
     margin-bottom: var(--size-4-2);
 }
 
-.settings-footer-links {
+.full-calendar-settings-footer-links {
     display: flex;
     justify-content: center;
     gap: var(--size-4-4);
 }
 
-.settings-footer-link {
+.full-calendar-settings-footer-link {
     font-size: var(--font-ui-medium);
     font-weight: 600;
     color: var(--interactive-accent);
@@ -191,7 +191,7 @@
 }
 
 
-.settings-footer-link:hover {
+.full-calendar-settings-footer-link:hover {
     color: var(--interactive-accent-hover);
 }
 

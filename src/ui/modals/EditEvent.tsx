@@ -39,7 +39,7 @@ interface DayChoiceProps {
 const DayChoice = ({ code, label, isSelected, onClick }: DayChoiceProps) => (
   <button
     type="button"
-    className={`day-choice-button ${isSelected ? 'is-selected' : ''}`}
+    className={`ofc-day-choice-button ${isSelected ? 'is-selected' : ''}`}
     onClick={() => onClick(code)}
   >
     <b>{label[0]}</b>

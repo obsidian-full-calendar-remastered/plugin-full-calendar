@@ -44,13 +44,13 @@ export class WorkspaceModal extends Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.parentElement?.addClass('settings-modal-wide');
-    contentEl.parentElement?.addClass('workspace-settings-modal');
+    contentEl.parentElement?.addClass('ofc-settings-modal-wide');
+    contentEl.parentElement?.addClass('ofc-workspace-settings-modal');
 
     const shell = contentEl.createDiv({
-      cls: 'settings-modal-shell workspace-settings-shell'
+      cls: 'ofc-settings-modal-shell ofc-workspace-settings-shell'
     });
-    const body = shell.createDiv({ cls: 'settings-modal-body workspace-settings-body' });
+    const body = shell.createDiv({ cls: 'ofc-settings-modal-body ofc-workspace-settings-body' });
 
     // Modal title
     body.createEl('h2', {
@@ -64,20 +64,20 @@ export class WorkspaceModal extends Modal {
     this.renderAppearanceSection(body);
 
     const footer = shell.createEl('footer', {
-      cls: 'settings-modal-footer workspace-settings-footer'
+      cls: 'ofc-settings-modal-footer ofc-workspace-settings-footer'
     });
     this.renderButtons(footer);
   }
 
   onClose() {
     const { contentEl } = this;
-    contentEl.parentElement?.removeClass('settings-modal-wide');
-    contentEl.parentElement?.removeClass('workspace-settings-modal');
+    contentEl.parentElement?.removeClass('ofc-settings-modal-wide');
+    contentEl.parentElement?.removeClass('ofc-workspace-settings-modal');
     contentEl.empty();
   }
 
   private renderGeneralSection(containerEl: HTMLElement) {
-    const section = containerEl.createDiv({ cls: 'workspace-modal-section' });
+    const section = containerEl.createDiv({ cls: 'ofc-workspace-modal-section' });
     section.createEl('h3', { text: t('modals.workspace.sections.general') });
 
     // Workspace name
@@ -96,7 +96,7 @@ export class WorkspaceModal extends Modal {
   }
 
   private renderViewSection(containerEl: HTMLElement) {
-    const section = containerEl.createDiv({ cls: 'workspace-modal-section' });
+    const section = containerEl.createDiv({ cls: 'ofc-workspace-modal-section' });
     section.createEl('h3', { text: t('modals.workspace.sections.viewConfiguration') });
 
     // Desktop view
@@ -168,7 +168,7 @@ export class WorkspaceModal extends Modal {
   }
 
   private renderCalendarFilterSection(containerEl: HTMLElement) {
-    const section = containerEl.createDiv({ cls: 'workspace-modal-section' });
+    const section = containerEl.createDiv({ cls: 'ofc-workspace-modal-section' });
     section.createEl('h3', { text: t('modals.workspace.sections.calendarFilters') });
 
     // Get available calendars
@@ -185,10 +185,10 @@ export class WorkspaceModal extends Modal {
     new Setting(section)
       .setName(t('modals.workspace.fields.visibleCalendars.label'))
       .setDesc(t('modals.workspace.fields.visibleCalendars.description'))
-      .setClass('workspace-calendar-filter');
+      .setClass('ofc-workspace-calendar-filter');
 
     this.visibleCalendarsContainer = section.createDiv({
-      cls: 'workspace-calendar-checkboxes'
+      cls: 'ofc-workspace-calendar-checkboxes'
     });
     this.renderCalendarCheckboxes(this.visibleCalendarsContainer, calendars);
   }
@@ -197,7 +197,7 @@ export class WorkspaceModal extends Modal {
     const selectedIds = new Set((this.workspace.visibleCalendars || []).map(String));
 
     calendars.forEach(calendar => {
-      const checkboxContainer = container.createDiv({ cls: 'workspace-checkbox-item' });
+      const checkboxContainer = container.createDiv({ cls: 'ofc-workspace-checkbox-item' });
 
       // Show labels in the format "<calendar type>: <user-defined name>"
       let displayName: string;
@@ -243,7 +243,7 @@ export class WorkspaceModal extends Modal {
   }
 
   private renderCategoryFilterSection(containerEl: HTMLElement) {
-    const section = containerEl.createDiv({ cls: 'workspace-modal-section' });
+    const section = containerEl.createDiv({ cls: 'ofc-workspace-modal-section' });
     section.createEl('h3', { text: t('modals.workspace.sections.categoryFilters') });
 
     if (!PluginState.getSettings().enableAdvancedCategorization) {
@@ -287,7 +287,7 @@ export class WorkspaceModal extends Modal {
       .setDesc(t('modals.workspace.fields.categories.description'));
 
     this.categoryFilterContainer = section.createDiv({
-      cls: 'workspace-category-checkboxes'
+      cls: 'ofc-workspace-category-checkboxes'
     });
     this.renderCategoryCheckboxes();
   }
@@ -309,7 +309,7 @@ export class WorkspaceModal extends Modal {
 
     categories.forEach(category => {
       const checkboxContainer = this.categoryFilterContainer.createDiv({
-        cls: 'workspace-checkbox-item'
+        cls: 'ofc-workspace-checkbox-item'
       });
 
       new Setting(checkboxContainer).setName(category.name).addToggle(toggle => {
@@ -333,7 +333,7 @@ export class WorkspaceModal extends Modal {
   }
 
   private renderAppearanceSection(containerEl: HTMLElement) {
-    const section = containerEl.createDiv({ cls: 'workspace-modal-section' });
+    const section = containerEl.createDiv({ cls: 'ofc-workspace-modal-section' });
     section.createEl('h3', { text: t('modals.workspace.sections.appearanceOverrides') });
 
     // Business hours override
@@ -361,7 +361,7 @@ export class WorkspaceModal extends Modal {
       });
 
     this.businessHoursContainer = section.createDiv({
-      cls: 'workspace-business-hours-details'
+      cls: 'ofc-workspace-business-hours-details'
     });
     this.renderBusinessHoursDetails();
 
@@ -393,7 +393,7 @@ export class WorkspaceModal extends Modal {
     }
 
     // Add separator
-    section.createEl('hr', { cls: 'workspace-modal-separator' });
+    section.createEl('hr', { cls: 'ofc-workspace-modal-separator' });
     section.createEl('h4', { text: t('modals.workspace.sections.viewClipping') });
 
     // Visible time range - Start time
@@ -517,7 +517,7 @@ export class WorkspaceModal extends Modal {
           }
         });
       })
-      .settingEl.addClass('fc-indented-setting');
+      .settingEl.addClass('ofc-indented-setting');
 
     if (this.workspace.businessHours.enabled) {
       // Business days
@@ -539,7 +539,7 @@ export class WorkspaceModal extends Modal {
             }
           });
         })
-        .settingEl.addClass('fc-indented-setting');
+        .settingEl.addClass('ofc-indented-setting');
 
       // Start time
       new Setting(this.businessHoursContainer)
@@ -553,7 +553,7 @@ export class WorkspaceModal extends Modal {
             }
           });
         })
-        .settingEl.addClass('fc-indented-setting');
+        .settingEl.addClass('ofc-indented-setting');
 
       // End time
       new Setting(this.businessHoursContainer)
@@ -567,12 +567,12 @@ export class WorkspaceModal extends Modal {
             }
           });
         })
-        .settingEl.addClass('fc-indented-setting');
+        .settingEl.addClass('ofc-indented-setting');
     }
   }
 
   private renderButtons(containerEl: HTMLElement) {
-    const buttonContainer = containerEl.createDiv({ cls: 'workspace-modal-buttons' });
+    const buttonContainer = containerEl.createDiv({ cls: 'ofc-workspace-modal-buttons' });
 
     // Cancel button
     buttonContainer.createEl('button', { text: t('modals.workspace.buttons.cancel') }, button => {

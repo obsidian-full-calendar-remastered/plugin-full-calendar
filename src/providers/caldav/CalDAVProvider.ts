@@ -676,7 +676,7 @@ const CalDAVSettingRow: React.FC<{ source: Partial<import('../../types').Calenda
         disabled: true,
         type: 'text',
         value: url,
-        className: 'fc-setting-input'
+        className: 'ofc-setting-input'
       })
     ),
     React.createElement(
@@ -686,7 +686,7 @@ const CalDAVSettingRow: React.FC<{ source: Partial<import('../../types').Calenda
         disabled: true,
         type: 'text',
         value: username,
-        className: 'fc-setting-input'
+        className: 'ofc-setting-input'
       })
     )
   );

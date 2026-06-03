@@ -527,10 +527,13 @@ export class FullCalendarSettingTab extends PluginSettingTab {
 
     for (const card of cards) {
       const cardEl = content.createDiv({
-        cls: `full-calendar-change-item ${card.unlocked ? 'change-type-new' : 'change-type-improvement'} ofc-milestone-card ${card.unlocked ? 'is-unlocked' : 'is-locked'}`
+        cls: `full-calendar-change-item ${card.unlocked ? 'full-calendar-change-type-new' : 'full-calendar-change-type-improvement'} ofc-milestone-card ${card.unlocked ? 'is-unlocked' : 'is-locked'}`
       });
 
-      cardEl.createDiv({ text: selectMilestoneIcon(card.id, card.unlocked), cls: 'change-icon' });
+      cardEl.createDiv({
+        text: selectMilestoneIcon(card.id, card.unlocked),
+        cls: 'full-calendar-change-icon'
+      });
       const cardContent = cardEl.createDiv({ cls: 'change-content u-flex-grow-1' });
 
       const topRow = cardContent.createDiv({ cls: 'full-calendar-whats-new-header' });
@@ -544,7 +547,7 @@ export class FullCalendarSettingTab extends PluginSettingTab {
 
       cardContent.createDiv({
         text: `${card.targetLabel} • ${card.description}`,
-        cls: 'change-description'
+        cls: 'full-calendar-change-description'
       });
 
       const progressTrack = cardContent.createDiv({ cls: 'ofc-milestone-progress-track' });

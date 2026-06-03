@@ -41,7 +41,7 @@ const FullNoteDirectorySetting: React.FC<{
       disabled: true,
       type: 'text',
       value: getDirectory(),
-      className: 'fc-setting-input'
+      className: 'ofc-setting-input'
     })
   );
 };

@@ -267,7 +267,9 @@ export class BasesProvider implements CalendarProvider<BasesProviderConfig>, Syn
         <span>
           {source.name} ({source.type})
         </span>
-        <span className="fc-setting-desc">{(source as Partial<BasesProviderConfig>).basePath}</span>
+        <span className="ofc-setting-desc">
+          {(source as Partial<BasesProviderConfig>).basePath}
+        </span>
       </div>
     );
   }

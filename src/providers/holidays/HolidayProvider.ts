@@ -54,7 +54,7 @@ const HolidaySettingsRow: React.FC<{ source: Partial<import('../../types').Calen
   return React.createElement(
     'div',
     { className: 'setting-item-control' },
-    React.createElement('span', { className: 'fc-setting-tag' }, display)
+    React.createElement('span', { className: 'ofc-setting-tag' }, display)
   );
 };
 

@@ -32,7 +32,7 @@ const OutlookNameSetting: React.FC<{ source: Partial<import('../../types').Calen
       disabled: true,
       type: 'text',
       value: displayValue,
-      className: 'fc-setting-input'
+      className: 'ofc-setting-input'
     })
   );
 };

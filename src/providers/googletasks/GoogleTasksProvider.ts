@@ -36,7 +36,7 @@ const GoogleTasksNameSetting: React.FC<{ source: Partial<import('../../types').C
       disabled: true,
       type: 'text',
       value: listId,
-      className: 'fc-setting-input'
+      className: 'ofc-setting-input'
     })
   );
 };

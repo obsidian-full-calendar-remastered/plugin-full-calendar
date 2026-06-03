@@ -69,15 +69,20 @@ export const VersionSection = ({
       </div>
       <div className={`full-calendar-version-content ${isOpen ? '' : 'is-collapsed'}`}>
         {version.changes.map((change, idx) => (
-          <div className={`full-calendar-change-item change-type-${change.type}`} key={idx}>
-            <div className="change-icon">
+          <div
+            className={`full-calendar-change-item full-calendar-change-type-${change.type}`}
+            key={idx}
+          >
+            <div className="full-calendar-change-icon">
               {change.type === 'new' && '✨'}
               {change.type === 'improvement' && '🔧'}
               {change.type === 'fix' && '🐛'}
             </div>
             <div className="change-content">
-              <div className="change-title">{renderMarkdownLinks(change.title)}</div>
-              <div className="change-description">{renderMarkdownLinks(change.description)}</div>
+              <div className="full-calendar-change-title">{renderMarkdownLinks(change.title)}</div>
+              <div className="full-calendar-change-description">
+                {renderMarkdownLinks(change.description)}
+              </div>
             </div>
           </div>
         ))}

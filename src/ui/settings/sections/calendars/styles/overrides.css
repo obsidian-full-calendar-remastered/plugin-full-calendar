@@ -10,7 +10,8 @@
     padding-right: max(8px, env(safe-area-inset-right, 0px));
 }
 
-.is-phone .fc {
+.is-phone .ofc-calendar-shell .fc,
+.is-phone .ofc-embedded-calendar-container .fc {
     height: 100%;
 }
 
@@ -26,7 +27,8 @@
     min-width: 0;
 }
 
-.fc {
+.ofc-calendar-shell .fc,
+.ofc-embedded-calendar-container .fc {
     height: 100%;
     --fc-button-text-color: var(--text-normal);
     --fc-button-bg-color: var(--interactive-normal);
@@ -63,42 +65,50 @@
     --fc-non-business-color: var(--background-modifier-box-shadow);
 }
 
-.fc .fc-bg-event {
+.ofc-calendar-shell .fc .fc-bg-event,
+.ofc-embedded-calendar-container .fc .fc-bg-event {
     pointer-events: auto;
 }
 
-.fc-button-active {
+.ofc-calendar-shell .fc-button-active,
+.ofc-embedded-calendar-container .fc-button-active {
     color: var(--text-on-accent);
 }
 
-.fc .fc-button {
+.ofc-calendar-shell .fc .fc-button,
+.ofc-embedded-calendar-container .fc .fc-button {
     border: 0px solid transparent;
     line-height: 1;
     padding: var(--size-4-1) var(--size-4-3);
 }
 
-.fc .fc-toolbar.fc-header-toolbar {
+.ofc-calendar-shell .fc .fc-toolbar.fc-header-toolbar,
+.ofc-embedded-calendar-container .fc .fc-toolbar.fc-header-toolbar {
     flex-wrap: nowrap;
 }
 
-.fc .fc-toolbar.fc-header-toolbar .fc-toolbar-chunk {
+.ofc-calendar-shell .fc .fc-toolbar.fc-header-toolbar .fc-toolbar-chunk,
+.ofc-embedded-calendar-container .fc .fc-toolbar.fc-header-toolbar .fc-toolbar-chunk {
     min-width: 0;
 }
 
-.fc .fc-toolbar.fc-header-toolbar .fc-toolbar-title {
+.ofc-calendar-shell .fc .fc-toolbar.fc-header-toolbar .fc-toolbar-title,
+.ofc-embedded-calendar-container .fc .fc-toolbar.fc-header-toolbar .fc-toolbar-title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.fc .ofc-toolbar-search-host {
+.ofc-calendar-shell .fc .ofc-toolbar-search-host,
+.ofc-embedded-calendar-container .fc .ofc-toolbar-search-host {
     display: flex;
     align-items: center;
     flex-wrap: nowrap;
     gap: 4px;
 }
 
-.fc .ofc-toolbar-search-input-wrap {
+.ofc-calendar-shell .fc .ofc-toolbar-search-input-wrap,
+.ofc-embedded-calendar-container .fc .ofc-toolbar-search-input-wrap {
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
@@ -109,7 +119,8 @@
     min-width: 0;
 }
 
-.fc .ofc-toolbar-search-input {
+.ofc-calendar-shell .fc .ofc-toolbar-search-input,
+.ofc-embedded-calendar-container .fc .ofc-toolbar-search-input {
     width: 100%;
     min-width: 0;
     border: 1px solid var(--background-modifier-border);
@@ -118,14 +129,16 @@
     background-color: var(--background-primary);
 }
 
-.fc .ofc-toolbar-search-input-wrap.is-active-query .ofc-toolbar-search-input {
+.ofc-calendar-shell .fc .ofc-toolbar-search-input-wrap.is-active-query .ofc-toolbar-search-input,
+.ofc-embedded-calendar-container .fc .ofc-toolbar-search-input-wrap.is-active-query .ofc-toolbar-search-input {
     border-color: var(--text-error);
     box-shadow: 0 0 0 2px color-mix(in srgb, white 85%, transparent),
         0 0 16px 5px color-mix(in srgb, var(--text-error) 66%, transparent),
         0 0 32px 12px color-mix(in srgb, var(--text-error) 52%, transparent);
 }
 
-.fc .ofc-toolbar-search-clear {
+.ofc-calendar-shell .fc .ofc-toolbar-search-clear,
+.ofc-embedded-calendar-container .fc .ofc-toolbar-search-clear {
     position: absolute;
     right: 6px;
     top: 50%;
@@ -138,38 +151,48 @@
     padding: 0;
 }
 
-.ofc-has-checkbox {
+.ofc-calendar-shell .ofc-has-checkbox,
+.ofc-embedded-calendar-container .ofc-has-checkbox {
     display: flex;
 }
 
-.ofc-has-checkbox.fc-list-event-title {
+.ofc-calendar-shell .ofc-has-checkbox.fc-list-event-title,
+.ofc-embedded-calendar-container .ofc-has-checkbox.fc-list-event-title {
     align-items: center;
 }
 
-.ofc-task-completed .fc-event-title,
-.ofc-task-completed .fc-list-event-title,
-.ofc-task-skipped .fc-event-title,
-.ofc-task-skipped .fc-list-event-title {
+.ofc-calendar-shell .ofc-task-completed .fc-event-title,
+.ofc-calendar-shell .ofc-task-completed .fc-list-event-title,
+.ofc-calendar-shell .ofc-task-skipped .fc-event-title,
+.ofc-calendar-shell .ofc-task-skipped .fc-list-event-title,
+.ofc-embedded-calendar-container .ofc-task-completed .fc-event-title,
+.ofc-embedded-calendar-container .ofc-task-completed .fc-list-event-title,
+.ofc-embedded-calendar-container .ofc-task-skipped .fc-event-title,
+.ofc-embedded-calendar-container .ofc-task-skipped .fc-list-event-title {
     background-image: linear-gradient(currentColor, currentColor);
     background-position: 0 50%;
     background-repeat: no-repeat;
     background-size: 100% 1px;
 }
 
-.ofc-task-completed {
+.ofc-calendar-shell .ofc-task-completed,
+.ofc-embedded-calendar-container .ofc-task-completed {
     opacity: 0.8;
 }
 
-.ofc-task-skipped {
+.ofc-calendar-shell .ofc-task-skipped,
+.ofc-embedded-calendar-container .ofc-task-skipped {
     opacity: 0.55;
 }
 
-.ofc-checkbox-white {
+.ofc-calendar-shell .ofc-checkbox-white,
+.ofc-embedded-calendar-container .ofc-checkbox-white {
     border-color: white;
     border-width: 1px;
 }
 
-.ofc-checkbox-black {
+.ofc-calendar-shell .ofc-checkbox-black,
+.ofc-embedded-calendar-container .ofc-checkbox-black {
     border-color: black;
     border-width: 1px;
 }
@@ -382,7 +405,7 @@
 }
 
 /* Day Choice Button for Edit Event Modal */
-.day-choice-button {
+.ofc-day-choice-button {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
     padding: 0;
@@ -395,69 +418,75 @@
     height: 25px;
 }
 
-.day-choice-button.is-selected {
+.ofc-day-choice-button.is-selected {
     background-color: var(--interactive-accent);
     color: var(--text-on-accent);
 }
 
 /* Generic styles for inputs in calendar settings */
-.fc-setting-input {
+.ofc-setting-input {
     width: 100%;
     margin-left: 4px;
     margin-right: 4px;
 }
 
 /* Styles for the Heading setting component */
-.fc-heading-setting-control {
+.ofc-heading-setting-control {
     display: block;
     text-align: center;
 }
 
-.fc-heading-setting-control .fc-setting-input.is-inline {
+.ofc-heading-setting-control .ofc-setting-input.is-inline {
     margin-left: 4px;
     margin-right: 4px;
     /* Overriding width for inline appearance */
     width: auto;
 }
 
-.fc-heading-setting-control .fc-heading-setting-suffix {
+.ofc-heading-setting-control .ofc-heading-setting-suffix {
     padding-right: .5rem;
 }
 
 /* Styles for specific controls in calendar settings */
-.fc-setting-delete-btn {
+.ofc-setting-delete-btn {
     max-width: 15%;
 }
 
-.fc-setting-color-input {
+.ofc-setting-color-input {
     max-width: 25%;
     min-width: 3rem;
 }
 
 /* Shadow events styling for resourceTimeline view */
-.fc-event-shadow {
+.ofc-calendar-shell .fc-event-shadow,
+.ofc-embedded-calendar-container .fc-event-shadow {
     opacity: 0.4;
     pointer-events: none;
     cursor: default;
 }
 
-.fc-event-shadow .fc-event-main {
+.ofc-calendar-shell .fc-event-shadow .fc-event-main,
+.ofc-embedded-calendar-container .fc-event-shadow .fc-event-main {
     opacity: 0.6;
 }
 
-.fc-event-shadow .fc-event-title {
+.ofc-calendar-shell .fc-event-shadow .fc-event-title,
+.ofc-embedded-calendar-container .fc-event-shadow .fc-event-title {
     font-style: italic;
     opacity: 0.8;
 }
 
 /* Ensure shadow events don't interfere with interactions */
-.fc-event-shadow:hover {
+.ofc-calendar-shell .fc-event-shadow:hover,
+.ofc-embedded-calendar-container .fc-event-shadow:hover {
     opacity: 0.4;
 }
 
 /* Highlight only the current event, or the immediate next one when nothing is current. */
-.fc .fc-event.ofc-event-current-or-next,
-.fc .fc-list-event.ofc-event-current-or-next {
+.ofc-calendar-shell .fc .fc-event.ofc-event-current-or-next,
+.ofc-calendar-shell .fc .fc-list-event.ofc-event-current-or-next,
+.ofc-embedded-calendar-container .fc .fc-event.ofc-event-current-or-next,
+.ofc-embedded-calendar-container .fc .fc-list-event.ofc-event-current-or-next {
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85),
         0 0 24px 8px color-mix(in srgb, var(--interactive-accent) 78%, transparent),
         0 0 56px 24px color-mix(in srgb, var(--interactive-accent) 62%, transparent);
@@ -468,8 +497,10 @@
 }
 
 /* Month view: daygrid events are compact and need explicit background/border highlighting. */
-.fc .fc-daygrid-event.ofc-event-current-or-next,
-.fc .fc-daygrid-dot-event.ofc-event-current-or-next {
+.ofc-calendar-shell .fc .fc-daygrid-event.ofc-event-current-or-next,
+.ofc-calendar-shell .fc .fc-daygrid-dot-event.ofc-event-current-or-next,
+.ofc-embedded-calendar-container .fc .fc-daygrid-event.ofc-event-current-or-next,
+.ofc-embedded-calendar-container .fc .fc-daygrid-dot-event.ofc-event-current-or-next {
     background: color-mix(in srgb, var(--interactive-accent) 26%, var(--background-primary));
     border: 1px solid color-mix(in srgb, var(--interactive-accent) 88%, white);
     border-radius: var(--radius-s);
@@ -477,16 +508,21 @@
         0 0 32px 12px color-mix(in srgb, var(--interactive-accent) 52%, transparent);
 }
 
-.fc .fc-daygrid-dot-event.ofc-event-current-or-next .fc-event-title,
-.fc .fc-daygrid-event.ofc-event-current-or-next .fc-event-title {
+.ofc-calendar-shell .fc .fc-daygrid-dot-event.ofc-event-current-or-next .fc-event-title,
+.ofc-calendar-shell .fc .fc-daygrid-event.ofc-event-current-or-next .fc-event-title,
+.ofc-embedded-calendar-container .fc .fc-daygrid-dot-event.ofc-event-current-or-next .fc-event-title,
+.ofc-embedded-calendar-container .fc .fc-daygrid-event.ofc-event-current-or-next .fc-event-title {
     color: var(--text-normal);
     font-weight: 700;
 }
 
 /* Ensure the outer glow is not clipped by event harness wrappers. */
-.fc .fc-timegrid-event-harness.ofc-event-current-or-next-harness,
-.fc .fc-daygrid-event-harness.ofc-event-current-or-next-harness,
-.fc .fc-timeline-event-harness.ofc-event-current-or-next-harness {
+.ofc-calendar-shell .fc .fc-timegrid-event-harness.ofc-event-current-or-next-harness,
+.ofc-calendar-shell .fc .fc-daygrid-event-harness.ofc-event-current-or-next-harness,
+.ofc-calendar-shell .fc .fc-timeline-event-harness.ofc-event-current-or-next-harness,
+.ofc-embedded-calendar-container .fc .fc-timegrid-event-harness.ofc-event-current-or-next-harness,
+.ofc-embedded-calendar-container .fc .fc-daygrid-event-harness.ofc-event-current-or-next-harness,
+.ofc-embedded-calendar-container .fc .fc-timeline-event-harness.ofc-event-current-or-next-harness {
     overflow: visible;
     z-index: 12;
     filter: drop-shadow(0 0 18px color-mix(in srgb, var(--interactive-accent) 72%, transparent))
@@ -494,7 +530,8 @@
 }
 
 /* List rows are table rows, so render glow at cell level for visibility. */
-.fc .fc-list-event.ofc-event-current-or-next > td {
+.ofc-calendar-shell .fc .fc-list-event.ofc-event-current-or-next > td,
+.ofc-embedded-calendar-container .fc .fc-list-event.ofc-event-current-or-next > td {
     background: linear-gradient(90deg,
             color-mix(in srgb, var(--interactive-accent) 28%, var(--background-primary)) 0%,
             color-mix(in srgb, var(--interactive-accent) 16%, var(--background-primary)) 100%);
@@ -503,42 +540,46 @@
     box-shadow: 0 0 18px 6px color-mix(in srgb, var(--interactive-accent) 58%, transparent);
 }
 
-.fc .fc-list-event.ofc-event-current-or-next > td:first-child {
+.ofc-calendar-shell .fc .fc-list-event.ofc-event-current-or-next > td:first-child,
+.ofc-embedded-calendar-container .fc .fc-list-event.ofc-event-current-or-next > td:first-child {
     border-left: 3px solid color-mix(in srgb, var(--interactive-accent) 90%, white);
 }
 
-.fc .fc-list-event.ofc-event-current-or-next > td:last-child {
+.ofc-calendar-shell .fc .fc-list-event.ofc-event-current-or-next > td:last-child,
+.ofc-embedded-calendar-container .fc .fc-list-event.ofc-event-current-or-next > td:last-child {
     border-right: 1px solid color-mix(in srgb, var(--interactive-accent) 72%, white);
 }
 
-.fc-resource-timeline .fc-datagrid-cell.fc-resource.fc-resource-group {
+.ofc-calendar-shell .fc-resource-timeline .fc-datagrid-cell.fc-resource.fc-resource-group,
+.ofc-embedded-calendar-container .fc-resource-timeline .fc-datagrid-cell.fc-resource.fc-resource-group {
     cursor: pointer;
 }
 
-.fc-resource-timeline .fc-datagrid-cell.fc-resource.fc-resource-group:hover {
+.ofc-calendar-shell .fc-resource-timeline .fc-datagrid-cell.fc-resource.fc-resource-group:hover,
+.ofc-embedded-calendar-container .fc-resource-timeline .fc-datagrid-cell.fc-resource.fc-resource-group:hover {
     background-color: var(--background-modifier-hover);
 }
 
 /* Indent dependent settings for better visual grouping */
-.fc-indented-setting {
+.ofc-indented-setting {
     padding-left: 2.5em;
     border-left: 2px solid var(--background-modifier-border);
     margin-left: 0.5em;
 }
 
 /* Workspace management styles */
-.workspace-list {
+.ofc-workspace-list {
     margin-top: 1rem;
 }
 
-.workspace-item {
+.ofc-workspace-item {
     border: 1px solid var(--background-modifier-border);
     border-radius: 4px;
     margin-bottom: 0.5rem;
     padding: 0.5rem;
 }
 
-.workspace-empty-state {
+.ofc-workspace-empty-state {
     margin-top: 1rem;
     padding: 1rem;
     text-align: center;
@@ -548,22 +589,22 @@
 }
 
 /* Workspace modal styles */
-.workspace-modal-section {
+.ofc-workspace-modal-section {
     margin-bottom: 1.5rem;
 }
 
-.workspace-modal-section h3 {
+.ofc-workspace-modal-section h3 {
     margin-bottom: 0.5rem;
     color: var(--text-normal);
 }
 
-.workspace-modal-buttons {
+.ofc-workspace-modal-buttons {
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
 }
 
-.workspace-modal-buttons button {
+.ofc-workspace-modal-buttons button {
     padding: 0.5rem 1rem;
     border: 1px solid var(--background-modifier-border);
     border-radius: 4px;
@@ -572,17 +613,17 @@
     cursor: pointer;
 }
 
-.workspace-modal-buttons button:hover {
+.ofc-workspace-modal-buttons button:hover {
     background: var(--interactive-hover);
 }
 
-.workspace-modal-buttons button.mod-cta {
+.ofc-workspace-modal-buttons button.mod-cta {
     background: var(--interactive-accent);
     color: var(--text-on-accent);
     border-color: var(--interactive-accent);
 }
 
-.workspace-modal-buttons button.mod-cta:hover {
+.ofc-workspace-modal-buttons button.mod-cta:hover {
     background: var(--interactive-accent-hover);
 }
 
@@ -591,26 +632,26 @@
     overflow: hidden;
 }
 
-.workspace-calendar-filter {
+.ofc-workspace-calendar-filter {
     border-bottom: none;
 }
 
-.workspace-calendar-checkboxes,
-.workspace-category-checkboxes {
+.ofc-workspace-calendar-checkboxes,
+.ofc-workspace-category-checkboxes {
     margin-left: 1rem;
     margin-top: 0.5rem;
 }
 
-.workspace-checkbox-item {
+.ofc-workspace-checkbox-item {
     border: none;
     padding: 0.25rem 0;
 }
 
-.workspace-checkbox-item .setting-item-info {
+.ofc-workspace-checkbox-item .setting-item-info {
     padding-left: 0;
 }
 
-.workspace-checkbox-item .setting-item-name {
+.ofc-workspace-checkbox-item .setting-item-name {
     font-size: 0.9rem;
     font-weight: normal;
 }
@@ -1134,7 +1175,7 @@
 }
 
 /* Day choice buttons - larger for mobile */
-.is-phone .day-choice-button {
+.is-phone .ofc-day-choice-button {
     width: 36px;
     height: 36px;
     font-size: 0.9rem;

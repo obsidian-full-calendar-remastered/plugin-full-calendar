@@ -77,15 +77,15 @@ const DailyNoteHeadingSetting: React.FC<{
 
   return React.createElement(
     'div',
-    { className: 'setting-item-control fc-heading-setting-control' },
+    { className: 'setting-item-control ofc-heading-setting-control' },
     React.createElement('span', {}, 'Under heading'),
     React.createElement('input', {
       disabled: true,
       type: 'text',
       value: getHeading(),
-      className: 'fc-setting-input is-inline'
+      className: 'ofc-setting-input is-inline'
     }),
-    React.createElement('span', { className: 'fc-heading-setting-suffix' }, 'in daily notes')
+    React.createElement('span', { className: 'ofc-heading-setting-suffix' }, 'in daily notes')
   );
 };
 

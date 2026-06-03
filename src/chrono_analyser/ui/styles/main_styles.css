@@ -1221,7 +1221,8 @@ body.theme-dark .chrono-analyser-view .main-chart-container .plotly .slicetext {
    ================================================================= */
 
 /* This wrapper is needed to position the suggestions dropdown correctly. */
-.autocomplete-wrapper {
+.chrono-analyser-view .autocomplete-wrapper,
+.chrono-analyser-modal .autocomplete-wrapper {
     position: relative;
     display: flex;
     align-items: center;
@@ -1229,7 +1230,8 @@ body.theme-dark .chrono-analyser-view .main-chart-container .plotly .slicetext {
 }
 
 /* The dropdown container. Positioned relative to the wrapper. */
-.autocomplete-suggestions {
+.chrono-analyser-view .autocomplete-suggestions,
+.chrono-analyser-modal .autocomplete-suggestions {
     position: absolute;
     top: 100%;
     left: 0;
@@ -1247,16 +1249,22 @@ body.theme-dark .chrono-analyser-view .main-chart-container .plotly .slicetext {
 }
 
 /* Generic visibility utility classes (replaces inline style.display manipulation) */
-.is-hidden { display: none; }
-.is-visible { display: block; }
+.chrono-analyser-view .is-hidden,
+.chrono-analyser-modal .is-hidden { display: none; }
+.chrono-analyser-view .is-visible,
+.chrono-analyser-modal .is-visible { display: block; }
 
 /* Opacity transition utility for fade effects (replaces inline style.opacity) */
-.fade-transition { transition: opacity 0.2s ease-in-out; }
-.is-transparent { opacity: 0; }
-.is-opaque { opacity: 1; }
+.chrono-analyser-view .fade-transition,
+.chrono-analyser-modal .fade-transition { transition: opacity 0.2s ease-in-out; }
+.chrono-analyser-view .is-transparent,
+.chrono-analyser-modal .is-transparent { opacity: 0; }
+.chrono-analyser-view .is-opaque,
+.chrono-analyser-modal .is-opaque { opacity: 1; }
 
 /* Individual suggestion items. */
-.autocomplete-suggestion-item {
+.chrono-analyser-view .autocomplete-suggestion-item,
+.chrono-analyser-modal .autocomplete-suggestion-item {
     padding: var(--size-2-3) var(--size-4-3);
     cursor: pointer;
     font-size: var(--font-ui-medium);
@@ -1267,12 +1275,14 @@ body.theme-dark .chrono-analyser-view .main-chart-container .plotly .slicetext {
     transition: all var(--anim-duration-fast) var(--anim-motion-smooth);
 }
 
-.autocomplete-suggestion-item:hover {
+.chrono-analyser-view .autocomplete-suggestion-item:hover,
+.chrono-analyser-modal .autocomplete-suggestion-item:hover {
     background: var(--background-modifier-hover);
 }
 
 /* The currently highlighted/active suggestion item. */
-.autocomplete-suggestion-item.is-active {
+.chrono-analyser-view .autocomplete-suggestion-item.is-active,
+.chrono-analyser-modal .autocomplete-suggestion-item.is-active {
     background: var(--interactive-accent);
     color: var(--text-on-accent);
 }

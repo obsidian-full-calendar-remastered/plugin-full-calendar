@@ -12,10 +12,10 @@ interface HeadingInputProps {
 export function HeadingInput({ value, onChange, headings, readOnly }: HeadingInputProps) {
   if (readOnly) {
     return (
-      <div className="fc-heading-setting-control">
+      <div className="ofc-heading-setting-control">
         <span>Under heading</span>
         <TextInput value={value || ''} onChange={() => {}} readOnly={true} />
-        <span className="fc-heading-setting-suffix">in daily notes</span>
+        <span className="ofc-heading-setting-suffix">in daily notes</span>
       </div>
     );
   }

@@ -122,7 +122,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
         <div className="event-details-row">
           <div className="event-details-icon" /> {/* Spacer */}
           <div className="event-details-content">
-            <div className="upcoming-instances">
+            <div className="ofc-upcoming-instances">
               <strong>Upcoming Instances:</strong>
               <ul>
                 {instances.map((date, i) => (
@@ -176,7 +176,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
       <div className="event-details-row">
         <Icon name="calendar-days" />
         <div className="event-details-content">
-          <span className="u-muted">{calendarName}</span>
+          <span className="ofc-u-muted">{calendarName}</span>
         </div>
       </div>
 

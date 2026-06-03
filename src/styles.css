@@ -23,14 +23,14 @@
   padding: 0 10px;
 }
 
-.event-details-header {
+.full-calendar-event-details .event-details-header {
   display: flex;
   align-items: center;
   gap: 15px;
   margin-bottom: 20px;
 }
 
-.event-details-icon-box {
+.full-calendar-event-details .event-details-icon-box {
   width: 40px;
   height: 40px;
   border: 1px solid var(--background-modifier-border);
@@ -40,20 +40,20 @@
   border-radius: 4px;
 }
 
-.event-details-title {
+.full-calendar-event-details .event-details-title {
   margin: 0;
   font-size: 1.2em;
   font-weight: 600;
 }
 
-.event-details-row {
+.full-calendar-event-details .event-details-row {
   display: flex;
   gap: 15px;
   margin-bottom: 15px;
   align-items: flex-start;
 }
 
-.event-details-icon {
+.full-calendar-event-details .event-details-icon {
   color: var(--text-muted);
   width: 20px;
   height: 20px;
@@ -61,16 +61,16 @@
   margin-top: 2px;
 }
 
-.event-details-content {
+.full-calendar-event-details .event-details-content {
   flex-grow: 1;
   overflow-wrap: anywhere;
 }
 
-.event-details-content.description {
+.full-calendar-event-details .event-details-content.description {
   white-space: pre-wrap;
 }
 
-.event-details-action {
+.full-calendar-event-details .event-details-action {
   margin-left: 15px;
   color: var(--text-accent);
   cursor: pointer;
@@ -80,61 +80,61 @@
   font-size: 0.9em;
 }
 
-.event-details-action:hover {
+.full-calendar-event-details .event-details-action:hover {
   text-decoration: underline;
 }
 
-.event-link {
+.full-calendar-event-details .event-link {
   color: var(--text-accent);
   text-decoration: none;
 }
 
-.event-link:hover {
+.full-calendar-event-details .event-link:hover {
   text-decoration: underline;
 }
 
-.upcoming-instances {
+.full-calendar-event-details .ofc-upcoming-instances {
   background-color: var(--background-secondary);
   padding: 10px;
   border-radius: 4px;
   font-size: 0.9em;
 }
 
-.upcoming-instances ul {
+.full-calendar-event-details .ofc-upcoming-instances ul {
   margin: 5px 0 0 20px;
   padding: 0;
 }
 
-.u-muted {
+.full-calendar-event-details .ofc-u-muted {
   color: var(--text-muted);
 }
 
 /* Shared settings modal shell/footer layout */
-.settings-modal-wide {
+.ofc-settings-modal-wide {
   width: min(900px, 88vw);
   max-width: 900px;
   max-height: min(860px, 88vh);
 }
 
-.settings-modal-wide .modal-content {
+.ofc-settings-modal-wide .modal-content {
   padding: 0;
   overflow: hidden;
 }
 
-.settings-modal-shell {
+.ofc-settings-modal-shell {
   display: flex;
   flex-direction: column;
   max-height: min(860px, 88vh);
   min-height: min(620px, 82vh);
 }
 
-.settings-modal-body {
+.ofc-settings-modal-body {
   flex: 1 1 auto;
   overflow-y: auto;
   padding: 18px 22px;
 }
 
-.settings-modal-footer {
+.ofc-settings-modal-footer {
   align-items: center;
   background-color: var(--background-primary);
   border-top: 1px solid var(--background-modifier-border);
@@ -279,17 +279,17 @@
 }
 
 @media (max-width: 640px) {
-  .settings-modal-wide {
+  .ofc-settings-modal-wide {
     width: 96vw;
     max-height: 94vh;
   }
 
-  .settings-modal-shell {
+  .ofc-settings-modal-shell {
     max-height: 94vh;
     min-height: 80vh;
   }
 
-  .settings-modal-body {
+  .ofc-settings-modal-body {
     padding: 14px;
   }
 
@@ -307,11 +307,11 @@
     justify-self: start;
   }
 
-  .settings-modal-footer {
+  .ofc-settings-modal-footer {
     padding: 10px 14px;
   }
 
-  .settings-modal-footer button {
+  .ofc-settings-modal-footer button {
     flex: 1 1 0;
   }
 }
@@ -1058,7 +1058,8 @@
 }
 
 /* Fix grayed out monthly view other-month cells (keep them fully bright and ungrayed) */
-.fc .fc-day-other {
+.ofc-calendar-shell .fc .fc-day-other,
+.ofc-embedded-calendar-container .fc .fc-day-other {
   opacity: 1;
 }
 
@@ -1077,7 +1078,8 @@
 }
 
 /* Adjust FullCalendar DayGrid Top layout for month-view emoji alignment */
-.fc .fc-daygrid-day-top {
+.ofc-calendar-shell .fc .fc-daygrid-day-top,
+.ofc-embedded-calendar-container .fc .fc-daygrid-day-top {
   display: flex;
   flex-direction: row-reverse;
   justify-content: space-between;

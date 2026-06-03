@@ -25,13 +25,13 @@ export class ActivityWatchSettingsModal extends ReactModal {
   }
 
   onOpen(): void {
-    this.contentEl.parentElement?.addClass('settings-modal-wide');
+    this.contentEl.parentElement?.addClass('ofc-settings-modal-wide');
     this.contentEl.parentElement?.addClass('activitywatch-settings-modal');
     super.onOpen();
   }
 
   onClose(): void {
-    this.contentEl.parentElement?.removeClass('settings-modal-wide');
+    this.contentEl.parentElement?.removeClass('ofc-settings-modal-wide');
     this.contentEl.parentElement?.removeClass('activitywatch-settings-modal');
     super.onClose();
   }

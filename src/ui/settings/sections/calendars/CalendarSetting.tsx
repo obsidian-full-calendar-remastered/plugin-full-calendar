@@ -37,14 +37,14 @@ const CalendarSettingRow = ({
 }: CalendarSettingRowProps) => {
   return (
     <div className="setting-item">
-      <button type="button" onClick={deleteCalendar} className="fc-setting-delete-btn">
+      <button type="button" onClick={deleteCalendar} className="ofc-setting-delete-btn">
         ✕
       </button>
       <div className="setting-item-control u-flex-1">
         <input
           type="text"
           value={setting.name || ''}
-          className="fc-setting-input"
+          className="ofc-setting-input"
           onChange={e => onNameChange(e.target.value)}
         />
       </div>
@@ -52,7 +52,7 @@ const CalendarSettingRow = ({
       <input
         type="color"
         value={setting.color}
-        className="fc-setting-color-input"
+        className="ofc-setting-color-input"
         onChange={e => onColorChange(e.target.value)}
       />
     </div>

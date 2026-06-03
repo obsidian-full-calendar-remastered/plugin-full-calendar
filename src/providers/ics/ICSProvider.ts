@@ -33,7 +33,7 @@ const ICSUrlSetting: React.FC<{ source: Partial<import('../../types').CalendarIn
       disabled: true,
       type: 'text',
       value: getUrl(),
-      className: 'fc-setting-input'
+      className: 'ofc-setting-input'
     })
   );
 };

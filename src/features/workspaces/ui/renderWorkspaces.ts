@@ -54,10 +54,10 @@ export function renderWorkspaceSettings(
 
   // Workspace list
   if (PluginState.getSettings().workspaces.length > 0) {
-    const workspaceList = workspaceSection.createDiv({ cls: 'workspace-list' });
+    const workspaceList = workspaceSection.createDiv({ cls: 'ofc-workspace-list' });
 
     PluginState.getSettings().workspaces.forEach((workspace, index) => {
-      const workspaceItem = workspaceList.createDiv({ cls: 'workspace-item' });
+      const workspaceItem = workspaceList.createDiv({ cls: 'ofc-workspace-item' });
 
       new Setting(workspaceItem)
         .setName(workspace.name)

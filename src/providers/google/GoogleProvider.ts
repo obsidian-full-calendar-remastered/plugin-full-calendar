@@ -30,7 +30,7 @@ const GoogleNameSetting: React.FC<{ source: Partial<import('../../types').Calend
       disabled: true,
       type: 'text',
       value: calendarId,
-      className: 'fc-setting-input'
+      className: 'ofc-setting-input'
     })
   );
 };

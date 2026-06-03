@@ -132,7 +132,7 @@ export function renderAppearanceSettings(
           await PluginState.saveSettings();
         });
       })
-      .settingEl.addClass('fc-indented-setting');
+      .settingEl.addClass('ofc-indented-setting');
 
     new Setting(containerEl)
       .setName(t('settings.appearance.businessHours.startTime.label'))
@@ -147,7 +147,7 @@ export function renderAppearanceSettings(
           }
         });
       })
-      .settingEl.addClass('fc-indented-setting');
+      .settingEl.addClass('ofc-indented-setting');
 
     new Setting(containerEl)
       .setName(t('settings.appearance.businessHours.endTime.label'))
@@ -162,7 +162,7 @@ export function renderAppearanceSettings(
           }
         });
       })
-      .settingEl.addClass('fc-indented-setting');
+      .settingEl.addClass('ofc-indented-setting');
   }
 
   // New granular view configuration section

@@ -83,7 +83,7 @@ const DISPLAY_OPTIONS: {
 function externalLink(href: string, label: string): React.ReactElement {
   return React.createElement(
     'a',
-    { href, target: '_blank', rel: 'noreferrer noopener', className: 'fc-holiday-doc-link' },
+    { href, target: '_blank', rel: 'noreferrer noopener', className: 'ofc-holiday-doc-link' },
     label
   );
 }
@@ -113,7 +113,7 @@ function SettingRow({
         required
           ? React.createElement(
               'span',
-              { className: 'fc-required-star', 'aria-hidden': 'true' },
+              { className: 'ofc-required-star', 'aria-hidden': 'true' },
               ' *'
             )
           : null
@@ -165,14 +165,14 @@ export const HolidayConfigComponent: React.FC<HolidayConfigComponentProps> = ({
 
   return React.createElement(
     'form',
-    { onSubmit: handleSubmit, className: 'fc-holiday-config-form' },
+    { onSubmit: handleSubmit, className: 'ofc-holiday-config-form' },
 
     // ── Calendar Name ──────────────────────────────────────────────────────────
     React.createElement(SettingRow, {
       label: t('settings.calendars.holidays.calendarName.label'),
       description: t('settings.calendars.holidays.calendarName.description'),
       control: React.createElement('input', {
-        className: 'fc-setting-input',
+        className: 'ofc-setting-input',
         type: 'text',
         value: name,
         placeholder: 'Holidays',
@@ -192,7 +192,7 @@ export const HolidayConfigComponent: React.FC<HolidayConfigComponentProps> = ({
         externalLink(DH_COUNTRIES_URL, t('global.learnMoreLink'))
       ),
       control: React.createElement('input', {
-        className: 'fc-setting-input',
+        className: 'ofc-setting-input',
         type: 'text',
         value: country,
         placeholder: 'US',
@@ -213,7 +213,7 @@ export const HolidayConfigComponent: React.FC<HolidayConfigComponentProps> = ({
         externalLink(DH_COUNTRIES_URL, t('global.learnMoreLink'))
       ),
       control: React.createElement('input', {
-        className: 'fc-setting-input',
+        className: 'ofc-setting-input',
         type: 'text',
         value: state,
         placeholder: 'ca',
@@ -233,7 +233,7 @@ export const HolidayConfigComponent: React.FC<HolidayConfigComponentProps> = ({
         externalLink(DH_COUNTRIES_URL, t('global.learnMoreLink'))
       ),
       control: React.createElement('input', {
-        className: 'fc-setting-input',
+        className: 'ofc-setting-input',
         type: 'text',
         value: region,
         placeholder: 'no',

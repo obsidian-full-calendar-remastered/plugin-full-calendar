@@ -18,7 +18,7 @@ export function ColorPicker<T extends Partial<CalendarInfo>>({
           required
           type="color"
           value={source.color}
-          className="fc-setting-color-input"
+          className="ofc-setting-color-input"
           onChange={changeListener(x => ({ ...source, color: x }))}
         />
       </div>

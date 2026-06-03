@@ -1216,7 +1216,7 @@ export class TasksPluginProvider
           disabled: true,
           type: 'text',
           value: name,
-          className: 'fc-setting-input'
+          className: 'ofc-setting-input'
         })
       );
     };

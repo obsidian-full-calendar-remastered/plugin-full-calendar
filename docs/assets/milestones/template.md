@@ -39,7 +39,7 @@ Full Calendar Remastered is a free, open-source labor of love. If this plugin he
 
 - 🐛 **Spot an issue?** [Report a bug on GitHub](Link)
 - ✨ **Have an idea?** [Request a new feature](Link)
-- ☕ **Love the plugin?** [Buy me a coffee](https://ko-fi.com/youfoundjk)
+- ☕ **Love the plugin?** [Buy me a coffee](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/donation/ko-fi)
 
 ---
 

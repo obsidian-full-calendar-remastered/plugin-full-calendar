@@ -62,7 +62,7 @@ curl -X POST https://fcr-cdn.plugin-fcr.workers.dev/telemetry \
 
 ### 💖 Love Full Calendar?
 If this plugin helps organize your life and save you time, please consider supporting its ongoing development. Every contribution keeps the project active and independent!
-*   **☕ Sponsor on Ko-fi**: [ko-fi.com/youfoundjk](https://ko-fi.com/youfoundjk)
+*   **☕ Sponsor on Ko-fi**: [ko-fi.com/youfoundjk](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/donation/ko-fi)
 *   **💖 Sponsor on GitHub**: [github.com/sponsors/YouFoundJK](https://github.com/sponsors/YouFoundJK)
 
 Thank you so much for being part of our journey! 🙏

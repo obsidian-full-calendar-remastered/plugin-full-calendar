@@ -658,7 +658,10 @@ function queueMilestoneToast(milestone: NewlyUnlockedMilestone, index: number): 
     const sponsorBtn = doc.createElement('a');
     sponsorBtn.className = 'ofc-milestone-toast-btn btn-primary';
     sponsorBtn.textContent = t('notices.milestones.sponsorBtn');
-    sponsorBtn.setAttribute('href', 'https://ko-fi.com/youfoundjk');
+    sponsorBtn.setAttribute(
+      'href',
+      'https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/donation/ko-fi'
+    );
     sponsorBtn.setAttribute('target', '_blank');
     sponsorBtn.setAttribute('rel', 'noopener noreferrer');
 

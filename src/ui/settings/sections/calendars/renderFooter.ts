@@ -12,7 +12,9 @@ export function renderFooter(containerEl: HTMLElement): void {
 
   linksContainer.createEl('a', {
     text: t('settings.footer.buyMeACoffee'),
-    attr: { href: 'https://ko-fi.com/youfoundjk' },
+    attr: {
+      href: 'https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/donation/ko-fi'
+    },
     cls: 'full-calendar-settings-footer-link'
   });
   linksContainer.createEl('a', {

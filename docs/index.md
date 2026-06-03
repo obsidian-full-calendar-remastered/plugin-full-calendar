@@ -25,4 +25,4 @@ This documentation site will guide you through setup and advanced features. If s
 
 **For advanced users:** [Data Integrity Notes](user/reference/data_integrity.md)
 
-[![Support me on Ko-Fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/youfoundjk)
+[![Support me on Ko-Fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/donation/ko-fi)

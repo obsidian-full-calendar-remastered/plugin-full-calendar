@@ -62,6 +62,23 @@ function addTimeProperty(
   return prop;
 }
 
+function addProviderAlarms(component: ical.Component, event: OFCEvent): void {
+  for (const alarm of event.alarms || []) {
+    const valarm = new ical.Component('valarm');
+    valarm.addPropertyWithValue('action', alarm.action || 'DISPLAY');
+
+    const trigger = new ical.Property('trigger');
+    trigger.setValue(`-PT${alarm.minutesBefore}M`);
+    valarm.addProperty(trigger);
+
+    if ((alarm.action || 'DISPLAY') === 'DISPLAY') {
+      valarm.addPropertyWithValue('description', event.title);
+    }
+
+    component.addSubcomponent(valarm);
+  }
+}
+
 /**
  * Helper to generate the VEVENT component structure.
  */
@@ -129,6 +146,8 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
   if (event.description) {
     vevent.addPropertyWithValue('description', event.description);
   }
+
+  addProviderAlarms(vevent, event);
 
   // Recurrence (RRULE) - Only for master events, not overrides usually
   if (!isOverride && event.type === 'rrule' && event.rrule) {
@@ -238,6 +257,8 @@ function createVTodoComponent(event: OFCEvent, isOverride = false): ical.Compone
   if (event.description) {
     vtodo.addPropertyWithValue('description', event.description);
   }
+
+  addProviderAlarms(vtodo, event);
 
   // Location/URL mapping:
   if (event.url) {

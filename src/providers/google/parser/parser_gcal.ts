@@ -46,6 +46,13 @@ export interface GoogleEventLike {
   recurrence?: string[];
   location?: string;
   description?: string;
+  reminders?: {
+    useDefault?: boolean;
+    overrides?: Array<{
+      method?: string;
+      minutes?: number;
+    }>;
+  };
 }
 
 export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
@@ -74,6 +81,12 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
   eventData.title = gEvent.summary;
   eventData.location = gEvent.location;
   eventData.description = gEvent.description;
+  const popupReminder = gEvent.reminders?.overrides?.find(
+    reminder => reminder.method === 'popup' && typeof reminder.minutes === 'number'
+  );
+  if (popupReminder) {
+    eventData.alarms = [{ minutesBefore: popupReminder.minutes, action: 'DISPLAY' }];
+  }
 
   // All-Day vs. Timed Events
   if (gEvent.start && gEvent.start.date) {
@@ -201,6 +214,16 @@ export function toGoogleEvent(event: OFCEvent): object {
 
   if (recurrence.length > 0) {
     gEvent.recurrence = recurrence;
+  }
+
+  if (event.alarms && event.alarms.length > 0) {
+    gEvent.reminders = {
+      useDefault: false,
+      overrides: event.alarms.map(alarm => ({
+        method: 'popup',
+        minutes: alarm.minutesBefore
+      }))
+    };
   }
 
   // Handle Overrides (Exceptions)

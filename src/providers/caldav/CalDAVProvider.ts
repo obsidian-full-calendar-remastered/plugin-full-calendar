@@ -784,12 +784,18 @@ export class CalDAVProvider
   }
 
   getEventHandle(event: OFCEvent): EventHandle | null {
+    if (event.caldavHref) {
+      return { persistentId: event.caldavHref };
+    }
     return event.uid ? { persistentId: event.uid } : null;
   }
 
   computeSyncKey(event: OFCEvent): string {
     if (event.type === 'rrule' && event.id) {
       return event.id;
+    }
+    if (event.uid && event.recurrenceId) {
+      return `${event.uid}::${event.recurrenceId}`;
     }
     return event.uid || JSON.stringify(event);
   }
@@ -832,10 +838,13 @@ export class CalDAVProvider
       const parsedEvents: OFCEvent[] = [];
       let parseFailures = 0;
 
-      for (const { ics, etag } of icsList) {
+      for (const { ics, etag, href } of icsList) {
         try {
           const events = getEventsFromICS(ics).map(ev => {
             if (etag) ev.etag = etag.replace(/"/g, ''); // standard ETag usually has quotes
+            if (href) {
+              ev.caldavHref = href;
+            }
             return ev;
           });
           parsedEvents.push(...events);
@@ -1083,15 +1092,15 @@ export class CalDAVProvider
     oldEvent: OFCEvent,
     newEvent: OFCEvent
   ): Promise<EventLocation | null> {
-    const uid = handle.persistentId;
+    const href = handle.persistentId;
     if (!newEvent.uid) {
-      newEvent.uid = uid;
+      newEvent.uid = oldEvent.uid || this.getUidFromHref(href);
     }
 
     // Convert to ICS
     const icsContent = eventToIcs(newEvent);
 
-    const url = `${canonCollection(this.source.homeUrl)}${uid}.ics`;
+    const url = this.resolveEventObjectUrl(href);
 
     // PUT to update
     await this.doRequest(url, {
@@ -1109,8 +1118,7 @@ export class CalDAVProvider
   }
 
   async deleteEvent(handle: EventHandle): Promise<void> {
-    const uid = handle.persistentId;
-    const url = `${canonCollection(this.source.homeUrl)}${uid}.ics`;
+    const url = this.resolveEventObjectUrl(handle.persistentId);
 
     await this.doRequest(url, {
       method: 'DELETE'
@@ -1265,8 +1273,11 @@ export class CalDAVProvider
     if (!masterEvent.uid) {
       throw new Error('Cannot create override: Master event has no UID.');
     }
-    const uid = masterEvent.uid;
-    const url = `${canonCollection(this.source.homeUrl)}${uid}.ics`;
+    const handle = this.getEventHandle(masterEvent);
+    if (!handle) {
+      throw new Error('Cannot create override: Master event has no CalDAV object reference.');
+    }
+    const url = this.resolveEventObjectUrl(handle.persistentId);
 
     // Fetch existing
     // We need to fetch the raw text of the ICS file.
@@ -1288,7 +1299,19 @@ export class CalDAVProvider
     const vcalendar = new ical.Component(jcal);
 
     // 3. Create the Override VEVENT
-    const overrideVEvent = createOverrideVEvent(newEventData, instanceDate);
+    const originalInstanceStart =
+      masterEvent.allDay || !('startTime' in masterEvent)
+        ? instanceDate
+        : `${instanceDate}T${masterEvent.startTime}`;
+    const overrideEventData: OFCEvent = {
+      ...newEventData,
+      uid: masterEvent.uid,
+      timezone: newEventData.timezone || masterEvent.timezone,
+      recurrenceId: originalInstanceStart,
+      notify: newEventData.notify !== undefined ? newEventData.notify : masterEvent.notify,
+      alarms: newEventData.alarms !== undefined ? newEventData.alarms : masterEvent.alarms
+    };
+    const overrideVEvent = createOverrideVEvent(overrideEventData, originalInstanceStart);
 
     // 4. Merge: Add the new VEVENT to the VCALENDAR
     vcalendar.addSubcomponent(overrideVEvent);
@@ -1307,7 +1330,7 @@ export class CalDAVProvider
       body: newIcsContent
     });
 
-    return [newEventData, null];
+    return [overrideEventData, null];
   }
 
   // Helper to attach auth and fetch
@@ -1324,6 +1347,25 @@ export class CalDAVProvider
       throw new Error(`CalDAV request failed: ${res.status} ${res.statusText}`);
     }
     return res;
+  }
+
+  private resolveEventObjectUrl(persistentId: string): string {
+    if (/^https?:\/\//i.test(persistentId)) {
+      return persistentId;
+    }
+    if (persistentId.endsWith('.ics') || persistentId.includes('/')) {
+      return resolveCollectionObjectUrl(this.source.homeUrl, persistentId);
+    }
+    return `${canonCollection(this.source.homeUrl)}${persistentId}.ics`;
+  }
+
+  private getUidFromHref(href: string): string {
+    return decodeURIComponent(
+      href
+        .split('/')
+        .pop()
+        ?.replace(/\.ics$/i, '') || href
+    );
   }
 
   // Boilerplate methods for the provider interface.

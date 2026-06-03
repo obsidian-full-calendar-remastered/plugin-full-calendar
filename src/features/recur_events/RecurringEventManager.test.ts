@@ -78,15 +78,107 @@ describe('RecurringEventManager', () => {
       getGlobalIdentifier: jest.fn(
         (event: OFCEvent, calendarId: string) => `${calendarId}::${event.title}`
       ),
+      updateQueue: {
+        toRemove: new Set<string>(),
+        toAdd: new Map()
+      },
+      generateId: jest.fn().mockReturnValue('override-session-id'),
+      enhancer: {
+        enhance: jest.fn((event: OFCEvent) => event)
+      },
       store: {
         getEventDetails: jest.fn(),
-        getAllEvents: jest.fn().mockReturnValue([])
+        getAllEvents: jest.fn().mockReturnValue([]),
+        add: jest.fn(),
+        delete: jest.fn()
       },
       calendars: new Map([['test-calendar', mockProvider]]),
       plugin: mockPlugin
     } as unknown as jest.Mocked<EventCache>;
 
     manager = new RecurringEventManager(mockCache, mockPlugin);
+  });
+
+  describe('modifyRecurringInstance', () => {
+    const masterEvent: OFCEvent = {
+      type: 'rrule',
+      title: 'Weekly Remote Meeting',
+      uid: 'remote-master',
+      startDate: '2026-06-01',
+      endDate: null,
+      rrule: 'FREQ=WEEKLY',
+      skipDates: [],
+      allDay: false,
+      startTime: '09:00',
+      endTime: '10:00',
+      notify: { value: 15 },
+      alarms: [{ minutesBefore: 15, action: 'DISPLAY' }]
+    };
+
+    const overrideEvent: OFCEvent = {
+      type: 'single',
+      title: 'Weekly Remote Meeting moved',
+      uid: 'remote-master',
+      date: '2026-06-08',
+      endDate: null,
+      allDay: false,
+      startTime: '11:00',
+      endTime: '12:00'
+    };
+
+    it('updates native provider masters in cache without rewriting the master event', async () => {
+      (mockProvider as unknown as { type: string }).type = 'caldav';
+      (PluginState.getProviderRegistry().getSource as jest.Mock).mockReturnValue({
+        type: 'caldav',
+        id: 'test-calendar'
+      });
+      (PluginState.getProviderRegistry().getInstance as jest.Mock).mockReturnValue(mockProvider);
+      (
+        PluginState.getProviderRegistry() as unknown as {
+          createInstanceOverrideInProvider: jest.Mock;
+        }
+      ).createInstanceOverrideInProvider = jest.fn().mockResolvedValue([overrideEvent, null]);
+
+      (mockCache.store.getEventDetails as jest.Mock).mockReturnValue({
+        id: 'master-session-id',
+        calendarId: 'test-calendar',
+        event: masterEvent,
+        location: null
+      });
+
+      await manager.modifyRecurringInstance('master-session-id', '2026-06-08', overrideEvent);
+
+      expect(
+        (
+          PluginState.getProviderRegistry() as unknown as {
+            createInstanceOverrideInProvider: jest.Mock;
+          }
+        ).createInstanceOverrideInProvider
+      ).toHaveBeenCalledWith(
+        'test-calendar',
+        masterEvent,
+        '2026-06-08',
+        expect.objectContaining({
+          notify: { value: 15 },
+          alarms: [{ minutesBefore: 15, action: 'DISPLAY' }]
+        })
+      );
+      expect(mockCache.processEvent).not.toHaveBeenCalled();
+      expect(mockCache.flushUpdateQueue).not.toHaveBeenCalled();
+      expect(mockCache.store.delete).toHaveBeenCalledWith('master-session-id');
+      expect(mockCache.store.add).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'master-session-id',
+          calendarId: 'test-calendar',
+          event: expect.objectContaining({ skipDates: ['2026-06-08'] }) as OFCEvent
+        })
+      );
+      expect(mockCache.updateQueue.toRemove.has('master-session-id')).toBe(true);
+      expect(mockCache.updateQueue.toAdd.get('override-session-id')).toMatchObject({
+        event: overrideEvent,
+        calendarId: 'test-calendar'
+      });
+    });
   });
 
   describe('toggleRecurringInstance - undoing completed task', () => {

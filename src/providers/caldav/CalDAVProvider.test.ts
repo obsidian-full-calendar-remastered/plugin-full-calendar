@@ -593,7 +593,7 @@ END:VCALENDAR
     expect(syncKeys).toHaveLength(2);
     expect(new Set(syncKeys).size).toBe(2);
     expect(syncKeys).toContain('ics::series-1::2020-01-15::recurring');
-    expect(syncKeys).toContain('series-1');
+    expect(syncKeys).toContain('series-1::2024-01-15');
   });
 
   it('should keep valid fallback events when some fallback GET requests fail', async () => {

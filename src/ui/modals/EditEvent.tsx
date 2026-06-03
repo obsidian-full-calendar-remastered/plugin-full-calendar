@@ -191,6 +191,13 @@ export const EditEvent = ({
   const [notifyValue, setNotifyValue] = useState(
     initialEvent?.notify?.value !== undefined ? initialEvent.notify.value : ''
   );
+  const [providerNotifyValue, setProviderNotifyValue] = useState(
+    initialEvent?.alarms?.[0]?.minutesBefore !== undefined
+      ? initialEvent.alarms[0].minutesBefore
+      : initialEvent?.notify?.value !== undefined
+        ? initialEvent.notify.value
+        : ''
+  );
   // END ADDITION
   type MonthlyMode = 'dayOfMonth' | 'onThe';
   const getInitialMonthlyMode = (): MonthlyMode =>
@@ -219,6 +226,9 @@ export const EditEvent = ({
 
   const selectedCalendar = calendars[calendarIndex];
   const isDailyNoteCalendar = selectedCalendar.type === 'dailynote';
+  const supportsProviderNotifications = ['caldav', 'google', 'outlook'].includes(
+    selectedCalendar.type
+  );
   const recurringTooltip = isDailyNoteCalendar
     ? t('modals.editEvent.tooltips.dailyNoteRecurring')
     : '';
@@ -305,6 +315,10 @@ export const EditEvent = ({
       description: description || undefined,
 
       notify: notifyValue !== '' ? { value: Number(notifyValue) } : undefined,
+      alarms:
+        supportsProviderNotifications && providerNotifyValue !== ''
+          ? [{ minutesBefore: Number(providerNotifyValue), action: 'DISPLAY' }]
+          : undefined,
       ...timeInfo,
       ...eventData
     } as OFCEvent;
@@ -493,24 +507,47 @@ export const EditEvent = ({
               </div>
             </div>
             <div className="setting-item-control ofc-notify-group">
-              <input
-                type="number"
-                min="0"
-                max="1440"
-                placeholder={t('modals.editEvent.fields.notification.mins') || 'Mins'}
-                value={notifyValue}
-                onChange={e => setNotifyValue(e.target.value)}
-                style={{ width: '80px', marginRight: '8px' }}
-              />
+              <label className="ofc-notify-field">
+                <span>Obsidian reminder</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="1440"
+                  placeholder="Minutes before start"
+                  value={notifyValue}
+                  onChange={e => setNotifyValue(e.target.value)}
+                  title="Minutes before the event starts"
+                />
+              </label>
+              {supportsProviderNotifications && (
+                <label className="ofc-notify-field">
+                  <span>Calendar provider reminder</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10080"
+                    placeholder="Minutes before start"
+                    value={providerNotifyValue}
+                    onChange={e => setProviderNotifyValue(e.target.value)}
+                    title="Minutes before the event starts"
+                  />
+                </label>
+              )}
               <select
                 onChange={e => {
                   const val = e.target.value;
-                  if (val) setNotifyValue(val);
+                  if (val) {
+                    setNotifyValue(val);
+                    if (supportsProviderNotifications) {
+                      setProviderNotifyValue(val);
+                    }
+                  }
                 }}
                 value="" // Always reset to allow re-selection
+                title="Reminder time preset"
               >
                 <option value="" disabled>
-                  {t('modals.editEvent.fields.notification.select') || 'Select...'}
+                  Preset
                 </option>
                 <option value="30">{t('modals.editEvent.fields.notification.presets.30m')}</option>
                 <option value="60">{t('modals.editEvent.fields.notification.presets.1h')}</option>

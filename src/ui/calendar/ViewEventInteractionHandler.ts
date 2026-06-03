@@ -169,14 +169,6 @@ export class ViewEventInteractionHandler {
       }
 
       if (originalEvent.type === 'rrule' || originalEvent.type === 'recurring') {
-        const oldDate = oldEvent.start ? DateTime.fromJSDate(oldEvent.start).toISODate() : null;
-        const newDate = newEvent.start ? DateTime.fromJSDate(newEvent.start).toISODate() : null;
-
-        if (oldDate && newDate && oldDate !== newDate) {
-          showNotice(t('ui.view.errors.moveRecurringInstanceError'), 6000);
-          return false;
-        }
-
         if (!oldEvent.start) {
           throw new Error('Recurring instance is missing original start date.');
         }

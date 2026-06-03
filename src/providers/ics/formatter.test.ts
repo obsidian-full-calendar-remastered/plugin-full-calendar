@@ -210,4 +210,24 @@ describe('ICS Formatter timezone serialization', () => {
     expect(ics).toContain('RECURRENCE-ID;TZID=Europe/Amsterdam:20260520T100000');
     expect(ics).toContain('END:VTODO');
   });
+
+  it('should serialize provider alarms as VALARM components', () => {
+    const event = {
+      type: 'single',
+      title: 'Alarmed Event',
+      date: '2026-05-20',
+      startTime: '10:00',
+      endTime: '11:00',
+      allDay: false,
+      endDate: null,
+      alarms: [{ minutesBefore: 15, action: 'DISPLAY' }]
+    } as OFCEvent;
+
+    const ics = eventToIcs(event);
+    expect(ics).toContain('BEGIN:VALARM');
+    expect(ics).toContain('ACTION:DISPLAY');
+    expect(ics).toContain('TRIGGER:-PT15M');
+    expect(ics).toContain('DESCRIPTION:Alarmed Event');
+    expect(ics).toContain('END:VALARM');
+  });
 });

@@ -52,6 +52,7 @@ describe('GoogleProvider Configuration Wrapper', () => {
 import { PluginState } from '../../core/PluginState';
 import { OFCEvent } from '../../types';
 import { showNotice } from '../../utils/showNotice';
+import { fromGoogleEvent, toGoogleEvent } from './parser/parser_gcal';
 
 jest.mock('../../core/PluginState');
 jest.mock('../../utils/showNotice');
@@ -152,5 +153,42 @@ describe('GoogleProvider createLinkedNote', () => {
     const file = await provider.createLinkedNote(mockEvent);
     expect(file).toBeNull();
     expect(showNotice).toHaveBeenCalledWith(t('notices.configureLinkedNotesDirFirst'));
+  });
+});
+
+describe('GoogleProvider reminder mapping', () => {
+  it('maps Google popup reminders to provider alarms', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Google Reminder',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      reminders: {
+        useDefault: false,
+        overrides: [{ method: 'popup', minutes: 25 }]
+      }
+    });
+
+    expect(event?.alarms).toEqual([{ minutesBefore: 25, action: 'DISPLAY' }]);
+  });
+
+  it('serializes provider alarms as Google popup reminder overrides', () => {
+    const event = {
+      title: 'Google Reminder',
+      type: 'single',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00',
+      alarms: [{ minutesBefore: 25, action: 'DISPLAY' }]
+    } as OFCEvent;
+
+    expect(toGoogleEvent(event)).toMatchObject({
+      reminders: {
+        useDefault: false,
+        overrides: [{ method: 'popup', minutes: 25 }]
+      }
+    });
   });
 });

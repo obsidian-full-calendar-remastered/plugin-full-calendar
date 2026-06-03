@@ -128,6 +128,9 @@ export class ICSProvider implements CalendarProvider<ICSProviderConfig>, SyncKey
     if (event.type === 'rrule' && event.id) {
       return event.id;
     }
+    if (event.uid && event.recurrenceId) {
+      return `${event.uid}::${event.recurrenceId}`;
+    }
     return event.uid || JSON.stringify(event);
   }
 

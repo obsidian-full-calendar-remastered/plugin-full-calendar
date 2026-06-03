@@ -342,6 +342,54 @@ export class RecurringEventManager {
     );
   }
 
+  private updateMasterSkipDateInCache(masterEventId: string, instanceDate: string): void {
+    const details = this.cache.store.getEventDetails(masterEventId);
+    if (!details) {
+      throw new Error('Master event not found for cache update.');
+    }
+
+    const { calendarId, event: masterEvent, location } = details;
+    if (masterEvent.type !== 'recurring' && masterEvent.type !== 'rrule') {
+      return;
+    }
+
+    const updatedMasterEvent: OFCEvent = {
+      ...masterEvent,
+      skipDates: masterEvent.skipDates.includes(instanceDate)
+        ? masterEvent.skipDates
+        : [...masterEvent.skipDates, instanceDate]
+    };
+
+    this.cache.store.delete(masterEventId);
+    this.cache.store.add({
+      calendarId,
+      location: location
+        ? { file: { path: location.path }, lineNumber: location.lineNumber }
+        : null,
+      id: masterEventId,
+      event: updatedMasterEvent
+    });
+
+    this.cache.updateQueue.toRemove.add(masterEventId);
+    this.cache.updateQueue.toAdd.set(masterEventId, {
+      id: masterEventId,
+      calendarId,
+      event: updatedMasterEvent
+    });
+  }
+
+  private providerOwnsRecurringInstanceOverrides(providerType: string): boolean {
+    return providerType === 'caldav' || providerType === 'google' || providerType === 'outlook';
+  }
+
+  private inheritReminderFields(overrideEvent: OFCEvent, masterEvent: OFCEvent): OFCEvent {
+    return {
+      ...overrideEvent,
+      notify: overrideEvent.notify !== undefined ? overrideEvent.notify : masterEvent.notify,
+      alarms: overrideEvent.alarms !== undefined ? overrideEvent.alarms : masterEvent.alarms
+    };
+  }
+
   /**
    * Handles the modification of a single instance of a recurring event.
    * This is triggered when a user drags or resizes an instance in the calendar view.
@@ -364,6 +412,15 @@ export class RecurringEventManager {
       throw new Error('Master event not found for instance modification.');
     }
     const { calendarId, event: masterEvent } = details;
+    const providerResult = this.getProviderAndConfig(calendarId);
+    if (!providerResult) {
+      throw new Error(`Provider for calendar ${calendarId} not found.`);
+    }
+
+    const overrideEventWithInheritedReminders = this.inheritReminderFields(
+      newEventData,
+      masterEvent
+    );
 
     // CORRECTED: Delegate the entire provider operation to the registry.
     const [authoritativeOverrideEvent, overrideLocation] =
@@ -371,7 +428,7 @@ export class RecurringEventManager {
         calendarId,
         masterEvent,
         instanceDate,
-        newEventData
+        overrideEventWithInheritedReminders
       );
 
     const enhancedEvent = this.cache.enhancer.enhance(authoritativeOverrideEvent);
@@ -390,19 +447,21 @@ export class RecurringEventManager {
     });
     this.cache.isBulkUpdating = true;
 
-    await this.cache.processEvent(
-      masterEventId,
-      e => {
-        if (e.type !== 'recurring' && e.type !== 'rrule') return e;
-        const skipDates = e.skipDates.includes(instanceDate)
-          ? e.skipDates
-          : [...e.skipDates, instanceDate];
-        return { ...e, skipDates };
-      },
-      { silent: true }
-    );
-
-    this.cache.flushUpdateQueue([], []);
+    if (this.providerOwnsRecurringInstanceOverrides(providerResult.provider.type)) {
+      this.updateMasterSkipDateInCache(masterEventId, instanceDate);
+    } else {
+      await this.cache.processEvent(
+        masterEventId,
+        e => {
+          if (e.type !== 'recurring' && e.type !== 'rrule') return e;
+          const skipDates = e.skipDates.includes(instanceDate)
+            ? e.skipDates
+            : [...e.skipDates, instanceDate];
+          return { ...e, skipDates };
+        },
+        { silent: true }
+      );
+    }
   }
 
   /**

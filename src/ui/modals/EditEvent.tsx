@@ -19,6 +19,7 @@ import { AutocompleteInput } from '../components/forms/AutocompleteInput';
 import { parseSubcategoryTitle } from '../../features/category/categoryParser';
 import { t } from '../../features/i18n/i18n';
 import { setIcon } from 'obsidian';
+import { PluginState } from '../../core/PluginState';
 
 const Icon = ({ name }: { name: string }) => {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -226,8 +227,10 @@ export const EditEvent = ({
 
   const selectedCalendar = calendars[calendarIndex];
   const isDailyNoteCalendar = selectedCalendar.type === 'dailynote';
-  const supportsProviderNotifications = ['caldav', 'google', 'outlook'].includes(
-    selectedCalendar.type
+  const supportsProviderNotifications = Boolean(
+    PluginState.getProviderRegistry()
+      .getInstance(selectedCalendar.id)
+      ?.getCapabilities().supportsAlarms
   );
   const recurringTooltip = isDailyNoteCalendar
     ? t('modals.editEvent.tooltips.dailyNoteRecurring')

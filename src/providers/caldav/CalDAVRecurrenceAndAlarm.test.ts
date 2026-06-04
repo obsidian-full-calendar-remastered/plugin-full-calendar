@@ -173,6 +173,156 @@ END:VCALENDAR`)
     expect(body).toEqual(expect.stringContaining('TRIGGER:-PT10M'));
   });
 
+  it('creates Obsidian recurring events as real CalDAV recurrence series', async () => {
+    const event = {
+      type: 'recurring',
+      uid: 'obsidian-created-series',
+      title: 'Daily standup',
+      startRecur: '2026-06-01',
+      endDate: null,
+      daysOfWeek: ['M', 'T', 'W', 'R', 'F'],
+      repeatInterval: 1,
+      skipDates: [],
+      allDay: false,
+      startTime: '09:00',
+      endTime: '09:30',
+      timezone: 'Europe/Amsterdam'
+    } as OFCEvent;
+
+    mockObsidianFetch.mockResolvedValueOnce({ status: 201, statusText: 'Created' } as Response);
+
+    await provider.createEvent(event);
+
+    expect(mockObsidianFetch).toHaveBeenLastCalledWith(
+      'https://example.com/caldav/user/calendar/events/obsidian-created-series.ics',
+      expect.objectContaining({ method: 'PUT' })
+    );
+    const body = mockObsidianFetch.mock.calls[0][1]?.body;
+    expect(body).toEqual(expect.stringContaining('BEGIN:VEVENT'));
+    expect(body).toEqual(expect.stringContaining('RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'));
+    expect(body).toEqual(expect.stringContaining('DTSTART;TZID=Europe/Amsterdam:20260601T090000'));
+    expect(body).toEqual(expect.stringContaining('DTEND;TZID=Europe/Amsterdam:20260601T093000'));
+  });
+
+  it('updates a CalDAV recurrence override without replacing the recurring object', async () => {
+    const oldOverride = {
+      type: 'single',
+      uid: 'meeting-series',
+      recurrenceId: '2026-06-08T10:00:00.000+02:00',
+      caldavHref: '/caldav/user/calendar/events/real-object.ics',
+      title: 'Weekly Meeting moved',
+      date: '2026-06-09',
+      endDate: null,
+      allDay: false,
+      startTime: '12:00',
+      endTime: '13:00',
+      timezone: 'Europe/Amsterdam'
+    } as OFCEvent;
+
+    const newOverride = {
+      ...oldOverride,
+      title: 'Weekly Meeting moved again',
+      alarms: [{ minutesBefore: 30, action: 'DISPLAY' }]
+    } as OFCEvent;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () =>
+          Promise.resolve(`BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:meeting-series
+SUMMARY:Weekly Meeting
+DTSTART;TZID=Europe/Amsterdam:20260601T100000
+DTEND;TZID=Europe/Amsterdam:20260601T110000
+RRULE:FREQ=WEEKLY
+END:VEVENT
+BEGIN:VEVENT
+UID:meeting-series
+RECURRENCE-ID;TZID=Europe/Amsterdam:20260608T100000
+SUMMARY:Weekly Meeting moved
+DTSTART;TZID=Europe/Amsterdam:20260609T120000
+DTEND;TZID=Europe/Amsterdam:20260609T130000
+END:VEVENT
+END:VCALENDAR`)
+      } as Response)
+      .mockResolvedValueOnce({ status: 204, statusText: 'No Content' } as Response);
+
+    const handle = provider.getEventHandle(oldOverride);
+    if (!handle) throw new Error('Expected event handle');
+
+    await provider.updateEvent(handle, oldOverride, newOverride);
+
+    expect(mockObsidianFetch).toHaveBeenLastCalledWith(
+      'https://example.com/caldav/user/calendar/events/real-object.ics',
+      expect.objectContaining({ method: 'PUT' })
+    );
+    const body = mockObsidianFetch.mock.calls[1][1]?.body;
+    expect(body).toEqual(expect.stringContaining('RRULE:FREQ=WEEKLY'));
+    expect(body).toEqual(expect.stringContaining('SUMMARY:Weekly Meeting'));
+    expect(body).toEqual(expect.stringContaining('SUMMARY:Weekly Meeting moved again'));
+    expect(body).toEqual(
+      expect.stringContaining('RECURRENCE-ID;TZID=Europe/Amsterdam:20260608T100000')
+    );
+    expect(body).toEqual(expect.stringContaining('TRIGGER:-PT30M'));
+  });
+
+  it('deletes a CalDAV recurrence override without deleting the shared recurring object', async () => {
+    const overrideEvent = {
+      type: 'single',
+      uid: 'meeting-series',
+      recurrenceId: '2026-06-08T10:00:00.000+02:00',
+      caldavHref: '/caldav/user/calendar/events/real-object.ics',
+      title: 'Weekly Meeting moved',
+      date: '2026-06-09',
+      endDate: null,
+      allDay: false,
+      startTime: '12:00',
+      endTime: '13:00',
+      timezone: 'Europe/Amsterdam'
+    } as OFCEvent;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () =>
+          Promise.resolve(`BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:meeting-series
+SUMMARY:Weekly Meeting
+DTSTART;TZID=Europe/Amsterdam:20260601T100000
+DTEND;TZID=Europe/Amsterdam:20260601T110000
+RRULE:FREQ=WEEKLY
+END:VEVENT
+BEGIN:VEVENT
+UID:meeting-series
+RECURRENCE-ID;TZID=Europe/Amsterdam:20260608T100000
+SUMMARY:Weekly Meeting moved
+DTSTART;TZID=Europe/Amsterdam:20260609T120000
+DTEND;TZID=Europe/Amsterdam:20260609T130000
+END:VEVENT
+END:VCALENDAR`)
+      } as Response)
+      .mockResolvedValueOnce({ status: 204, statusText: 'No Content' } as Response);
+
+    const handle = provider.getEventHandle(overrideEvent);
+    if (!handle) throw new Error('Expected event handle');
+
+    await provider.deleteEvent(handle);
+
+    expect(mockObsidianFetch).toHaveBeenLastCalledWith(
+      'https://example.com/caldav/user/calendar/events/real-object.ics',
+      expect.objectContaining({ method: 'PUT' })
+    );
+    const body = mockObsidianFetch.mock.calls[1][1]?.body;
+    expect(body).toEqual(expect.stringContaining('RRULE:FREQ=WEEKLY'));
+    expect(body).toEqual(expect.stringContaining('SUMMARY:Weekly Meeting'));
+    expect(body).not.toEqual(expect.stringContaining('SUMMARY:Weekly Meeting moved'));
+    expect(body).not.toEqual(expect.stringContaining('RECURRENCE-ID'));
+  });
+
   it('keeps multiple moved recurrence exceptions distinct when syncing CalDAV', async () => {
     const propfindResponse = `
       <d:multistatus xmlns:d="DAV:">

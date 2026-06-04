@@ -117,11 +117,140 @@ export class RecurringEventManager {
     const masterLocalIdentifier = globalId.split('::').pop()?.split('/').pop();
     if (!masterLocalIdentifier) return [];
 
-    return this.cache.store
-      .getAllEvents()
-      .filter(
-        e => e.calendarId === calendarId && e.event.recurringEventId === masterLocalIdentifier
-      );
+    return this.cache.store.getAllEvents().filter(e => {
+      if (e.calendarId !== calendarId || e.event.type !== 'single') {
+        return false;
+      }
+      if (e.event.recurringEventId === masterLocalIdentifier) {
+        return true;
+      }
+      if (masterEvent.uid && e.event.recurringEventId === masterEvent.uid) {
+        return true;
+      }
+      if (masterEvent.id && e.event.recurringEventId === masterEvent.id) {
+        return true;
+      }
+      return Boolean(masterEvent.uid && e.event.uid === masterEvent.uid && e.event.recurrenceId);
+    });
+  }
+
+  private findRecurringMasterId(eventId: string, event: OFCEvent, calendarId: string): string | null {
+    if (event.type === 'recurring' || event.type === 'rrule') {
+      return eventId;
+    }
+
+    if (event.type !== 'single' || (!event.recurringEventId && !event.recurrenceId)) {
+      return null;
+    }
+
+    const expectedParentIdentifier = event.recurringEventId || event.uid;
+    if (!expectedParentIdentifier) {
+      return null;
+    }
+
+    const expectedParentFilename = expectedParentIdentifier.split('/').pop();
+    const master = this.cache.store.getAllEvents().find(candidate => {
+      if (candidate.calendarId !== calendarId) {
+        return false;
+      }
+      if (candidate.event.type !== 'recurring' && candidate.event.type !== 'rrule') {
+        return false;
+      }
+      if (candidate.event.uid && candidate.event.uid === expectedParentIdentifier) {
+        return true;
+      }
+      if (candidate.event.id && candidate.event.id === expectedParentIdentifier) {
+        return true;
+      }
+
+      const candidateFilename = candidate.location?.path.split('/').pop();
+      return Boolean(candidateFilename && candidateFilename === expectedParentFilename);
+    });
+
+    return master?.id ?? null;
+  }
+
+  private async deleteSingleRecurringInstance(
+    eventId: string,
+    event: OFCEvent,
+    calendarId: string,
+    instanceDate?: string
+  ): Promise<void> {
+    if (event.type === 'single' && event.recurrenceId && !event.recurringEventId) {
+      await this.cache.deleteEvent(eventId, { silent: true, force: true });
+      this.cache.flushUpdateQueue([], []);
+      return;
+    }
+
+    if (event.type === 'single' && event.recurringEventId) {
+      const masterFilename = event.recurringEventId;
+      const providerResult = this.getProviderAndConfig(calendarId);
+      if (!providerResult) {
+        console.warn(
+          `Could not find provider for calendar ID ${calendarId}. Deleting orphan override.`
+        );
+        await this.cache.deleteEvent(eventId, { silent: true, force: true });
+        this.cache.flushUpdateQueue([], []);
+        return;
+      }
+      const { config } = providerResult;
+      if (config.type !== 'local') {
+        await this.cache.deleteEvent(eventId, { silent: true, force: true });
+        this.cache.flushUpdateQueue([], []);
+        return;
+      }
+      const masterPath = `${config.directory}/${masterFilename}`;
+      const globalMasterIdentifier = `${calendarId}::${masterPath}`;
+
+      const masterSessionId = await this.cache.getSessionId(globalMasterIdentifier);
+
+      if (masterSessionId) {
+        await this.cache.processEvent(
+          masterSessionId,
+          e => {
+            if (e.type !== 'recurring' && e.type !== 'rrule') return e;
+            const dateToUnskip = event.date;
+            return {
+              ...e,
+              skipDates: e.skipDates.filter((d: string) => d !== dateToUnskip)
+            };
+          },
+          { silent: true }
+        );
+      } else {
+        console.warn(
+          `Master recurring event with identifier "${globalMasterIdentifier}" not found. Deleting orphan override.`
+        );
+      }
+      await this.cache.deleteEvent(eventId, { silent: true, force: true });
+      this.cache.flushUpdateQueue([], []);
+      return;
+    }
+
+    if (event.type === 'recurring' || event.type === 'rrule') {
+      const dateToSkip = instanceDate;
+      if (!dateToSkip) {
+        return;
+      }
+
+      const updated = await this.cache.processEvent(eventId, e => {
+        if (e.type !== 'recurring' && e.type !== 'rrule') return e;
+        const skipDates = e.skipDates?.includes(dateToSkip)
+          ? e.skipDates
+          : [...(e.skipDates || []), dateToSkip];
+        return { ...e, skipDates };
+      });
+
+      if (updated) {
+        const details = this.cache.store.getEventDetails(eventId);
+        if (details) {
+          const calendarSource = this.cache.getAllEvents().find(s => s.id === details.calendarId);
+          if (calendarSource) {
+            this.cache.updateCalendar(calendarSource);
+          }
+        }
+      }
+    }
   }
 
   public async promoteRecurringChildren(masterEventId: string): Promise<void> {
@@ -174,118 +303,35 @@ export class RecurringEventManager {
     event: OFCEvent,
     options?: DeleteOptions
   ): Promise<boolean> {
-    // Check if we are "undoing" an override. This is now the full operation.
-    if (event.type === 'single' && event.recurringEventId) {
-      const eventDetails = this.cache.store.getEventDetails(eventId);
-      if (!eventDetails) return false;
-      const { calendarId } = eventDetails;
-
-      const masterFilename = event.recurringEventId;
-      const providerResult = this.getProviderAndConfig(calendarId);
-      if (!providerResult) {
-        // Cannot proceed if provider/config is not found.
-        console.warn(
-          `Could not find provider for calendar ID ${calendarId}. Deleting orphan override.`
-        );
-        await this.cache.deleteEvent(eventId, { silent: true, force: true });
-        this.cache.flushUpdateQueue([], []);
-        return true;
-      }
-      const { config } = providerResult;
-      // Reconstruct the master event's full path (only for local sources)
-      if (config.type !== 'local') {
-        console.warn('Expected local calendar for recurring override cleanup.');
-        await this.cache.deleteEvent(eventId, { silent: true, force: true });
-        this.cache.flushUpdateQueue([], []);
-        return true;
-      }
-      const masterPath = `${config.directory}/${masterFilename}`;
-      const globalMasterIdentifier = `${calendarId}::${masterPath}`;
-
-      const masterSessionId = await this.cache.getSessionId(globalMasterIdentifier);
-
-      if (masterSessionId) {
-        await this.cache.processEvent(
-          masterSessionId,
-          e => {
-            if (e.type !== 'recurring' && e.type !== 'rrule') return e;
-            const dateToUnskip = event.date;
-            return {
-              ...e,
-              skipDates: e.skipDates.filter((d: string) => d !== dateToUnskip)
-            };
-          },
-          { silent: true }
-        );
-      } else {
-        console.warn(
-          `Master recurring event with identifier "${globalMasterIdentifier}" not found. Deleting orphan override.`
-        );
-      }
-      await this.cache.deleteEvent(eventId, { silent: true, force: true });
-      this.cache.flushUpdateQueue([], []);
-      return true;
-    }
-
-    const isRecurringMaster = event.type === 'recurring' || event.type === 'rrule';
-    if (!isRecurringMaster) {
-      return false;
-    }
-
     const eventDetails = this.cache.store.getEventDetails(eventId);
     if (!eventDetails) return false;
     const { calendarId } = eventDetails;
+    const masterEventId = this.findRecurringMasterId(eventId, event, calendarId);
+    if (!masterEventId) {
+      return false;
+    }
 
     // REPLACE calendar lookup with provider lookup
     const providerResult = this.getProviderAndConfig(calendarId);
     if (!providerResult) return false;
     const isGoogle = providerResult.provider.type === 'google';
 
-    const children = this.findRecurringChildren(eventId);
-
-    if (children.length > 0 || options?.instanceDate) {
-      // LAZY LOAD MODAL
-      const { DeleteRecurringModal } = await import('../../ui/modals/DeleteRecurringModal');
-      new DeleteRecurringModal(
-        this.cache.plugin.app,
-        () => void this.promoteRecurringChildren(eventId),
-        () => void this.deleteAllRecurring(eventId),
-        options?.instanceDate
-          ? () => {
-              void (async () => {
-                const instanceDate = options.instanceDate;
-                if (!instanceDate) {
-                  return;
-                }
-                const updated = await this.cache.processEvent(eventId, e => {
-                  if (e.type !== 'recurring' && e.type !== 'rrule') return e;
-                  const skipDates = e.skipDates?.includes(instanceDate)
-                    ? e.skipDates
-                    : [...(e.skipDates || []), instanceDate];
-                  return { ...e, skipDates };
-                });
-
-                if (updated) {
-                  const details = this.cache.store.getEventDetails(eventId);
-                  if (details) {
-                    const calendarSource = this.cache
-                      .getAllEvents()
-                      .find(s => s.id === details.calendarId);
-                    if (calendarSource) {
-                      this.cache.updateCalendar(calendarSource);
-                    }
-                  }
-                }
-              })();
-            }
-          : undefined,
-        options?.instanceDate,
-        isGoogle
-      ).open();
-      return true;
-    }
-
-    return false;
+    const instanceDate =
+      options?.instanceDate || (event.type === 'single' ? event.recurrenceId || event.date : undefined);
+    const { DeleteRecurringModal } = await import('../../ui/modals/DeleteRecurringModal');
+    new DeleteRecurringModal(
+      this.cache.plugin.app,
+      () => void this.promoteRecurringChildren(masterEventId),
+      () => void this.deleteAllRecurring(masterEventId),
+      instanceDate
+        ? () => {
+            void this.deleteSingleRecurringInstance(eventId, event, calendarId, instanceDate);
+          }
+        : undefined,
+      instanceDate,
+      isGoogle
+    ).open();
+    return true;
   }
 
   /**
@@ -378,8 +424,10 @@ export class RecurringEventManager {
     });
   }
 
-  private providerOwnsRecurringInstanceOverrides(providerType: string): boolean {
-    return providerType === 'caldav' || providerType === 'google' || providerType === 'outlook';
+  private providerOwnsRecurringInstanceOverrides(
+    providerResult: ReturnType<RecurringEventManager['getProviderAndConfig']>
+  ): boolean {
+    return Boolean(providerResult?.provider.getCapabilities().ownsRecurringInstanceOverrides);
   }
 
   private inheritReminderFields(overrideEvent: OFCEvent, masterEvent: OFCEvent): OFCEvent {
@@ -447,7 +495,7 @@ export class RecurringEventManager {
     });
     this.cache.isBulkUpdating = true;
 
-    if (this.providerOwnsRecurringInstanceOverrides(providerResult.provider.type)) {
+    if (this.providerOwnsRecurringInstanceOverrides(providerResult)) {
       this.updateMasterSkipDateInCache(masterEventId, instanceDate);
     } else {
       await this.cache.processEvent(

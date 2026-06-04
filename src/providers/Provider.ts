@@ -8,6 +8,8 @@ export interface CalendarProviderCapabilities {
   canEdit: boolean;
   canDelete: boolean;
   hasCustomEditUI?: boolean; // This is the new capability
+  supportsAlarms?: boolean;
+  ownsRecurringInstanceOverrides?: boolean;
   contextMenu?: {
     allowGenericTaskActions?: boolean;
     allowDisplayActions?: boolean;

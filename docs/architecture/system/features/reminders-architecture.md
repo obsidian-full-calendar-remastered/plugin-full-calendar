@@ -33,6 +33,25 @@ If snooze was runtime-only, snoozing on a Desktop would not prevent a mobile dev
 
 ---
 
+## Provider Alarm Contract
+
+Full Calendar keeps two reminder concepts separate:
+
+*   `notify` is the Obsidian/local reminder value consumed by `NotificationManager`.
+*   `alarms` is provider-owned reminder data that syncs to remote calendar services.
+
+Providers that can persist provider alarms set `CalendarProviderCapabilities.supportsAlarms`. The edit modal reads that capability and shows the provider reminder control only for those calendars.
+
+Provider mappings:
+
+*   CalDAV serializes `alarms` as ICS `VALARM` components.
+*   Google serializes `alarms` as popup reminder overrides.
+*   Outlook serializes `alarms` as reminder minutes.
+
+Recurring instance overrides inherit `notify` and `alarms` from the master event unless the override explicitly supplies its own values. For CalDAV, override alarm edits are written by replacing the matching recurrence override component in the same `.ics` resource as the recurring master.
+
+---
+
 ## Startup Safety (Recency Cutoff)
 
 The manager implements a **5-minute recency cutoff**. If a reminder's trigger point was more than 5 minutes in the past (e.g., you open Obsidian at 14:05 for a 14:00 event with a 10-minute reminder), the notification is suppressed. This prevents a "spam" of missed notifications when starting the app after a long break.

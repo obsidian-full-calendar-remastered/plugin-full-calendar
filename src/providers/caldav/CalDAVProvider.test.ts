@@ -833,7 +833,13 @@ END:VCALENDAR
       .mockResolvedValueOnce({ status: 204, statusText: 'No Content' } as Response)
       .mockResolvedValueOnce({ status: 204, statusText: 'No Content' } as Response);
 
-    expect(provider.getCapabilities()).toEqual({ canCreate: true, canEdit: true, canDelete: true });
+    expect(provider.getCapabilities()).toEqual({
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      supportsAlarms: true,
+      ownsRecurringInstanceOverrides: true
+    });
 
     const [createdEvent] = await provider.createEvent({ ...baseEvent });
     expect(createdEvent.uid).toBe('evt-workflow-1');

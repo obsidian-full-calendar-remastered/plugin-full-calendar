@@ -16,6 +16,11 @@ This page describes how event logic is organized.
 - Recurrence logic is delegated to dedicated feature managers.
 - Provider write operations are routed through provider registry.
 - Recurring instance completion/skip semantics are exposed through provider-agnostic contracts and implemented inside providers (no provider-specific recurrence branching in shared UI/core paths).
+- Provider-specific recurring overrides are declared through `CalendarProviderCapabilities.ownsRecurringInstanceOverrides`. Shared recurrence code checks that capability instead of hardcoding provider types.
+- CalDAV recurrence overrides are edited inside the shared server `.ics` object. Updating or deleting one override must replace or remove only the matching `VEVENT` with the same `UID` and `RECURRENCE-ID`; it must not PUT a one-event calendar over the whole resource or DELETE the resource URL.
+- Recurring deletes are centralized in `RecurringEventManager.handleDelete`. Any GUI path that calls `EventCache.deleteEvent()` for a recurring master or linked override must show the same recurring-delete modal unless the caller explicitly uses `force`.
+- Dragging or resizing a recurring occurrence opens `RescheduleRecurringModal`, allowing either an occurrence override or a whole-sequence update. Single events bypass this modal and use the normal update path.
+- ICS serialization treats both internal recurrence shapes as provider-recurring data: `type: rrule` is serialized from its raw `rrule`, and `type: recurring` is converted into an RFC 5545 `RRULE` before writing to CalDAV/ICS providers.
 
 ## Related User Docs
 

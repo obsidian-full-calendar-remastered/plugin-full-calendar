@@ -1158,8 +1158,6 @@
         },
         "notification": {
           "label": "通知",
-          "select": "选择...",
-          "mins": "分钟",
           "presets": {
             "30m": "30 分钟",
             "1h": "1 小时",
@@ -1434,6 +1432,22 @@
         "save": "保存",
         "cancel": "取消"
       }
+    },
+    "rescheduleRecurring": {
+      "title": "Reschedule Recurring Event",
+      "description": "This is a recurring event. Choose whether to reschedule only this occurrence or the entire recurring sequence.",
+      "rescheduleInstance": {
+        "name": "Reschedule only this instance",
+        "description": "Move only the instance on {{date}}. The rest of the sequence will keep its current schedule.",
+        "descriptionNoDate": "Move only this instance. The rest of the sequence will keep its current schedule.",
+        "button": "Move This Instance"
+      },
+      "rescheduleSequence": {
+        "name": "Reschedule entire sequence",
+        "description": "Update the recurring event itself so every occurrence follows the new schedule.",
+        "button": "Move Sequence"
+      },
+      "cancel": "Cancel"
     }
   },
   "google": {
@@ -1499,12 +1513,9 @@
         "chronoAnalyserDesktopOnly": "数据分析器仅在桌面版可用。",
         "chronoAnalyserFailed": "打开数据分析器失败。请检查控制台。",
         "modifyEventFailed": "修改事件失败。",
-        "taskScheduleFailed": "安排任务失败：{{message}}",
-        "moveRecurringDayError": "无法将重复实例移动到不同日期。请仅修改时间或编辑主重复事件。",
-        "moveRecurringInstanceError": "无法将重复实例移动到不同日期。您只能修改时间。"
+        "taskScheduleFailed": "安排任务失败：{{message}}"
       },
       "success": {
-        "deletedEvent": "已删除事件 \"{{title}}\"。",
         "taskScheduled": "任务安排成功"
       },
       "workspace": {

@@ -16,6 +16,9 @@ Implement the `CalendarProvider` interface with clear source capability boundari
 - `getEvents` is mandatory.
 - `createEvent` / `updateEvent` / `deleteEvent` should throw explicit read-only errors if unsupported.
 - `getEventHandle` must return stable persistent identity.
+- Set `CalendarProviderCapabilities.supportsAlarms` only when the provider can persist `OFCEvent.alarms`.
+- Set `CalendarProviderCapabilities.ownsRecurringInstanceOverrides` when single-instance recurrence edits are provider-native and shared recurrence code should not create local child notes or infer behavior from provider type strings.
+- Providers that serialize ICS must preserve recurrence semantics for both `type: rrule` and `type: recurring`; UI-created recurring events must leave the app as real provider recurrence rules, not as single events that only look recurring locally.
 - Optional hooks (`initialize`, `toggleComplete`, `canBeScheduledAt`) are allowed only when needed.
 
 If recurring instance complete/skip semantics are provider-owned, implement the normalized recurring-instance hooks described in [Provider Implementations and Patches](provider-implementations.md#provider-agnostic-recurring-instance-semantics).

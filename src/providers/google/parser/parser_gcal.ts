@@ -48,10 +48,10 @@ export interface GoogleEventLike {
   description?: string;
   reminders?: {
     useDefault?: boolean;
-    overrides?: Array<{
+    overrides?: {
       method?: string;
       minutes?: number;
-    }>;
+    }[];
   };
 }
 

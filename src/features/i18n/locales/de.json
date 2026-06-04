@@ -1158,8 +1158,6 @@
         },
         "notification": {
           "label": "Benachrichtigen",
-          "select": "Auswählen...",
-          "mins": "Min.",
           "presets": {
             "30m": "30 Min.",
             "1h": "1 Stunde",
@@ -1434,6 +1432,22 @@
         "regex": "Regex",
         "btnAdd": "+ Regel hinzufügen"
       }
+    },
+    "rescheduleRecurring": {
+      "title": "Reschedule Recurring Event",
+      "description": "This is a recurring event. Choose whether to reschedule only this occurrence or the entire recurring sequence.",
+      "rescheduleInstance": {
+        "name": "Reschedule only this instance",
+        "description": "Move only the instance on {{date}}. The rest of the sequence will keep its current schedule.",
+        "descriptionNoDate": "Move only this instance. The rest of the sequence will keep its current schedule.",
+        "button": "Move This Instance"
+      },
+      "rescheduleSequence": {
+        "name": "Reschedule entire sequence",
+        "description": "Update the recurring event itself so every occurrence follows the new schedule.",
+        "button": "Move Sequence"
+      },
+      "cancel": "Cancel"
     }
   },
   "google": {
@@ -1499,12 +1513,9 @@
         "chronoAnalyserDesktopOnly": "Der Chrono-Analysator ist nur auf dem Desktop verfügbar.",
         "chronoAnalyserFailed": "Fehler beim Öffnen des Chrono-Analysators. Bitte überprüfen Sie die Konsole.",
         "modifyEventFailed": "Fehler beim Ändern des Ereignisses.",
-        "taskScheduleFailed": "Fehler beim Planen der Aufgabe: {{message}}",
-        "moveRecurringDayError": "Eine wiederkehrende Instanz kann nicht auf einen anderen Tag verschoben werden. Ändern Sie nur die Uhrzeit oder bearbeiten Sie das wiederkehrende Hauptereignis.",
-        "moveRecurringInstanceError": "Eine wiederkehrende Instanz kann nicht auf einen anderen Tag verschoben werden. Sie können nur die Uhrzeit ändern."
+        "taskScheduleFailed": "Fehler beim Planen der Aufgabe: {{message}}"
       },
       "success": {
-        "deletedEvent": "Ereignis \"{{title}}\" gelöscht.",
         "taskScheduled": "Aufgabe erfolgreich geplant"
       },
       "workspace": {

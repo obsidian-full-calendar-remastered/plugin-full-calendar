@@ -288,6 +288,12 @@
         "label": "Modèle de note liée",
         "description": "Définissez le modèle utilisé pour créer de nouvelles notes liées. Prend en charge : {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
         "placeholder": "Entrez le modèle Markdown de la note..."
+      },
+      "linkedNoteLinkStrategy": {
+        "label": "Linked note link strategy",
+        "description": "Choose whether recurring event occurrences share one title-based note or use separate date-specific notes.",
+        "deadline": "Deadline-based (one note per occurrence)",
+        "name": "Name-based (one note per event series)"
       }
     },
     "reminders": {

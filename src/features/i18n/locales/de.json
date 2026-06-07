@@ -288,6 +288,12 @@
         "label": "Vorlage für verknüpfte Notizen",
         "description": "Definieren Sie die Vorlage, die zum Erstellen neuer verknüpfter Notizen verwendet wird. Unterstützt: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
         "placeholder": "Geben Sie die Markdown-Vorlage für Notizen ein..."
+      },
+      "linkedNoteLinkStrategy": {
+        "label": "Linked note link strategy",
+        "description": "Choose whether recurring event occurrences share one title-based note or use separate date-specific notes.",
+        "deadline": "Deadline-based (one note per occurrence)",
+        "name": "Name-based (one note per event series)"
       }
     },
     "reminders": {

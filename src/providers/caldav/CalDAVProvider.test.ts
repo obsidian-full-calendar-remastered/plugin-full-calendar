@@ -886,6 +886,8 @@ END:VCALENDAR
     interface MockCalDAVVault {
       getAbstractFileByPath: jest.Mock;
       create: jest.Mock;
+      read: jest.Mock;
+      modify: jest.Mock;
     }
 
     interface MockCalDAVMetadataCache {
@@ -925,7 +927,17 @@ END:VCALENDAR
           create: jest
             .fn()
             .mockImplementation((path: string, content: string): MockCalDAVCreatedFile => {
-              return { path, content };
+              const file = { path, content };
+              return file;
+            }),
+          read: jest
+            .fn()
+            .mockImplementation((file: MockCalDAVCreatedFile) => Promise.resolve(file.content)),
+          modify: jest
+            .fn()
+            .mockImplementation((file: MockCalDAVCreatedFile, content: string) => {
+              file.content = content;
+              return Promise.resolve();
             })
         },
         metadataCache: {
@@ -969,6 +981,67 @@ END:VCALENDAR
       expect(file).toBeDefined();
       expect(file!.path).toBe('Calendar/Notes/CalDAV Linked Note Event.md');
       expect(file!.content).toContain('My Template: CalDAV Linked Note Event');
+    });
+
+    it('adds proper dates and daily-note links when creating a linked task note', async () => {
+      PluginState.getSettings = jest.fn().mockReturnValue({
+        linkedNotesDirectory: 'Calendar/Notes',
+        linkedNoteTemplate: 'Task body that must remain unchanged'
+      });
+      const task: OFCEvent = {
+        ...mockEvent,
+        completed: false,
+        date: '2026-04-23',
+        endDate: '2026-04-24'
+      };
+
+      const file = (await caldavProvider.createLinkedNote(task)) as MockCalDAVCreatedFile | null;
+
+      expect(file!.content).toContain('scheduled: 2026-04-23');
+      expect(file!.content).toContain('scheduled-link: "[[2026-04-23]]"');
+      expect(file!.content).toContain('due: 2026-04-24');
+      expect(file!.content).toContain('due-link: "[[2026-04-24]]"');
+      expect(file!.content).not.toContain('[["2026-04-23"]]');
+      expect(file!.content.endsWith('Task body that must remain unchanged')).toBe(true);
+    });
+
+    it('updates only managed task date properties when a linked task is rescheduled', async () => {
+      const linkedFile = {
+        path: 'Calendar/Notes/task.md',
+        content:
+          '---\nfc-event-uid: "caldav-uid-999"\ncustom: keep-me\nscheduled: 2026-04-20\nscheduled-link: [[2026-04-20]]\ndue: 2026-04-20\ndue-link: [[2026-04-20]]\n---\nBody must remain unchanged.'
+      };
+      jest.spyOn(caldavProvider.linkedNoteIndex, 'getFileForEventAfterHydration').mockResolvedValue(
+        linkedFile as unknown as import('obsidian').TFile
+      );
+      mockObsidianFetch.mockResolvedValueOnce({
+        status: 204,
+        statusText: 'No Content'
+      } as Response);
+      const oldTask: OFCEvent = {
+        ...mockEvent,
+        completed: false,
+        date: '2026-04-20'
+      };
+      const rescheduledTask: OFCEvent = {
+        ...oldTask,
+        date: '2026-04-23',
+        endDate: '2026-04-24'
+      };
+
+      await caldavProvider.updateEvent(
+        { persistentId: 'caldav-uid-999.ics' },
+        oldTask,
+        rescheduledTask
+      );
+
+      expect(linkedFile.content).toContain('custom: keep-me');
+      expect(linkedFile.content).toContain('scheduled: 2026-04-23');
+      expect(linkedFile.content).toContain('scheduled-link: "[[2026-04-23]]"');
+      expect(linkedFile.content).toContain('due: 2026-04-24');
+      expect(linkedFile.content).toContain('due-link: "[[2026-04-24]]"');
+      expect(linkedFile.content).not.toContain('[["2026-04-23"]]');
+      expect(linkedFile.content.endsWith('Body must remain unchanged.')).toBe(true);
     });
   });
 });

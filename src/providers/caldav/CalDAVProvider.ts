@@ -26,6 +26,8 @@ import {
 import { parseTimezoneAwareString } from '../../features/timezone/Timezone';
 import { PluginState } from '../../core/PluginState';
 import { DateTime } from 'luxon';
+import { isTask } from '../../types/tasks';
+import { modifyFrontmatterString } from '../fullnote/frontmatter';
 
 import { fetchCalendarInfo } from './helper_caldav';
 
@@ -401,6 +403,33 @@ function taskToLinkedNoteEvent(task: CalDAVTaskInboxItem): OFCEvent {
     description: task.description,
     location: task.location,
     url: task.url
+  };
+}
+
+const LINKED_TASK_DATE_PROPERTIES = ['scheduled', 'scheduled-link', 'due', 'due-link'] as const;
+
+function linkedTaskDailyNoteLink(date: string | null): string | null {
+  // YAML must quote wiki-links or Obsidian parses [[date]] as a nested array.
+  return date ? `"[[${date}]]"` : null;
+}
+
+function linkedTaskDateProperties(event: OFCEvent): Record<string, unknown> {
+  let scheduled: string | null = null;
+  let due: string | null = null;
+
+  if (event.type === 'single') {
+    scheduled = event.date || null;
+    due = event.endDate || scheduled;
+  } else if (event.type === 'rrule') {
+    scheduled = event.startDate || null;
+    due = event.endDate || scheduled;
+  }
+
+  return {
+    scheduled,
+    'scheduled-link': linkedTaskDailyNoteLink(scheduled),
+    due,
+    'due-link': linkedTaskDailyNoteLink(due)
   };
 }
 
@@ -805,7 +834,7 @@ export class CalDAVProvider
   }
 
   async createLinkedNote(event: OFCEvent, instanceDate?: string): Promise<TFile | null> {
-    return createLinkedNoteForProvider({
+    const file = await createLinkedNoteForProvider({
       app: this.plugin.app,
       event,
       calendarId: this.source.id,
@@ -813,6 +842,10 @@ export class CalDAVProvider
       linkedNoteIndex: this.linkedNoteIndex,
       instanceDate
     });
+    if (file && isTask(event)) {
+      await this.updateLinkedTaskNoteDates(event, file);
+    }
+    return file;
   }
 
   async createLinkedNoteForTask(task: CalDAVTaskInboxItem): Promise<TFile | null> {
@@ -854,6 +887,34 @@ export class CalDAVProvider
       return { persistentId: event.caldavHref, ...context };
     }
     return event.uid ? { persistentId: event.uid, ...context } : null;
+  }
+
+  private async updateLinkedTaskNoteDates(event: OFCEvent, knownFile?: TFile): Promise<void> {
+    const uid = event.uid || event.id;
+    if (!uid) return;
+
+    const file =
+      knownFile ||
+      (await this.linkedNoteIndex.getFileForEventAfterHydration(uid, event.recurrenceId));
+    if (!file) return;
+
+    const contents = await this.plugin.app.vault.read(file);
+    const updatedContents = modifyFrontmatterString(contents, linkedTaskDateProperties(event));
+    if (updatedContents !== contents) {
+      await this.plugin.app.vault.modify(file, updatedContents);
+    }
+  }
+
+  private async clearLinkedTaskNoteDates(uid: string): Promise<void> {
+    const file = await this.linkedNoteIndex.getFileForEventAfterHydration(uid);
+    if (!file) return;
+
+    const contents = await this.plugin.app.vault.read(file);
+    const removals = Object.fromEntries(LINKED_TASK_DATE_PROPERTIES.map(property => [property, null]));
+    const updatedContents = modifyFrontmatterString(contents, removals);
+    if (updatedContents !== contents) {
+      await this.plugin.app.vault.modify(file, updatedContents);
+    }
   }
 
   computeSyncKey(event: OFCEvent): string {
@@ -922,6 +983,10 @@ export class CalDAVProvider
       if (parseFailures > 0) {
         console.warn(`[CalDAVProvider] Skipped ${parseFailures} malformed ICS payload(s).`);
       }
+
+      await Promise.all(
+        parsedEvents.filter(isTask).map(event => this.updateLinkedTaskNoteDates(event))
+      );
 
       return parsedEvents.map(ev => {
         const linkedFile = this.linkedNoteIndex.getFileForEvent(ev.uid || '');
@@ -1166,6 +1231,9 @@ export class CalDAVProvider
     const url = this.resolveEventObjectUrl(href);
     if (oldEvent.recurrenceId && oldEvent.uid) {
       await this.updateRecurrenceOverride(url, oldEvent, newEvent);
+      if (isTask(newEvent)) {
+        await this.updateLinkedTaskNoteDates(newEvent);
+      }
       return null;
     }
 
@@ -1183,6 +1251,10 @@ export class CalDAVProvider
       },
       body: icsContent
     });
+
+    if (isTask(newEvent)) {
+      await this.updateLinkedTaskNoteDates(newEvent);
+    }
 
     return null;
   }
@@ -1283,6 +1355,23 @@ export class CalDAVProvider
 
       this.undatedTaskCache = this.undatedTaskCache.filter(task => task.uid !== taskUid);
       this.hasLoadedUndatedTasks = true;
+      const scheduledDate = DateTime.fromJSDate(date).toISODate() || '';
+      const scheduledTask: OFCEvent = {
+        type: 'single',
+        uid: taskUid,
+        title: getTextProperty(todo, 'summary') || 'Untitled task',
+        date: scheduledDate,
+        endDate: null,
+        completed: isCompletedTodo(todo) ? DateTime.now().toISO() : false,
+        ...(allDay
+          ? { allDay: true }
+          : {
+              allDay: false,
+              startTime: DateTime.fromJSDate(date).toFormat('HH:mm'),
+              endTime: DateTime.fromJSDate(date).plus({ hours: 1 }).toFormat('HH:mm')
+            })
+      };
+      await this.updateLinkedTaskNoteDates(scheduledTask);
       return;
     }
 
@@ -1333,6 +1422,7 @@ export class CalDAVProvider
         ...unscheduledTasks
       ];
       this.hasLoadedUndatedTasks = true;
+      await this.clearLinkedTaskNoteDates(taskUid);
       return;
     }
 

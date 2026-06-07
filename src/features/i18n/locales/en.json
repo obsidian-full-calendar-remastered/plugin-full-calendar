@@ -289,6 +289,12 @@
         "description": "Choose the folder path where event linked notes will be created.",
         "vaultRoot": "/ (Vault Root)"
       },
+      "linkedNoteLinkStrategy": {
+        "label": "Linked note link strategy",
+        "description": "Choose whether recurring event occurrences share one title-based note or use separate date-specific notes.",
+        "deadline": "Deadline-based (one note per occurrence)",
+        "name": "Name-based (one note per event series)"
+      },
       "linkedNoteTemplate": {
         "label": "Linked note template",
         "description": "Define the template used for creating new linked notes. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",

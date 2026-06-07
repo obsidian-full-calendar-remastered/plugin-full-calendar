@@ -9,21 +9,23 @@
 |---|---|---|
 | `LinkedNoteIndex` | Reactive index matching remote event UIDs and recurrence IDs to Obsidian file paths. Supports compound key mapping (`eventUid::recurrenceId`) for instance-level note lookup. | Listens to Obsidian vault events; decoupled from [EventStore](../event-storage.md#eventstore-model). |
 | `TemplateEngine` | Renders a clean markdown body from event fields using a custom layout. | Pure functional renderer; no file system or vault side effects. |
-| `createLinkedNoteForProvider` | Centralized helper that orchestrates note creation for any remote provider. | Combines `TemplateEngine`, `noteUtils`, and `frontmatter` utilities in a single DRY entry point. |
+| `createLinkedNoteForProvider` | Centralized helper that resolves or creates a linked note according to the configured strategy. | Combines exact title-path lookup, `LinkedNoteIndex`, `TemplateEngine`, `noteUtils`, and frontmatter utilities in a single DRY entry point. |
 | `noteUtils` | General file-handling, title sanitization, and YAML serialization. | Shared file utility layer; DRY wrapper around Obsidian API. |
 | Remote Providers | Delegate to `createLinkedNoteForProvider` for note creation; query `LinkedNoteIndex` during event reads. | Zero manual frontmatter construction in providers. |
 
 ---
 
-## Source Of Truth
+## Identity Sources
 
-Linked note identity is **frontmatter-driven**. The canonical identifiers are:
+Deadline-based identity and renamed/moved-note recovery are **frontmatter-driven**. The canonical identifiers are:
 
 * `fc-event-uid`
 * `fc-calendar-id`
-* `fc-event-recurrence-id` for instance-specific recurring notes
+* `fc-event-recurrence-id` for deadline-based instance-specific recurring notes
 
-`LinkedNoteIndex` is only an in-memory projection of those identifiers. Filenames, rendered body text, and cache state are not authoritative and may change without breaking linkage.
+In name-based mode, the exact sanitized title path inside the configured linked-notes directory is the primary lookup key. When that file is reused or created, the plugin attaches the stable calendar/UID identifiers so `LinkedNoteIndex` can continue resolving it after a later rename or move.
+
+Rendered body text and cache state are never authoritative.
 
 ## Architectural Principles & SOLID Boundaries
 
@@ -39,7 +41,7 @@ Instead of the core mapping files to events:
 
 ### 2️⃣ Standalone Body Templating (SOLID: Single Responsibility Principle)
 To avoid vault contamination and ensure data cleanliness:
-* The frontmatter of the linked note remains **minimal** (e.g., storing only identifiers like `fc-event-uid` and `fc-calendar-id`).
+* The frontmatter of the linked note remains **managed and scoped**. Shared linked-note identity uses fields such as `fc-event-uid` and `fc-calendar-id`; CalDAV task notes may additionally manage scheduled/due properties.
 * All rich metadata (title, formatted date, times, location, description, and source calendar name) is rendered directly inside the **body** of the note.
 * `TemplateEngine` is a pure utility that parses double-braced expressions (e.g., `{{title}}`, `{{timeString}}`, `{{location}}`) inside customizable layouts, and operates independently of Obsidian's storage or settings UI layers.
 
@@ -57,22 +59,28 @@ Rather than executing expensive, repetitive full-vault scans on every calendar l
 
 ### 4️⃣ Centralized Note Creation (SOLID: DRY)
 All remote providers delegate to a single centralized helper `createLinkedNoteForProvider()` in `src/features/linked-notes/linkedNotes.ts`. This function:
-1. Checks if a linked note already exists via `LinkedNoteIndex`.
-2. Reads the linked notes directory and template from `PluginState.getSettings()`.
-3. Renders the note body via `TemplateEngine`.
-4. Constructs minimal frontmatter using `serializeFrontmatter()`.
-5. Applies frontmatter using `replaceFrontmatter()` from the FullNote provider utilities.
-6. Writes the file via `ObsidianIO`.
+1. Reads the linked-note strategy, directory, and template from `PluginState.getSettings()`.
+2. In name mode, checks the exact sanitized title path first and attaches managed identity properties when reusing an existing file.
+3. Falls back to `LinkedNoteIndex` so renamed or moved notes remain resolvable.
+4. Renders the note body via `TemplateEngine` only when creating a new file.
+5. Constructs managed frontmatter using `serializeFrontmatter()`.
+6. Writes the exact title path in name mode, or a collision-safe occurrence path in deadline mode.
 
 No provider implements its own frontmatter construction, template rendering, or file creation logic.
 
-### 5️⃣ Recurring Event Instance Support (Unique Instance Identity)
-To resolve note collisions for recurring remote events (daily or weekly meetings), the linking model supports instance-level mapping:
+### 5️⃣ Configurable Recurring Event Identity
+The `linkedNoteLinkStrategy` setting selects how occurrence dates participate in note identity:
+* **Deadline-based**: Uses instance-level mapping and remains the compatibility default.
+* **Name-based**: Resolves the exact sanitized title path before UID lookup. An existing file at that path is reused and receives only the managed calendar/UID identity properties; otherwise the exact path is created without a collision suffix. UID lookup remains the fallback for notes later renamed or moved.
+
+For deadline-based mapping:
 * **Compound Key Indexing**: `LinkedNoteIndex` computes compound keys using `${eventUid}::${recurrenceId}` when the YAML frontmatter includes `fc-event-recurrence-id`.
 * **Fallback Strategy**: When querying notes, `LinkedNoteIndex.getFileForEvent(uid, recurrenceId)` prioritizes matching compound keys first, falling back to the master series note (`uid`) only if no instance note exists.
 * **Reactive Cache Scrubbing**: During reactive updates, if a note's frontmatter is modified to add or change the recurrence ID, `LinkedNoteIndex` automatically purges the old orphan key pointing to that same file path.
 * **Instance-Aware Filenames & Templating**: File names for newly created notes automatically append the occurrence date (e.g., `Weekly Sync 2026-05-20.md`) to avoid vault conflicts, and the `TemplateEngine` uses the instance date to format the `{{date}}` placeholder in the note body.
 * **Recurring Identity Source Of Truth**: The recurrence-specific frontmatter field remains canonical. Filename date suffixes are collision-avoidance and readability aids only.
+
+For name-based mapping, the exact title path is the first lookup key and intentionally makes equal titles share a note. The stable calendar ID and master event UID are attached to the file as a secondary identity so later renames or moves remain resolvable.
 
 ---
 
@@ -86,6 +94,16 @@ sequenceDiagram
     participant LNI as LinkedNoteIndex
     participant TE as TemplateEngine
     participant V as Obsidian Vault
+
+    Note over UI,V: Name-Based Resolution
+    UI->>LN: open/create linked note
+    LN->>V: check exact sanitized title path
+    alt title file exists
+        LN->>V: update managed calendar/UID properties only
+        LN-->>UI: open existing title file
+    else title file absent
+        LN->>LNI: fallback lookup by UID
+    end
 
     Note over GP,LNI: Read Path
     GP->>LNI: getFileForEvent(uid, recurrenceId)
@@ -109,8 +127,9 @@ sequenceDiagram
 ## Invariants for Contributors
 
 * **Do not pollute core files**: Never modify [`EventCache.ts`](file:///d:/Codes/plugin-full-calendar/src/core/EventCache.ts), sync modules, or cache stores to orchestrate note creation or path association.
-* **Keep frontmatter minimal**: Only add parameters crucial for identity matching (`fc-event-uid`, `fc-calendar-id`) to the YAML frontmatter. Put all other variables in the note body.
+* **Keep frontmatter changes scoped**: Shared linked-note code manages only identity parameters (`fc-event-uid`, `fc-calendar-id`, and optional recurrence ID). Provider-specific managed properties, such as CalDAV task dates, must update without altering unrelated frontmatter or note body content.
 * **Always sanitize inputs**: Always pipe event titles through `sanitizeTitleForFilename` to strip OS-reserved characters before attempting a file write.
+* **Never suffix name-based files**: Name mode must reuse or create the exact sanitized title path. Collision suffixes are reserved for deadline-based creation.
 * **Locale-independent tests**: When asserting date or time strings in the template test suite, always calculate the expected outcome dynamically using Luxon's local formatter to prevent timezone/locale mismatches on test machines.
 * **Never duplicate logic in providers**: All note creation must go through `createLinkedNoteForProvider`. Providers must not construct frontmatter, render templates, or create files independently.
 
@@ -125,7 +144,7 @@ sequenceDiagram
 *   [`src/providers/fullnote/frontmatter.ts`](file:///d:/Codes/plugin-full-calendar/src/providers/fullnote/frontmatter.ts) — Frontmatter parsing and serialization.
 *   [`src/utils/eventActions.ts`](file:///d:/Codes/plugin-full-calendar/src/utils/eventActions.ts) — Re-exports `openOrCreateLinkedNote` for UI access.
 *   [`src/ui/modals/event_modal.ts`](file:///d:/Codes/plugin-full-calendar/src/ui/modals/event_modal.ts) — Event modal with "Open Note" button integration.
-*   [`src/ui/settings/sections/renderCalendars.ts`](file:///d:/Codes/plugin-full-calendar/src/ui/settings/sections/renderCalendars.ts) — Linked note settings UI (directory picker + template editor).
+*   [`src/ui/settings/sections/renderCalendars.ts`](file:///d:/Codes/plugin-full-calendar/src/ui/settings/sections/renderCalendars.ts) — Linked note settings UI (directory picker, link strategy, and template editor).
 
 ---
 
@@ -133,4 +152,3 @@ sequenceDiagram
 
 *   [Event Linked Notes User Guide](../../../user/features/event-linked-notes.md) — Learn how to configure directories and design custom templates.
 *   [Provider Architecture](../../calendars/architecture.md) — Unified blueprint of remote and local calendar models.
-

@@ -11,13 +11,22 @@ When you click on a remote calendar event in Obsidian, the event details modal o
 
 1. **Open Note**: Click the **Open Note** button in the top-right corner of the event modal. If no linked note exists yet, one will be created automatically in your configured directory.
 2. **Automated Templating**: The new note is populated with rich event details (date, time, location, description, calendar name) according to your template.
-3. **Instant Access**: On subsequent clicks, the same note is opened — the plugin uses [frontmatter-based identity matching](../../architecture/system/features/event-linked-notes.md#1-core-blindness-solid-open-closed-principle) to find the existing note, so you'll never get duplicates.
+3. **Instant Access**: On subsequent clicks, the same note is opened according to your selected link strategy. Name-based mode checks the exact title path first; deadline-based mode uses event and occurrence identity.
 
 ---
 
 ## Handling Recurring Events
 
-For recurring remote calendar events (such as daily or weekly standups), the plugin creates and manages **instance-specific linked notes** by default. Clicking or editing a specific calendar occurrence of a recurring series will open or create a note dedicated to *that specific instance date* rather than a single shared note for the entire series.
+The **Linked note link strategy** setting controls how recurring remote events and rescheduled task instances use notes:
+
+* **Deadline-based** is the compatibility default. Each occurrence gets an instance-specific note.
+* **Name-based** first checks for an exact title-matched file in the configured linked-notes folder. It opens that file when present, or creates it without a suffix when absent. Moving a task deadline or opening another occurrence continues to use the same note.
+
+When name mode reuses an existing title-matched file, it adds or updates only the calendar ID and event UID properties; the existing body and unrelated properties remain unchanged. These stable frontmatter IDs preserve lookup after the note is later renamed or moved.
+
+Name-based matching is folder-specific and exact after filename sanitization. For example, an event titled `Project / Launch` matches `Project Launch.md` inside the configured linked-notes folder. It does not search other folders or add collision suffixes such as `-_-_-1`.
+
+In deadline-based mode:
 
 * **Collision-Free Filenames**: Newly generated notes automatically append the occurrence date directly to the filename to avoid vault conflicts in your notes folder (e.g., `Weekly Sync 2026-05-20.md`).
 * **Instance Frontmatter Identity**: The note's YAML frontmatter includes an additional field `fc-event-recurrence-id` specifying the exact date of that occurrence:
@@ -37,7 +46,11 @@ Go to [Settings → Calendars](../settings/sources.md) to set up the default beh
 ### 1️⃣ Linked Notes Directory
 Choose the folder inside your Obsidian vault where all newly created event notes will be stored (e.g., `Meetings` or `Inbox/Calendar`). Use the folder dropdown to select an existing folder. If the folder does not exist, it will be automatically created upon the first note generation.
 
-### 2️⃣ Linked Note Template
+### 2️⃣ Linked Note Link Strategy
+
+Choose **Name-based** when a project, recurring series, or rescheduled task should keep one shared note. Exact matching uses the sanitized event title inside the configured linked-notes folder, so events with the same title intentionally share that note. Choose **Deadline-based** when every dated occurrence needs its own note. Changing this setting affects future lookup and creation; it does not rename or merge existing notes.
+
+### 3️⃣ Linked Note Template
 Write a custom template that will populate the body of every new note. You can use standard markdown and insert the following double-braced dynamic placeholders:
 
 | Placeholder | Replaced With | Example Output |
@@ -79,11 +92,11 @@ Write a custom template that will populate the body of every new note. You can u
     fc-event-uid: 0q5u45oijpqnkljsndpfoiash98
     fc-calendar-id: google-calendar-work
     ```
-    Because of this metadata-driven design:
-    * **Rename Safe**: You can rename your note files or move them between directories inside your vault; the calendar will never lose the link.
-    * **Re-sync Safe**: If you disconnect your calendar and add it back, or clear the local calendar cache, the plugin reactively re-indexes the frontmatter and restores the link immediately.
-    * **No Vault Bloat**: We only add these two simple IDs to the frontmatter, keeping the rest of your note completely customizable and clean.
-    * **No Duplicates**: The plugin checks for existing notes before creating new ones, so pressing "Open Note" multiple times always opens the same file.
+    These IDs support reactive indexing and preserve the connection after a linked note is renamed or moved:
+    * **Rename and Move Recovery**: After identity properties are attached, the reactive index can continue resolving a linked note that is renamed or moved within the configured linked-notes directory.
+    * **Re-sync Recovery**: Clearing the local calendar cache does not remove the identity properties stored in the note.
+    * **Minimal Changes**: Reusing an existing name-based note updates only managed identity properties. CalDAV task notes may additionally contain managed scheduled/due properties.
+    * **Predictable Reuse**: Name-based mode intentionally shares one file between events with the same sanitized title in the configured folder. Deadline-based mode keeps dated occurrences separate.
 
 ---
 
@@ -97,4 +110,3 @@ Write a custom template that will populate the body of every new note. You can u
 
 === "Technical Deep-Dives"
     *   [Event Linked Notes Architecture](../../architecture/system/features/event-linked-notes.md) — Decoupled reactive architecture and SOLID principles.
-

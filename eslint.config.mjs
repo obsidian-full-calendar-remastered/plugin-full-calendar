@@ -102,7 +102,10 @@ export default tseslint.config(
             // Type assertions
             '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
             '@typescript-eslint/prefer-as-const': 'warn',
-
+            
+            // Remove in newer version.
+            '@typescript-eslint/no-deprecated': 'off',
+            
             // Code style
             eqeqeq: ['error', 'always'], // Require === and !== instead of == and !=
             'prefer-template': 'warn', // Use template literals instead of string concatenation

@@ -84,7 +84,7 @@ export function renderGoogleSettings(
       .addButton(button => {
         button
           .setButtonText(t('google.buttons.disconnect'))
-          .setDestructive()
+          .setWarning()
           .onClick(async () => {
             await authManager.removeAccount(account.id);
             rerender();

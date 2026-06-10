@@ -22,7 +22,7 @@ import { ensureCalendarIds, migrateAndSanitizeSettings } from './ui/settings/uti
 import { PLUGIN_SLUG } from './types';
 import EventCache from './core/EventCache';
 import { manageTimezone } from './features/timezone/Timezone';
-import { Plugin, TFile, App, EventRef, ButtonComponent } from 'obsidian';
+import { Plugin, TFile, App, EventRef } from 'obsidian';
 import type { Workspace } from 'obsidian';
 import { initializeI18n, t } from './features/i18n/i18n';
 import './styles.css';
@@ -88,31 +88,9 @@ export default class FullCalendarPlugin extends Plugin {
    * Plugin load lifecycle method.
    * This method is called when the plugin is enabled.
    * It initializes settings, sets up the EventCache, registers the calendar
-   * and sidebar views, adds the ribbon icon and commands, and sets up
    * listeners for Vault file changes (create, rename, delete).
    */
   async onload() {
-    // Polyfill ButtonComponent prototype for backwards compatibility with older Obsidian versions (pre-1.13.0)
-    if (
-      typeof ButtonComponent !== 'undefined' &&
-      typeof ButtonComponent.prototype !== 'undefined'
-    ) {
-      if (!ButtonComponent.prototype.setDestructive) {
-        interface LegacyButton {
-          setWarning(): ButtonComponent;
-        }
-        ButtonComponent.prototype.setDestructive = function (this: ButtonComponent) {
-          return (this as unknown as LegacyButton).setWarning();
-        };
-      }
-      if (!ButtonComponent.prototype.removeDestructive) {
-        ButtonComponent.prototype.removeDestructive = function (this: ButtonComponent) {
-          this.buttonEl.classList.remove('mod-warning');
-          return this;
-        };
-      }
-    }
-
     // Initialize i18n system first, before any UI is rendered
     await initializeI18n(this.app, this.manifest.id);
 

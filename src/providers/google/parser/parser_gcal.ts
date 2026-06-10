@@ -53,6 +53,10 @@ export interface GoogleEventLike {
       minutes?: number;
     }[];
   };
+  attendees?: {
+    self?: boolean;
+    responseStatus?: string;
+  }[];
 }
 
 export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
@@ -61,6 +65,12 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
     // Its information is already incorporated into the master event's `exdates`.
     // We should not display it as a separate event.
 
+    return null;
+  }
+
+  const selfAttendee = gEvent.attendees?.find(attendee => attendee.self);
+  if (selfAttendee && selfAttendee.responseStatus === 'declined') {
+    // The user has declined the invitation / cancelled their participation.
     return null;
   }
 

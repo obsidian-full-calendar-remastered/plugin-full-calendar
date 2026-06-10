@@ -333,3 +333,57 @@ describe('GoogleProvider reminder mapping', () => {
     });
   });
 });
+
+describe('GoogleProvider declined events', () => {
+  it('filters out events where the user has declined the invite', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Declined Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      attendees: [
+        { self: true, responseStatus: 'declined' },
+        { self: false, responseStatus: 'accepted' }
+      ]
+    });
+
+    expect(event).toBeNull();
+  });
+
+  it('keeps events where the user has accepted or not responded', () => {
+    const event1 = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Accepted Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      attendees: [{ self: true, responseStatus: 'accepted' }]
+    });
+    expect(event1).not.toBeNull();
+    expect(event1?.title).toBe('Accepted Event');
+
+    const event2 = fromGoogleEvent({
+      id: 'google-event-2',
+      summary: 'Needs Action Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      attendees: [{ self: true, responseStatus: 'needsAction' }]
+    });
+    expect(event2).not.toBeNull();
+    expect(event2?.title).toBe('Needs Action Event');
+  });
+
+  it('keeps events with other declined attendees but user has not declined', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Other Declined Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      attendees: [
+        { self: false, responseStatus: 'declined' },
+        { self: true, responseStatus: 'accepted' }
+      ]
+    });
+    expect(event).not.toBeNull();
+    expect(event?.title).toBe('Other Declined Event');
+  });
+});

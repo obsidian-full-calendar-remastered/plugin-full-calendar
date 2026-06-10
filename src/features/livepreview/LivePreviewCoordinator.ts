@@ -1,27 +1,24 @@
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
+import { EditorState, StateEffect, StateField, Transaction } from '@codemirror/state';
 import { TFile, editorInfoField } from 'obsidian';
 import { PluginState } from '../../core/PluginState';
 
+export const forceUpdateLivePreviewEffect = StateEffect.define<void>();
+
 export class LivePreviewCoordinatorPlugin {
-  decorations: DecorationSet;
-  private currentFilePath: string | null = null;
   private isDestroyed = false;
   private updateListener: (() => void) | null = null;
 
   constructor(view: EditorView) {
-    const activeFile = this.getFileFromView(view);
-    this.currentFilePath = activeFile ? activeFile.path : null;
-    this.decorations = this.buildDecorations(view, activeFile);
-
     // Set up update listener to dynamically update decorations when cache updates
     this.updateListener = () => {
       if (this.isDestroyed) {
         return;
       }
-      const file = this.getFileFromView(view);
-      this.decorations = this.buildDecorations(view, file);
       if (typeof view.dispatch === 'function') {
-        view.dispatch({});
+        view.dispatch({
+          effects: forceUpdateLivePreviewEffect.of()
+        });
       }
     };
 
@@ -36,14 +33,8 @@ export class LivePreviewCoordinatorPlugin {
   }
 
   update(update: ViewUpdate) {
-    const activeFile = this.getFileFromView(update.view);
-    const activeFilePath = activeFile ? activeFile.path : null;
-
-    const fileChanged = activeFilePath !== this.currentFilePath;
-    if (fileChanged || update.docChanged || update.selectionSet || update.viewportChanged) {
-      this.currentFilePath = activeFilePath;
-      this.decorations = this.buildDecorations(update.view, activeFile);
-    }
+    // ViewPlugin doesn't manage the decoration value itself anymore.
+    // The StateField responds directly to editor state transactions.
   }
 
   destroy() {
@@ -57,61 +48,85 @@ export class LivePreviewCoordinatorPlugin {
       // Ignore cleanup error if cache is already destroyed or uninitialized
     }
   }
+}
 
-  private getFileFromView(view: EditorView): TFile | null {
-    try {
-      if (editorInfoField && typeof view.state.field === 'function') {
-        const info = view.state.field(editorInfoField);
-        if (info && info.file) {
-          return info.file;
-        }
+export const livePreviewCoordinatorPlugin = ViewPlugin.fromClass(LivePreviewCoordinatorPlugin);
+
+function getFileFromState(state: EditorState): TFile | null {
+  try {
+    if (editorInfoField && typeof state.field === 'function') {
+      const info = state.field(editorInfoField);
+      if (info && info.file) {
+        return info.file;
       }
-    } catch {
-      // Fallback
     }
-    try {
-      return PluginState.getPlugin().app.workspace.getActiveFile();
-    } catch {
-      return null;
-    }
+  } catch {
+    // Fallback
   }
-
-  private buildDecorations(view: EditorView, activeFile: TFile | null): DecorationSet {
-    if (!activeFile) {
-      return Decoration.none;
-    }
-
-    try {
-      const activeProviders = PluginState.getProviderRegistry().getActiveProviders();
-      const provider = activeProviders.find(p => {
-        return (
-          p.isFileRelevant &&
-          p.isFileRelevant(activeFile) &&
-          typeof p.getEditorDecorator === 'function'
-        );
-      });
-
-      if (!provider) {
-        return Decoration.none;
-      }
-
-      if (!provider.getEditorDecorator) {
-        return Decoration.none;
-      }
-
-      const decorator = provider.getEditorDecorator();
-      if (!decorator) {
-        return Decoration.none;
-      }
-
-      return decorator.getDecorations(view, activeFile, view.visibleRanges);
-    } catch (error) {
-      console.error('Full Calendar: Error building live preview decorations', error);
-      return Decoration.none;
-    }
+  try {
+    return PluginState.getPlugin().app.workspace.getActiveFile();
+  } catch {
+    return null;
   }
 }
 
-export const livePreviewCoordinator = ViewPlugin.fromClass(LivePreviewCoordinatorPlugin, {
-  decorations: v => v.decorations
-});
+function buildDecorationsForState(state: EditorState, activeFile: TFile | null): DecorationSet {
+  if (!activeFile) {
+    return Decoration.none;
+  }
+
+  try {
+    const activeProviders = PluginState.getProviderRegistry().getActiveProviders();
+    const provider = activeProviders.find(p => {
+      return (
+        p.isFileRelevant &&
+        p.isFileRelevant(activeFile) &&
+        typeof p.getEditorDecorator === 'function'
+      );
+    });
+
+    if (!provider) {
+      return Decoration.none;
+    }
+
+    if (!provider.getEditorDecorator) {
+      return Decoration.none;
+    }
+
+    const decorator = provider.getEditorDecorator();
+    if (!decorator) {
+      return Decoration.none;
+    }
+
+    return decorator.getDecorations(state, activeFile);
+  } catch (error) {
+    console.error('Full Calendar: Error building live preview decorations', error);
+    return Decoration.none;
+  }
+}
+
+export const livePreviewStateFieldSpec = {
+  create(state: EditorState): DecorationSet {
+    const file = getFileFromState(state);
+    return buildDecorationsForState(state, file);
+  },
+  update(value: DecorationSet, tr: Transaction): DecorationSet {
+    const oldFile = getFileFromState(tr.startState);
+    const newFile = getFileFromState(tr.state);
+    const fileChanged = oldFile?.path !== newFile?.path;
+
+    const selectionChanged = !tr.startState.selection.eq(tr.state.selection);
+    const forceUpdate = tr.effects.some(e => e.is(forceUpdateLivePreviewEffect));
+
+    if (tr.docChanged || selectionChanged || fileChanged || forceUpdate) {
+      return buildDecorationsForState(tr.state, newFile);
+    }
+
+    return value.map(tr.changes);
+  },
+  provide: (f: StateField<DecorationSet>) => EditorView.decorations.from(f)
+};
+
+export const livePreviewStateField = StateField.define<DecorationSet>(livePreviewStateFieldSpec);
+
+export const livePreviewCoordinator = [livePreviewStateField, livePreviewCoordinatorPlugin];

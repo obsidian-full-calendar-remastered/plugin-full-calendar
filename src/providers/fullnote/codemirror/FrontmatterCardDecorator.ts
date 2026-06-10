@@ -1,5 +1,5 @@
 import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
-import { RangeSetBuilder } from '@codemirror/state';
+import { EditorState, RangeSetBuilder } from '@codemirror/state';
 import { TFile } from 'obsidian';
 import { LivePreviewDecorator } from '../../../features/livepreview/LivePreviewDecorator';
 import { PluginState } from '../../../core/PluginState';
@@ -117,11 +117,7 @@ class FrontmatterCardWidget extends WidgetType {
 }
 
 export class FrontmatterCardDecorator implements LivePreviewDecorator {
-  getDecorations(
-    view: EditorView,
-    file: TFile,
-    visibleRanges: readonly { from: number; to: number }[]
-  ): DecorationSet {
+  getDecorations(state: EditorState, file: TFile): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>();
     const cache = PluginState.getCache();
     if (!cache || !cache.store) {
@@ -144,7 +140,7 @@ export class FrontmatterCardDecorator implements LivePreviewDecorator {
       return builder.finish();
     }
 
-    if (view.state.doc.length === 0) {
+    if (state.doc.length === 0) {
       return builder.finish();
     }
 
@@ -193,7 +189,7 @@ export class FrontmatterCardDecorator implements LivePreviewDecorator {
 
     let targetPos = 0;
     try {
-      const doc = view.state.doc;
+      const doc = state.doc;
       if (doc.length > 0 && doc.line(1).text.trim() === '---') {
         const maxLines = Math.min(doc.lines, 100);
         for (let i = 2; i <= maxLines; i++) {
@@ -212,7 +208,7 @@ export class FrontmatterCardDecorator implements LivePreviewDecorator {
     }
 
     try {
-      const docLength = view.state.doc.length;
+      const docLength = state.doc.length;
       if (targetPos < 0) {
         targetPos = 0;
       }

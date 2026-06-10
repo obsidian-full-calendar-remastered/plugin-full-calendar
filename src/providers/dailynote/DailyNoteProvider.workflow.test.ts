@@ -530,7 +530,7 @@ describe('DailyNoteProvider workflow', () => {
     const firstId = provider.getEventHandle(first)?.persistentId;
 
     expect(firstId).toBeTruthy();
-    expect(firstId).toBe('2026-04-07::Wellness - Sleep - Night');
+    expect(firstId).toBe('2026-04-07::Wellness - Sleep - Night::time:23:30-07:30');
     expect(provider.getCanonicalTitle(first)).toBe('Wellness - Sleep - Night');
   });
 

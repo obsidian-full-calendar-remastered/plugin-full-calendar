@@ -1,13 +1,10 @@
-import { DecorationSet, EditorView } from '@codemirror/view';
+import { DecorationSet } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
 import { TFile } from 'obsidian';
 
 export interface LivePreviewDecorator {
   /**
-   * Generates CodeMirror decorations synchronously for the given file and visible ranges.
+   * Generates CodeMirror decorations synchronously for the given file and state.
    */
-  getDecorations(
-    view: EditorView,
-    file: TFile,
-    visibleRanges: readonly { from: number; to: number }[]
-  ): DecorationSet;
+  getDecorations(state: EditorState, file: TFile): DecorationSet;
 }

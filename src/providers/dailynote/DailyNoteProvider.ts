@@ -158,7 +158,12 @@ export class DailyNoteProvider
     if (event.uid) {
       return `${event.date}::uid:${event.uid}`;
     }
-    return `${event.date}::${this._fullTitleForEvent(event)}`;
+
+    const timeSuffix = event.allDay
+      ? '::allday'
+      : `::time:${event.startTime || ''}-${event.endTime || ''}`;
+
+    return `${event.date}::${this._fullTitleForEvent(event)}${timeSuffix}`;
   }
 
   getEventHandle(event: OFCEvent): EventHandle | null {
@@ -249,8 +254,7 @@ export class DailyNoteProvider
       if (parsed && parsed.type === 'single') {
         if (isV2 && parsed.uid === targetUid) return true;
 
-        const fullTitle = constructTitle(parsed.category, parsed.subCategory, parsed.title);
-        const currentId = `${parsed.date}::${fullTitle}`;
+        const currentId = this._persistentIdForEvent(parsed);
         if (!isV2 && currentId === persistentId) return true;
       }
       return false;

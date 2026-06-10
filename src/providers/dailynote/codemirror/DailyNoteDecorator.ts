@@ -1,5 +1,5 @@
 import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
-import { RangeSetBuilder } from '@codemirror/state';
+import { EditorState, RangeSetBuilder } from '@codemirror/state';
 import { TFile } from 'obsidian';
 import { LivePreviewDecorator } from '../../../features/livepreview/LivePreviewDecorator';
 import { PluginState } from '../../../core/PluginState';
@@ -95,11 +95,7 @@ class InlineEventWidget extends WidgetType {
 }
 
 export class DailyNoteDecorator implements LivePreviewDecorator {
-  getDecorations(
-    view: EditorView,
-    file: TFile,
-    visibleRanges: readonly { from: number; to: number }[]
-  ): DecorationSet {
+  getDecorations(state: EditorState, file: TFile): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>();
     const cache = PluginState.getCache();
     if (!cache || !cache.store) {
@@ -121,8 +117,8 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
     }
 
     // Get active cursor line for exclusion (1-indexed)
-    const selection = view.state.selection.main;
-    const cursorLine = view.state.doc.lineAt(selection.head).number;
+    const selection = state.selection.main;
+    const cursorLine = state.doc.lineAt(selection.head).number;
 
     interface DecoEntry {
       from: number;
@@ -131,101 +127,97 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
     }
     const decos: DecoEntry[] = [];
 
-    for (const range of visibleRanges) {
-      const startLineObj = view.state.doc.lineAt(range.from);
-      const endLineObj = view.state.doc.lineAt(range.to);
-
-      for (let i = startLineObj.number; i <= endLineObj.number; i++) {
-        // Active-line exclusion: do not decorate the line currently being edited
-        if (i === cursorLine) {
-          continue;
-        }
-
-        const lineIndex = i - 1; // 0-indexed line number
-        const event = eventMap.get(lineIndex);
-
-        if (event) {
-          const line = view.state.doc.line(i);
-          const calendarId = event.calendarId;
-          const source = PluginState.getProviderRegistry().getSource(calendarId);
-          const calendarColor = source?.color || 'var(--interactive-accent)';
-
-          const startTime = event.event.allDay ? undefined : event.event.startTime;
-          const endTime = event.event.allDay ? undefined : event.event.endTime || undefined;
-
-          let completed: boolean | null = null;
-          if (
-            event.event.type === 'single' &&
-            event.event.completed !== undefined &&
-            event.event.completed !== null
-          ) {
-            completed = event.event.completed !== false;
-          }
-
-          const widget = Decoration.widget({
-            widget: new InlineEventWidget(
-              line.text,
-              event.id,
-              calendarColor,
-              event.event.title,
-              startTime,
-              endTime,
-              event.event.category,
-              completed,
-              // Checkbox Toggle Callback
-              () => {
-                if (event.event.type === 'single') {
-                  const isDone = event.event.completed === false;
-                  const updatedEvent = {
-                    ...event.event,
-                    completed: isDone ? 'x' : false
-                  } as OFCEvent;
-                  void cache.updateEventWithId(event.id, updatedEvent);
-                }
-              },
-              // Edit Event Callback
-              () => {
-                launchEditModal(PluginState.getPlugin(), event.id);
-              }
-            ),
-            side: -1
-          });
-
-          const hideTextMark = Decoration.mark({
-            class: 'fc-lp-hidden-text',
-            attributes: {
-              style: 'display: none;'
-            }
-          });
-
-          // Collect line-level override decoration
-          decos.push({
-            from: line.from,
-            to: line.from,
-            value: Decoration.line({
-              attributes: {
-                class: 'fc-lp-line-override',
-                style:
-                  'display: flex; align-items: center; gap: 8px; padding-left: 0px; text-indent: 0px; margin-left: 0px; margin-top: 0px; margin-bottom: 0px; padding-top: 0px; padding-bottom: 0px; min-height: 0px; line-height: 1.2;'
-              }
-            })
-          });
-
-          // Collect the mark decoration to hide original text
-          decos.push({
-            from: line.from,
-            to: line.to,
-            value: hideTextMark
-          });
-
-          // Collect the widget decoration for the event card
-          decos.push({
-            from: line.from,
-            to: line.from,
-            value: widget
-          });
-        }
+    for (const [lineIndex, event] of eventMap.entries()) {
+      const i = lineIndex + 1; // 1-indexed line number
+      // Active-line exclusion: do not decorate the line currently being edited
+      if (i === cursorLine) {
+        continue;
       }
+
+      // Check if line number is valid in the document
+      if (i > state.doc.lines || i < 1) {
+        continue;
+      }
+
+      const line = state.doc.line(i);
+      const calendarId = event.calendarId;
+      const source = PluginState.getProviderRegistry().getSource(calendarId);
+      const calendarColor = source?.color || 'var(--interactive-accent)';
+
+      const startTime = event.event.allDay ? undefined : event.event.startTime;
+      const endTime = event.event.allDay ? undefined : event.event.endTime || undefined;
+
+      let completed: boolean | null = null;
+      if (
+        event.event.type === 'single' &&
+        event.event.completed !== undefined &&
+        event.event.completed !== null
+      ) {
+        completed = event.event.completed !== false;
+      }
+
+      const widget = Decoration.widget({
+        widget: new InlineEventWidget(
+          line.text,
+          event.id,
+          calendarColor,
+          event.event.title,
+          startTime,
+          endTime,
+          event.event.category,
+          completed,
+          // Checkbox Toggle Callback
+          () => {
+            if (event.event.type === 'single') {
+              const isDone = event.event.completed === false;
+              const updatedEvent = {
+                ...event.event,
+                completed: isDone ? 'x' : false
+              } as OFCEvent;
+              void cache.updateEventWithId(event.id, updatedEvent);
+            }
+          },
+          // Edit Event Callback
+          () => {
+            launchEditModal(PluginState.getPlugin(), event.id);
+          }
+        ),
+        side: -1
+      });
+
+      const hideTextMark = Decoration.mark({
+        class: 'fc-lp-hidden-text',
+        attributes: {
+          style: 'display: none;'
+        }
+      });
+
+      // Collect line-level override decoration
+      decos.push({
+        from: line.from,
+        to: line.from,
+        value: Decoration.line({
+          attributes: {
+            class: 'fc-lp-line-override',
+            style:
+              'display: flex; align-items: center; gap: 8px; padding-left: 0px; text-indent: 0px; margin-left: 0px; margin-top: 0px; margin-bottom: 0px; padding-top: 0px; padding-bottom: 0px; min-height: 0px; line-height: 1.2;'
+          }
+        })
+      });
+
+      // Collect the mark decoration to hide original text
+      decos.push({
+        from: line.from,
+        to: line.to,
+        value: hideTextMark
+      });
+
+      // Collect the widget decoration for the event card
+      decos.push({
+        from: line.from,
+        to: line.from,
+        value: widget
+      });
     }
 
     // Sort decorations by starting position (from) and element type

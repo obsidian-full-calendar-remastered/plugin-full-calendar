@@ -84,6 +84,7 @@ export function renderAppearanceSettings(
         });
     });
 
+  /* Commented out as monthly report is not ready for production runs yet
   new Setting(containerEl)
     .setName('Enable monthly milestones report')
     .setDesc(
@@ -96,6 +97,7 @@ export function renderAppearanceSettings(
         await PluginState.saveSettings();
       });
     });
+  */
 
   // Business Hours Settings
   new Setting(containerEl)

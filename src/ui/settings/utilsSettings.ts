@@ -94,6 +94,14 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     apiTokens: (raw as Partial<FullCalendarSettings>).apiTokens || {},
     authorizedTokens: (raw as Partial<FullCalendarSettings>).authorizedTokens || {},
     dev: raw.dev,
+    milestones: raw.milestones || { counters: {}, unlockedAt: {} },
+    enableMonthlyStatsReport:
+      raw.enableMonthlyStatsReport ?? DEFAULT_SETTINGS.enableMonthlyStatsReport,
+    lastMonthlyMilestonesGeneratedMonth:
+      raw.lastMonthlyMilestonesGeneratedMonth ??
+      DEFAULT_SETTINGS.lastMonthlyMilestonesGeneratedMonth,
+    lastMonthlyMilestonesCheckDate:
+      raw.lastMonthlyMilestonesCheckDate ?? DEFAULT_SETTINGS.lastMonthlyMilestonesCheckDate,
     milestoneNotifierDuration:
       raw.milestoneNotifierDuration ?? DEFAULT_SETTINGS.milestoneNotifierDuration,
     currentVersion: raw.currentVersion ?? null,

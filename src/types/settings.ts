@@ -275,7 +275,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     counters: {},
     unlockedAt: {}
   },
-  enableMonthlyStatsReport: true,
+  enableMonthlyStatsReport: false,
   lastMonthlyMilestonesGeneratedMonth: null,
   lastMonthlyMilestonesCheckDate: null,
   fcrReminderCompanion: {

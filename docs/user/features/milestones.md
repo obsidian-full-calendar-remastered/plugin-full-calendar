@@ -1,7 +1,7 @@
 # Milestones and Progress
 
-!!! success "Reward Your Consistency"
-    Milestones provide long-horizon progress tracking across all your calendar activities. Designed to reward consistent usage without artificially inflating counts from failed operations, they gamify your productivity.
+!!! success "Philoscopy"
+    Milestone provides a transparent overview of your usage across all the plugin features, but more importantly it tells you **what new features you are NOT using**, and potentially should look into for maximizing productivity. 
 
 ## Accessing Milestones
 

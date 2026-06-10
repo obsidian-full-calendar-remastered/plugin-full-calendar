@@ -17,6 +17,17 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v6
 
+            - name: Verify version match (manifest.json vs manifest-beta.json)
+              run: |
+                  MANIFEST_VER=$(jq -r '.version' manifest.json)
+                  BETA_VER=$(jq -r '.version' manifest-beta.json)
+                  echo "manifest.json version: $MANIFEST_VER"
+                  echo "manifest-beta.json version: $BETA_VER"
+                  if [ "$MANIFEST_VER" != "$BETA_VER" ]; then
+                    echo "::error::Version mismatch! manifest.json is $MANIFEST_VER but manifest-beta.json is $BETA_VER"
+                    exit 1
+                  fi
+
             - name: Setup Node.js
               uses: actions/setup-node@v6
               with:

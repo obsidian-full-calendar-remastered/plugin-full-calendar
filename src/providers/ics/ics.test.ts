@@ -44,6 +44,27 @@ END:VCALENDAR`;
     expect(events).toMatchSnapshot(ics);
   });
 
+  it('parses display VALARM triggers as provider alarms', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:alarm-event
+SUMMARY:Alarmed Event
+DTSTART:20260615T100000Z
+DTEND:20260615T110000Z
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15M
+DESCRIPTION:Alarmed Event
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    expect(events[0].alarms).toEqual([{ minutesBefore: 15, action: 'DISPLAY' }]);
+  });
+
   it('parses gcal ics file and categories', () => {
     const ics = `BEGIN:VCALENDAR
 PRODID:-//Google Inc//Google Calendar 70.9054//EN

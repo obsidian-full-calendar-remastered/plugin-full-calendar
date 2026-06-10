@@ -40,6 +40,8 @@ export interface OutlookEventLike {
     dateTime?: string;
     timeZone?: string;
   } | null;
+  isReminderOn?: boolean;
+  reminderMinutesBeforeStart?: number;
 }
 
 const OUTLOOK_DAY_TO_CHAR: Record<string, 'U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S'> = {
@@ -107,6 +109,11 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
       isTask: false,
       skipDates: []
     };
+    if (event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number') {
+      recurringBase.alarms = [
+        { minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' }
+      ];
+    }
 
     if (!event.isAllDay) {
       recurringBase.startTime = start.toFormat('HH:mm');
@@ -174,7 +181,14 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
       title: event.subject,
       allDay: true,
       date: start.toISODate() || '',
-      endDate: inclusiveEnd || null
+      endDate: inclusiveEnd || null,
+      ...(event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number'
+        ? {
+            alarms: [
+              { minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' as const }
+            ]
+          }
+        : {})
     };
   }
 
@@ -188,7 +202,12 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
     startTime: start.toFormat('HH:mm'),
     endDate: end.toISODate() !== start.toISODate() ? end.toISODate() : null,
     endTime: end.toFormat('HH:mm'),
-    timezone: event.start.timeZone || undefined
+    timezone: event.start.timeZone || undefined,
+    ...(event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number'
+      ? {
+          alarms: [{ minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' as const }]
+        }
+      : {})
   };
 }
 
@@ -196,6 +215,13 @@ export function toOutlookEvent(event: OFCEvent): object {
   const payload: Record<string, unknown> = {
     subject: constructTitle(event.category, event.subCategory, event.title)
   };
+
+  if (event.alarms && event.alarms.length > 0) {
+    payload.isReminderOn = true;
+    payload.reminderMinutesBeforeStart = event.alarms[0].minutesBefore;
+  } else {
+    payload.isReminderOn = false;
+  }
 
   if (event.allDay) {
     if (event.type !== 'single' && event.type !== 'recurring') {

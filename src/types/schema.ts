@@ -64,6 +64,8 @@ export const CommonSchema = z.object({
   title: z.string(), // This will now store the CLEAN title.
   id: z.string().optional(),
   uid: z.string().optional(),
+  caldavHref: z.string().optional(),
+  recurrenceId: z.string().optional(),
   timezone: z.string().optional(),
   etag: z.string().optional(),
   category: z.string().optional(), // This will store the parsed category.
@@ -80,6 +82,14 @@ export const CommonSchema = z.object({
     .object({
       value: z.number().min(0).max(1440)
     })
+    .optional(),
+  alarms: z
+    .array(
+      z.object({
+        minutesBefore: z.number().int().min(0).max(10080),
+        action: z.enum(['DISPLAY', 'AUDIO', 'EMAIL']).default('DISPLAY')
+      })
+    )
     .optional()
 });
 

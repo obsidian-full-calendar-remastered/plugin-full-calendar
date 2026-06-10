@@ -221,7 +221,7 @@ export function launchEditModal(
         },
         deleteEvent: async () => {
           try {
-            await PluginState.getCache().deleteEvent(eventId);
+            await PluginState.getCache().deleteEvent(eventId, { instanceDate });
             closeModal();
           } catch (e) {
             if (e instanceof Error) {

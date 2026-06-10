@@ -47,6 +47,80 @@ function specifiesEnd(iCalEvent: ical.Event) {
   );
 }
 
+type ProviderAlarm = NonNullable<OFCEvent['alarms']>[number];
+
+function durationToSeconds(value: unknown): number | null {
+  if (typeof value === 'string') {
+    const match = value.match(/^(-?)P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i);
+    if (!match) return null;
+    const sign = match[1] === '-' ? -1 : 1;
+    const days = Number(match[2] || 0);
+    const hours = Number(match[3] || 0);
+    const minutes = Number(match[4] || 0);
+    const seconds = Number(match[5] || 0);
+    return sign * (days * 86400 + hours * 3600 + minutes * 60 + seconds);
+  }
+
+  if (value && typeof value === 'object') {
+    const candidate = value as {
+      toSeconds?: () => number;
+      isNegative?: boolean;
+      days?: number;
+      hours?: number;
+      minutes?: number;
+      seconds?: number;
+    };
+    if (typeof candidate.toSeconds === 'function') {
+      return candidate.toSeconds();
+    }
+    const seconds =
+      (candidate.days || 0) * 86400 +
+      (candidate.hours || 0) * 3600 +
+      (candidate.minutes || 0) * 60 +
+      (candidate.seconds || 0);
+    return candidate.isNegative ? -seconds : seconds;
+  }
+
+  return null;
+}
+
+function extractProviderAlarms(component: ical.Component): ProviderAlarm[] | undefined {
+  const alarms = component
+    .getAllSubcomponents('valarm')
+    .map((alarm): ProviderAlarm | null => {
+      const trigger = alarm.getFirstProperty('trigger');
+      if (!trigger) return null;
+
+      const seconds = durationToSeconds(trigger.getFirstValue());
+      if (seconds === null || seconds > 0) return null;
+
+      const action = String(alarm.getFirstPropertyValue('action') || 'DISPLAY').toUpperCase();
+      if (action !== 'DISPLAY' && action !== 'AUDIO' && action !== 'EMAIL') return null;
+
+      return {
+        minutesBefore: Math.round(Math.abs(seconds) / 60),
+        action
+      };
+    })
+    .filter((alarm): alarm is ProviderAlarm => alarm !== null);
+
+  return alarms.length > 0 ? alarms : undefined;
+}
+
+function recurrenceIdToString(recurrenceId: ical.Time | null): string | undefined {
+  if (!recurrenceId) return undefined;
+
+  const dt = parseTimezoneAwareString(recurrenceId);
+  if (!dt.isValid) return undefined;
+
+  return recurrenceId.isDate ? dt.toISODate() || undefined : dt.toISO() || undefined;
+}
+
+function recurrenceIdToDate(recurrenceId: string | undefined): string | undefined {
+  if (!recurrenceId) return undefined;
+  return DateTime.fromISO(recurrenceId, { setZone: true }).toISODate() || undefined;
+}
+
 // MODIFICATION: Remove settings parameter from icsToOFC
 function icsToOFC(input: ical.Event): OFCEvent | null {
   const summary = input.summary || '';
@@ -54,6 +128,7 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
   const rruleProp = input.component.getFirstProperty('rrule');
   const rruleVal = rruleProp ? String(rruleProp.getFirstValue()) : null;
   const rruleStr = rruleVal ? String(rruleVal) : '';
+  const recurrenceId = recurrenceIdToString(input.recurrenceId);
 
   // Simplified: just use the title directly
   const eventData = { title: summary };
@@ -64,6 +139,7 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
   const location = String(input.component.getFirstProperty('location')?.getFirstValue() || '');
   // Use extractEventUrl helper or input.component.getFirstProperty('url')
   const url = extractEventUrl(input);
+  const alarms = extractProviderAlarms(input.component);
 
   const startDate = parseTimezoneAwareString(input.startDate);
 
@@ -135,6 +211,7 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
     return {
       type: 'rrule',
       uid,
+      ...(recurrenceId ? { recurrenceId } : {}),
       title: eventData.title,
       id: `ics::${uid}::${startDateISO}::recurring`,
       rrule: rrule.toString(),
@@ -144,6 +221,7 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
       timezone,
       ...recurringTiming,
       description,
+      ...(alarms ? { alarms } : {}),
       url:
         url ||
         (location && typeof location === 'string' && location.startsWith('http')
@@ -191,12 +269,14 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
   return {
     type: 'single',
     uid,
+    ...(recurrenceId ? { recurrenceId } : {}),
     title: eventData.title,
     date: date,
     endDate: date !== finalEndDate ? finalEndDate || null : null,
     timezone,
     ...singleTiming,
     description,
+    ...(alarms ? { alarms } : {}),
     url:
       url ||
       (location && typeof location === 'string' && location.startsWith('http')
@@ -235,6 +315,11 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
   const description = String(todo.getFirstPropertyValue('description') || '');
   const location = String(todo.getFirstPropertyValue('location') || '');
   const url = String(todo.getFirstPropertyValue('url') || '');
+  const alarms = extractProviderAlarms(todo);
+  const recurrenceIdProp = todo.getFirstProperty('recurrence-id');
+  const recurrenceId = recurrenceIdProp
+    ? recurrenceIdToString(recurrenceIdProp.getFirstValue())
+    : undefined;
 
   // Handle completed status
   const status = todo.getFirstPropertyValue('status');
@@ -318,6 +403,7 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
     return {
       type: 'rrule',
       uid,
+      ...(recurrenceId ? { recurrenceId } : {}),
       title: summary,
       id: `ics::${uid}::${startDateISO}::recurring`,
       rrule: rrule.toString(),
@@ -328,6 +414,7 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
       ...recurringTiming,
       isTask: true,
       description,
+      ...(alarms ? { alarms } : {}),
       url:
         url ||
         (location && typeof location === 'string' && location.startsWith('http')
@@ -382,6 +469,7 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
   return {
     type: 'single',
     uid,
+    ...(recurrenceId ? { recurrenceId } : {}),
     title: summary,
     date: date,
     endDate: date !== finalEndDate ? finalEndDate || null : null,
@@ -389,6 +477,7 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
     ...singleTiming,
     completed: completedValue,
     description,
+    ...(alarms ? { alarms } : {}),
     url:
       url ||
       (location && typeof location === 'string' && location.startsWith('http')
@@ -498,8 +587,9 @@ export function getEventsFromICS(text: string): OFCEvent[] {
       });
       continue;
     }
-    if (event.date) {
-      baseEvent.skipDates.push(event.date);
+    const originalDate = recurrenceIdToDate(event.recurrenceId) || event.date;
+    if (originalDate) {
+      baseEvent.skipDates.push(originalDate);
     }
   }
 
@@ -541,8 +631,9 @@ export function getEventsFromICS(text: string): OFCEvent[] {
     if (baseTodo.type !== 'rrule' || todoExc.type !== 'single') {
       continue;
     }
-    if (todoExc.date) {
-      baseTodo.skipDates.push(todoExc.date);
+    const originalDate = recurrenceIdToDate(todoExc.recurrenceId) || todoExc.date;
+    if (originalDate) {
+      baseTodo.skipDates.push(originalDate);
     }
   }
 

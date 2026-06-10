@@ -41,6 +41,7 @@ Keep detailed project notes or task descriptions locally in Obsidian while keepi
 - Click a task event in the calendar or backlog, and click **Create Event Note**.
 - A local markdown note will be created, indexed, and linked using **[Event Linked Notes](../features/event-linked-notes.md)** templates.
 - The linked note indicator will automatically show that a local page is associated with the Google Task.
+- The global linked-note strategy applies: **Name-based** reuses the exact task-title file across due-date changes, while **Deadline-based** uses dated occurrence identity.
 
 ---
 

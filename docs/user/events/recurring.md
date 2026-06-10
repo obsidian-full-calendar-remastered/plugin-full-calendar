@@ -10,7 +10,9 @@ The recurring event system in Full Calendar is designed to be both powerful and 
     -   **Monthly:** The event will repeat on the same day of the month as the start date (e.g., the 15th).
     -   **Yearly:** The event will repeat on the same month and day as the start date (e.g., every January 15th).
 3.  Optionally, set a **Start Repeat** and **End Repeat** date to define the range of the recurrence.
-4.  Save the event. A single note will be created that represents the entire series.
+4.  Save the event. A single source item will be created that represents the entire series.
+
+For note-backed calendars this is stored as one recurring note event. For CalDAV calendars, Full Calendar writes a real calendar recurrence rule (`RRULE`) to the remote calendar, so the event is a proper provider-side sequence rather than several local-looking copies.
 
 <!-- TODO: Add GIF of new recurring modal with "Repeats" dropdown -->
 
@@ -31,6 +33,13 @@ The plugin will automatically:
 3.  Visually, it looks like you just moved one event, but the data is handled cleanly in the background.
 
 ![Creating an override by dragging a recurring event](../../assets/events/moving-event.gif)
+
+When you drag or resize an event that belongs to a recurring sequence, Full Calendar asks whether you want to:
+
+-   **Move only this instance:** create or update an override for the selected occurrence.
+-   **Move the entire sequence:** update the recurring event itself so every occurrence follows the new schedule.
+
+Single, non-recurring events move immediately without this prompt.
 
 ---
 
@@ -62,13 +71,14 @@ Note: Some fields on an override intentionally inherit from the parent rule and 
 
 ### Deleting a Recurring Event
 
-When you delete an event that is part of a recurring series, the plugin will ask you what you want to do.
+When you delete an event that is part of a recurring series, the plugin will ask you what you want to do. This happens consistently whether you delete from the event modal, a context menu, or another calendar UI action.
 
--   **Deleting an Override:** If you delete a single override you created, it will be removed and the original instance from the parent series will reappear in its place.
--   **Deleting a Master Event:** If you delete the main recurring event (the one that defines the series), you will be presented with a modal with two options:
-    1.  **Promote Children:** This deletes the master recurring rule but **converts all of its overrides into standalone events**. They will no longer be linked to the series.
-    2.  **Delete Everything:** This deletes the master recurring rule **and all of its child overrides**. This cannot be undone.
+-   **Delete only this instance:** If available for the selected occurrence, this removes just that occurrence or override and leaves the sequence intact.
+-   **Promote child events:** This deletes the recurring rule but converts its overrides into standalone events.
+-   **Delete sequence:** This deletes the recurring rule and every override associated with the sequence. This cannot be undone.
 
-Remote calendars (Google/ICS/CalDAV) respect cancellations and exceptions from the source and propagate them into the view.
+Remote calendars respect cancellations and exceptions from the source and propagate them into the view. Google, Outlook, and CalDAV own their recurring-instance overrides natively, so moving, editing, or deleting one instance is written back as a provider override instead of as a separate local note.
+
+For CalDAV, the master recurring event and its exceptions usually live together in one `.ics` resource on the server. Full Calendar updates that shared resource in place when you edit or delete a single override, so the rest of the recurring series remains intact.
 
 <!-- TODO: Add Screenshot of DeleteRecurringModal -->

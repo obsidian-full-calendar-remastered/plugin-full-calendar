@@ -56,6 +56,20 @@ export function renderCalendarManagement(
     });
 
   new Setting(containerEl)
+    .setName(t('settings.general.linkedNoteLinkStrategy.label'))
+    .setDesc(t('settings.general.linkedNoteLinkStrategy.description'))
+    .addDropdown(dropdown => {
+      dropdown
+        .addOption('deadline', t('settings.general.linkedNoteLinkStrategy.deadline'))
+        .addOption('name', t('settings.general.linkedNoteLinkStrategy.name'))
+        .setValue(PluginState.getSettings().linkedNoteLinkStrategy || 'deadline')
+        .onChange(async value => {
+          PluginState.getSettings().linkedNoteLinkStrategy = value as 'name' | 'deadline';
+          await PluginState.saveSettings();
+        });
+    });
+
+  new Setting(containerEl)
     .setName(t('settings.general.linkedNoteTemplate.label'))
     .setDesc(t('settings.general.linkedNoteTemplate.description'))
     .addTextArea(text => {

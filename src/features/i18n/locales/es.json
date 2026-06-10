@@ -288,6 +288,12 @@
         "label": "Plantilla de nota vinculada",
         "description": "Defina la plantilla utilizada para crear nuevas notas vinculadas. Compatible con: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
         "placeholder": "Introduzca la plantilla Markdown de la nota..."
+      },
+      "linkedNoteLinkStrategy": {
+        "label": "Linked note link strategy",
+        "description": "Choose whether recurring event occurrences share one title-based note or use separate date-specific notes.",
+        "deadline": "Deadline-based (one note per occurrence)",
+        "name": "Name-based (one note per event series)"
       }
     },
     "reminders": {
@@ -1162,8 +1168,6 @@
         },
         "notification": {
           "label": "Notificar",
-          "select": "Seleccionar...",
-          "mins": "Min.",
           "presets": {
             "30m": "30 min",
             "1h": "1 hora",
@@ -1438,6 +1442,22 @@
         "regex": "Regex",
         "btnAdd": "+ Añadir Regla"
       }
+    },
+    "rescheduleRecurring": {
+      "title": "Reschedule Recurring Event",
+      "description": "This is a recurring event. Choose whether to reschedule only this occurrence or the entire recurring sequence.",
+      "rescheduleInstance": {
+        "name": "Reschedule only this instance",
+        "description": "Move only the instance on {{date}}. The rest of the sequence will keep its current schedule.",
+        "descriptionNoDate": "Move only this instance. The rest of the sequence will keep its current schedule.",
+        "button": "Move This Instance"
+      },
+      "rescheduleSequence": {
+        "name": "Reschedule entire sequence",
+        "description": "Update the recurring event itself so every occurrence follows the new schedule.",
+        "button": "Move Sequence"
+      },
+      "cancel": "Cancel"
     }
   },
   "google": {
@@ -1503,12 +1523,9 @@
         "chronoAnalyserDesktopOnly": "El Analizador Chrono solo está disponible en la versión de escritorio.",
         "chronoAnalyserFailed": "No se pudo abrir el Analizador Chrono. Revisa la consola.",
         "modifyEventFailed": "No se pudo modificar el evento.",
-        "taskScheduleFailed": "No se pudo programar la tarea: {{message}}",
-        "moveRecurringDayError": "No se puede mover una instancia recurrente a un día diferente. Modifica solo la hora o edita el evento recurrente principal.",
-        "moveRecurringInstanceError": "No se puede mover una instancia recurrente a un día diferente. Solo puedes cambiar la hora."
+        "taskScheduleFailed": "No se pudo programar la tarea: {{message}}"
       },
       "success": {
-        "deletedEvent": "Evento eliminado \"{{title}}\".",
         "taskScheduled": "Tarea programada con éxito"
       },
       "workspace": {

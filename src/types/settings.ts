@@ -38,6 +38,7 @@ export interface ActivityWatchSettings {
 }
 
 export type TasksDateTarget = 'scheduledDate' | 'startDate' | 'dueDate';
+export type LinkedNoteLinkStrategy = 'name' | 'deadline';
 
 export type TasksBacklogDateTarget = TasksDateTarget;
 export type TasksDisplayFormat = 'standard' | 'dayPlanner';
@@ -195,6 +196,7 @@ export interface FullCalendarSettings {
   currentVersion: string | null;
   linkedNotesDirectory: string;
   linkedNoteTemplate: string;
+  linkedNoteLinkStrategy: LinkedNoteLinkStrategy;
   taskBacklogLastProviderId: string;
   caldavTaskInboxLastCalendarId: string;
   weatherCity: string;
@@ -288,6 +290,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   defaultReminderMinutes: 10,
   currentVersion: null,
   linkedNotesDirectory: '',
+  linkedNoteLinkStrategy: 'deadline',
   taskBacklogLastProviderId: '',
   caldavTaskInboxLastCalendarId: '',
   weatherCity: '',

@@ -122,7 +122,13 @@ export class OutlookProvider implements CalendarProvider<OutlookProviderConfig>,
   }
 
   getCapabilities(): CalendarProviderCapabilities {
-    return { canCreate: true, canEdit: true, canDelete: true };
+    return {
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      supportsAlarms: true,
+      ownsRecurringInstanceOverrides: true
+    };
   }
 
   getEventHandle(event: OFCEvent): EventHandle | null {

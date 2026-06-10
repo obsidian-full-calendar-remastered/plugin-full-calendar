@@ -1294,3 +1294,333 @@
   filter: grayscale(40%);
 }
 
+/* Embedded Weather View Styling */
+.ofc-weather-shell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ofc-embedded-weather-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background-color: var(--background-secondary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.ofc-embedded-weather-container.is-vertical {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.ofc-embedded-weather-container.is-horizontal {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.ofc-weather-unconfigured,
+.ofc-weather-error {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+.ofc-weather-unconfigured:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+/* Day/Hourly Weather */
+.ofc-weather-widget-day {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.ofc-weather-widget-day.is-horizontal {
+  flex-direction: row;
+}
+
+.ofc-weather-widget-day.is-vertical {
+  flex-direction: column;
+}
+
+.ofc-weather-day-card {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  min-width: 180px;
+}
+
+.ofc-weather-day-card.is-sticky {
+  position: sticky;
+  z-index: 5;
+}
+
+.ofc-weather-widget-day.is-vertical .ofc-weather-day-card.is-sticky {
+  top: 0;
+}
+
+.ofc-weather-widget-day.is-horizontal .ofc-weather-day-card.is-sticky {
+  left: 0;
+}
+
+.ofc-weather-widget-day.is-horizontal .ofc-weather-day-card {
+  max-width: 220px;
+}
+
+.ofc-weather-day-summary {
+  margin-bottom: 12px;
+}
+
+.ofc-weather-location {
+  font-weight: 700;
+  font-size: 1.1em;
+  color: var(--text-normal);
+}
+
+.ofc-weather-date {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.ofc-weather-main-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ofc-weather-emoji-large {
+  font-size: 2.5em;
+}
+
+.ofc-weather-temp-range {
+  display: flex;
+  flex-direction: column;
+}
+
+.ofc-weather-temp-val {
+  font-weight: 700;
+  font-size: 1.3em;
+  color: var(--text-accent);
+}
+
+.ofc-weather-desc-text {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+/* Hourly Strip */
+.ofc-weather-hourly-container {
+  display: flex;
+  gap: 12px;
+}
+
+.ofc-weather-widget-day.is-horizontal .ofc-weather-hourly-container {
+  flex-direction: row;
+  align-items: center;
+  padding-bottom: 8px;
+}
+
+.ofc-weather-widget-day.is-vertical .ofc-weather-hourly-container {
+  flex-direction: column;
+}
+
+.ofc-weather-hourly-item {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+}
+
+.ofc-weather-widget-day.is-horizontal .ofc-weather-hourly-item {
+  flex-direction: column;
+  justify-content: center;
+  min-width: 72px;
+  text-align: center;
+  gap: 4px;
+}
+
+.ofc-weather-widget-day.is-vertical .ofc-weather-hourly-item {
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+.ofc-weather-hour-time {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ofc-weather-hour-emoji {
+  font-size: 1.4em;
+}
+
+.ofc-weather-hour-temp {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--text-normal);
+}
+
+.ofc-weather-hour-precip {
+  font-size: 0.75em;
+  color: var(--text-accent);
+}
+
+.ofc-weather-hour-desc {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  flex-grow: 1;
+  text-align: right;
+}
+
+/* Week Weather Strip */
+.ofc-weather-widget-week {
+  width: 100%;
+}
+
+.ofc-weather-week-container {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.ofc-weather-widget-week.is-horizontal .ofc-weather-week-container {
+  flex-direction: row;
+}
+
+.ofc-weather-widget-week.is-vertical .ofc-weather-week-container {
+  flex-direction: column;
+}
+
+.ofc-weather-week-item {
+  flex: 1 1 0;
+  display: flex;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px;
+  box-sizing: border-box;
+  align-items: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ofc-weather-week-item.is-clickable {
+  cursor: pointer;
+}
+
+.ofc-weather-week-item.is-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-s);
+  border-color: var(--interactive-accent);
+}
+
+.ofc-weather-widget-week.is-horizontal .ofc-weather-week-item {
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 100px;
+  text-align: center;
+}
+
+.ofc-weather-widget-week.is-vertical .ofc-weather-week-item {
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+.ofc-weather-week-day-label {
+  display: flex;
+  flex-direction: column;
+}
+
+.ofc-weather-widget-week.is-vertical .ofc-weather-week-day-label {
+  min-width: 80px;
+}
+
+.ofc-weather-week-day-name {
+  font-weight: 700;
+  font-size: 0.95em;
+  color: var(--text-normal);
+}
+
+.ofc-weather-week-day-date {
+  font-size: 0.75em;
+  color: var(--text-muted);
+}
+
+.ofc-weather-week-emoji {
+  font-size: 1.8em;
+}
+
+.ofc-weather-week-temp {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--text-accent);
+}
+
+.ofc-weather-week-desc {
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+
+.ofc-weather-widget-week.is-vertical .ofc-weather-week-desc {
+  flex-grow: 1;
+  text-align: right;
+}
+
+.ofc-weather-widget-week.is-horizontal .ofc-weather-week-desc {
+  display: none; /* Hide desc in compact horizontal boxes to prevent clutter */
+}
+
+/* Minimal Weather Variant Styles */
+.ofc-weather-widget-day.is-minimal,
+.ofc-weather-widget-week.is-minimal {
+  gap: 8px;
+}
+
+.ofc-weather-widget-day.is-minimal .ofc-weather-hourly-item,
+.ofc-weather-widget-week.is-minimal .ofc-weather-week-item {
+  padding: 4px 6px;
+  gap: 8px;
+  font-size: 0.82em;
+  background-color: var(--background-secondary);
+}
+
+.ofc-weather-widget-day.is-minimal.is-horizontal .ofc-weather-hourly-item {
+  min-width: 45px;
+}
+
+.ofc-weather-widget-week.is-minimal.is-horizontal .ofc-weather-week-item {
+  min-width: 65px;
+}
+
+.ofc-weather-widget-day.is-minimal.is-vertical .ofc-weather-hourly-item,
+.ofc-weather-widget-week.is-minimal.is-vertical .ofc-weather-week-item {
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+

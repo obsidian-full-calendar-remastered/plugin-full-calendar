@@ -183,7 +183,71 @@ By default, **nested views within the same code block automatically inherit all 
 
 ---
 
-## 6. Premium Dashboard Workflows
+## 6. Weather View Layouts (`view: weather`)
+
+You can embed a beautiful, highly polished weather dashboard or forecast strip inside your layout by adding `view: weather` to your views list. 
+
+Clicking any day or hour item in the weather view opens the detailed weather popup modal containing hourly breakdowns, temperatures, precipitation probabilities, and wind speeds.
+
+### Weather Parameters
+
+The following parameters are supported specifically when `view: weather` is set:
+
+| Parameter | Type | Allowed Values | Default | Description |
+|---|---|---|---|---|
+| `type` | `string` | `day`, `week` | `day` | The forecast format. `day` renders a daily summary alongside a scrollable hourly strip. `week` renders a 7-day weather strip aligned to your start-of-week settings. |
+| `orientation` | `string` | `horizontal`, `vertical` | `horizontal` | The layout flow. `horizontal` places columns side-by-side (scrolls horizontally if needed). `vertical` stacks items in a scrollable list. |
+| `variant` | `string` | `default`, `minimal` | `default` | Renders a minimalistic style with just time, temperature, and condition icon (hiding daily card, descriptions, and precipitation indicators until hover). |
+| `defaultDate` | `string` | `auto`, `today`, `YYYY-MM-DD` | `auto` | Target date to resolve weather coordinates for. `auto` locks to your Daily Note's date (or today's date if not in a Daily Note). |
+
+### Example Configurations
+
+=== "Single Hourly Weather Strip"
+
+    ```yaml
+    ```fc-calendar
+    view: weather
+    type: day
+    orientation: horizontal
+    height: 180px
+    ```
+
+=== "Minimal Sidebar Weather Column"
+
+    ```yaml
+    ```fc-calendar
+    view: weather
+    type: day
+    variant: minimal
+    orientation: vertical
+    width: 15%
+    ```
+
+=== "Multi-View Daily Note Layout"
+
+    ```yaml
+    ```fc-calendar
+    defaultDate: auto    # Automatically locks to the date of your Daily Note!
+    calendars:
+      - DailyNote
+    height: 650px    
+    layout:
+      orientation: horizontal
+      views:
+        # Column 1: Daily Schedule (65% width)
+        - view: timeGridWeek
+          width: 65%
+          header: false
+        # Column 2: Vertical Weather Dashboard (35% width)
+        - view: weather
+          type: day
+          orientation: vertical
+          width: 35%
+    ```
+
+---
+
+## 7. Premium Dashboard Workflows
 
 Copy and paste these pre-configured templates directly into your vault:
 
@@ -261,7 +325,7 @@ Copy and paste these pre-configured templates directly into your vault:
 
 ---
 
-## 7. Advanced Customization
+## 8. Advanced Customization
 
 ### Scoped Style Customizations (`styles`)
 

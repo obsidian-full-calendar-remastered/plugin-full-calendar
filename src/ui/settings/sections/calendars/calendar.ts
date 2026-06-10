@@ -204,13 +204,39 @@ export async function renderCalendar(
   const getToolbarLayout = (windowWidth: number): ToolbarLayout => {
     const narrow = !!settings?.forceNarrow || windowWidth < MOBILE_BREAKPOINT;
 
+    const hasButton = (name: string): boolean => {
+      if (['prev', 'next', 'prevYear', 'nextYear', 'today', 'title'].includes(name)) {
+        return true;
+      }
+      if (['views', 'search', 'navigate', 'more'].includes(name)) {
+        return true;
+      }
+      if (name === 'timeline') {
+        return showResourceViews;
+      }
+      return !!(customButtons && customButtons[name]);
+    };
+
+    const filterToolbarString = (str: string): string => {
+      return str
+        .split(' ')
+        .map(group => {
+          return group
+            .split(',')
+            .filter(btn => hasButton(btn))
+            .join(',');
+        })
+        .filter(group => group.length > 0)
+        .join(' ');
+    };
+
     if (narrow) {
       return {
         mode: 'narrow',
         headerToolbar: false,
         footerToolbar: {
-          left: 'prev,today,next search',
-          right: 'views,more'
+          left: filterToolbarString('prev,today,next search'),
+          right: filterToolbarString('views,more')
         }
       };
     }
@@ -219,9 +245,9 @@ export async function renderCalendar(
       return {
         mode: 'compact-desktop',
         headerToolbar: {
-          left: 'prev,today,next search',
+          left: filterToolbarString('prev,today,next search'),
           center: 'title',
-          right: 'analysis more'
+          right: filterToolbarString('analysis more')
         },
         footerToolbar: false
       };
@@ -234,9 +260,9 @@ export async function renderCalendar(
     return {
       mode: 'desktop',
       headerToolbar: {
-        left: 'workspace prev,today,navigate,next search',
+        left: filterToolbarString('workspace prev,today,navigate,next search'),
         center: 'title',
-        right: `analysis ${fullDesktopViewGroup}`
+        right: filterToolbarString(`analysis ${fullDesktopViewGroup}`)
       },
       footerToolbar: false
     };
@@ -382,11 +408,13 @@ export async function renderCalendar(
     click: (ev: MouseEvent) => {
       const menu = new Menu();
 
-      menu.addItem(item => {
-        item.setTitle('Workspace').onClick(() => {
-          void customButtons?.workspace?.click(ev);
+      if (customButtons?.workspace) {
+        menu.addItem(item => {
+          item.setTitle('Workspace').onClick(() => {
+            void customButtons.workspace.click(ev);
+          });
         });
-      });
+      }
 
       menu.addItem(item => {
         item.setTitle('Go to date').onClick(() => {

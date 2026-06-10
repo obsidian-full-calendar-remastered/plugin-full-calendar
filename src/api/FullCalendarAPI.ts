@@ -1,5 +1,14 @@
 import { showNotice } from '../utils/showNotice';
 import { PluginState } from '../core/PluginState';
+import {
+  EventFilterSortEngine,
+  QueryableEvent,
+  EventFilterCriteria,
+  EventSortCriteria
+} from '../core/EventFilterSortEngine';
+import type { EventSourceInput } from '@fullcalendar/core';
+import type { ViewConfig } from '../features/codeblock/CodeBlockProcessor';
+import { getEventSources as helperGetEventSources } from '../features/codeblock/CodeBlockQueryHelper';
 import { Modal, App } from 'obsidian';
 import type { Calendar } from '@fullcalendar/core';
 import type FullCalendarPlugin from '../main';
@@ -102,6 +111,49 @@ export class InternalAPI {
   public getEventById(id: string): OFCEvent | null {
     return PluginState.getCache().getEventById(id);
   }
+
+  public getEventDetails(id: string): ApiEventDetails {
+    return PluginState.getCache().store.getEventDetails(id) as ApiEventDetails;
+  }
+
+  public getEvents(criteria: EventFilterCriteria, sorts?: EventSortCriteria[]): QueryableEvent[] {
+    const allSources = PluginState.getCache().getAllEvents();
+    const queryables: QueryableEvent[] = [];
+
+    for (const source of allSources) {
+      for (const event of source.events) {
+        if (!event.id) continue;
+        const details = this.getEventDetails(event.id);
+
+        const q = EventFilterSortEngine.fromStoredEvent({
+          id: event.id,
+          event: details ? details.event : event.event,
+          calendarId: details ? details.calendarId : source.id,
+          location:
+            details && details.location
+              ? {
+                  path:
+                    'file' in details.location
+                      ? (details.location as { file: { path: string } }).file.path
+                      : (details.location as { path: string }).path,
+                  lineNumber: details.location.lineNumber
+                }
+              : null
+        });
+        q.rawEvent = event;
+        queryables.push(q);
+      }
+    }
+
+    return EventFilterSortEngine.query(queryables, criteria, sorts);
+  }
+
+  public getEventSources(
+    config: ViewConfig,
+    sourcePath: string
+  ): { sources: EventSourceInput[]; initialDate?: string } {
+    return helperGetEventSources(config, sourcePath, this);
+  }
 }
 
 export type ApiEventDetails = {
@@ -162,7 +214,7 @@ function createAuthorizedApi(tokenRecord: ApiTokenRecord): AuthorizedAPI {
     },
     getEventDetails: (id: string) => {
       assertScope(grantedScopes, 'events:read');
-      return cache.store.getEventDetails(id) as ApiEventDetails;
+      return internal.getEventDetails(id);
     },
     createEvent: (calendarId: string, event: OFCEvent, options?: { silent?: boolean }) => {
       assertScope(grantedScopes, 'events:write');

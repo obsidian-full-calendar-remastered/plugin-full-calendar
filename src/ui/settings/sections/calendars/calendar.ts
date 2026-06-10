@@ -84,6 +84,7 @@ interface ExtraRenderProps {
   headerToolbar?: false | object;
   footerToolbar?: false | object;
   height?: 'auto' | number | 'parent';
+  weatherHide?: boolean;
 }
 
 type TimeGridDayHeaderFormat =
@@ -676,21 +677,21 @@ export async function renderCalendar(
     // FullCalendar mounts headers and cells BEFORE datesSet triggers.
     // Clearing them here discards the DOM elements collected during dayHeaderDidMount/dayCellDidMount.
 
-    const settings = PluginState.getSettings();
-    if (settings.weatherHide) {
+    const pluginSettings = PluginState.getSettings();
+    if (settings?.weatherHide || pluginSettings.weatherHide) {
       pendingHeaders = [];
       pendingCells = [];
       return;
     }
 
-    if (settings.weatherLatitude === null || settings.weatherLongitude === null) {
+    if (pluginSettings.weatherLatitude === null || pluginSettings.weatherLongitude === null) {
       pendingHeaders = [];
       pendingCells = [];
       return;
     }
 
-    const latitude = settings.weatherLatitude ?? 50.088;
-    const longitude = settings.weatherLongitude ?? 14.4208;
+    const latitude = pluginSettings.weatherLatitude ?? 50.088;
+    const longitude = pluginSettings.weatherLongitude ?? 14.4208;
 
     if (!view) return;
 
@@ -737,12 +738,12 @@ export async function renderCalendar(
       if (arg.view.type.startsWith('timeGrid')) {
         bindDailyNoteHeaderClick(arg.el, arg.date);
       }
-      const settings = PluginState.getSettings();
-      if (settings.weatherHide) {
+      const pluginSettings = PluginState.getSettings();
+      if (settings?.weatherHide || pluginSettings.weatherHide) {
         return;
       }
       const isUnconfigured =
-        settings.weatherLatitude === null || settings.weatherLongitude === null;
+        pluginSettings.weatherLatitude === null || pluginSettings.weatherLongitude === null;
       if (isUnconfigured) {
         const isFirst = pendingHeaders.length === 0;
         pendingHeaders.push({ dateStr: formatDateLocal(arg.date), el: arg.el });
@@ -757,11 +758,12 @@ export async function renderCalendar(
       }
     },
     dayCellDidMount: arg => {
-      const settings = PluginState.getSettings();
+      const pluginSettings = PluginState.getSettings();
       if (
-        settings.weatherHide ||
-        settings.weatherLatitude === null ||
-        settings.weatherLongitude === null
+        settings?.weatherHide ||
+        pluginSettings.weatherHide ||
+        pluginSettings.weatherLatitude === null ||
+        pluginSettings.weatherLongitude === null
       ) {
         return;
       }

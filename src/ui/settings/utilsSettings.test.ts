@@ -40,13 +40,11 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
   });
 
   it('should fallback to defaults when milestone settings are missing', () => {
-    const {
-      milestones: _m,
-      enableMonthlyStatsReport: _e,
-      lastMonthlyMilestonesGeneratedMonth: _g,
-      lastMonthlyMilestonesCheckDate: _c,
-      ...rawSettings
-    } = DEFAULT_SETTINGS;
+    const rawSettings = { ...DEFAULT_SETTINGS } as Partial<typeof DEFAULT_SETTINGS>;
+    delete rawSettings.milestones;
+    delete rawSettings.enableMonthlyStatsReport;
+    delete rawSettings.lastMonthlyMilestonesGeneratedMonth;
+    delete rawSettings.lastMonthlyMilestonesCheckDate;
 
     const { settings } = migrateAndSanitizeSettings(rawSettings);
 

@@ -86,6 +86,26 @@ Embed a calendar by writing a custom `fc-calendar` code block using declarative 
 
 ## 3. Advanced Query & Filter Reference
 
+### View Layout & Rendering Parameters
+
+Customize the calendar representation and time grid scaling by using the following parameters:
+
+| Parameter | Type | Allowed / Example Values | Description |
+|---|---|---|---|
+| `view` | `string` | [`dayGridMonth`](../views/index.md)<br>[`timeGridWeek`](../views/index.md)<br>[`timeGridDay`](../views/index.md)<br>[`listWeek`](../views/index.md)<br>[`listMonth`](../views/index.md)<br>[`resourceTimelineDay`](../views/timeline_view.md)<br>[`resourceTimelineWeek`](../views/timeline_view.md)<br>[`resourceTimelineMonth`](../views/timeline_view.md) | The [FullCalendar View](../views/index.md) format to render. |
+| `height` | `string` | `400px`, `100%`, `fit` | Set calendar height. `fit` adjusts the height dynamically to wrap events perfectly. |
+| `width` | `string` | `100%`, `350px` | Set custom calendar width. |
+| `defaultDate` | `string` | `auto`, `today`, `YYYY-MM-DD` | Initial date focused by the calendar. `auto` resolves automatically to the date of your [Daily Note](../calendars/dailynote.md) when embedded there. |
+| `header` | `boolean` | `true`, `false` | Set to `false` to hide the top header/navigation and footer toolbars (default: `true`). |
+| `zoomLevel` | `number` | `0` to `4` | Scale the density of the grid time slots. Higher values provide finer granularity. |
+| `slotDuration` | `string` | `00:15:00`, `00:30:00`, `01:00:00` | Custom duration of each timeline/agenda time slot (e.g. `00:15:00` for 15 minutes). |
+| `slotLabelInterval` | `string` | `01:00:00`, `02:00:00` | Interval at which time labels are drawn (e.g. draw labels every hour). |
+| `weather` | `boolean` | `true`, `false` | Set to `false` to hide the weather forecast widget overlay on views (default: `true`). |
+| `inheritFilters` | `boolean` | `true`, `false` | Cascade parent filters and rendering options down to nested layout views (default: `true`). |
+| `layout` | `object` | See [layout definition](#5-multi-view-dashboards-layouts-filter-inheritance) | Configure a multi-view dashboard layout with orientation and views. |
+| `styles` | `object` | See [scoped style customizations](#7-advanced-customization) | Define scoped CSS variable overrides and inline styles. |
+
+
 The embedded calendar processor exposes the full capabilities of the [Event Cache Engine](../../architecture/dev-logs/index.md). Below is the comprehensive directory of query parameters you can use:
 
 ### Query Parameters
@@ -102,6 +122,9 @@ The embedded calendar processor exposes the full capabilities of the [Event Cach
 | `titleFilter` | `string` | Regex-friendly substring filter matching event titles. | [NLP Smart Title Matching](nlp.md) |
 | `tagFilter` | `string` | Match specific `#tags` from inline markdown or frontmatter. | [Local Note Calendars](../calendars/local.md) |
 | `pathFilter` | `string` | Limit events to those originating from a specific vault subfolder. | [Event Linked Notes](event-linked-notes.md) |
+| `startOffset` | `string` | Relative start date range offset (e.g., `-7d`, `-2w`, `-1m`). | [Relative Offsets](#relative-offsets-relative-ranges) |
+| `endOffset` | `string` | Relative end date range offset (e.g., `+7d`, `+4w`, `+2m`). | [Relative Offsets](#relative-offsets-relative-ranges) |
+
 
 ### Relative Offsets & Relative Ranges
 

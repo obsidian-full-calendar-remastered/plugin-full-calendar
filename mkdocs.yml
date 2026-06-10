@@ -3,6 +3,7 @@ site_name: Full Calendar Remastered
 site_url: https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/
 repo_url: https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar
 repo_name: obsidian-full-calendar-remastered/plugin-full-calendar
+docs_dir: docs
 theme:
     name: material
     custom_dir: docs/overrides
@@ -62,6 +63,7 @@ markdown_extensions:
     - pymdownx.keys
     - pymdownx.caret
     - attr_list
+    - md_in_html
 
 extra_javascript:
     - assets/javascripts/nav-section-links.js

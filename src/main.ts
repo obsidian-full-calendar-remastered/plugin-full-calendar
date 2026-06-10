@@ -26,10 +26,7 @@ import { Plugin, TFile, App, EventRef, ButtonComponent } from 'obsidian';
 import type { Workspace } from 'obsidian';
 import { initializeI18n, t } from './features/i18n/i18n';
 import './styles.css';
-import {
-  livePreviewCoordinator,
-  livePreviewStateField
-} from './features/livepreview/LivePreviewCoordinator';
+import { livePreviewCoordinator } from './features/livepreview/LivePreviewCoordinator';
 
 import { AppWithSettings } from './types/obsidian-ext';
 import { FullCalendarSettings, DEFAULT_SETTINGS } from './types/settings';
@@ -423,7 +420,6 @@ export default class FullCalendarPlugin extends Plugin {
       }
     });
 
-    this.registerEditorExtension(livePreviewStateField);
     this.registerEditorExtension(livePreviewCoordinator);
 
     // Register embedded calendar markdown code block processor

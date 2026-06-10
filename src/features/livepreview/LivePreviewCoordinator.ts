@@ -1,25 +1,6 @@
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { TFile, editorInfoField } from 'obsidian';
-import { StateField, StateEffect } from '@codemirror/state';
 import { PluginState } from '../../core/PluginState';
-
-export const setLivePreviewDecorations = StateEffect.define<DecorationSet>();
-
-export const livePreviewStateField = StateField.define<DecorationSet>({
-  create() {
-    return Decoration.none;
-  },
-  update(value, tr) {
-    const mapped = value.map(tr.changes);
-    for (const effect of tr.effects) {
-      if (effect.is(setLivePreviewDecorations)) {
-        return effect.value;
-      }
-    }
-    return mapped;
-  },
-  provide: f => EditorView.decorations.from(f)
-});
 
 export class LivePreviewCoordinatorPlugin {
   decorations: DecorationSet;
@@ -32,29 +13,16 @@ export class LivePreviewCoordinatorPlugin {
     this.currentFilePath = activeFile ? activeFile.path : null;
     this.decorations = this.buildDecorations(view, activeFile);
 
-    // Dispatch initial decorations to the StateField
-    window.setTimeout(() => {
-      if (!this.isDestroyed && typeof view.dispatch === 'function') {
-        view.dispatch({
-          effects: setLivePreviewDecorations.of(this.decorations)
-        });
-      }
-    }, 0);
-
     // Set up update listener to dynamically update decorations when cache updates
     this.updateListener = () => {
-      window.setTimeout(() => {
-        if (this.isDestroyed) {
-          return;
-        }
-        const file = this.getFileFromView(view);
-        this.decorations = this.buildDecorations(view, file);
-        if (typeof view.dispatch === 'function') {
-          view.dispatch({
-            effects: setLivePreviewDecorations.of(this.decorations)
-          });
-        }
-      }, 0);
+      if (this.isDestroyed) {
+        return;
+      }
+      const file = this.getFileFromView(view);
+      this.decorations = this.buildDecorations(view, file);
+      if (typeof view.dispatch === 'function') {
+        view.dispatch({});
+      }
     };
 
     try {
@@ -75,16 +43,6 @@ export class LivePreviewCoordinatorPlugin {
     if (fileChanged || update.docChanged || update.selectionSet || update.viewportChanged) {
       this.currentFilePath = activeFilePath;
       this.decorations = this.buildDecorations(update.view, activeFile);
-
-      const view = update.view;
-      const decs = this.decorations;
-      window.setTimeout(() => {
-        if (!this.isDestroyed && typeof view.dispatch === 'function') {
-          view.dispatch({
-            effects: setLivePreviewDecorations.of(decs)
-          });
-        }
-      }, 0);
     }
   }
 
@@ -154,4 +112,6 @@ export class LivePreviewCoordinatorPlugin {
   }
 }
 
-export const livePreviewCoordinator = ViewPlugin.fromClass(LivePreviewCoordinatorPlugin);
+export const livePreviewCoordinator = ViewPlugin.fromClass(LivePreviewCoordinatorPlugin, {
+  decorations: v => v.decorations
+});

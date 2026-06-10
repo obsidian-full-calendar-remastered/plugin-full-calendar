@@ -11,6 +11,67 @@ import { t } from '../../features/i18n/i18n';
 import { dateEndpointsToFrontmatter, fromEventApi } from '../../core/interop';
 import { ViewContext } from './ViewContext';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
+import { OFCEvent } from '../../types';
+
+const shiftIsoDate = (date: string | undefined, days: number): string | undefined => {
+  if (!date || days === 0) {
+    return date;
+  }
+
+  return DateTime.fromISO(date).plus({ days }).toISODate() || date;
+};
+
+const getEventDate = (eventApi: EventApi): string | null =>
+  eventApi.start ? DateTime.fromJSDate(eventApi.start).toISODate() : null;
+
+const getDayDelta = (oldEvent: EventApi, newEvent: EventApi): number => {
+  if (!oldEvent.start || !newEvent.start) {
+    return 0;
+  }
+
+  const oldStart = DateTime.fromJSDate(oldEvent.start).startOf('day');
+  const newStart = DateTime.fromJSDate(newEvent.start).startOf('day');
+  return Math.round(newStart.diff(oldStart, 'days').days);
+};
+
+function buildRecurringSequenceReschedule(
+  masterEvent: OFCEvent,
+  oldEvent: EventApi,
+  newEvent: EventApi,
+  modifiedInstance: OFCEvent
+): OFCEvent {
+  if (masterEvent.type !== 'recurring' && masterEvent.type !== 'rrule') {
+    return masterEvent;
+  }
+
+  const dayDelta = getDayDelta(oldEvent, newEvent);
+  const nextEvent = {
+    ...masterEvent,
+    allDay: modifiedInstance.allDay,
+    timezone: modifiedInstance.timezone || masterEvent.timezone
+  } as Record<string, unknown>;
+
+  if (modifiedInstance.allDay) {
+    delete nextEvent.startTime;
+    delete nextEvent.endTime;
+  } else if ('startTime' in modifiedInstance) {
+    nextEvent.startTime = modifiedInstance.startTime;
+    nextEvent.endTime = modifiedInstance.endTime;
+  }
+
+  if (masterEvent.type === 'recurring') {
+    return {
+      ...nextEvent,
+      startRecur: shiftIsoDate(masterEvent.startRecur, dayDelta),
+      endRecur: shiftIsoDate(masterEvent.endRecur, dayDelta)
+    } as OFCEvent;
+  }
+
+  return {
+    ...nextEvent,
+    startDate: shiftIsoDate(masterEvent.startDate, dayDelta) || masterEvent.startDate
+  } as OFCEvent;
+}
 
 export class ViewEventInteractionHandler {
   constructor(private ctx: ViewContext) {}
@@ -158,43 +219,93 @@ export class ViewEventInteractionHandler {
         throw new Error('Original event not found in cache.');
       }
 
-      if (originalEvent.type === 'single' && originalEvent.recurringEventId) {
-        const oldDate = oldEvent.start ? DateTime.fromJSDate(oldEvent.start).toISODate() : null;
-        const newDate = newEvent.start ? DateTime.fromJSDate(newEvent.start).toISODate() : null;
-
-        if (oldDate && newDate && oldDate !== newDate) {
-          showNotice(t('ui.view.errors.moveRecurringDayError'), 6000);
-          return false;
-        }
-      }
-
       if (originalEvent.type === 'rrule' || originalEvent.type === 'recurring') {
-        const oldDate = oldEvent.start ? DateTime.fromJSDate(oldEvent.start).toISODate() : null;
-        const newDate = newEvent.start ? DateTime.fromJSDate(newEvent.start).toISODate() : null;
-
-        if (oldDate && newDate && oldDate !== newDate) {
-          showNotice(t('ui.view.errors.moveRecurringInstanceError'), 6000);
-          return false;
-        }
-
         if (!oldEvent.start) {
           throw new Error('Recurring instance is missing original start date.');
         }
 
-        const instanceDate = DateTime.fromJSDate(oldEvent.start).toISODate();
+        const instanceDate = getEventDate(oldEvent);
         if (!instanceDate) {
           throw new Error('Could not determine instance date from recurring event.');
         }
 
         const modifiedEvent = fromEventApi(newEvent, PluginState.getSettings(), newResource);
-
-        await PluginState.getCache().modifyRecurringInstance(
-          oldEvent.id,
-          instanceDate,
-          modifiedEvent
-        );
-        return true;
+        const { RescheduleRecurringModal } = await import('../modals/RescheduleRecurringModal');
+        new RescheduleRecurringModal(
+          this.ctx.app,
+          () => {
+            void PluginState.getCache().modifyRecurringInstance(
+              oldEvent.id,
+              instanceDate,
+              modifiedEvent
+            );
+          },
+          () => {
+            void PluginState.getCache().updateEventWithId(
+              oldEvent.id,
+              buildRecurringSequenceReschedule(originalEvent, oldEvent, newEvent, modifiedEvent)
+            );
+          },
+          instanceDate
+        ).open();
+        return false;
       }
+
+      if (
+        originalEvent.type === 'single' &&
+        (originalEvent.recurringEventId || originalEvent.recurrenceId)
+      ) {
+        const oldDate = getEventDate(oldEvent);
+        const modifiedEvent = fromEventApi(newEvent, PluginState.getSettings(), newResource);
+        const masterDetails = PluginState.getCache()
+          .store.getAllEvents()
+          .find(candidate => {
+            if (
+              candidate.event.type !== 'recurring' &&
+              candidate.event.type !== 'rrule'
+            ) {
+              return false;
+            }
+            if (candidate.event.uid && candidate.event.uid === originalEvent.uid) {
+              return true;
+            }
+            if (
+              originalEvent.recurringEventId &&
+              candidate.event.uid === originalEvent.recurringEventId
+            ) {
+              return true;
+            }
+            const parentFilename = originalEvent.recurringEventId?.split('/').pop();
+            const candidateFilename = candidate.location?.path.split('/').pop();
+            return Boolean(parentFilename && candidateFilename === parentFilename);
+          });
+
+        if (!oldDate || !masterDetails) {
+          return await PluginState.getCache().updateEventWithId(oldEvent.id, modifiedEvent);
+        }
+
+        const { RescheduleRecurringModal } = await import('../modals/RescheduleRecurringModal');
+        new RescheduleRecurringModal(
+          this.ctx.app,
+          () => {
+            void PluginState.getCache().updateEventWithId(oldEvent.id, modifiedEvent);
+          },
+          () => {
+            void PluginState.getCache().updateEventWithId(
+              masterDetails.id,
+              buildRecurringSequenceReschedule(
+                masterDetails.event,
+                oldEvent,
+                newEvent,
+                modifiedEvent
+              )
+            );
+          },
+          oldDate
+        ).open();
+        return false;
+      }
+
       const didModify = await PluginState.getCache().updateEventWithId(
         oldEvent.id,
         fromEventApi(newEvent, PluginState.getSettings(), newResource)

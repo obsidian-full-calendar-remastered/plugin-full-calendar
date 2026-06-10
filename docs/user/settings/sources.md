@@ -42,6 +42,9 @@ Access these settings in **Full Calendar Settings → Calendar Sources**.
 ## Global Source Settings
 
 *   **Default Calendar**: Choose which calendar is selected by default when creating a new event via the UI or [FCR Command](../features/nlp.md).
+*   **Linked Note Link Strategy**:
+    * `Name-based`: Reuse or create the exact sanitized event-title file in the configured linked-notes folder. Existing matching files keep their body and unrelated properties; no collision suffix is added.
+    * `Deadline-based`: Keep separate notes for dated recurring occurrences, using occurrence identity and collision-safe filenames.
 *   **Revalidate Remote Calendars**: Manually trigger a refresh of all external feeds.
 *   **Reset Event Cache**: A deep reload that forces the plugin to re-read all data from all sources. See [Data Integrity](../reference/data_integrity.md).
 

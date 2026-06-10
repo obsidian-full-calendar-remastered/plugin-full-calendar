@@ -88,7 +88,10 @@ export function newFrontmatter(fields: Partial<OFCEvent>): string {
     .join('\n');
 }
 
-export function modifyFrontmatterString(page: string, modifications: Partial<OFCEvent>): string {
+export function modifyFrontmatterString(
+  page: string,
+  modifications: Record<string, unknown>
+): string {
   const frontmatter = extractFrontmatter(page);
   const sourceLines = frontmatter ? frontmatter.split('\n') : [];
 

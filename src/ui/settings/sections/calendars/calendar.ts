@@ -37,6 +37,7 @@ import {
   formatTempRange
 } from '../../../../features/weather/Weather';
 import { WeatherDetailModal } from '../../../../features/weather/WeatherDetailModal';
+import { openDailyNoteForDate } from '../../../../features/daily-notes/openDailyNote';
 
 interface ExtraRenderProps {
   eventClick?: (info: EventClickArg) => void;
@@ -655,6 +656,21 @@ export async function renderCalendar(
     });
   };
 
+  const bindDailyNoteHeaderClick = (el: HTMLElement, date: Date): void => {
+    const dateLabel = el.querySelector<HTMLElement>('.fc-col-header-cell-cushion');
+    if (!dateLabel || dateLabel.dataset.ofcDailyNoteBound === 'true') {
+      return;
+    }
+
+    dateLabel.dataset.ofcDailyNoteBound = 'true';
+    dateLabel.setCssProps({ cursor: 'pointer' });
+    dateLabel.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      void openDailyNoteForDate(PluginState.getPlugin().app, date);
+    });
+  };
+
   const handleViewChangeAndFetchWeather = async (view: { activeStart: Date; activeEnd: Date }) => {
     // DO NOT clear pendingHeaders, pendingCells, or activeForecast at the start of this function!
     // FullCalendar mounts headers and cells BEFORE datesSet triggers.
@@ -718,6 +734,9 @@ export async function renderCalendar(
 
   const cal = new CalendarCtor(containerEl, {
     dayHeaderDidMount: arg => {
+      if (arg.view.type.startsWith('timeGrid')) {
+        bindDailyNoteHeaderClick(arg.el, arg.date);
+      }
       const settings = PluginState.getSettings();
       if (settings.weatherHide) {
         return;

@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian';
+import { App, TFile, normalizePath } from 'obsidian';
 import { OFCEvent } from '../../types';
 import { PluginState } from '../../core/PluginState';
 import { TemplateEngine } from './TemplateEngine';
@@ -11,13 +11,57 @@ import {
   findUniquePath,
   sanitizeTitleForFilename
 } from '../../providers/utils/noteUtils';
-import { replaceFrontmatter } from '../../providers/fullnote/frontmatter';
+import { modifyFrontmatterString, replaceFrontmatter } from '../../providers/fullnote/frontmatter';
 import FullCalendarPlugin from '../../main';
 
 const linkedNoteCreationPromises = new Map<string, Promise<TFile | null>>();
 
+function linkedNoteIdentityInstanceDate(instanceDate?: string): string | undefined {
+  return PluginState.getSettings().linkedNoteLinkStrategy === 'name' ? undefined : instanceDate;
+}
+
+function isNameBasedLinkedNotes(): boolean {
+  return PluginState.getSettings().linkedNoteLinkStrategy === 'name';
+}
+
+function titleBasedLinkedNotePath(directory: string, event: OFCEvent): string {
+  const baseFilename = sanitizeTitleForFilename(event.title || t('linkedNotes.untitledNote'));
+  return normalizePath(`${directory}/${baseFilename}.md`);
+}
+
+function quotedFrontmatterString(value: string): string {
+  return JSON.stringify(value);
+}
+
+async function linkExistingTitleFile(
+  app: App,
+  event: OFCEvent,
+  calendarId: string,
+  directory: string
+): Promise<TFile | null> {
+  const file = app.vault.getFileByPath(titleBasedLinkedNotePath(directory, event));
+  const eventUid = event.uid || event.id;
+  if (!file || !eventUid) {
+    return file;
+  }
+
+  const contents = await app.vault.read(file);
+  const updatedContents = modifyFrontmatterString(contents, {
+    'fc-event-uid': quotedFrontmatterString(eventUid),
+    'fc-calendar-id': quotedFrontmatterString(calendarId),
+    'fc-event-recurrence-id': null
+  });
+  if (updatedContents !== contents) {
+    await app.vault.modify(file, updatedContents);
+  }
+  return file;
+}
+
 function linkedNoteCreationKey(calendarId: string, event: OFCEvent, instanceDate?: string): string {
-  return `${calendarId}::${event.uid || ''}::${instanceDate || ''}`;
+  if (isNameBasedLinkedNotes()) {
+    return `${calendarId}::name::${sanitizeTitleForFilename(event.title || t('linkedNotes.untitledNote'))}`;
+  }
+  return `${calendarId}::${event.uid || event.id || ''}::${instanceDate || ''}`;
 }
 
 /**
@@ -38,15 +82,24 @@ export async function createLinkedNoteForProvider({
   linkedNoteIndex: LinkedNoteIndex;
   instanceDate?: string;
 }): Promise<TFile | null> {
+  const identityInstanceDate = linkedNoteIdentityInstanceDate(instanceDate);
+  const directory = PluginState.getSettings().linkedNotesDirectory;
+  if (isNameBasedLinkedNotes() && directory) {
+    const titleFile = await linkExistingTitleFile(app, event, calendarId, directory);
+    if (titleFile) {
+      return titleFile;
+    }
+  }
+
   const existingFile = await linkedNoteIndex.getFileForEventAfterHydration(
     event.uid || event.id || '',
-    instanceDate
+    identityInstanceDate
   );
   if (existingFile) {
     return existingFile;
   }
 
-  const creationKey = linkedNoteCreationKey(calendarId, event, instanceDate);
+  const creationKey = linkedNoteCreationKey(calendarId, event, identityInstanceDate);
   const inFlightCreation = linkedNoteCreationPromises.get(creationKey);
   if (inFlightCreation) {
     return inFlightCreation;
@@ -57,7 +110,8 @@ export async function createLinkedNoteForProvider({
     event,
     calendarId,
     calendarName,
-    instanceDate
+    instanceDate,
+    identityInstanceDate
   }).finally(() => {
     linkedNoteCreationPromises.delete(creationKey);
   });
@@ -70,13 +124,15 @@ async function createLinkedNoteFile({
   event,
   calendarId,
   calendarName,
-  instanceDate
+  instanceDate,
+  identityInstanceDate
 }: {
   app: App;
   event: OFCEvent;
   calendarId: string;
   calendarName: string;
   instanceDate?: string;
+  identityInstanceDate?: string;
 }): Promise<TFile | null> {
   const settings = PluginState.getSettings();
   const directory = settings.linkedNotesDirectory;
@@ -92,8 +148,8 @@ async function createLinkedNoteFile({
     'fc-event-uid': event.uid || event.id,
     'fc-calendar-id': calendarId
   };
-  if (instanceDate) {
-    frontmatter['fc-event-recurrence-id'] = instanceDate;
+  if (identityInstanceDate) {
+    frontmatter['fc-event-recurrence-id'] = identityInstanceDate;
   }
 
   const yaml = serializeFrontmatter(frontmatter);
@@ -101,11 +157,13 @@ async function createLinkedNoteFile({
   const fileContent = replaceFrontmatter(bodyContent, yaml);
 
   let baseFilename = sanitizeTitleForFilename(event.title || t('linkedNotes.untitledNote'));
-  if (instanceDate) {
-    baseFilename = `${baseFilename} ${instanceDate}`;
+  if (identityInstanceDate) {
+    baseFilename = `${baseFilename} ${identityInstanceDate}`;
   }
   const appAdapter = new ObsidianIO(app);
-  const uniquePath = findUniquePath(appAdapter, directory, baseFilename);
+  const uniquePath = isNameBasedLinkedNotes()
+    ? titleBasedLinkedNotePath(directory, event)
+    : findUniquePath(appAdapter, directory, baseFilename);
 
   const file = await appAdapter.create(uniquePath, fileContent);
   return file;
@@ -139,10 +197,25 @@ export async function openOrCreateLinkedNote(
   }
 
   // 2. Check if note already exists
+  if (isNameBasedLinkedNotes()) {
+    const titleFile = await linkExistingTitleFile(
+      plugin.app,
+      event,
+      calendarId,
+      settings.linkedNotesDirectory
+    );
+    if (titleFile) {
+      const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);
+      await leaf.openFile(titleFile);
+      return;
+    }
+  }
+
   if (linkedNoteProvider.linkedNoteIndex) {
+    const identityInstanceDate = linkedNoteIdentityInstanceDate(instanceDate);
     const existingFile = await linkedNoteProvider.linkedNoteIndex.getFileForEventAfterHydration(
       event.uid || event.id || '',
-      instanceDate
+      identityInstanceDate
     );
     if (existingFile) {
       const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);

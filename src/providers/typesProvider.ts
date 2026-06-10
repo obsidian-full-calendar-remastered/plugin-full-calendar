@@ -5,6 +5,8 @@ import { ComponentType } from 'react';
  */
 export type EventHandle = {
   persistentId: string;
+  uid?: string;
+  recurrenceId?: string;
   location?: { path: string; lineNumber?: number };
 };
 

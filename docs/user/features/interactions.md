@@ -5,6 +5,7 @@ This page documents direct interactions in the calendar UI.
 ## Mouse and Trackpad
 
 - Click empty date/time slot: create event.
+- Click a date label above a time-grid column: open or create that day's Obsidian daily note when the Daily Notes core plugin is enabled.
 - Drag event: move event to a new day or time.
 - Resize event edge: change event duration.
 - Right-click event: open context actions.

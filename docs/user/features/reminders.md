@@ -27,6 +27,16 @@ startTime: "14:00"
 notify: 15  # Trigger 15 minutes before start
 ```
 
+## Calendar Provider Reminders
+
+Some remote calendars also have their own reminder model. Full Calendar maps those provider reminders into `alarms` event data:
+
+*   CalDAV reminders are stored as ICS `VALARM` entries.
+*   Google popup reminders are stored as Google reminder overrides.
+*   Outlook reminders are stored as Outlook reminder minutes.
+
+When a calendar supports provider reminders, the event editor shows separate controls for the Obsidian reminder and the calendar-provider reminder. Recurring instance overrides inherit the parent reminder settings unless you explicitly change the override.
+
 ## The Reminder Modal
 
 When you click a system notification (or when a reminder triggers while Obsidian is focused), an interactive modal appears:

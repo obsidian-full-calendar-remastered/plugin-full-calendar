@@ -98,6 +98,8 @@ export function migrateAndSanitizeSettings(settings: unknown): {
       raw.milestoneNotifierDuration ?? DEFAULT_SETTINGS.milestoneNotifierDuration,
     currentVersion: raw.currentVersion ?? null,
     linkedNotesDirectory: raw.linkedNotesDirectory ?? DEFAULT_SETTINGS.linkedNotesDirectory,
+    linkedNoteLinkStrategy:
+      raw.linkedNoteLinkStrategy ?? DEFAULT_SETTINGS.linkedNoteLinkStrategy,
     taskBacklogLastProviderId:
       raw.taskBacklogLastProviderId ??
       raw.caldavTaskInboxLastCalendarId ??

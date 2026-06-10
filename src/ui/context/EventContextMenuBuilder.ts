@@ -1,4 +1,3 @@
-import { showNotice } from '../../utils/showNotice';
 import { PluginState } from '../../core/PluginState';
 import { EventApi } from '@fullcalendar/core';
 import { Menu } from 'obsidian';
@@ -238,7 +237,6 @@ function buildDeleteActions(
           await PluginState.getCache().deleteEvent(context.eventId);
         }
 
-        showNotice(t('ui.view.success.deletedEvent', { title: context.title }));
       }
     }
   ];

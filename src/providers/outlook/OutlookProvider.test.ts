@@ -53,6 +53,7 @@ describe('OutlookProvider Configuration Wrapper', () => {
 
 import { PluginState } from '../../core/PluginState';
 import { OFCEvent } from '../../types';
+import { fromOutlookEvent, toOutlookEvent } from './parser/parser_outlook';
 
 jest.mock('../../core/PluginState');
 jest.mock('../../utils/showNotice');
@@ -143,5 +144,39 @@ describe('OutlookProvider createLinkedNote', () => {
     expect(file).toBeDefined();
     expect(file!.path).toBe('Calendar/Notes/Outlook Linked Note Event.md');
     expect(file!.content).toContain('Teams: Outlook Linked Note Event');
+  });
+});
+
+describe('OutlookProvider reminder mapping', () => {
+  it('maps Outlook reminders to provider alarms', () => {
+    const event = fromOutlookEvent({
+      id: 'outlook-event-1',
+      subject: 'Outlook Reminder',
+      isAllDay: false,
+      start: { dateTime: '2026-06-15T10:00:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00', timeZone: 'Europe/Amsterdam' },
+      isReminderOn: true,
+      reminderMinutesBeforeStart: 35
+    });
+
+    expect(event?.alarms).toEqual([{ minutesBefore: 35, action: 'DISPLAY' }]);
+  });
+
+  it('serializes provider alarms as Outlook reminders', () => {
+    const event = {
+      title: 'Outlook Reminder',
+      type: 'single',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00',
+      alarms: [{ minutesBefore: 35, action: 'DISPLAY' }]
+    } as OFCEvent;
+
+    expect(toOutlookEvent(event)).toMatchObject({
+      isReminderOn: true,
+      reminderMinutesBeforeStart: 35
+    });
   });
 });

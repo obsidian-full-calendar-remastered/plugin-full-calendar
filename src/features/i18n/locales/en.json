@@ -289,6 +289,12 @@
         "description": "Choose the folder path where event linked notes will be created.",
         "vaultRoot": "/ (Vault Root)"
       },
+      "linkedNoteLinkStrategy": {
+        "label": "Linked note link strategy",
+        "description": "Choose whether recurring event occurrences share one title-based note or use separate date-specific notes.",
+        "deadline": "Deadline-based (one note per occurrence)",
+        "name": "Name-based (one note per event series)"
+      },
       "linkedNoteTemplate": {
         "label": "Linked note template",
         "description": "Define the template used for creating new linked notes. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
@@ -1173,8 +1179,6 @@
         },
         "notification": {
           "label": "Notify",
-          "select": "Select...",
-          "mins": "Mins",
           "presets": {
             "30m": "30 minutes",
             "1h": "1 hour",
@@ -1232,9 +1236,25 @@
         "button": "Promote Children"
       },
       "deleteAll": {
-        "name": "Delete child events",
-        "description": "Delete all future override events associated with this recurring series. This cannot be undone.",
-        "button": "Delete Everything"
+        "name": "Delete entire sequence",
+        "description": "Delete the recurring event and every override associated with this recurring series. This cannot be undone.",
+        "button": "Delete Sequence"
+      },
+      "cancel": "Cancel"
+    },
+    "rescheduleRecurring": {
+      "title": "Reschedule Recurring Event",
+      "description": "This is a recurring event. Choose whether to reschedule only this occurrence or the entire recurring sequence.",
+      "rescheduleInstance": {
+        "name": "Reschedule only this instance",
+        "description": "Move only the instance on {{date}}. The rest of the sequence will keep its current schedule.",
+        "descriptionNoDate": "Move only this instance. The rest of the sequence will keep its current schedule.",
+        "button": "Move This Instance"
+      },
+      "rescheduleSequence": {
+        "name": "Reschedule entire sequence",
+        "description": "Update the recurring event itself so every occurrence follows the new schedule.",
+        "button": "Move Sequence"
       },
       "cancel": "Cancel"
     },
@@ -1570,12 +1590,9 @@
         "chronoAnalyserDesktopOnly": "The ChronoAnalyser is only available on desktop.",
         "chronoAnalyserFailed": "Failed to open ChronoAnalyser. Please check the console.",
         "modifyEventFailed": "Failed to modify event.",
-        "taskScheduleFailed": "Failed to schedule task: {{message}}",
-        "moveRecurringDayError": "Cannot move a recurring instance to a different day. Modify the time only or edit the main recurring event.",
-        "moveRecurringInstanceError": "Cannot move a recurring instance to a different day. You can only change the time."
+        "taskScheduleFailed": "Failed to schedule task: {{message}}"
       },
       "success": {
-        "deletedEvent": "Deleted event \"{{title}}\".",
         "taskScheduled": "Task scheduled successfully"
       },
       "workspace": {

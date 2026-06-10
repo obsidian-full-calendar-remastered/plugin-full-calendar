@@ -11,7 +11,7 @@ Here are some handy **Guides** ([Onboarding and Daily Use](guides/index.md), [Co
 |---|---|---|
 | Connect a calendar now | [Calendars](./calendars/index.md) | [Google Calendar](./calendars/gcal.md), [CalDAV](./calendars/caldav.md), [ICS](./calendars/ics.md) |
 | Create, edit, and organize events | [Events](./events/index.md) | [Event Management](./events/manage.md), [Recurring Events](./events/recurring.md), [Category Coloring](./events/categories.md) |
-| Link notes to calendar events | [Event Linked Notes](./features/event-linked-notes.md) | [Template Engine](./features/event-linked-notes.md#2-linked-note-template), [Settings -> Calendars](./settings/sources.md) |
+| Link notes to calendar events | [Event Linked Notes](./features/event-linked-notes.md) | [Template Engine](./features/event-linked-notes.md#3-linked-note-template), [Settings -> Calendars](./settings/sources.md) |
 | Learn commands and interactions quickly | [Commands and Shortcuts](guides/commands-and-shortcuts.md) | [Interactions and Gestures](features/interactions.md), [Reminders and Notifications](features/reminders.md) |
 | Manage reminders & daemon sync | [FCR Reminder Companion](./features/fcr-reminder.md) | [Unified Reminders](./features/reminders.md), [Reminders Settings](./settings/reminders.md) |
 | Filter backlog with global query | [Tasks Integration](./calendars/tasks-plugin-integration.md) | [Supported Global Query Syntax](./calendars/tasks-plugin-integration.md#supported-global-query-syntax) |

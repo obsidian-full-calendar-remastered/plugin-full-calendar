@@ -30,6 +30,23 @@ CalDAV tasks (`VTODO` components) that do not have a scheduled or due date are p
 - **Task Creation**: Create new unscheduled CalDAV tasks directly in the backlog sidebar by choosing your CalDAV calendar from the creation source dropdown.
 - **Linked Notes**: Clicking the note icon next to a CalDAV task in the backlog will automatically generate and open a local linked markdown note in Obsidian using your configured templates, allowing you to attach rich local notes and details to remote tasks.
 
+The global **Linked Note Link Strategy** also applies to CalDAV tasks. Name-based mode reuses the exact task-title file across reschedules and recurring occurrences; deadline-based mode keeps dated occurrence notes separate.
+
+### Linked Task Date Properties
+
+Linked notes for scheduled CalDAV tasks automatically receive managed date properties:
+
+```yaml
+scheduled: 2026-04-23
+scheduled-link: "[[2026-04-23]]"
+due: 2026-04-24
+due-link: "[[2026-04-24]]"
+```
+
+The `scheduled` and `due` values are ISO dates. The corresponding `-link` values are daily-note links. The outer quotes are YAML syntax and prevent Obsidian from interpreting the wiki-link as a nested list; the property value itself is `[[2026-04-23]]`.
+
+These properties are updated when the task is rescheduled or synchronized from CalDAV. When a task becomes unscheduled, only these managed date properties are removed. Other frontmatter and note content are left unchanged.
+
 ---
 
 ## Apple Calendar

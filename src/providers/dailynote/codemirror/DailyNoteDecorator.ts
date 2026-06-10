@@ -107,6 +107,7 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
     }
 
     const storedEvents = cache.store.getEventsInFile(file);
+
     if (storedEvents.length === 0) {
       return builder.finish();
     }
@@ -191,7 +192,10 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
           });
 
           const hideTextMark = Decoration.mark({
-            class: 'fc-lp-hidden-text'
+            class: 'fc-lp-hidden-text',
+            attributes: {
+              style: 'display: none;'
+            }
           });
 
           // Collect line-level override decoration
@@ -200,7 +204,9 @@ export class DailyNoteDecorator implements LivePreviewDecorator {
             to: line.from,
             value: Decoration.line({
               attributes: {
-                class: 'fc-lp-line-override'
+                class: 'fc-lp-line-override',
+                style:
+                  'display: flex; align-items: center; gap: 8px; padding-left: 0px; text-indent: 0px; margin-left: 0px; margin-top: 0px; margin-bottom: 0px; padding-top: 0px; padding-bottom: 0px; min-height: 0px; line-height: 1.2;'
               }
             })
           });

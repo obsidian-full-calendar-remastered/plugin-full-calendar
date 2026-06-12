@@ -410,15 +410,19 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
 
         const itemWidth = itemConfig.width;
         if (typeof itemWidth === 'string' || typeof itemWidth === 'number') {
-          targetEl.style.width = String(itemWidth);
-          targetEl.style.flex = `0 0 ${itemWidth}`;
+          targetEl.setCssProps({
+            width: String(itemWidth),
+            flex: `0 0 ${itemWidth}`
+          });
         }
         const itemHeight = itemConfig.height;
         if (
           (typeof itemHeight === 'string' || typeof itemHeight === 'number') &&
           itemHeight !== 'fit'
         ) {
-          targetEl.style.height = String(itemHeight);
+          targetEl.setCssProps({
+            height: String(itemHeight)
+          });
         }
 
         const strategyName = resolveStrategy(itemConfig);
@@ -454,10 +458,14 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
               viewWidth !== undefined &&
               (typeof viewWidth === 'string' || typeof viewWidth === 'number')
             ) {
-              viewEl.style.width = String(viewWidth);
-              viewEl.style.flex = `0 0 ${viewWidth}`;
+              viewEl.setCssProps({
+                '--view-item-width': String(viewWidth),
+                '--view-item-flex': `0 0 ${viewWidth}`
+              });
             } else {
-              viewEl.style.flex = '1';
+              viewEl.setCssProps({
+                '--view-item-flex': '1'
+              });
             }
 
             const viewHeight = viewConfig.height;
@@ -527,10 +535,10 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
           }
 
           if (configObj.width) {
-            container.style.width = configObj.width;
+            container.setCssProps({ width: configObj.width });
           }
           if (configObj.height && configObj.height !== 'fit') {
-            container.style.height = configObj.height;
+            container.setCssProps({ height: configObj.height });
           }
 
           await renderItem(container, parsedConfig);

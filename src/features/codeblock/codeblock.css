@@ -28,6 +28,8 @@
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
+  width: var(--view-item-width, auto);
+  flex: var(--view-item-flex, 1);
 }
 
 /* Responsive Dashboards on Mobile */
@@ -36,8 +38,8 @@
     flex-direction: column;
   }
   .ofc-layout-horizontal .ofc-layout-view-item {
-    width: 100% !important;
-    flex: 1 1 auto !important;
+    --view-item-width: 100%;
+    --view-item-flex: 1 1 auto;
   }
 }
 

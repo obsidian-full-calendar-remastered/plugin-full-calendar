@@ -69,9 +69,11 @@ extra_javascript:
     - assets/javascripts/nav-section-links.js
     - assets/javascripts/theme-logo.js
     - assets/javascripts/analytics-events.js
+    - assets/javascripts/showcase-modal.js
 
 extra_css:
       - assets/stylesheets/site-polish.css
+      - assets/stylesheets/showcase.css
       - assets/stylesheets/nav-section-links.css
       - assets/stylesheets/custom-footer.css
 
@@ -84,6 +86,9 @@ plugins:
           repository: obsidian-full-calendar-remastered/plugin-full-calendar
           cache_dir: .cache/plugin/git-committers
           branch: main
+
+hooks:
+    - tools/generate_showcase.py
 
 extra:
     analytics:

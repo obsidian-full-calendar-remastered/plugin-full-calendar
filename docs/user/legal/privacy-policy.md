@@ -12,7 +12,7 @@ All calendar data is processed locally. No personal data, calendar events, or cr
 
 To support synchronization with external calendar providers (Google, Microsoft, CalDAV, ICS), load dynamic UI/date assets (Plotly, date-holidays), fetch weather forecasts, or interface with local companions, the plugin makes outbound network connections.
 
-For a detailed and complete listing of all outbound endpoints, triggers, and purposes, please refer to the **[Outbound Network Requests](../../reference/network_requests.md)** documentation page.
+For a detailed and complete listing of all outbound endpoints, triggers, and purposes, please refer to the **[Outbound Network Requests](../reference/network_requests.md)** documentation page.
 
 ---
 

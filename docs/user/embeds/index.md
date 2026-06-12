@@ -9,12 +9,12 @@ Use this matrix to quickly select the configuration type that fits your immediat
 
 | Operational Goal | Recommended Widget | Configuration Key | Primary Use Case |
 |---|---|---|---|
-| Standard calendar grids | [Interactive Calendar](deep_dive.md#calendar-widget-type-calendar) | `type: calendar` (default) | Daily planners, monthly agendas, resource timelines |
-| Drag-and-drop task planning | [Task Backlog](deep_dive.md#task-backlog-widget-type-backlog) | `type: backlog` | Unscheduled task pool next to a calendar schedule |
-| Glance at local conditions | [Weather Strip/Card](deep_dive.md#weather-widget-type-weather) | `type: weather` | Daily note headers, sidebar temperature strips |
-| Review habits & time spent | [Productivity Analytics](deep_dive.md#productivity-analysis-widget-type-analysis) | `type: analysis` | Weekly review summaries, sunburst category charts |
-| Multi-column side-by-side | [Horizontal Flex Dashboard](deep_dive.md#multi-view-dashboards-layouts) | `layout.orientation: horizontal` | Workspace control centers, split daily note dashboards |
-| Row-by-row stacked grids | [Vertical Flex Dashboard](deep_dive.md#multi-view-dashboards-layouts) | `layout.orientation: vertical` | Mobile-friendly note feeds, list-heavy widgets stacking |
+| Standard calendar grids | [Interactive Calendar](deep_dive.md#layout-view-config) | `type: calendar` (default) | Daily planners, monthly agendas, resource timelines |
+| Drag-and-drop task planning | [Task Backlog](deep_dive.md#layout-view-config) | `type: backlog` | Unscheduled task pool next to a calendar schedule |
+| Glance at local conditions | [Weather Strip/Card](deep_dive.md#layout-view-config) | `type: weather` | Daily note headers, sidebar temperature strips |
+| Review habits & time spent | [Productivity Analytics](deep_dive.md#layout-view-config) | `type: analysis` | Weekly review summaries, sunburst category charts |
+| Multi-column side-by-side | [Horizontal Flex Dashboard](deep_dive.md#dashboard-layouts-inheritance) | `layout.orientation: horizontal` | Workspace control centers, split daily note dashboards |
+| Row-by-row stacked grids | [Vertical Flex Dashboard](deep_dive.md#dashboard-layouts-inheritance) | `layout.orientation: vertical` | Mobile-friendly note feeds, list-heavy widgets stacking |
 
 ---
 

@@ -5,6 +5,10 @@ Explore pre-configured dashboard setups and copy-paste templates to build beauti
 !!! info "Get Showcased"
     submit your own in [Discussions](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/discussions/new?category=show-and-tell) and get it showcased here! Do not forget to include screenshot as well as the code block, and any other plugins or setups essential for reproducing your dashboard.
 
+
+<!-- SHOWCASE_GRID_PLACEHOLDER -->
+
+
 === "Daily Planner Companion"
     !!! info "A: Daily Planner Setup"
         Designed for daily templates. It locks to the note's date (`defaultDate: auto`) and renders your day grid next to the unscheduled task backlog panel.

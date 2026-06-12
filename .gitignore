@@ -1,6 +1,6 @@
 # vscode
 .vscode 
-
+__pycache__
 # Intellij
 *.iml
 .idea

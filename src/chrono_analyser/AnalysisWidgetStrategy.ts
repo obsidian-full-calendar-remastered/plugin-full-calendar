@@ -169,7 +169,7 @@ export class AnalysisWidgetStrategy implements EmbeddedWidgetStrategy {
 }
 
 export function registerChronoAnalysisStrategy(plugin: FullCalendarPlugin): void {
-  if (!EmbeddedBlockRegistry.has('fc-analysis')) {
-    EmbeddedBlockRegistry.register('fc-analysis', new AnalysisWidgetStrategy(plugin));
+  if (!EmbeddedBlockRegistry.has('analysis')) {
+    EmbeddedBlockRegistry.register('analysis', new AnalysisWidgetStrategy(plugin));
   }
 }

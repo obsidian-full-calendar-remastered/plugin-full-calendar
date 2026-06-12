@@ -63,22 +63,19 @@ Embed a calendar by writing a custom `fc-calendar` code block using declarative 
     ```
     ````
 
-=== "Multi-View Dashboard"
+=== "Mixed Widget Dashboard"
 
     ````yaml
     ```fc-calendar
-    calendars:
-      - "work-tasks"
-    inheritFilters: true       # Cascades the "work-tasks" calendar filter to child views
     layout:
-      orientation: horizontal  # Place columns side-by-side
+      orientation: horizontal
       views:
-        - view: timeGridDay
-          width: 50%
-          header: false
-        - view: listWeek
-          width: 50%
-          header: true
+        - type: calendar
+          view: timeGridDay
+          width: 70%
+        - type: backlog
+          width: 30%
+          showFooter: false
     ```
     ````
 
@@ -92,7 +89,8 @@ Customize the calendar representation and time grid scaling by using the followi
 
 | Parameter | Type | Allowed / Example Values | Description |
 |---|---|---|---|
-| `view` | `string` | [`dayGridMonth`](../views/index.md)<br>[`timeGridWeek`](../views/index.md)<br>[`timeGridDay`](../views/index.md)<br>[`listWeek`](../views/index.md)<br>[`listMonth`](../views/index.md)<br>[`resourceTimelineDay`](../views/timeline_view.md)<br>[`resourceTimelineWeek`](../views/timeline_view.md)<br>[`resourceTimelineMonth`](../views/timeline_view.md) | The [FullCalendar View](../views/index.md) format to render. |
+| `type` / `widget` | `string` | `calendar`, `weather`, `analysis`, `backlog` | The widget type to render (default: `calendar`). |
+| `view` | `string` | [`dayGridMonth`](../views/index.md)<br>[`timeGridWeek`](../views/index.md)<br>[`timeGridDay`](../views/index.md)<br>[`listWeek`](../views/index.md)<br>[`listMonth`](../views/index.md)<br>[`resourceTimelineDay`](../views/timeline_view.md)<br>[`resourceTimelineWeek`](../views/timeline_view.md)<br>[`resourceTimelineMonth`](../views/timeline_view.md) | The [FullCalendar View](../views/index.md) format to render. Only applies to `type: calendar`. |
 | `height` | `string` | `400px`, `100%`, `fit` | Set calendar height. `fit` adjusts the height dynamically to wrap events perfectly. |
 | `width` | `string` | `100%`, `350px` | Set custom calendar width. |
 | `defaultDate` | `string` | `auto`, `today`, `YYYY-MM-DD` | Initial date focused by the calendar. `auto` resolves automatically to the date of your [Daily Note](../calendars/dailynote.md) when embedded there. |
@@ -183,15 +181,26 @@ By default, **nested views within the same code block automatically inherit all 
 
 ---
 
-## 6. Weather View Layouts (`view: weather`)
+## 6. Embedded Widget Strategies & Types
 
-You can embed a beautiful, highly polished weather dashboard or forecast strip inside your layout by adding `view: weather` to your views list. 
+You can embed different types of interactive widgets inside an `fc-calendar` block by specifying the `type` (or `widget`) parameter. The following widget types are supported:
+
+*   **Calendar** (`type: calendar`): Renders standard Full Calendar interactive grids.
+*   **Weather** (`type: weather` or `view: weather`): Renders daily or weekly weather forecasts.
+*   **Analysis** (`type: analysis`): Renders productivity charts (time-series, sunburst, etc.) using the Chrono Analyzer engine.
+*   **Backlog** (`type: backlog`): Renders the unscheduled Task Backlog, enabling drag-and-drop scheduling onto calendar views.
+
+---
+
+### Weather Widget (`type: weather`)
+
+You can embed a beautiful, highly polished weather dashboard or forecast strip inside your layout by setting `type: weather` (or using the legacy `view: weather`). 
 
 Clicking any day or hour item in the weather view opens the detailed weather popup modal containing hourly breakdowns, temperatures, precipitation probabilities, and wind speeds.
 
-### Weather Parameters
+#### Weather Parameters
 
-The following parameters are supported specifically when `view: weather` is set:
+The following parameters are supported specifically when `type: weather` is set:
 
 | Parameter | Type | Allowed Values | Default | Description |
 |---|---|---|---|---|
@@ -200,14 +209,13 @@ The following parameters are supported specifically when `view: weather` is set:
 | `variant` | `string` | `default`, `minimal` | `default` | Renders a minimalistic style with just time, temperature, and condition icon (hiding daily card, descriptions, and precipitation indicators until hover). |
 | `defaultDate` | `string` | `auto`, `today`, `YYYY-MM-DD` | `auto` | Target date to resolve weather coordinates for. `auto` locks to your Daily Note's date (or today's date if not in a Daily Note). |
 
-### Example Configurations
+#### Example Configurations
 
 === "Single Hourly Weather Strip"
 
     ```yaml
     ```fc-calendar
-    view: weather
-    type: day
+    type: weather
     orientation: horizontal
     height: 180px
     ```
@@ -216,8 +224,7 @@ The following parameters are supported specifically when `view: weather` is set:
 
     ```yaml
     ```fc-calendar
-    view: weather
-    type: day
+    type: weather
     variant: minimal
     orientation: vertical
     width: 15%
@@ -235,15 +242,50 @@ The following parameters are supported specifically when `view: weather` is set:
       orientation: horizontal
       views:
         # Column 1: Daily Schedule (65% width)
-        - view: timeGridWeek
+        - type: calendar
+          view: timeGridWeek
           width: 65%
           header: false
         # Column 2: Vertical Weather Dashboard (35% width)
-        - view: weather
-          type: day
+        - type: weather
           orientation: vertical
           width: 35%
     ```
+
+---
+
+### Productivity Analysis Widget (`type: analysis`)
+
+Renders a productivity and event-breakdown chart using the Chrono Analyzer.
+
+#### Analysis Parameters
+
+The following parameters are supported specifically when `type: analysis` is set:
+
+| Parameter | Type | Allowed / Example Values | Default | Description |
+|---|---|---|---|---|
+| `chart` | `string` | `sunburst`, `pie`, `time-series`, `activity` | `sunburst` | The chart representation to render. |
+| `metric` | `string` | `duration`, `count` | `duration` | Renders based on event duration (hours spent) or event count. |
+| `breakdownBy`| `string` | `hierarchy`, `category`, `subCategory` | `hierarchy` | Direct fields to group segments by. |
+| `level` | `string` | `category`, `subcategory` | `subcategory` | Max hierarchy depth to draw for Sunburst charts. |
+
+---
+
+### Task Backlog Widget (`type: backlog`)
+
+Renders a list of unscheduled tasks from configured backlog providers. Unscheduled tasks can be dragged directly from this list onto any adjacent calendar widget.
+
+#### Backlog Parameters
+
+The following parameters are supported specifically when `type: backlog` is set:
+
+| Parameter | Type | Allowed Values | Default | Description |
+|---|---|---|---|---|
+| `calendars` | `string[]` | Specific calendar/backlog source IDs | (All) | Filter backlog items to specific source IDs. |
+| `searchQuery` | `string` | Text string | `""` | Initial filter text to populate in the search bar. |
+| `showSearch` | `boolean` | `true`, `false` | `true` | Toggle the query filter search bar visibility. |
+| `showFooter` | `boolean` | `true`, `false` | `true` | Toggle the quick task creation footer form. |
+| `showDateSelector` | `boolean` | `true`, `false` | `true` | Toggle the missing target date selector. |
 
 ---
 

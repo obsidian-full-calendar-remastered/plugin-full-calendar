@@ -1,0 +1,71 @@
+/* CSS styles for embedded widget containers and layouts */
+
+.ofc-embedded-widget-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
+}
+
+.ofc-layout-horizontal {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  width: 100%;
+  align-items: stretch;
+}
+
+.ofc-layout-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  align-items: stretch;
+}
+
+.ofc-layout-view-item {
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* Embedded Backlog Widget Styling */
+.ofc-embedded-backlog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background-color: var(--background-primary);
+}
+
+.ofc-embedded-backlog .tasks-backlog-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.ofc-embedded-backlog .tasks-backlog-footer {
+  flex-shrink: 0;
+  padding: 12px 12px 20px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+}
+
+.ofc-embedded-backlog .tasks-backlog-header {
+  padding: 12px 12px 6px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+}
+
+.ofc-embedded-backlog .tasks-backlog-search-row {
+  margin-top: 8px;
+}
+
+.ofc-embedded-backlog .tasks-backlog-count {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

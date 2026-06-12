@@ -70,6 +70,8 @@ export class TaskBacklogManager {
         void view.refresh();
       }
     }
+
+    this.plugin.app.workspace.trigger('full-calendar:backlog-changed');
   }
 
   public getIsLoaded(): boolean {

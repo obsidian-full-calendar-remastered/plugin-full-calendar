@@ -109,7 +109,7 @@ export class EmbeddedWeather extends Component {
     let targetDateStr: string | null = null;
     const dateConfig = this.config.defaultDate || 'auto';
     if (dateConfig === 'today') {
-      targetDateStr = new Date().toISOString().split('T')[0];
+      targetDateStr = DateTime.now().toISODate();
     } else if (dateConfig && dateConfig !== 'auto') {
       targetDateStr = dateConfig;
     } else {
@@ -121,7 +121,7 @@ export class EmbeddedWeather extends Component {
         }
       }
       if (!targetDateStr) {
-        targetDateStr = new Date().toISOString().split('T')[0];
+        targetDateStr = DateTime.now().toISODate();
       }
     }
 
@@ -289,7 +289,7 @@ export class EmbeddedWeather extends Component {
     });
     const weekContainer = wrapper.createDiv({ cls: 'ofc-weather-week-container' });
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = DateTime.now().toISODate() || '';
 
     for (let i = 0; i < 7; i++) {
       const currentDay = startOfWeek.plus({ days: i });

@@ -30,6 +30,17 @@
   box-sizing: border-box;
 }
 
+/* Responsive Dashboards on Mobile */
+@media (max-width: 600px) {
+  .ofc-layout-horizontal {
+    flex-direction: column;
+  }
+  .ofc-layout-horizontal .ofc-layout-view-item {
+    width: 100% !important;
+    flex: 1 1 auto !important;
+  }
+}
+
 /* Embedded Backlog Widget Styling */
 .ofc-embedded-backlog {
   display: flex;

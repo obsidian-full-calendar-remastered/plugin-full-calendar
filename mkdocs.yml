@@ -154,7 +154,10 @@ nav:
                 - Internationalization: user/features/i18n.md
                 - Link Notes to Remote Events: user/features/event-linked-notes.md
                 - Live Preview Decorators: user/features/live-preview.md
-                - Embedded Code Block Calendars: user/features/embedded_calendars.md
+          - Embedded Calendars:
+                  - user/embeds/index.md
+                  - Deep Dive Specs: user/embeds/deep_dive.md
+                  - Dashboard Showcases: user/embeds/showcase.md
           - Chrono Analyser: 
                 - user/chrono_analyser/index.md
                 - Introduction: user/chrono_analyser/introduction.md

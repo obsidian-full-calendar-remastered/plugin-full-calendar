@@ -71,6 +71,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
   private interactionHandler: ViewEventInteractionHandler;
   private timelineHandler: ViewTimelineHandler;
   private callback: (() => void) | null = null;
+  private resizeObservers: ResizeObserver[] = [];
 
   constructor(
     plugin: FullCalendarPlugin,
@@ -101,6 +102,8 @@ export class EmbeddedCalendar extends Component implements ViewContext {
     this.calendars.forEach(cal => cal.destroy());
     this.calendars = [];
     this.activeCalendar = null;
+    this.resizeObservers.forEach(obs => obs.disconnect());
+    this.resizeObservers = [];
     if (this.callback) {
       this.callback = null;
     }
@@ -245,6 +248,7 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       cal.updateSize();
     });
     resizeObserver.observe(el);
+    this.resizeObservers.push(resizeObserver);
   }
 
   private getSourcesAndConfig(config: ViewConfig): {
@@ -383,6 +387,14 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
 
     const mountWidget = async () => {
       const renderItem = async (targetEl: HTMLElement, itemConfig: Record<string, unknown>) => {
+        if (!itemConfig || typeof itemConfig !== 'object') {
+          targetEl.empty();
+          targetEl.createEl('pre', {
+            text: `Full Calendar: Invalid item configuration (expected object, got ${String(itemConfig)})`
+          });
+          return;
+        }
+
         if (
           itemConfig.styles &&
           typeof itemConfig.styles === 'object' &&
@@ -399,6 +411,7 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
         const itemWidth = itemConfig.width;
         if (typeof itemWidth === 'string' || typeof itemWidth === 'number') {
           targetEl.style.width = String(itemWidth);
+          targetEl.style.flex = `0 0 ${itemWidth}`;
         }
         const itemHeight = itemConfig.height;
         if (
@@ -435,19 +448,16 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
             const viewEl = container.createDiv({ cls: 'ofc-layout-view-item' });
 
             // Custom width / flex layout control in horizontal layout
-            const viewWidth = viewConfig.width;
+            const viewWidth = viewConfig?.width;
             if (
               layoutOrientation === 'horizontal' &&
+              viewWidth !== undefined &&
               (typeof viewWidth === 'string' || typeof viewWidth === 'number')
             ) {
-              viewEl.setCssProps({
-                width: String(viewWidth),
-                flex: `0 0 ${viewWidth}`
-              });
+              viewEl.style.width = String(viewWidth);
+              viewEl.style.flex = `0 0 ${viewWidth}`;
             } else {
-              viewEl.setCssProps({
-                flex: '1'
-              });
+              viewEl.style.flex = '1';
             }
 
             const viewHeight = viewConfig.height;
@@ -533,6 +543,12 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
       }
     };
 
+    // Set up ResizeObserver on the container to update all widget instances
+    const containerResizeObserver = new ResizeObserver(() => {
+      instances.forEach(inst => inst.updateSize());
+    });
+    containerResizeObserver.observe(container);
+
     // Set up lazy rendering using IntersectionObserver
     let observer: IntersectionObserver | null = new IntersectionObserver(
       entries => {
@@ -553,6 +569,9 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
       if (observer) {
         observer.disconnect();
         observer = null;
+      }
+      if (containerResizeObserver) {
+        containerResizeObserver.disconnect();
       }
       updateCallbacks.forEach(cb => {
         PluginState.getCache().off('update', cb);

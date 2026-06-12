@@ -72,7 +72,7 @@ export function getEventSources(
   let initialDate: string | undefined = undefined;
   let baseDate = DateTime.now().startOf('day');
   if (config.defaultDate === 'today') {
-    initialDate = new Date().toISOString().split('T')[0];
+    initialDate = DateTime.now().toISODate() || '';
     baseDate = DateTime.now().startOf('day');
   } else if (config.defaultDate && config.defaultDate !== 'auto') {
     initialDate = config.defaultDate;

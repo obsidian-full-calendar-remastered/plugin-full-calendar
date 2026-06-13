@@ -213,10 +213,14 @@ export class CalendarView extends ItemView implements ViewContext {
 
       this.fullCalendarView = await renderCalendar(calendarEl, sources, {
         timeZone:
+          calendarConfig.displayTimezone ||
           PluginState.getSettings().displayTimezone ||
           Intl.DateTimeFormat().resolvedOptions().timeZone,
         forceNarrow: this.inSidebar,
-        enableAdvancedCategorization: PluginState.getSettings().enableAdvancedCategorization,
+        enableAdvancedCategorization:
+          calendarConfig.enableAdvancedCategorization !== undefined
+            ? calendarConfig.enableAdvancedCategorization
+            : PluginState.getSettings().enableAdvancedCategorization,
         onViewChange: handleViewChange,
         initialView: calendarConfig.initialView,
         businessHours: (() => {
@@ -239,7 +243,19 @@ export class CalendarView extends ItemView implements ViewContext {
         weekends: calendarConfig.weekends,
         hiddenDays: calendarConfig.hiddenDays,
         dayMaxEvents: calendarConfig.dayMaxEvents,
-        highlightCurrentOrNextEvent: PluginState.getSettings().highlightCurrentOrNextEvent,
+        highlightCurrentOrNextEvent:
+          calendarConfig.highlightCurrentOrNextEvent !== undefined
+            ? calendarConfig.highlightCurrentOrNextEvent
+            : PluginState.getSettings().highlightCurrentOrNextEvent,
+        slotDuration: calendarConfig.slotDuration,
+        slotLabelInterval: calendarConfig.slotLabelInterval,
+        headerToolbar: calendarConfig.headerToolbar,
+        footerToolbar: calendarConfig.footerToolbar,
+        height: calendarConfig.height,
+        weatherHide:
+          calendarConfig.weatherHide !== undefined
+            ? calendarConfig.weatherHide
+            : PluginState.getSettings().weatherHide,
         initialSearchQuery: this.searchHandler.eventSearchQuery,
         onSearchQueryChange: (query: string) => {
           this.searchHandler.eventSearchQuery = query;

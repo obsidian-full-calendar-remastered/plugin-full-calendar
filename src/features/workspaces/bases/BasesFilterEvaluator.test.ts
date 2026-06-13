@@ -70,6 +70,52 @@ describe('BasesFilterEvaluator', () => {
       expect(evaluateBaseFilter('date', mockFile, mockMetadataCache)).toBe(true);
       expect(evaluateBaseFilter('missingProp', mockFile, mockMetadataCache)).toBe(false);
     });
+
+    it('should handle inequality property comparisons', () => {
+      expect(evaluateBaseFilter('priority > 2', mockFile, mockMetadataCache)).toBe(true);
+      expect(evaluateBaseFilter('priority < 5', mockFile, mockMetadataCache)).toBe(true);
+      expect(evaluateBaseFilter('priority >= 3', mockFile, mockMetadataCache)).toBe(true);
+      expect(evaluateBaseFilter('priority <= 3', mockFile, mockMetadataCache)).toBe(true);
+      expect(evaluateBaseFilter('priority > 3', mockFile, mockMetadataCache)).toBe(false);
+      expect(evaluateBaseFilter('priority < 3', mockFile, mockMetadataCache)).toBe(false);
+    });
+
+    it('should handle boolean property comparisons', () => {
+      mockCache.frontmatter!.isTask = true;
+      mockCache.frontmatter!.isCompleted = false;
+      expect(evaluateBaseFilter('isTask == true', mockFile, mockMetadataCache)).toBe(true);
+      expect(evaluateBaseFilter('isCompleted == false', mockFile, mockMetadataCache)).toBe(true);
+      expect(evaluateBaseFilter('isTask == false', mockFile, mockMetadataCache)).toBe(false);
+    });
+
+    it('should handle number property comparisons', () => {
+      expect(evaluateBaseFilter('priority == 3', mockFile, mockMetadataCache)).toBe(true);
+      expect(evaluateBaseFilter('priority == 4', mockFile, mockMetadataCache)).toBe(false);
+    });
+
+    it('should match context variables', () => {
+      const context = {
+        calendarId: 'local_1',
+        calendarName: 'Work',
+        category: 'Meetings',
+        subCategory: '1-on-1'
+      };
+      expect(
+        evaluateBaseFilter('file.calendarId == "local_1"', mockFile, mockMetadataCache, context)
+      ).toBe(true);
+      expect(
+        evaluateBaseFilter('file.calendarName == "Work"', mockFile, mockMetadataCache, context)
+      ).toBe(true);
+      expect(
+        evaluateBaseFilter('file.category == "Meetings"', mockFile, mockMetadataCache, context)
+      ).toBe(true);
+      expect(
+        evaluateBaseFilter('file.subCategory == "1-on-1"', mockFile, mockMetadataCache, context)
+      ).toBe(true);
+      expect(
+        evaluateBaseFilter('file.calendarId == "other"', mockFile, mockMetadataCache, context)
+      ).toBe(false);
+    });
   });
 
   describe('evaluateBaseFilter boolean operators', () => {

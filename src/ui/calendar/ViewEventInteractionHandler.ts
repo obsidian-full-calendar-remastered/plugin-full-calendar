@@ -3,6 +3,7 @@ import { showNotice } from '../../utils/showNotice';
 import { DateTime } from 'luxon';
 import { EventApi, EventClickArg } from '@fullcalendar/core';
 import { PluginState } from '../../core/PluginState';
+import { FullCalendarSettings } from '../../types/settings';
 import type {
   RecurringInstanceState,
   RecurringInstanceStateProvider
@@ -186,14 +187,14 @@ export class ViewEventInteractionHandler {
     if (allDay) {
       end.setDate(end.getDate() - 1);
     }
-    const displayZone =
-      PluginState.getSettings().displayTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const config = this.ctx.viewEnhancer
+      ? (this.ctx.viewEnhancer.getCalendarConfig() as FullCalendarSettings)
+      : PluginState.getSettings();
+
+    const displayZone = config.displayTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
     const partialEvent = dateEndpointsToFrontmatter(start, end, allDay, displayZone);
     try {
-      if (
-        PluginState.getSettings().clickToCreateEventFromMonthView ||
-        viewType !== 'dayGridMonth'
-      ) {
+      if (config.clickToCreateEventFromMonthView || viewType !== 'dayGridMonth') {
         const { launchCreateModal } = await import('../modals/event_modal');
         launchCreateModal(this.ctx.plugin, partialEvent);
       } else {
@@ -214,6 +215,10 @@ export class ViewEventInteractionHandler {
     newResource?: string
   ): Promise<boolean> {
     try {
+      const config = this.ctx.viewEnhancer
+        ? (this.ctx.viewEnhancer.getCalendarConfig() as FullCalendarSettings)
+        : PluginState.getSettings();
+
       const originalEvent = PluginState.getCache().getEventById(oldEvent.id);
       if (!originalEvent) {
         throw new Error('Original event not found in cache.');
@@ -229,7 +234,7 @@ export class ViewEventInteractionHandler {
           throw new Error('Could not determine instance date from recurring event.');
         }
 
-        const modifiedEvent = fromEventApi(newEvent, PluginState.getSettings(), newResource);
+        const modifiedEvent = fromEventApi(newEvent, config, newResource);
         const { RescheduleRecurringModal } = await import('../modals/RescheduleRecurringModal');
         new RescheduleRecurringModal(
           this.ctx.app,
@@ -256,7 +261,7 @@ export class ViewEventInteractionHandler {
         (originalEvent.recurringEventId || originalEvent.recurrenceId)
       ) {
         const oldDate = getEventDate(oldEvent);
-        const modifiedEvent = fromEventApi(newEvent, PluginState.getSettings(), newResource);
+        const modifiedEvent = fromEventApi(newEvent, config, newResource);
         const masterDetails = PluginState.getCache()
           .store.getAllEvents()
           .find(candidate => {
@@ -305,7 +310,7 @@ export class ViewEventInteractionHandler {
 
       const didModify = await PluginState.getCache().updateEventWithId(
         oldEvent.id,
-        fromEventApi(newEvent, PluginState.getSettings(), newResource)
+        fromEventApi(newEvent, config, newResource)
       );
       return !!didModify;
     } catch (e: unknown) {

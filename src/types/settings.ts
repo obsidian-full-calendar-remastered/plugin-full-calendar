@@ -120,6 +120,23 @@ export interface WorkspaceSettings {
   weekends?: boolean; // Whether to display weekends
   hiddenDays?: number[]; // Array of day numbers to hide (0=Sunday, 1=Monday, etc.)
   dayMaxEvents?: number | boolean; // Max events per day in month view (true = no limit, false = default, number = limit)
+
+  // General & appearance overrides
+  firstDay?: number;
+  timeFormat24h?: boolean;
+  clickToCreateEventFromMonthView?: boolean;
+  displayTimezone?: string | null;
+  enableAdvancedCategorization?: boolean;
+  enableBackgroundEvents?: boolean;
+  showEventInStatusBar?: boolean;
+  highlightCurrentOrNextEvent?: boolean;
+  categorySettings?: { name: string; color: string }[];
+  slotDuration?: string;
+  slotLabelInterval?: string;
+  headerToolbar?: false | object;
+  footerToolbar?: false | object;
+  height?: 'auto' | number | 'parent';
+  weatherHide?: boolean;
 }
 
 export interface GoogleAccount {
@@ -184,6 +201,11 @@ export interface FullCalendarSettings {
   weekends?: boolean; // Whether to display weekends
   hiddenDays?: number[]; // Array of day numbers to hide (0=Sunday, 1=Monday, etc.)
   dayMaxEvents?: number | boolean; // Max events per day in month view (true = no limit, false = default, number = limit)
+  slotDuration?: string;
+  slotLabelInterval?: string;
+  headerToolbar?: false | object;
+  footerToolbar?: false | object;
+  height?: 'auto' | number | 'parent';
   activityWatch: ActivityWatchSettings;
   tasksIntegration: TasksIntegrationSettings;
   milestones: MilestonesSettings;

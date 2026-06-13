@@ -18,6 +18,13 @@ export interface BaseFile {
   properties?: unknown;
 }
 
+export interface FilterContext {
+  calendarId?: string;
+  calendarName?: string;
+  category?: string;
+  subCategory?: string;
+}
+
 /**
  * Extracts all tags from cached metadata frontmatter or inline tags array.
  */
@@ -66,24 +73,26 @@ export function getTagsFromCache(cache: {
  * @param filter The filter tree node or string statement.
  * @param file The TFile to evaluate against.
  * @param metadataCache Obsidian MetadataCache instance.
+ * @param context Optional event context for extended checks.
  */
 export function evaluateBaseFilter(
   filter: BaseFilter | string,
   file: TFile,
-  metadataCache: MetadataCache
+  metadataCache: MetadataCache,
+  context?: FilterContext
 ): boolean {
   if (typeof filter === 'string') {
-    return evaluateBaseFilterString(filter, file, metadataCache);
+    return evaluateBaseFilterString(filter, file, metadataCache, context);
   }
 
   if (filter.or) {
-    return filter.or.some(f => evaluateBaseFilter(f, file, metadataCache));
+    return filter.or.some(f => evaluateBaseFilter(f, file, metadataCache, context));
   }
   if (filter.and) {
-    return filter.and.every(f => evaluateBaseFilter(f, file, metadataCache));
+    return filter.and.every(f => evaluateBaseFilter(f, file, metadataCache, context));
   }
   if (filter.not) {
-    return !filter.not.some(f => evaluateBaseFilter(f, file, metadataCache));
+    return !filter.not.some(f => evaluateBaseFilter(f, file, metadataCache, context));
   }
   return true; // Default to true for empty filter object
 }
@@ -94,7 +103,8 @@ export function evaluateBaseFilter(
 export function evaluateBaseFilterString(
   statement: string,
   file: TFile,
-  metadataCache: MetadataCache
+  metadataCache: MetadataCache,
+  context?: FilterContext
 ): boolean {
   const cache = metadataCache.getFileCache(file);
   const tags = getTagsFromCache(cache || {});
@@ -124,19 +134,86 @@ export function evaluateBaseFilterString(
     }
   }
 
-  // 4. Property comparisons (e.g. status == "done", priority > 3)
-  const frontmatter = cache?.frontmatter || {};
-
-  // Match equals comparison (e.g., status == "done" or status = "done")
-  const eqMatch = statement.match(/^([a-zA-Z0-9_-]+)\s*==?\s*"([^"]+)"$/);
-  if (eqMatch) {
-    const propName = eqMatch[1];
-    const propVal = eqMatch[2];
-    return String(frontmatter[propName]) === propVal;
+  // 4. Context variables checks (e.g. file.calendarId, file.calendarName, file.category, file.subCategory)
+  if (context) {
+    if (statement.includes('file.calendarId')) {
+      const match = statement.match(/file\.calendarId\s*==?\s*"([^"]+)"/);
+      if (match) return context.calendarId === match[1];
+    }
+    if (statement.includes('file.calendarName')) {
+      const match = statement.match(/file\.calendarName\s*==?\s*"([^"]+)"/);
+      if (match) return context.calendarName === match[1];
+    }
+    if (statement.includes('file.category')) {
+      const match = statement.match(/file\.category\s*==?\s*"([^"]+)"/);
+      if (match) return context.category === match[1];
+    }
+    if (statement.includes('file.subCategory')) {
+      const match = statement.match(/file\.subCategory\s*==?\s*"([^"]+)"/);
+      if (match) return context.subCategory === match[1];
+    }
   }
 
-  // Match existence checks (e.g., just "date" or "category")
-  const wordMatch = statement.match(/^([a-zA-Z0-9_-]+)$/);
+  // 5. Property comparisons (e.g. status == "done", isTask == true, priority > 3)
+  const frontmatter = (cache?.frontmatter || {}) as Record<string, unknown>;
+
+  // Equals comparison (handles strings, booleans, and numbers)
+  const eqMatch = statement.match(/^([a-zA-Z0-9_.-]+)\s*==?\s*(?:"([^"]+)"|([a-zA-Z0-9_-]+))$/);
+  if (eqMatch) {
+    const propName = eqMatch[1];
+    const stringVal = eqMatch[2];
+    const rawVal = eqMatch[3];
+
+    const expectedVal = stringVal !== undefined ? stringVal : rawVal;
+    const actualVal = frontmatter[propName];
+
+    if (actualVal === undefined || actualVal === null) {
+      return false;
+    }
+
+    if (expectedVal === 'true') return actualVal === true;
+    if (expectedVal === 'false') return actualVal === false;
+
+    if (!isNaN(Number(expectedVal)) && typeof actualVal === 'number') {
+      return actualVal === Number(expectedVal);
+    }
+
+    if (
+      typeof actualVal === 'string' ||
+      typeof actualVal === 'number' ||
+      typeof actualVal === 'boolean'
+    ) {
+      return String(actualVal) === expectedVal;
+    }
+    return false;
+  }
+
+  // Inequality comparisons (e.g. priority > 3, priority <= 5)
+  const ineqMatch = statement.match(/^([a-zA-Z0-9_.-]+)\s*(>=|<=|>|<)\s*([0-9.-]+)$/);
+  if (ineqMatch) {
+    const propName = ineqMatch[1];
+    const operator = ineqMatch[2];
+    const expectedNum = Number(ineqMatch[3]);
+    const actualVal = Number(frontmatter[propName]);
+
+    if (isNaN(actualVal) || frontmatter[propName] === undefined) {
+      return false;
+    }
+
+    switch (operator) {
+      case '>':
+        return actualVal > expectedNum;
+      case '<':
+        return actualVal < expectedNum;
+      case '>=':
+        return actualVal >= expectedNum;
+      case '<=':
+        return actualVal <= expectedNum;
+    }
+  }
+
+  // Presence check (e.g. status)
+  const wordMatch = statement.match(/^([a-zA-Z0-9_.-]+)$/);
   if (wordMatch) {
     const propName = wordMatch[1];
     return frontmatter[propName] !== undefined && frontmatter[propName] !== null;

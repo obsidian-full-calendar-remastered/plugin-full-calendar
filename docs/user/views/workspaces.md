@@ -1,71 +1,143 @@
 # Calendar Workspaces
 
-Save and switch between customized calendar setups with Workspaces. A workspace captures your current calendar configuration so you can quickly jump between different contexts like Planning, Personal, or Team.
+Workspaces allow you to save and switch between customized calendar setups. A workspace captures your current calendar configuration so you can quickly jump between different contexts like Planning, Personal, or Team.
 
-## What is saved in a Workspace
+---
 
-- Selected calendar sources (Local, [Daily Notes](../calendars/dailynote.md), ICS, CalDAV, [Google](../calendars/gcal.md))
-- Filters: [categories](../events/categories.md)/sub-categories, tasks visibility, all‑day toggles
-- Display options: view type (month/week/day/[timeline](timeline_view.md)), week start, time grid settings
-- Optional: default start date range for the view
+## What is Saved in a Workspace
 
-## Create and manage
+- **Calendar Sources**: Selected calendars (e.g. [Local Folder](../calendars/local.md), [Daily Notes](../calendars/dailynote.md), CalDAV, [Google Calendar](../calendars/gcal.md)).
+- **Filters**: [Category overrides](../events/categories.md), tasks visibility, and all‑day event toggles.
+- **Display Options**: View type (Month, Week, Day, or [Timeline](timeline_view.md)), week start day, and time grid settings.
+- **Default Date**: The start date range loaded by default (e.g. `today`, `start-of-month`, etc.).
 
-1. Configure the calendar as you like (sources, filters, view).
-2. Open the header menu and choose Save as Workspace.
-3. Give it a name (e.g., "Planning", "Deep Work").
-4. Use the workspace switcher in the header to load it later.
+---
 
-Tips:
-- Set a Default Workspace in Settings to load it when opening the calendar.
-- Rename or delete workspaces from the same menu.
+## Creating and Managing Workspaces
 
-## Filtering and quick switching
+1. Configure the calendar view to your liking (enable sources, choose filters, set options).
+2. Click the workspace switcher in the header and choose **Save as Workspace**.
+3. Provide a name (e.g., "Planning", "Deep Work").
+4. Select it from the workspace switcher dropdown in the header to load it instantly.
 
-- Per‑workspace filters for categories and sources let you focus on what matters.
-- Switch workspaces instantly from the header dropdown; switching is optimized to avoid full re‑renders.
+> [!TIP]
+> You can set a **Default Workspace** in the plugin settings to load your favorite configuration automatically on startup.
 
-## Keyboard and commands
-
-- Command Palette: "Full Calendar: Switch Workspace" to pick one quickly.
-- Optional hotkeys can be assigned per workspace via Obsidian’s Hotkeys.
-
-## Performance notes
-
-Workspace switching applies incremental updates where possible (sources, filters, and view) to keep transitions snappy even on large calendars.
+---
 
 ## Advanced Bases Filtering
 
-For advanced workflows, you can apply Obsidian Bases query logic directly to a workspace. This acts as an overlay filter on top of the workspace's configured calendar sources.
+For power users, workspaces can be integrated with Obsidian **Bases** query files. Point a workspace to a `.base` file, and Full Calendar will dynamically filter event notes and override layout settings.
 
-### Setting Up Bases Filtering
+### Setting Up Bases Integration
 
-1. In the **Workspaces** settings tab, click **Edit** on your workspace.
-2. In the **Advanced Bases Filtering** section, enter the path to your `.base` file (e.g., `queries/work.base`).
-3. Click **Save**.
+1. Go to **Settings** → **Organization** → **Workspaces**.
+2. Click **Edit** on your chosen workspace.
+3. In the **Bases Query Path** field, enter the relative path to your `.base` file (e.g., `queries/planning.base`).
+4. Click **Save**.
 
-Once configured, the calendar will automatically parse the `.base` file and hide any events whose underlying notes do not match the Base's YAML filters.
+---
 
-### Supported Filter Syntax
+## The `.base` File Structure
 
-The workspace filter evaluator supports the standard Obsidian Bases query rules:
+A `.base` file is a YAML document with two optional top-level sections: `filters` and `settings`.
 
-- **Logical Groups**: `and`, `or`, `not`
-- **File Toggles**:
-    - `file.hasTag("tag")`
-    - `file.inFolder("folder")`
-    - `file.ext == "md"`
-- **Metadata Properties**:
-    - Equals comparison: `status == "done"`
-    - Existence check: `priority` or `date`
+```yaml
+filters:
+  # Advanced logical event filters
+  and:
+    - 'file.inFolder("Projects/Phoenix")'
+    - 'file.hasTag("meeting")'
+    - 'priority >= 3'
+settings:
+  # Workspace layout and view overrides
+  slotMinTime: "08:00"
+  slotMaxTime: "18:00"
+  weekends: false
+```
 
-!!! note "Performance Optimization"
-    To keep UI transitions fast and snappy, the workspace's `.base` filter file is read and parsed asynchronously when switching workspaces or opening the calendar. The filter is cached in memory and applied instantaneously to your events.
+### 1. Filters Syntax (`filters`)
+
+Filters are evaluated against each calendar event file in your vault. They support nesting using logical operators:
+
+| Operator | Description | Example |
+| :--- | :--- | :--- |
+| `and` | All nested conditions must evaluate to `true` | `and: [ 'file.ext == "md"', 'priority > 2' ]` |
+| `or` | At least one nested condition must evaluate to `true` | `or: [ 'file.hasTag("work")', 'file.hasTag("urgent")' ]` |
+| `not` | Negates the nested conditions | `not: [ 'status == "completed"' ]` |
+
+#### Built-in File Properties
+- **Tags**: `file.hasTag("tag_name")` checks if the note contains the tag (with or without `#`).
+- **Folders**: `file.inFolder("folder/path")` checks if the note path starts with the directory.
+- **Extension**: `file.ext == "md"` checks the file extension.
+
+#### Context Variables
+You can filter events based on calendar and category properties provided at runtime:
+- `file.calendarId == "id"` (e.g. `file.calendarId == "local_1"`)
+- `file.calendarName == "name"` (e.g. `file.calendarName == "Personal"`)
+- `file.category == "category"` (e.g. `file.category == "Wellness"`)
+- `file.subCategory == "subCategory"` (e.g. `file.subCategory == "Gym"`)
+
+#### Frontmatter Metadata Properties
+You can filter by any custom YAML frontmatter property:
+- **Existence check**: Specify the property name alone (e.g. `status` or `priority`).
+- **Equality comparisons** (`==`, `=`): Compares string, number, or boolean values.
+  - `status == "done"` (String)
+  - `isTask == true` (Boolean)
+  - `priority == 3` (Number)
+- **Inequality comparisons** (`>`, `<`, `>=`, `<=`, only for numbers):
+  - `priority > 3`
+  - `difficulty <= 2`
+
+---
+
+### 2. Workspace & View Overrides (`settings`)
+
+You can customize almost all [Full Calendar Configuration](../settings/fc_config.md) options per workspace by adding them to the `settings:` block inside your `.base` file:
+
+#### View Configuration
+- `firstDay`: Starts the week on a specific day (`0` for Sunday, `1` for Monday, etc.).
+- `timeFormat24h`: Toggle 24-hour time format (`true` / `false`).
+- `displayTimezone`: Set a custom timezone (e.g., `America/New_York`).
+- `clickToCreateEventFromMonthView`: Toggle creating events directly by clicking month slots.
+
+#### Time & Slot Settings
+- `slotMinTime`: Earliest time to display in day/week views (e.g., `"06:00"`).
+- `slotMaxTime`: Latest time to display in day/week views (e.g., `"22:00"`).
+- `slotDuration`: Grid slot duration (e.g., `"00:30:00"`).
+- `slotLabelInterval`: Label interval (e.g., `"01:00:00"`).
+- `allDaySlot`: Show/hide all-day event row (`true` / `false`).
+
+#### Layout & Appearance
+- `weekends`: Show/hide weekends (`true` / `false`).
+- `hiddenDays`: Hide specific days (e.g., `[0, 6]` to hide weekends).
+- `dayMaxEvents`: Max events displayed per day in month view (e.g., `3`, or `true` for unlimited).
+- `enableBackgroundEvents`: Show/hide background events (`true` / `false`).
+- `showEventInStatusBar`: Show currently active event in Obsidian status bar (`true` / `false`).
+- `highlightCurrentOrNextEvent`: Highlight the current active event (`true` / `false`).
+- `categorySettings`: Custom category color palette overrides:
+  ```yaml
+  categorySettings:
+    - name: Work
+      color: "#ff0000"
+    - name: Wellness
+      color: "#00ff00"
+  ```
+- `weatherHide`: Hide the weather widget for this workspace (`true` / `false`).
+
+---
+
+## Under the Hood
+
+> [!NOTE]
+> **Performance Optimization**
+>
+> To ensure instantaneous workspace switching, the workspace's `.base` file is parsed asynchronously when you open the calendar or switch workspaces. The parsed filter tree is cached in memory, ensuring that even with thousands of events, filtering remains fast and layout settings apply without lag.
+
+---
 
 ## Troubleshooting
 
-- If a source isn’t visible, check that it’s enabled for the current workspace.
-- Category filters are additive; clear them to see all events.
-- You can always return to an "All Events" default workspace.
-- **Bases Filtering Issues**: Verify that the `.base` file path is correct relative to the vault root, and ensure the `.base` file's YAML filters are valid.
-
+- **No Events Displayed**: Check if you have defined category filters or Bases filters that are too restrictive. Ensure your `.base` file path is correct relative to the vault root.
+- **Wrong Colors**: Ensure your workspace's `categorySettings` color hex codes are valid (e.g., `#ffffff`).
+- **YAML Errors**: Validate your `.base` file using a YAML linter if the workspace fails to load.

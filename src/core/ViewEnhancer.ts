@@ -72,6 +72,13 @@ export class ViewEnhancer {
   }
 
   /**
+   * Gets the resolved workspace configuration (overrides merged on top of global settings).
+   */
+  public getCalendarConfig(): Partial<FullCalendarSettings> {
+    return this.workspaceManager.getCalendarConfig();
+  }
+
+  /**
    * Gets the active workspace object from the internal manager.
    * @returns The active WorkspaceSettings object, or null if none is active.
    */

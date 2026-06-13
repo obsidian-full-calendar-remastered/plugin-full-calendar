@@ -1,5 +1,6 @@
 import { EventInput } from '@fullcalendar/core';
 import { PluginState } from '../../core/PluginState';
+import { FullCalendarSettings } from '../../types/settings';
 import { toEventInput } from '../../core/interop';
 import { CachedEvent } from '../../core/EventCache';
 import { ViewContext } from './ViewContext';
@@ -19,12 +20,16 @@ export class ViewTimelineHandler {
 
   public buildTimelineResources(): ResourceItem[] {
     const resources: ResourceItem[] = [];
-    if (!PluginState.getSettings().enableAdvancedCategorization) {
+    const viewEnhancer = this.ctx.viewEnhancer;
+    const config = viewEnhancer
+      ? (viewEnhancer.getCalendarConfig() as FullCalendarSettings)
+      : PluginState.getSettings();
+
+    if (!config.enableAdvancedCategorization) {
       return resources;
     }
 
-    const categorySettings = PluginState.getSettings().categorySettings || [];
-    const viewEnhancer = this.ctx.viewEnhancer;
+    const categorySettings = config.categorySettings || [];
     if (!viewEnhancer) {
       return resources;
     }
@@ -90,8 +95,11 @@ export class ViewTimelineHandler {
 
   public generateShadowEvents(mainEvents: EventInput[], forceTimeline = false): EventInput[] {
     const shadowEvents: EventInput[] = [];
+    const config = this.ctx.viewEnhancer
+      ? (this.ctx.viewEnhancer.getCalendarConfig() as FullCalendarSettings)
+      : PluginState.getSettings();
 
-    if (!PluginState.getSettings().enableAdvancedCategorization) {
+    if (!config.enableAdvancedCategorization) {
       return shadowEvents;
     }
 
@@ -126,7 +134,11 @@ export class ViewTimelineHandler {
 
   public addShadowEventsToView() {
     const fullCalendarView = this.ctx.fullCalendarView;
-    if (!PluginState.getSettings().enableAdvancedCategorization || !fullCalendarView) {
+    const config = this.ctx.viewEnhancer
+      ? (this.ctx.viewEnhancer.getCalendarConfig() as FullCalendarSettings)
+      : PluginState.getSettings();
+
+    if (!config.enableAdvancedCategorization || !fullCalendarView) {
       return;
     }
 
@@ -138,10 +150,9 @@ export class ViewTimelineHandler {
       if (!cachedSource) continue;
 
       const { events } = cachedSource;
-      const settings = PluginState.getSettings();
 
       const mainEvents = events
-        .map((e: CachedEvent) => toEventInput(e.id, e.event, settings))
+        .map((e: CachedEvent) => toEventInput(e.id, e.event, config))
         .filter((e): e is EventInput => !!e);
 
       const shadowEvents = this.generateShadowEvents(mainEvents, true);

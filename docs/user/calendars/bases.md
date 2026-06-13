@@ -1,4 +1,4 @@
-# Obsidian Bases calendar (Deprecated)
+# Obsidian Bases Calendar (Deprecated)
 
 !!! warning "Deprecated"
     The standalone **Obsidian Bases calendar provider** is deprecated and will be removed in the next major version. 

@@ -198,6 +198,26 @@ describe('schema parsing tests', () => {
         }
       `);
     });
+    it('to-do completed with true boolean', () => {
+      expect(
+        parseEvent({
+          title: 'Test',
+          type: 'single',
+          date: '2021-01-01',
+          allDay: true,
+          completed: true
+        })
+      ).toMatchInlineSnapshot(`
+        {
+          "allDay": true,
+          "completed": true,
+          "date": "2021-01-01",
+          "endDate": null,
+          "title": "Test",
+          "type": "single",
+        }
+      `);
+    });
   });
 
   describe('simple recurring events', () => {

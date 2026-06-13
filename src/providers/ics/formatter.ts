@@ -325,9 +325,11 @@ function createVTodoComponent(event: OFCEvent, isOverride = false): ical.Compone
   if (event.type === 'single' && event.completed) {
     vtodo.addPropertyWithValue('status', 'COMPLETED');
     try {
-      const completedDt = DateTime.fromISO(event.completed).toUTC();
-      if (completedDt.isValid) {
-        addTimeProperty(vtodo, 'completed', completedDt, false, 'UTC');
+      if (typeof event.completed === 'string') {
+        const completedDt = DateTime.fromISO(event.completed).toUTC();
+        if (completedDt.isValid) {
+          addTimeProperty(vtodo, 'completed', completedDt, false, 'UTC');
+        }
       }
     } catch (e) {
       console.error('Failed to parse completed date', e);

@@ -99,7 +99,7 @@ export const EventSchema = z
       type: z.literal('single'),
       date: ParsedDate,
       endDate: ParsedDate.nullable().default(null),
-      completed: ParsedDate.or(z.literal(false)).or(z.literal(null)).optional()
+      completed: ParsedDate.or(z.literal(true)).or(z.literal(false)).or(z.literal(null)).optional()
     }),
     z.object({
       type: z.literal('recurring'),

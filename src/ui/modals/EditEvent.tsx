@@ -245,7 +245,7 @@ export const EditEvent = ({
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    let completedValue: string | false | null = null;
+    let completedValue: string | boolean | null = null;
     if (isTask) {
       completedValue = complete || false;
     }

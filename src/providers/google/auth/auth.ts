@@ -1,4 +1,5 @@
 import { showNotice } from '../../../utils/showNotice';
+import { openExternalUrl } from '../../../utils/openExternalUrl';
 /**
  * @file auth.ts
  * @brief Handles all OAuth 2.0 logic for Google Calendar integration.
@@ -87,7 +88,7 @@ function startDesktopLogin(plugin: FullCalendarPlugin, authUrl: string): void {
   const http = window.require('http') as DesktopHttpModule;
   const url = window.require('url') as DesktopUrlModule;
   if (server) {
-    window.open(authUrl);
+    openExternalUrl(authUrl);
     return;
   }
   server = http.createServer(
@@ -134,7 +135,7 @@ function startDesktopLogin(plugin: FullCalendarPlugin, authUrl: string): void {
     }
   );
   server.listen(42813, () => {
-    window.open(authUrl);
+    openExternalUrl(authUrl);
   });
 }
 

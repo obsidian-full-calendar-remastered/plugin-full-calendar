@@ -1,4 +1,5 @@
 import { showNotice } from '../../../utils/showNotice';
+import { openExternalUrl } from '../../../utils/openExternalUrl';
 import { Platform, requestUrl } from 'obsidian';
 import FullCalendarPlugin from '../../../main';
 import { PluginState } from '../../../core/PluginState';
@@ -56,7 +57,7 @@ function startDesktopLogin(plugin: FullCalendarPlugin, authUrl: string): void {
   const url = window.require('url') as DesktopUrlModule;
 
   if (server) {
-    window.open(authUrl);
+    openExternalUrl(authUrl);
     return;
   }
 
@@ -99,7 +100,7 @@ function startDesktopLogin(plugin: FullCalendarPlugin, authUrl: string): void {
   });
 
   server.listen(42813, () => {
-    window.open(authUrl);
+    openExternalUrl(authUrl);
   });
 }
 

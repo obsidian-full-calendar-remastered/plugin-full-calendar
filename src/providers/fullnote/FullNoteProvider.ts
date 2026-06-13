@@ -1,6 +1,7 @@
 import { PluginState } from '../../core/PluginState';
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import * as React from 'react';
+import { DateTime } from 'luxon';
 
 import { OFCEvent, EventLocation, validateEvent } from '../../types';
 import FullCalendarPlugin from '../../main';
@@ -141,6 +142,30 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
     this.app = app;
     this.plugin = plugin;
     this.source = source;
+  }
+
+  get taskCompletionStyle(): 'datetime' | 'boolean' {
+    return this.source.taskCompletionStyle || 'datetime';
+  }
+
+  async toggleComplete(eventId: string, isDone: boolean): Promise<boolean> {
+    const event = PluginState.getCache().getEventById(eventId);
+    if (!event || event.type !== 'single') return false;
+
+    let completed: string | boolean;
+    if (isDone) {
+      completed = this.taskCompletionStyle === 'boolean' ? true : (DateTime.now().toISO() ?? '');
+    } else {
+      completed = false;
+    }
+
+    const updatedEvent: OFCEvent = {
+      ...event,
+      completed
+    };
+
+    await PluginState.getCache().updateEventWithId(eventId, updatedEvent);
+    return true;
   }
 
   getCapabilities(): CalendarProviderCapabilities {

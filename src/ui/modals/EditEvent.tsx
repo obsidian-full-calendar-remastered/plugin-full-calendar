@@ -227,6 +227,12 @@ export const EditEvent = ({
 
   const selectedCalendar = calendars[calendarIndex];
   const isDailyNoteCalendar = selectedCalendar.type === 'dailynote';
+  const provider = PluginState.getProviderRegistry().getInstance(selectedCalendar.id);
+  const useBooleanTaskCompletion = Boolean(
+    provider &&
+    'taskCompletionStyle' in provider &&
+    (provider as { taskCompletionStyle: string }).taskCompletionStyle === 'boolean'
+  );
   const supportsProviderNotifications = Boolean(
     PluginState.getProviderRegistry().getInstance(selectedCalendar.id)?.getCapabilities()
       .supportsAlarms
@@ -491,7 +497,14 @@ export const EditEvent = ({
                   type="checkbox"
                   checked={isRecurring ? false : !!complete}
                   onChange={e =>
-                    !isRecurring && setComplete(e.target.checked ? DateTime.now().toISO() : false)
+                    !isRecurring &&
+                    setComplete(
+                      e.target.checked
+                        ? useBooleanTaskCompletion
+                          ? true
+                          : DateTime.now().toISO()
+                        : false
+                    )
                   }
                   disabled={isRecurring}
                 />

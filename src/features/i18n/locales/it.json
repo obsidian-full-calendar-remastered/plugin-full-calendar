@@ -673,6 +673,14 @@
         "template": {
           "label": "Modello personalizzato",
           "description": "Definisci il modello utilizzato per creare nuovi eventi in questo calendario. Supporta: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
+        },
+        "taskCompletionStyle": {
+          "label": "Completion style",
+          "description": "Choose how completed tasks are marked in the frontmatter. ISO Date/Time string preserves completion time; Boolean writes true/false.",
+          "options": {
+            "datetime": "ISO Date/Time String",
+            "boolean": "Boolean (true/false)"
+          }
         }
       },
       "dailyNote": {

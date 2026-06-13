@@ -826,4 +826,105 @@ text_property: "[[example]]"
     expect(content).toContain('startTime: 15:00');
     expect(content).toContain('timezone: Europe/Berlin');
   });
+
+  describe('toggleComplete tests', () => {
+    let mockCache: {
+      getEventById: jest.Mock;
+      updateEventWithId: jest.Mock;
+    };
+
+    beforeEach(() => {
+      mockCache = {
+        getEventById: jest.fn(),
+        updateEventWithId: jest.fn()
+      };
+      PluginState.setCache(mockCache as unknown as import('../../core/EventCache').default);
+    });
+
+    afterEach(() => {
+      PluginState.clear();
+    });
+
+    it('should toggle complete with datetime ISO string by default', async () => {
+      const obsidian = makeApp(MockAppBuilder.make().done());
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const mockEvent = {
+        type: 'single',
+        title: 'Test Task',
+        date: '2024-05-15',
+        completed: false
+      };
+      mockCache.getEventById.mockReturnValue(mockEvent);
+
+      const result = await calendar.toggleComplete('event_1', true);
+      expect(result).toBe(true);
+      expect(mockCache.getEventById).toHaveBeenCalledWith('event_1');
+      expect(mockCache.updateEventWithId).toHaveBeenCalledTimes(1);
+      const updatedEvent = (mockCache.updateEventWithId.mock.calls[0] as [string, OFCEvent])[1];
+      expect(updatedEvent.type).toBe('single');
+      if (updatedEvent.type === 'single') {
+        expect(typeof updatedEvent.completed).toBe('string');
+        expect(DateTime.fromISO(updatedEvent.completed as string).isValid).toBe(true);
+      }
+    });
+
+    it('should toggle complete with boolean true when taskCompletionStyle is boolean', async () => {
+      const obsidian = makeApp(MockAppBuilder.make().done());
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1', taskCompletionStyle: 'boolean' },
+        makePlugin(),
+        obsidian
+      );
+
+      const mockEvent = {
+        type: 'single',
+        title: 'Test Task',
+        date: '2024-05-15',
+        completed: false
+      };
+      mockCache.getEventById.mockReturnValue(mockEvent);
+
+      const result = await calendar.toggleComplete('event_1', true);
+      expect(result).toBe(true);
+      expect(mockCache.getEventById).toHaveBeenCalledWith('event_1');
+      expect(mockCache.updateEventWithId).toHaveBeenCalledTimes(1);
+      const updatedEvent = (mockCache.updateEventWithId.mock.calls[0] as [string, OFCEvent])[1];
+      expect(updatedEvent.type).toBe('single');
+      if (updatedEvent.type === 'single') {
+        expect(updatedEvent.completed).toBe(true);
+      }
+    });
+
+    it('should toggle complete to false when isDone is false regardless of style', async () => {
+      const obsidian = makeApp(MockAppBuilder.make().done());
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1', taskCompletionStyle: 'boolean' },
+        makePlugin(),
+        obsidian
+      );
+
+      const mockEvent = {
+        type: 'single',
+        title: 'Test Task',
+        date: '2024-05-15',
+        completed: true
+      };
+      mockCache.getEventById.mockReturnValue(mockEvent);
+
+      const result = await calendar.toggleComplete('event_1', false);
+      expect(result).toBe(true);
+      expect(mockCache.getEventById).toHaveBeenCalledWith('event_1');
+      expect(mockCache.updateEventWithId).toHaveBeenCalledTimes(1);
+      const updatedEvent = (mockCache.updateEventWithId.mock.calls[0] as [string, OFCEvent])[1];
+      expect(updatedEvent.type).toBe('single');
+      if (updatedEvent.type === 'single') {
+        expect(updatedEvent.completed).toBe(false);
+      }
+    });
+  });
 });

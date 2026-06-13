@@ -88,3 +88,12 @@ This ensures each event belongs to exactly one calendar, even if multiple calend
 
 - Moving events between calendars is currently supported only between Full Note calendars.
 - Moving to or from a Daily Note calendar is not supported.
+
+---
+
+## Task Completion Style
+
+When you mark a task complete in a Full Note calendar, the plugin updates the frontmatter's `completed` field. You can configure which style you prefer under the calendar settings:
+
+*   **ISO Date/Time String** (Default): Saves the completion date and time as an ISO string (e.g. `completed: 2026-06-13T14:02:48+02:00`). This is recommended because it preserves exact completion timestamps.
+*   **Boolean**: Saves completion as a standard YAML boolean (`completed: true` when checked, `completed: false` when unchecked). Use this style if you manually edit your frontmatter or use other metadata-based plugins (such as Dataview or Metadata Menu) that expect simple boolean properties.

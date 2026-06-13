@@ -3,4 +3,5 @@ export type FullNoteProviderConfig = {
   name?: string;
   directory: string;
   template?: string;
+  taskCompletionStyle?: 'datetime' | 'boolean';
 };

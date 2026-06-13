@@ -1173,7 +1173,7 @@
   overflow-x: auto;
   padding: var(--size-4-2) 0 var(--size-4-4);
   margin-bottom: var(--size-4-6);
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
 }
 

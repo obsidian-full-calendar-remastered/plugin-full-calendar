@@ -74,6 +74,13 @@ export class WeatherDetailModal extends Modal {
     if (this.weatherInfo.hourly && this.weatherInfo.hourly.length > 0) {
       const timeline = contentEl.createDiv({ cls: 'ofc-weather-detail-hourly-timeline' });
 
+      timeline.addEventListener('wheel', (evt: WheelEvent) => {
+        if (evt.deltaY !== 0) {
+          timeline.scrollLeft += evt.deltaY;
+          evt.preventDefault();
+        }
+      });
+
       this.weatherInfo.hourly.forEach(hour => {
         const card = timeline.createDiv({ cls: 'ofc-weather-detail-hourly-card' });
 

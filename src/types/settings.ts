@@ -55,6 +55,7 @@ export interface TasksIntegrationSettings {
 export interface MilestonesSettings {
   counters: Record<string, number>;
   unlockedAt: Record<string, number>;
+  shown: Record<string, number>;
 }
 
 export type ApiScope =
@@ -276,7 +277,8 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   },
   milestones: {
     counters: {},
-    unlockedAt: {}
+    unlockedAt: {},
+    shown: {}
   },
   enableMonthlyStatsReport: false,
   lastMonthlyMilestonesGeneratedMonth: null,

@@ -52,6 +52,7 @@ export interface MilestoneRecordOptions {
 interface MilestoneState {
   counters: Record<string, number>;
   unlockedAt: Record<string, number>;
+  shown: Record<string, number>;
 }
 
 const REMOTE_PROVIDER_TYPES: ProviderType[] = ['ical', 'caldav', 'google', 'outlook'];
@@ -77,11 +78,12 @@ const ALL_PROVIDER_TYPES: ProviderType[] = [
 function ensureMilestonesState(): MilestoneState {
   const settings = PluginState.getSettings();
   if (!settings.milestones) {
-    settings.milestones = { counters: {}, unlockedAt: {} };
+    settings.milestones = { counters: {}, unlockedAt: {}, shown: {} };
   }
 
   settings.milestones.counters ||= {};
   settings.milestones.unlockedAt ||= {};
+  settings.milestones.shown ||= {};
 
   return settings.milestones;
 }
@@ -838,8 +840,12 @@ export async function recordMilestoneAction(
     }
 
     const unlocked = evaluateUnlocks(state);
+    const toShow = unlocked.filter(milestone => state.shown[milestone.id] !== 1);
+    for (const milestone of toShow) {
+      state.shown[milestone.id] = 1;
+    }
     await PluginState.persistData();
-    unlocked.forEach((milestone, index) => queueMilestoneToast(milestone, index));
+    toShow.forEach((milestone, index) => queueMilestoneToast(milestone, index));
   } catch (error) {
     console.warn('Full Calendar: milestone tracking failed.', error);
   }
@@ -881,19 +887,24 @@ export async function triggerDevMilestoneIfActive(): Promise<void> {
     if (settings.dev === 1 || settings.dev === '1') {
       const state = ensureMilestonesState();
       state.unlockedAt['devMilestone'] = Date.now();
-      await PluginState.persistData();
-      const definition = MILESTONE_DEFINITIONS.find(d => d.id === 'devMilestone');
-      if (definition) {
-        queueMilestoneToast(
-          {
-            id: 'devMilestone',
-            title: t(definition.titleKey),
-            description: t(definition.descriptionKey)
-          },
-          0
-        );
+      if (state.shown['devMilestone'] !== 1) {
+        state.shown['devMilestone'] = 1;
+        await PluginState.persistData();
+        const definition = MILESTONE_DEFINITIONS.find(d => d.id === 'devMilestone');
+        if (definition) {
+          queueMilestoneToast(
+            {
+              id: 'devMilestone',
+              title: t(definition.titleKey),
+              description: t(definition.descriptionKey)
+            },
+            0
+          );
+        } else {
+          console.warn('Full Calendar: definition for devMilestone not found!');
+        }
       } else {
-        console.warn('Full Calendar: definition for devMilestone not found!');
+        await PluginState.persistData();
       }
     }
   } catch (error) {

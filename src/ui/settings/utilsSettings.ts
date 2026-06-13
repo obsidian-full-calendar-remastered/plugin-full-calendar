@@ -94,7 +94,13 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     apiTokens: (raw as Partial<FullCalendarSettings>).apiTokens || {},
     authorizedTokens: (raw as Partial<FullCalendarSettings>).authorizedTokens || {},
     dev: raw.dev,
-    milestones: raw.milestones || { counters: {}, unlockedAt: {} },
+    milestones: raw.milestones
+      ? {
+          counters: raw.milestones.counters || {},
+          unlockedAt: raw.milestones.unlockedAt || {},
+          shown: raw.milestones.shown || {}
+        }
+      : { counters: {}, unlockedAt: {}, shown: {} },
     enableMonthlyStatsReport:
       raw.enableMonthlyStatsReport ?? DEFAULT_SETTINGS.enableMonthlyStatsReport,
     lastMonthlyMilestonesGeneratedMonth:

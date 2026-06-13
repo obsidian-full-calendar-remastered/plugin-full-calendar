@@ -21,7 +21,8 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
       ...DEFAULT_SETTINGS,
       milestones: {
         counters: { 'created.total': 42 },
-        unlockedAt: { 'created.total.100': 1234567890 }
+        unlockedAt: { 'created.total.100': 1234567890 },
+        shown: { 'created.total.100': 1 }
       },
       enableMonthlyStatsReport: false,
       lastMonthlyMilestonesGeneratedMonth: '2026-05',
@@ -32,7 +33,8 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
 
     expect(settings.milestones).toEqual({
       counters: { 'created.total': 42 },
-      unlockedAt: { 'created.total.100': 1234567890 }
+      unlockedAt: { 'created.total.100': 1234567890 },
+      shown: { 'created.total.100': 1 }
     });
     expect(settings.enableMonthlyStatsReport).toBe(false);
     expect(settings.lastMonthlyMilestonesGeneratedMonth).toBe('2026-05');
@@ -50,7 +52,8 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
 
     expect(settings.milestones).toEqual({
       counters: {},
-      unlockedAt: {}
+      unlockedAt: {},
+      shown: {}
     });
     expect(settings.enableMonthlyStatsReport).toBe(DEFAULT_SETTINGS.enableMonthlyStatsReport);
     expect(settings.lastMonthlyMilestonesGeneratedMonth).toBe(

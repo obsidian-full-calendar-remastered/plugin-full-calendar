@@ -40,7 +40,8 @@ const mockSettings = {
       'deleted.total': 2,
       'moved.total': 4
     },
-    unlockedAt: {}
+    unlockedAt: {},
+    shown: {}
   },
   workspaces: []
 };

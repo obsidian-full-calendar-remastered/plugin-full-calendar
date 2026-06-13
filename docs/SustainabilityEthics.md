@@ -34,7 +34,7 @@ With contributions attributed to roughly
 
 ![Activity ChronoAnalyzer](assets/chrono-analyser/2025-26-FCR-development.png){ style="display: block; margin: 0 auto;" }
 
-Spread across a **305.83 Hours** of Developer Time (27 May 2025 to 10 May 2026). Measured via [Activity Watch](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/activitywatch/) + [ChronoAnalyser](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/chrono_analyser/) integrations. My [freelancing hourly rate](https://www.upwork.com/freelancers/~010170cbba31f704df) might be able to put a facevalue to what that time is worth in a different universe. 
+Spread across a **305.83 Hours** of Developer Time (27 May 2025 to 10 May 2026). Measured via [Activity Watch](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/activitywatch/) + [ChronoAnalyser](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/chrono_analyser/) integrations.
 
 
 ### The Shift in AI Development Tools

@@ -49,7 +49,7 @@
         "@types/plotly.js": "^3.0.10",
         "@types/react": "^19.2.15",
         "@types/react-dom": "^19.2.3",
-        "esbuild": "0.28.0",
+        "esbuild": "^0.28.1",
         "eslint": "^9.39.4",
         "eslint-plugin-obsidianmd": "^0.3.0",
         "eslint-plugin-react-hooks": "^7.1.1",

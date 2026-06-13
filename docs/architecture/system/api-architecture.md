@@ -1,83 +1,79 @@
 # API Architecture
 
 !!! abstract "Purpose"
-    The Full Calendar API exposes safe, permissioned entry points for other plugins while keeping `EventCache` as the single source of truth.
+    The Full Calendar API exposes safe, permissioned entry points for other plugins and external systems while keeping [`EventCache`](eventcache.md) as the single source of truth.
 
 ## Components and Ownership
 
 | Component | Responsibility | Must Not Own |
 |---|---|---|
-| `PublicAPI` | Bouncer surface on `app.plugins.plugins['full-calendar'].api`. Handles authorization and token exchange. | Event state or provider I/O. |
-| `InternalAPI` | Executes actions (open views, change view, read cached events) using **[`PluginState`](core-systems.md)**. | Direct exposure to third-party callers. |
-| `PluginState` | Runtime singleton for settings, cache, provider registry, and utility hooks. | Alternative state sources. |
-| **[`EventCache`](eventcache.md)** | Canonical event state and mutation authority. | UI or provider-specific policy. |
-| **[`ProviderRegistry`](../calendars/architecture.md)** | Provider I/O routing and ID mapping. | UI decisions. |
+| [`PublicAPI`](../../src/api/FullCalendarAPI.ts#L368) | Bouncer surface on `app.plugins.plugins['full-calendar'].api`. Handles token verification, [Personal Access Tokens (PATs)](#personal-access-tokens-pats), and plugin access request modals. | Direct event state or provider I/O. |
+| [`LocalServer`](../../src/api/LocalServer.ts) | Localhost HTTP server (127.0.0.1) running in Node.js. Translates incoming REST API requests (Bearer Token) into programmatically executed operations. | UI presentation or file writing policies. |
+| [`InternalAPI`](../../src/api/FullCalendarAPI.ts#L34) | Executes raw actions (querying, opening views, modifying events) using [`PluginState`](core-systems.md). | Third-party validation logic or CLI exposure. |
+| [`PluginState`](core-systems.md) | Runtime singleton holding references to settings, cache, registry, and system capabilities. | Alternative sources of state. |
+| [`EventCache`](eventcache.md) | Canonical cached event state and database mutations. | UI decisions or CLI protocol formatting. |
+| [`ProviderRegistry`](../calendars/architecture.md) | Network/Local calendar source route management and synchronization. | Client filtering engines. |
 
-## Authorization and Token Storage
+## Authorization & Token Storage
 
-- `PublicAPI.requestAccess(pluginId, reason, requestedScopes?)` shows a permissions modal and stores an approved token in settings.
-- Tokens are stored in `FullCalendarSettings.apiTokens` as `{ pluginId, reason, requestedScopes, grantedScopes, grantedAt }` keyed by a UUID.
-- `PublicAPI.withToken(token)` returns `AuthorizedAPI` or `null` if the token is missing or invalid.
+The API uses standard scope-gated capability tokens stored under [`FullCalendarSettings.apiTokens`](../../src/types/settings.ts#L190).
+* **Plugin Tokens**: Acquired via [`PublicAPI.requestAccess(pluginId, reason, requestedScopes)`](../../src/api/FullCalendarAPI.ts#L379) showing an authorization modal. Stored with the calling plugin's identifier.
+* **Personal Access Tokens (PATs)**: Generated manually by the user in settings. Stored with a fixed `pluginId: 'personal'`. Prefixed with `ofc_pat_` to prevent collisions.
+* **Tracking**: On access via [`PublicAPI.withToken(token)`](../../src/api/FullCalendarAPI.ts#L428), `lastUsedAt` is updated and persisted asynchronously to disk.
 
 ## Scope Model
 
-The API is scope-gated. Each method requires a scope (e.g. `events:read`, `events:write`, `settings:write`).
-`system:full-access` unlocks an unsafe gateway that exposes internal state for trusted integrations.
+Methods require a specific scope (e.g. `events:read`, `events:write`, `ui:open-calendar`, `providers:read`). 
+`system:full-access` provides raw access to singletons via [`AuthorizedAPI.getInternalState()`](../../src/api/FullCalendarAPI.ts#L356).
 
-## API Surface (AuthorizedAPI)
+## Local REST Server
 
-The authorized surface provides granular control over the calendar system, gated by permission scopes:
+When `enableLocalServer` is toggled in settings:
+1. [`LocalServer`](../../src/api/LocalServer.ts) opens an HTTP listener on the configured `localServerPort` (default `8540`) bound to `127.0.0.1` (localhost).
+2. It intercept requests, validates `Authorization: Bearer <token>` against [`PublicAPI.withToken()`](../../src/api/FullCalendarAPI.ts#L428), and checks scopes.
+3. Requests map to the [`AuthorizedAPI`](../../src/api/FullCalendarAPI.ts#L317) surface.
 
-### UI & Interaction (`ui:*`)
-- `openCalendar()`: Focus or open the main view.
-- `openSidebar()`: Reveal the calendar sidebar.
-- `changeView(viewName)`: Switch to `timeGridWeek`, `listMonth`, etc.
-- `openCreateModal(initialData?)`: Launch the event creation UI.
+### Supported REST Routes
 
-### Event Management (`events:*`)
-- `getAllEvents()`: Retrieve all enhanced events from the cache.
-- `getEventById(id)`: Fetch a specific event.
-- `getEventDetails(id)`: Access metadata like source location.
-- `createEvent(calendarId, event, options?)`: Persist a new event.
-- `updateEvent(eventId, event, options?)`: Modify an existing event.
-- `deleteEvent(eventId, options?)`: Remove or override an instance.
-- `moveEvent(eventId, targetCalendarId)`: Migrate an event between sources.
-- `processEvent(eventId, processor)`: Atomic read-modify-write for event data.
-
-### Recurring & Tasks
-- `toggleRecurringInstance(...)`: Mark a specific recurrence as done.
-- `modifyRecurringInstance(...)`: Create an exception for one instance.
-- `scheduleTask(taskId, date)`: Map a task to a specific calendar date.
-- `validateTaskSchedule(taskId, date)`: Verify if a task can be scheduled.
-
-### Provider & Settings (`providers:*`, `settings:*`)
-- `getCalendarSources()`: List all configured sources.
-- `revalidateRemoteCalendars(force?)`: Refresh GCal/CalDAV/ICS feeds.
-- `reloadProviderNow(calendarId)`: Force deep sync for one provider.
-- `getSettings()` / `updateSettings(...)`: Read and write plugin configuration.
-
-### System Access (`system:full-access`)
-- `getInternalState()`: Unsafe access to `plugin`, `cache`, and `registry` instances.
+* **Events**:
+  * `GET /api/v1/events` -> Returns JSON array of events matching criteria (`events:read`). Query parameters: `start` (ISO/ms), `end` (ISO/ms), `calendar` (IDs), `query` (text search), `isTask` (bool), `isCompleted` (bool).
+  * `GET /api/v1/events/:id` -> Detailed event object & source file path (`events:read`).
+  * `POST /api/v1/events` -> Create event in source (`events:write`).
+  * `PUT /api/v1/events/:id` -> Update event details (`events:write`).
+  * `DELETE /api/v1/events/:id` -> Remove or suppress event (`events:write`).
+* **UI Controls**:
+  * `POST /api/v1/ui/open-calendar` -> Open main calendar leaf (`ui:open-calendar`).
+  * `POST /api/v1/ui/open-sidebar` -> Focus right sidebar (`ui:open-sidebar`).
+  * `POST /api/v1/ui/change-view` -> Switch view (e.g., `timeGridWeek`) (`ui:change-view`).
+* **System/Sync**:
+  * `GET /api/v1/calendars` -> List configured calendars and sources (`providers:read`).
+  * `POST /api/v1/providers/revalidate` -> Trigger background sync/reload (`providers:write`).
+  * `GET / PUT /api/v1/settings` -> Read/update plugin settings (`settings:read`/`settings:write`).
 
 ---
 
-Direct data access via `loadData()` or `saveData()` remains blocked to enforce the `EventCache` as the single source of truth.
-
 ## Data Flow
 
-1. External plugin acquires `PublicAPI` from the plugin registry.
-2. `requestAccess()` prompts the user and persists a token on approval.
-3. `withToken()` returns a bound `AuthorizedAPI` instance.
-4. `AuthorizedAPI` delegates to `InternalAPI`, which uses `PluginState` to reach `EventCache` and `ProviderRegistry`.
+```mermaid
+sequenceDiagram
+    participant CLI as External Script / CLI
+    participant Server as LocalServer
+    participant API as PublicAPI / AuthorizedAPI
+    participant Cache as EventCache
+    participant Registry as ProviderRegistry
+
+    CLI->>Server: HTTP GET /api/v1/events (Bearer Token)
+    Server->>API: withToken(token)
+    API-->>Server: return AuthorizedAPI
+    Server->>API: getEvents(criteria)
+    API->>Cache: getEvents() / query()
+    Cache-->>API: return raw queryables
+    API-->>Server: return filtered JSON
+    Server-->>CLI: HTTP 200 OK + JSON events
+```
 
 ## Constraints and Invariants
 
-- Event state remains owned by `EventCache`. The API does not allow direct writes to storage.
-- Tokens are capability grants. Treat them as secrets and expect possible revocation.
-- API calls assume the plugin has initialized `PluginState`. Callers must handle `null` or errors gracefully.
-
-## Implementation Anchors
-
-- `src/api/FullCalendarAPI.ts`
-- `src/core/PluginState.ts`
-- `src/main.ts`
+* **Process Boundary Security**: The server binds *strictly* to `127.0.0.1` preventing network exposure.
+* **State Isolation**: Writes always flow through the [`EventCache`](eventcache.md) mutating the source file or network provider, rather than modifying memory representations.
+* **Platform Exclusions**: The [`LocalServer`](../../src/api/LocalServer.ts) checks [`PluginState.isMobile()`](../../src/main.ts#L141) and disables itself on mobile platforms to prevent Capacitor runtime errors.

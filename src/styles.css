@@ -1623,4 +1623,14 @@
   width: 100%;
 }
 
+.ofc-generated-token-container {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.ofc-token-display-input {
+  flex-grow: 1;
+  margin-right: 10px;
+}
+
 

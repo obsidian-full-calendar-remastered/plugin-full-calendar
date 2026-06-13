@@ -159,6 +159,7 @@ nav:
                 - Internationalization: user/features/i18n.md
                 - Link Notes to Remote Events: user/features/event-linked-notes.md
                 - Live Preview Decorators: user/features/live-preview.md
+                - Developer API & CLI: user/features/api.md
           - Embedded Calendars:
                   - user/embeds/index.md
                   - Deep Dive Specs: user/embeds/deep_dive.md

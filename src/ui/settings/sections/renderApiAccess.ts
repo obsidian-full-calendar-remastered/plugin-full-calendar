@@ -1,4 +1,4 @@
-import { Modal, Setting } from 'obsidian';
+import { Modal, Setting, App } from 'obsidian';
 import { PluginState } from '../../../core/PluginState';
 import type FullCalendarPlugin from '../../../main';
 import type { ApiScope, ApiTokenRecord } from '../../../types/settings';
@@ -113,24 +113,262 @@ class ApiAccessModal extends Modal {
   }
 }
 
+class GeneratePatModal extends Modal {
+  private tokenName: string = '';
+  private selectedScopes: Set<ApiScope> = new Set();
+  private onGenerate: (name: string, scopes: ApiScope[]) => void;
+
+  constructor(app: App, onGenerate: (name: string, scopes: ApiScope[]) => void) {
+    super(app);
+    this.onGenerate = onGenerate;
+  }
+
+  onOpen() {
+    const { contentEl, titleEl } = this;
+    titleEl.setText(t('api.settings.patModalTitle'));
+
+    contentEl.createEl('p', {
+      text: t('api.settings.patModalDesc')
+    });
+
+    new Setting(contentEl)
+      .setName(t('api.settings.patModalName'))
+      .setDesc(t('api.settings.patModalNameDesc'))
+      .addText(text => {
+        text.onChange(value => {
+          this.tokenName = value;
+          updateGenerateButton();
+        });
+      });
+
+    contentEl.createEl('h3', { text: t('api.settings.patModalPermissions') });
+    const scopesContainer = contentEl.createDiv({ cls: 'ofc-auth-scopes' });
+
+    API_SCOPES.forEach(scope => {
+      const row = scopesContainer.createDiv({ cls: 'ofc-auth-scope-row' });
+      if (scope.risky) {
+        row.addClass('is-risky');
+      }
+
+      const label = row.createEl('label', { cls: 'ofc-auth-scope-label' });
+      const checkbox = label.createEl('input');
+      checkbox.setAttribute('type', 'checkbox');
+      checkbox.checked = false;
+      checkbox.onchange = () => {
+        if (checkbox.checked) {
+          this.selectedScopes.add(scope.id);
+        } else {
+          this.selectedScopes.delete(scope.id);
+        }
+        updateGenerateButton();
+      };
+      label.createSpan({ text: scope.label });
+      row.createDiv({ cls: 'ofc-auth-scope-desc', text: scope.description });
+    });
+
+    const buttonContainer = contentEl.createDiv({ cls: 'ofc-auth-buttons' });
+    const cancelBtn = buttonContainer.createEl('button', {
+      text: t('api.settings.patModalCancel')
+    });
+    cancelBtn.onclick = () => this.close();
+
+    const generateBtn = buttonContainer.createEl('button', {
+      text: t('api.settings.patModalGenerate'),
+      cls: 'mod-cta'
+    });
+    generateBtn.disabled = true;
+
+    const updateGenerateButton = () => {
+      generateBtn.disabled = !this.tokenName.trim() || this.selectedScopes.size === 0;
+    };
+
+    generateBtn.onclick = () => {
+      const name = this.tokenName.trim();
+      const scopes = Array.from(this.selectedScopes);
+      this.close();
+      this.onGenerate(name, scopes);
+    };
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
+class ShowTokenModal extends Modal {
+  private token: string;
+  private name: string;
+
+  constructor(app: App, name: string, token: string) {
+    super(app);
+    this.name = name;
+    this.token = token;
+  }
+
+  onOpen() {
+    const { contentEl, titleEl } = this;
+    titleEl.setText(t('api.settings.patSuccessTitle'));
+
+    contentEl.createEl('p', {
+      text: t('api.settings.patSuccessDesc', { name: this.name }),
+      cls: 'mod-warning'
+    });
+
+    const tokenContainer = contentEl.createDiv({ cls: 'ofc-generated-token-container' });
+
+    const tokenInput = tokenContainer.createEl('input', {
+      cls: 'ofc-token-display-input'
+    });
+    tokenInput.value = this.token;
+    tokenInput.setAttribute('readonly', 'true');
+
+    const copyBtn = tokenContainer.createEl('button', { text: t('api.settings.patSuccessCopy') });
+    copyBtn.onclick = () => {
+      void (async () => {
+        await navigator.clipboard.writeText(this.token);
+        copyBtn.setText(t('api.settings.patSuccessCopied'));
+        window.setTimeout(() => copyBtn.setText(t('api.settings.patSuccessCopy')), 2000);
+      })();
+    };
+
+    const closeBtn = contentEl.createEl('button', {
+      text: t('api.settings.patSuccessClose'),
+      cls: 'mod-cta'
+    });
+    closeBtn.onclick = () => this.close();
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
 export function renderApiAccessSettings(
   containerEl: HTMLElement,
   plugin: FullCalendarPlugin,
   onChange: () => void
 ): void {
-  new Setting(containerEl).setName(t('api.settings.title')).setHeading();
+  const settings = PluginState.getSettings();
 
-  const tokenStore = PluginState.getSettings().apiTokens || {};
+  // --- 1. LOCAL REST SERVER CONFIGURATION ---
+  new Setting(containerEl).setName(t('api.settings.serverTitle')).setHeading();
+
+  new Setting(containerEl)
+    .setName(t('api.settings.serverEnable'))
+    .setDesc(t('api.settings.serverEnableDesc'))
+    .addToggle(toggle => {
+      toggle.setValue(settings.enableLocalServer).onChange(value => {
+        void (async () => {
+          settings.enableLocalServer = value;
+          await PluginState.saveSettings();
+          onChange();
+        })();
+      });
+    });
+
+  new Setting(containerEl)
+    .setName(t('api.settings.serverPort'))
+    .setDesc(t('api.settings.serverPortDesc'))
+    .addText(text => {
+      text
+        .setValue(String(settings.localServerPort))
+        .setPlaceholder('8540')
+        .onChange(value => {
+          void (async () => {
+            const port = parseInt(value, 10);
+            if (!isNaN(port) && port >= 1024 && port <= 65535) {
+              settings.localServerPort = port;
+              await PluginState.saveSettings();
+            }
+          })();
+        });
+    });
+
+  // --- 2. PERSONAL ACCESS TOKENS (PATs) ---
+  const patSetting = new Setting(containerEl).setName(t('api.settings.patTitle')).setHeading();
+
+  const tokenStore = settings.apiTokens || {};
   const tokenEntries = Object.entries(tokenStore) as TokenEntry[];
 
-  if (tokenEntries.length === 0) {
+  const pluginTokens = tokenEntries.filter(entry => entry[1].pluginId !== 'personal');
+  const personalTokens = tokenEntries.filter(entry => entry[1].pluginId === 'personal');
+
+  patSetting.addButton(btn => {
+    btn
+      .setButtonText(t('api.settings.patGenerate'))
+      .setCta()
+      .onClick(() => {
+        const modal = new GeneratePatModal(plugin.app, (name, scopes) => {
+          void (async () => {
+            const token = `ofc_pat_${crypto.randomUUID()}`;
+            tokenStore[token] = {
+              pluginId: 'personal',
+              reason: name,
+              requestedScopes: scopes,
+              grantedScopes: scopes,
+              grantedAt: Date.now()
+            };
+            settings.apiTokens = tokenStore;
+            await PluginState.saveSettings();
+            onChange();
+
+            const showModal = new ShowTokenModal(plugin.app, name, token);
+            showModal.open();
+          })();
+        });
+        modal.open();
+      });
+  });
+
+  if (personalTokens.length === 0) {
+    containerEl.createEl('p', {
+      text: t('api.settings.patNone'),
+      cls: 'setting-item-description'
+    });
+  } else {
+    personalTokens.forEach(([token, record]) => {
+      const scopeSummary = summarizeScopes(record.grantedScopes);
+      const createdStr = new Date(record.grantedAt).toLocaleDateString();
+      const lastUsedStr = record.lastUsedAt
+        ? new Date(record.lastUsedAt).toLocaleString()
+        : t('api.settings.patNeverUsed');
+
+      const desc = [
+        t('api.settings.patScopes', { scopes: scopeSummary }),
+        t('api.settings.patCreated', { date: createdStr }),
+        t('api.settings.patLastUsed', { date: lastUsedStr })
+      ].join(' · ');
+
+      new Setting(containerEl)
+        .setName(record.reason)
+        .setDesc(desc)
+        .addButton(btn => {
+          btn
+            .setButtonText(t('api.settings.revoke'))
+            .setWarning()
+            .onClick(() => {
+              void (async () => {
+                delete tokenStore[token];
+                settings.apiTokens = tokenStore;
+                await PluginState.saveSettings();
+                onChange();
+              })();
+            });
+        });
+    });
+  }
+
+  // --- 3. AUTHORIZED PLUGINS ---
+  new Setting(containerEl).setName(t('api.settings.title')).setHeading();
+
+  if (pluginTokens.length === 0) {
     containerEl.createEl('p', {
       text: t('api.settings.noAuthorizedPlugins')
     });
     return;
   }
 
-  const grouped = groupTokensByPlugin(tokenEntries);
+  const grouped = groupTokensByPlugin(pluginTokens);
 
   grouped.forEach((entries, pluginId) => {
     const grantedScopes = sanitizeScopes(entries.flatMap(entry => entry[1].grantedScopes || []));
@@ -150,7 +388,7 @@ export function renderApiAccessSettings(
                 grantedScopes: scopes
               };
             });
-            PluginState.getSettings().apiTokens = tokenStore;
+            settings.apiTokens = tokenStore;
             void PluginState.saveSettings();
             onChange();
           });
@@ -161,13 +399,15 @@ export function renderApiAccessSettings(
         btn
           .setButtonText(t('api.settings.revoke'))
           .setWarning()
-          .onClick(async () => {
-            entries.forEach(([token]) => {
-              delete tokenStore[token];
-            });
-            PluginState.getSettings().apiTokens = tokenStore;
-            await PluginState.saveSettings();
-            onChange();
+          .onClick(() => {
+            void (async () => {
+              entries.forEach(([token]) => {
+                delete tokenStore[token];
+              });
+              settings.apiTokens = tokenStore;
+              await PluginState.saveSettings();
+              onChange();
+            })();
           });
       });
   });

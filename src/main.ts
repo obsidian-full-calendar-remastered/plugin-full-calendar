@@ -71,6 +71,7 @@ export default class FullCalendarPlugin extends Plugin {
 
   // Keep a snapshot of the last saved settings to detect changes reliable
   #loadedSettings: string = '';
+  #localServer: import('./api/LocalServer').LocalServer | null = null;
 
   loadData(): Promise<unknown> {
     return Promise.reject(
@@ -146,6 +147,7 @@ export default class FullCalendarPlugin extends Plugin {
     PluginState.getProviderRegistry().registerBuiltInProviders();
 
     await this.#loadSettings(); // This now handles setting and syncing
+    await this.#setupLocalServer();
 
     await PluginState.getProviderRegistry().initializeInstances();
 
@@ -424,6 +426,9 @@ export default class FullCalendarPlugin extends Plugin {
    */
   onunload() {
     this.#clearActivityWatchAutoSync();
+    if (this.#localServer) {
+      void this.#localServer.stop();
+    }
     if (this.#notificationManager) {
       this.#notificationManager.unload();
     }
@@ -526,11 +531,7 @@ export default class FullCalendarPlugin extends Plugin {
     // Update the snapshot
     this.#loadedSettings = newSettingsString;
     this.#setupActivityWatchAutoSync();
-
-    // This manual call is now redundant and will be removed.
-    // if (this.notificationManager) {
-    //   this.notificationManager.update(PluginState.getSettings());
-    // }
+    await this.#setupLocalServer();
   }
 
   async #persistData() {
@@ -628,5 +629,29 @@ export default class FullCalendarPlugin extends Plugin {
 
       processBatch();
     });
+  }
+
+  async #setupLocalServer(): Promise<void> {
+    if (PluginState.isMobile()) {
+      return;
+    }
+    const settings = PluginState.getSettings();
+    if (this.#localServer) {
+      if (!settings.enableLocalServer || this.#localServer.port !== settings.localServerPort) {
+        await this.#localServer.stop();
+        this.#localServer = null;
+      }
+    }
+    if (settings.enableLocalServer && !this.#localServer) {
+      const { LocalServer } = await import('./api/LocalServer');
+      this.#localServer = new LocalServer(this.api, settings.localServerPort);
+      try {
+        await this.#localServer.start();
+      } catch (err: unknown) {
+        const errorObj = err as Error;
+        showNotice(`Full Calendar REST server failed to start: ${errorObj.message || String(err)}`);
+        this.#localServer = null;
+      }
+    }
   }
 }

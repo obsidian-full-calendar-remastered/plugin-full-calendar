@@ -603,9 +603,7 @@ export function fromEventApi(
           type: 'single',
           date: startDate,
           ...(startDate !== endDate ? { endDate } : { endDate: null }),
-          completed: extendedProps.isTask
-            ? ((taskCompleted as unknown as string | false | null | undefined) ?? false)
-            : (taskCompleted as unknown as string | false | null | undefined)
+          completed: extendedProps.isTask ? (taskCompleted ?? false) : taskCompleted
         })
   };
 }

@@ -216,6 +216,10 @@ function createAuthorizedApi(tokenRecord: ApiTokenRecord): AuthorizedAPI {
       assertScope(grantedScopes, 'events:read');
       return internal.getEventDetails(id);
     },
+    getEvents: (criteria: EventFilterCriteria, sorts?: EventSortCriteria[]) => {
+      assertScope(grantedScopes, 'events:read');
+      return internal.getEvents(criteria, sorts);
+    },
     createEvent: (calendarId: string, event: OFCEvent, options?: { silent?: boolean }) => {
       assertScope(grantedScopes, 'events:write');
       return cache.addEvent(calendarId, event, options);
@@ -322,6 +326,7 @@ export interface AuthorizedAPI {
   getAllEvents(): unknown[];
   getEventById(id: string): OFCEvent | null;
   getEventDetails(id: string): ApiEventDetails;
+  getEvents(criteria: EventFilterCriteria, sorts?: EventSortCriteria[]): QueryableEvent[];
   createEvent(
     calendarId: string,
     event: OFCEvent,
@@ -431,6 +436,8 @@ export class PublicAPI {
     const tokenRecord = tokenStore[token];
 
     if (tokenRecord) {
+      tokenRecord.lastUsedAt = Date.now();
+      void PluginState.saveSettings();
       return createAuthorizedApi(tokenRecord);
     }
 

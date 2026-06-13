@@ -190,6 +190,9 @@ export interface FullCalendarSettings {
   apiTokens?: Record<string, ApiTokenRecord>;
   authorizedTokens?: Record<string, { pluginId: string; reason: string; grantedAt: number }>;
 
+  enableLocalServer: boolean;
+  localServerPort: number;
+
   dev?: number | string;
   milestoneNotifierDuration?: number;
 
@@ -284,6 +287,8 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   },
   apiTokens: {},
   authorizedTokens: {},
+  enableLocalServer: false,
+  localServerPort: 8540,
   milestoneNotifierDuration: 8000,
 
   enableDefaultReminder: true,

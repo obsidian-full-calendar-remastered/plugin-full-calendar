@@ -1256,7 +1256,8 @@
         "calendarFilters": "Filtres de calendrier",
         "categoryFilters": "Filtres de catégorie",
         "appearanceOverrides": "Remplacements d'apparence",
-        "viewClipping": "Plage horaire et découpage de la vue"
+        "viewClipping": "Plage horaire et découpage de la vue",
+        "advancedBases": "Advanced Bases Filtering"
       },
       "fields": {
         "name": {
@@ -1370,6 +1371,10 @@
             "five": "5 événements",
             "ten": "10 événements"
           }
+        },
+        "basisQueryPath": {
+          "label": "Bases query file path",
+          "description": "Optional path to a .base file containing filter rules to apply on top of this workspace (e.g., queries/work.base)"
         }
       },
       "calendarTypes": {

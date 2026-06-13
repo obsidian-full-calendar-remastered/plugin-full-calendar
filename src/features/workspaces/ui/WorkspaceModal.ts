@@ -61,6 +61,7 @@ export class WorkspaceModal extends Modal {
     this.renderViewSection(body);
     this.renderCalendarFilterSection(body);
     this.renderCategoryFilterSection(body);
+    this.renderAdvancedBasesSection(body);
     this.renderAppearanceSection(body);
 
     const footer = shell.createEl('footer', {
@@ -330,6 +331,23 @@ export class WorkspaceModal extends Modal {
         });
       });
     });
+  }
+
+  private renderAdvancedBasesSection(containerEl: HTMLElement) {
+    const section = containerEl.createDiv({ cls: 'ofc-workspace-modal-section' });
+    section.createEl('h3', { text: t('modals.workspace.sections.advancedBases') });
+
+    new Setting(section)
+      .setName(t('modals.workspace.fields.basisQueryPath.label'))
+      .setDesc(t('modals.workspace.fields.basisQueryPath.description'))
+      .addText(text => {
+        text
+          .setPlaceholder('e.g., queries/work.base')
+          .setValue(this.workspace.basisQueryPath || '')
+          .onChange(value => {
+            this.workspace.basisQueryPath = value.trim() || undefined;
+          });
+      });
   }
 
   private renderAppearanceSection(containerEl: HTMLElement) {

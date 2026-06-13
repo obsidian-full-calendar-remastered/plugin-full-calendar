@@ -151,6 +151,7 @@ export class CalendarView extends ItemView implements ViewContext {
       }
 
       this.viewEnhancer = new ViewEnhancer(PluginState.getSettings());
+      await this.viewEnhancer.loadBasesFilter();
 
       const container = this.contentEl;
       container.empty();

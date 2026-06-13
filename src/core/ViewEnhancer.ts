@@ -38,6 +38,10 @@ export class ViewEnhancer {
     this.workspaceManager.updateSettings(newSettings);
   }
 
+  public async loadBasesFilter(): Promise<void> {
+    await this.workspaceManager.loadBasesFilter();
+  }
+
   /**
    * The main enhancement pipeline.
    * Takes raw sources from the cache and returns the final, filtered, and

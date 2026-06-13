@@ -20,6 +20,7 @@ import { StatusBarManager } from './features/statusbar/StatusBarManager';
 import { LazySettingsTab } from './ui/settings/LazySettingsTab';
 import { ensureCalendarIds, migrateAndSanitizeSettings } from './ui/settings/utilsSettings';
 import { PLUGIN_SLUG } from './types';
+import { DEPRECATED_PROVIDERS } from './ui/settings/deprecations';
 import EventCache from './core/EventCache';
 import { manageTimezone } from './features/timezone/Timezone';
 import { Plugin, TFile, App, EventRef } from 'obsidian';
@@ -214,6 +215,17 @@ export default class FullCalendarPlugin extends Plugin {
     this.registerEvent(
       this.app.metadataCache.on('changed', file => {
         void PluginState.getProviderRegistry().handleFileUpdate(file);
+
+        // If the modified file is the active workspace's Bases query file, trigger cache resync to reload it
+        const activeWorkspaceId = PluginState.getSettings().activeWorkspace;
+        if (activeWorkspaceId) {
+          const activeWorkspace = PluginState.getSettings().workspaces.find(
+            w => w.id === activeWorkspaceId
+          );
+          if (activeWorkspace && activeWorkspace.basisQueryPath === file.path) {
+            PluginState.getCache().resync();
+          }
+        }
       })
     );
     this.registerEvent(
@@ -468,6 +480,28 @@ export default class FullCalendarPlugin extends Plugin {
     // Check if we need to show the changelog
     const { checkAndShowWhatsNew } = await import('./ui/settings/changelogs/renderWhatsNew');
     checkAndShowWhatsNew(this);
+
+    // Check for deprecated provider types in calendar sources
+    const deprecatedItems: import('./ui/modals/DeprecationWarningModal').DeprecatedSourceItem[] =
+      [];
+    const sources = migratedSettings.calendarSources || [];
+    for (const source of sources) {
+      if (source.type in DEPRECATED_PROVIDERS) {
+        const info = DEPRECATED_PROVIDERS[source.type];
+        deprecatedItems.push({
+          name: source.name || 'Unnamed',
+          typeName: info.displayName,
+          message: info.message
+        });
+      }
+    }
+
+    if (deprecatedItems.length > 0) {
+      this.app.workspace.onLayoutReady(async () => {
+        const { DeprecationWarningModal } = await import('./ui/modals/DeprecationWarningModal');
+        new DeprecationWarningModal(this.app, deprecatedItems).open();
+      });
+    }
   }
 
   /**

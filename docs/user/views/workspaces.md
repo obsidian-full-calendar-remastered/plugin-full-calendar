@@ -34,8 +34,38 @@ Tips:
 
 Workspace switching applies incremental updates where possible (sources, filters, and view) to keep transitions snappy even on large calendars.
 
+## Advanced Bases Filtering
+
+For advanced workflows, you can apply Obsidian Bases query logic directly to a workspace. This acts as an overlay filter on top of the workspace's configured calendar sources.
+
+### Setting Up Bases Filtering
+
+1. In the **Workspaces** settings tab, click **Edit** on your workspace.
+2. In the **Advanced Bases Filtering** section, enter the path to your `.base` file (e.g., `queries/work.base`).
+3. Click **Save**.
+
+Once configured, the calendar will automatically parse the `.base` file and hide any events whose underlying notes do not match the Base's YAML filters.
+
+### Supported Filter Syntax
+
+The workspace filter evaluator supports the standard Obsidian Bases query rules:
+
+- **Logical Groups**: `and`, `or`, `not`
+- **File Toggles**:
+    - `file.hasTag("tag")`
+    - `file.inFolder("folder")`
+    - `file.ext == "md"`
+- **Metadata Properties**:
+    - Equals comparison: `status == "done"`
+    - Existence check: `priority` or `date`
+
+!!! note "Performance Optimization"
+    To keep UI transitions fast and snappy, the workspace's `.base` filter file is read and parsed asynchronously when switching workspaces or opening the calendar. The filter is cached in memory and applied instantaneously to your events.
+
 ## Troubleshooting
 
 - If a source isn’t visible, check that it’s enabled for the current workspace.
 - Category filters are additive; clear them to see all events.
 - You can always return to an "All Events" default workspace.
+- **Bases Filtering Issues**: Verify that the `.base` file path is correct relative to the vault root, and ensure the `.base` file's YAML filters are valid.
+

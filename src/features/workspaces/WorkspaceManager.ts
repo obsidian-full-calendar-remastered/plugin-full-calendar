@@ -19,7 +19,9 @@ import { FullCalendarSettings, WorkspaceSettings } from '../../types/settings';
 import { EventInput, EventSourceInput } from '@fullcalendar/core';
 import { OFCEventSource, CachedEvent } from '../../core/EventCache';
 import { toEventInput } from '../../core/interop';
-import { activeDocument } from 'obsidian';
+import { activeDocument, TFile, parseYaml } from 'obsidian';
+import { evaluateBaseFilter, BaseFilter, BaseFile } from './bases/BasesFilterEvaluator';
+import { PluginState } from '../../core/PluginState';
 
 // Copied from view.ts to break circular dependency.
 function getCalendarColors(color: string | null | undefined): {
@@ -61,9 +63,48 @@ function getCalendarColors(color: string | null | undefined): {
 
 export class WorkspaceManager {
   private settings: FullCalendarSettings;
+  private cachedBasesFilter: BaseFilter | null = null;
+  private cachedBasesQueryPath: string | null = null;
 
   constructor(settings: FullCalendarSettings) {
     this.settings = settings;
+  }
+
+  /**
+   * Asynchronously loads and parses the active workspace's Bases query file,
+   * caching the parsed filter tree in memory.
+   */
+  public async loadBasesFilter(): Promise<void> {
+    const workspace = this.getActiveWorkspace();
+    const queryPath = workspace?.basisQueryPath;
+
+    if (!queryPath) {
+      this.cachedBasesFilter = null;
+      this.cachedBasesQueryPath = null;
+      return;
+    }
+
+    if (queryPath === this.cachedBasesQueryPath) {
+      return; // Already loaded/cached
+    }
+
+    try {
+      const app = PluginState.getPlugin().app;
+      const file = app.vault.getAbstractFileByPath(queryPath);
+      if (file instanceof TFile) {
+        const content = await app.vault.read(file);
+        const baseData = parseYaml(content) as BaseFile;
+        this.cachedBasesFilter = baseData.filters || null;
+        this.cachedBasesQueryPath = queryPath;
+      } else {
+        this.cachedBasesFilter = null;
+        this.cachedBasesQueryPath = null;
+      }
+    } catch (e) {
+      console.error('Failed to load active workspace Bases filter:', e);
+      this.cachedBasesFilter = null;
+      this.cachedBasesQueryPath = null;
+    }
   }
 
   /**
@@ -230,7 +271,25 @@ export class WorkspaceManager {
     const filteredSources = this.filterCalendarSources(allSources);
 
     const sources = filteredSources.map(({ events, editable, color, id }): EventSourceInput => {
-      const mainEvents = events
+      // Apply Bases query filter on events first if active and loaded
+      const basesFilter = this.cachedBasesFilter;
+      let filteredCachedEvents = events;
+      if (basesFilter) {
+        const app = PluginState.getPlugin().app;
+        filteredCachedEvents = events.filter(e => {
+          const eventDetails = PluginState.getCache().store.getEventDetails(e.id);
+          const path = eventDetails?.location?.path;
+          if (!path) return true; // Keep events without file paths by default
+
+          const file = app.vault.getAbstractFileByPath(path);
+          if (file instanceof TFile) {
+            return evaluateBaseFilter(basesFilter, file, app.metadataCache);
+          }
+          return true;
+        });
+      }
+
+      const mainEvents = filteredCachedEvents
         .map((e: CachedEvent) => toEventInput(e.id, e.event, this.settings))
         .filter((e): e is EventInput => !!e);
 

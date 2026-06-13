@@ -1276,6 +1276,7 @@
         "viewConfiguration": "View Configuration",
         "calendarFilters": "Calendar Filters",
         "categoryFilters": "Category Filters",
+        "advancedBases": "Advanced Bases Filtering",
         "appearanceOverrides": "Appearance Overrides",
         "viewClipping": "View Clipping & Time Range"
       },
@@ -1297,6 +1298,10 @@
           "label": "Default date (optional)",
           "description": "Date to jump to when activating workspace (e.g., \"today\", \"2024-01-01\")",
           "placeholder": "today, next-week, 2024-01-01"
+        },
+        "basisQueryPath": {
+          "label": "Bases query file path",
+          "description": "Optional path to a .base file containing filter rules to apply on top of this workspace (e.g., queries/work.base)"
         },
         "visibleCalendars": {
           "label": "Visible calendars",

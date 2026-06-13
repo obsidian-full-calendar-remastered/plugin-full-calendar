@@ -1256,7 +1256,8 @@
         "calendarFilters": "日历过滤器",
         "categoryFilters": "分类过滤器",
         "appearanceOverrides": "外观覆盖",
-        "viewClipping": "视图裁剪和时间范围"
+        "viewClipping": "视图裁剪和时间范围",
+        "advancedBases": "Advanced Bases Filtering"
       },
       "fields": {
         "name": {
@@ -1370,6 +1371,10 @@
             "five": "5 个事件",
             "ten": "10 个事件"
           }
+        },
+        "basisQueryPath": {
+          "label": "Bases query file path",
+          "description": "Optional path to a .base file containing filter rules to apply on top of this workspace (e.g., queries/work.base)"
         }
       },
       "calendarTypes": {

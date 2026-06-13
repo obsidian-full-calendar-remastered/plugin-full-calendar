@@ -105,6 +105,9 @@ export interface WorkspaceSettings {
     categories: string[]; // List of categories to show/hide
   };
 
+  // Advanced Bases filtering integration
+  basisQueryPath?: string;
+
   // Appearance Overrides
   businessHours?: BusinessHoursSettings; // Override global business hours setting
   timelineExpanded?: boolean; // Timeline categories expanded by default
@@ -323,6 +326,7 @@ export function createDefaultWorkspace(name: string): WorkspaceSettings {
     defaultDate: undefined,
     visibleCalendars: undefined,
     categoryFilter: undefined,
+    basisQueryPath: undefined,
     businessHours: undefined,
     timelineExpanded: undefined
   };

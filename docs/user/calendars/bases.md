@@ -1,4 +1,9 @@
-# Obsidian Bases calendar
+# Obsidian Bases calendar (Deprecated)
+
+!!! warning "Deprecated"
+    The standalone **Obsidian Bases calendar provider** is deprecated and will be removed in the next major version. 
+    
+    Instead, please migrate your event files to a **[Local Folder calendar](local.md)** and use the new **[Workspaces Advanced Bases Filtering](../views/workspaces.md)** to dynamically filter your events.
 
 Use your Obsidian **Bases** tables as a read-only calendar source. This provider reads a `.base` file, applies the Base filters to your vault, and turns matching notes into calendar events.
 

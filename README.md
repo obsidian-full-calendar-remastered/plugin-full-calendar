@@ -22,7 +22,6 @@ Full Calendar supports multiple calendar sources:
 - [**ICS**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/ics/): Read-only remote or local ICS files
 - [**CalDAV**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/caldav/): Two-way sync with CalDAV servers
 - [**Google Calendar**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/gcal/): Two-way sync with Google Calendar
-- [**Bases**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/bases/): Integrate with the Obsidian Bases plugin
 
 Integrations include
 

@@ -1633,4 +1633,10 @@
   margin-right: 10px;
 }
 
+.ofc-loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
 

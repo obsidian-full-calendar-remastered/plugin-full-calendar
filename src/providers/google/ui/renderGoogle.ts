@@ -29,6 +29,18 @@ export function renderGoogleSettings(
       ])
     );
 
+  // Copy-paste Auth toggle
+  new Setting(containerEl)
+    .setName(t('google.copyPasteAuth.enable.label'))
+    .setDesc(t('google.copyPasteAuth.enable.description'))
+    .addToggle(toggle => {
+      toggle.setValue(PluginState.getSettings().googleUseCopyPasteAuth).onChange(async value => {
+        PluginState.getSettings().googleUseCopyPasteAuth = value;
+        await PluginState.saveSettings();
+        rerender();
+      });
+    });
+
   // Custom credentials toggle
   new Setting(containerEl)
     .setName(t('google.customCredentials.enable.label'))

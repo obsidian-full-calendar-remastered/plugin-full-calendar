@@ -178,6 +178,7 @@ export interface FullCalendarSettings {
   useCustomGoogleClient: boolean;
   googleClientId: string;
   googleClientSecret: string;
+  googleUseCopyPasteAuth: boolean;
   googleAccounts: GoogleAccount[];
   useCustomMicrosoftClient: boolean;
   microsoftClientId: string;
@@ -254,6 +255,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   useCustomGoogleClient: false,
   googleClientId: '',
   googleClientSecret: '',
+  googleUseCopyPasteAuth: false,
   googleAccounts: [],
   useCustomMicrosoftClient: false,
   microsoftClientId: '',

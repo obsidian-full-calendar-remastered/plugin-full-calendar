@@ -50,6 +50,7 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     useCustomGoogleClient: raw.useCustomGoogleClient ?? false,
     googleClientId: raw.googleClientId ?? '',
     googleClientSecret: raw.googleClientSecret ?? '',
+    googleUseCopyPasteAuth: raw.googleUseCopyPasteAuth ?? false,
     googleAccounts: raw.googleAccounts || [],
     useCustomMicrosoftClient: raw.useCustomMicrosoftClient ?? false,
     microsoftClientId: raw.microsoftClientId ?? '',

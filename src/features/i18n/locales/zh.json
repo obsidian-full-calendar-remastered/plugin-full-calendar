@@ -1481,7 +1481,15 @@
       "customCredsMissing": "必须在插件设置中设置自定义 Google Client ID 和 Secret。",
       "stateMismatch": "Google 认证失败。状态不匹配。",
       "success": "成功连接 Google 账户！",
-      "failed": "连接 Google 账户失败。请检查开发者控制台获取详情。"
+      "failed": "连接 Google 账户失败。请检查开发者控制台获取详情。",
+      "copyModalTitle": "Google Authorization Link",
+      "copyModalDesc": "Please copy the link below, paste it into your browser of choice, complete the authorization, and then return to Obsidian.",
+      "copyModalCopyButton": "Copy Link",
+      "copyModalCopiedButton": "Copied!",
+      "copyModalCloseButton": "Close",
+      "waitingModalTitle": "Waiting for Authentication",
+      "waitingModalDesc": "Obsidian is waiting for you to complete the authentication in your browser. Once completed, this window will close automatically.",
+      "waitingModalCancel": "Cancel"
     },
     "title": "Google 账户",
     "customCredentials": {
@@ -1527,6 +1535,12 @@
     "errors": {
       "tokenRefreshFailed": "Failed to refresh token for {{email}}. Please try connecting the account again.",
       "fetchTaskListsFailed": "Failed to fetch task lists for {{email}}. {{message}}"
+    },
+    "copyPasteAuth": {
+      "enable": {
+        "label": "Copy-paste authorization",
+        "description": "Show a popup with the authorization URL to manually copy and paste into a browser of your choice, instead of automatically opening the system default browser."
+      }
     }
   },
   "ui": {

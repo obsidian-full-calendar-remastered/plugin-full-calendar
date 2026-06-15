@@ -76,6 +76,73 @@ Use this page as a first response checklist for common issues.
 
 
 
+## Google & Outlook Calendars
+
+??? question "Google Calendar: OAuth login redirect fails"
+    <a id="google-calendar-authentication-manual-flow"></a>
+    If standard login fails or your browser cannot automatically redirect back to Obsidian (due to firewall blocks, local port restrictions, or specific sandbox/browser security settings):
+    
+    1. Go to **Settings** → **Calendars** → **Google Calendar Settings**.
+    2. Enable **Copy-paste authorization**.
+    3. Click **Login with Google**. Instead of automatically launching the browser, a modal will display the OAuth authorization URL.
+    4. Copy the URL, paste it manually into the browser of your choice, and authorize the integration.
+    5. Copy the resulting code/token and paste it back into Obsidian to complete authentication.
+
+??? question "Outlook Calendar: Account connection fails or custom token fails"
+    <a id="outlook-calendar"></a>
+    If custom token creation and account connection fails:
+    
+    - Verify the Azure app is configured for Desktop/Native flow.
+    - Verify redirect URI is exactly `http://localhost:42813/callback`.
+    - Ensure your proxy has the required Microsoft environment variables.
+    - Reconnect the account after any authorization config change.
+    
+    If events are missing:
+    
+    - Revalidate remote calendars from command or settings.
+    - Confirm the event exists in the selected Outlook calendar.
+    - Confirm the calendar source is linked to the expected Outlook account.
+
+## Special Calendars (Bases & Holidays)
+
+??? question "Bases Calendar: Troubleshooting missing events, wrong notes, or category coloring"
+    <a id="bases-calendar"></a>
+    - **Basis is now depreciated and will be removed**
+    - **No events showing**: Ensure the Bases plugin is enabled and the selected `.base` file exists; confirm your notes have a `date` (or `start`/`due`) frontmatter field.
+    - **Wrong notes included**: Refine your Base filters (tags/folder) and ensure the `.base` file is saved.
+    - **Categories missing**: Add `category` and optional `subCategory` to note frontmatter so titles render with hierarchy.
+
+??? question "Holidays Calendar: Troubleshooting holiday details or codes"
+    <a id="holidays-calendar"></a>
+    - **No holidays showing**: Verify the country code is a valid [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) code (exactly 2 uppercase letters). Check the [supported countries list](https://github.com/commenthol/date-holidays/blob/master/docs/Holidays.md).
+    - **Fewer holidays than expected**: The selected holiday type tier may be too narrow. Try **Public + Bank + Observance** or **All types** to include more tiers.
+    - **State/region code not working**: State and region codes are lowercase in date-holidays (e.g. `ca` not `CA`). Verify against the [supported countries list](https://github.com/commenthol/date-holidays/blob/master/docs/Holidays.md).
+    - **Wrong holidays for my location**: Add the state/province code to narrow down national holidays to your region. Some countries (e.g. Germany `DE`) have significant per-state variation.
+
+## Workspaces
+
+??? question "Workspaces: Troubleshooting filtering, colors, or YAML loading"
+    <a id="workspaces"></a>
+    - **No Events Displayed**: Check if you have defined category filters or Bases filters that are too restrictive. Ensure your `.base` file path is correct relative to the vault root.
+    - **Wrong Colors**: Ensure your workspace's `categorySettings` color hex codes are valid (e.g., `#ffffff`).
+    - **YAML Errors**: Validate your `.base` file using a YAML linter if the workspace fails to load.
+
+## Chrono Analyser
+
+??? question "Chrono Analyser: Troubleshooting empty insight datasets or missing events"
+    <a id="chrono-analyser"></a>
+    - **My insights look empty or incorrect**: Double-check your Insight Group configuration. The most common issues are using the wrong field, expecting AND logic between fields, or forgetting that sub-project keywords use substring matching while project/hierarchy lists use exact matching. See [matching rules](../chrono_analyser/settings.md#how-matching-works).
+    - **Events are missing from analysis**: Ensure Category Coloring is enabled if you want remote calendars included. If it is disabled, Chrono Analyser only analyzes Full Note calendar records. Also verify that the affected events have valid dates and durations.
+    - **Habit Consistency is flagging projects I do not care about**: Add those project names to **Muted Projects** or add a keyword to **Muted Sub-project Keywords** in the relevant Insight Group. See [muted rules](../chrono_analyser/settings.md#how-matching-works).
+    - **The analyser is slow or unresponsive**: Try resetting the event cache from the plugin command palette. For very large datasets, consider filtering by date or category.
+
+## Internationalization (i18n)
+
+??? question "Internationalization (i18n): Translation issues"
+    <a id="internationalization-i18n"></a>
+    - If a string appears in English, It's likely that the key has not been translated into your language yet. Help us translate it via a PR or [upload translation here](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/discussions/310).
+
+
 ## Others
 
 If the above steps don't resolve your issue, please feel free to reach out.

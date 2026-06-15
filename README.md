@@ -1,6 +1,6 @@
 <div align="right">
   <img src="https://img.shields.io/github/downloads/obsidian-full-calendar-remastered/plugin-full-calendar/total?label=Downloads" alt="Downloads" />
-  <a href="#contributors-"><img src="https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square" alt="All Contributors" /></a>
+  <a href="#contributors-"><img src="https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square" alt="All Contributors" /></a>
   <a href="https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/"><img src="https://img.shields.io/badge/Version-v_0.13.2-blue" alt="Version" /></a>
 </div>
 

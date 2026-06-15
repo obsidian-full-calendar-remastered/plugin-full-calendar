@@ -57,19 +57,7 @@ A: Insight payload items can prefill the analyzer controls automatically. This i
 
 ## Troubleshooting
 
-**Q: My insights look empty or incorrect.**  
-A: Double-check your Insight Group configuration. The most common issues are using the wrong field, expecting AND logic between fields, or forgetting that sub-project keywords use substring matching while project/hierarchy lists use exact matching.  
-➡️ [Review the rule table](settings.md#how-matching-works)
-
-**Q: Events are missing from analysis.**  
-A: Ensure Category Coloring is enabled if you want remote calendars included. If it is disabled, Chrono Analyser only analyzes Full Note calendar records. Also verify that the affected events have valid dates and durations.
-
-**Q: Habit Consistency is flagging projects I do not care about.**  
-A: Add those project names to **Muted Projects** or add a keyword to **Muted Sub-project Keywords** in the relevant Insight Group. Muting currently affects the at-risk / consistency logic rather than the whole charting system.  
-➡️ [See muted rule behavior](settings.md#how-matching-works)
-
-**Q: The analyser is slow or unresponsive.**  
-A: Try resetting the event cache from the plugin command palette. For very large datasets, consider filtering by date or category.
+See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#chrono-analyser)** for help with empty insights, missing events, muting habit projects, or responsiveness issues.
 
 ---
 

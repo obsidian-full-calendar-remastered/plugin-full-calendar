@@ -134,10 +134,6 @@ You can customize almost all [Full Calendar Configuration](../settings/fc_config
 >
 > To ensure instantaneous workspace switching, the workspace's `.base` file is parsed asynchronously when you open the calendar or switch workspaces. The parsed filter tree is cached in memory, ensuring that even with thousands of events, filtering remains fast and layout settings apply without lag.
 
----
-
 ## Troubleshooting
 
-- **No Events Displayed**: Check if you have defined category filters or Bases filters that are too restrictive. Ensure your `.base` file path is correct relative to the vault root.
-- **Wrong Colors**: Ensure your workspace's `categorySettings` color hex codes are valid (e.g., `#ffffff`).
-- **YAML Errors**: Validate your `.base` file using a YAML linter if the workspace fails to load.
+See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#workspaces)** for help with missing events, category coloring overrides, or YAML formatting issues.

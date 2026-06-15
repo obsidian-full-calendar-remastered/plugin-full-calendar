@@ -13,12 +13,13 @@
 | Tasks as schedulable blocks | [Tasks Plugin Integration](tasks-plugin-integration.md) | Pull tasks into calendar planning flow |
 | Read-only table/bases source | [Obsidian Bases Calendar](bases.md) | Display data-oriented calendar views |
 | Tasks from TaskNotes | [TaskNotes Integration](tasknotes.md) | Sync scheduled tasks from the TaskNotes plugin |
+| Offline public holidays | [Holidays Calendar](holidays.md) | Quick offline-first lookup of public and bank holidays |
 
 ## Source Directory
 
 Local editable: [Full Note](local.md), [Daily Note](dailynote.md)  
 Remote/external: [ICS](ics.md), [CalDAV](caldav.md), [Google](gcal.md), [Google Tasks](gtasks.md), [Outlook](outlook.md)  
-Integrations: [Tasks](tasks-plugin-integration.md), [TaskNotes](tasknotes.md), [Bases](bases.md), [ActivityWatch](activitywatch.md)
+Integrations: [Tasks](tasks-plugin-integration.md), [TaskNotes](tasknotes.md), [Bases](bases.md), [ActivityWatch](activitywatch.md), [Holidays](holidays.md)
 
 ## Related Sections
 
@@ -26,4 +27,4 @@ Integrations: [Tasks](tasks-plugin-integration.md), [TaskNotes](tasknotes.md), [
 - [Working with Events](../events/index.md)
 - [Troubleshooting](../guides/troubleshooting.md)
 
-Compact index: [Full Note](local.md) · [Daily Note](dailynote.md) · [ICS](ics.md) · [CalDAV](caldav.md) · [Google](gcal.md) · [Google Tasks](gtasks.md) · [Outlook](outlook.md) · [Tasks](tasks-plugin-integration.md) · [TaskNotes](tasknotes.md) · [Bases](bases.md) · [ActivityWatch](activitywatch.md) · [Architecture](../../architecture/calendars/architecture.md)
+Compact index: [Full Note](local.md) · [Daily Note](dailynote.md) · [ICS](ics.md) · [CalDAV](caldav.md) · [Google](gcal.md) · [Google Tasks](gtasks.md) · [Outlook](outlook.md) · [Holidays](holidays.md) · [Tasks](tasks-plugin-integration.md) · [TaskNotes](tasknotes.md) · [Bases](bases.md) · [ActivityWatch](activitywatch.md) · [Architecture](../../architecture/calendars/architecture.md)

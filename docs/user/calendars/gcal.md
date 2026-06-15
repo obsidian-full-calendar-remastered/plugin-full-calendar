@@ -60,6 +60,10 @@ If you prefer to maintain your own OAuth Client ID and Secret for privacy or dev
 - **Event Linked Notes**: Keep rich local meeting notes or agendas connected directly to remote Google Calendar events with automated template population. Name-based mode reuses the exact sanitized title file; deadline-based mode can keep recurring occurrences separate. See the **[Event Linked Notes Guide](../features/event-linked-notes.md)** for details.
 - **Mobile Support**: On iOS/Android, the login flow opens a blank tab first to bypass popup blockers. Ensure popups are allowed for Obsidian.
 
+## Troubleshooting & Manual Authorization
+
+See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#google-calendar-authentication-manual-flow)** for help with OAuth redirects, manual copy-paste login, or syncing issues.
+
 ---
 
 [CalDAV Two-Way Sync](caldav.md) · [iCal / ICS Support](ics.md) · [Back to Index](index.md)

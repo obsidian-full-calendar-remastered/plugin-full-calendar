@@ -135,6 +135,7 @@ nav:
                 - TaskNotes Integration: user/calendars/tasknotes.md
                 - ActivityWatch Integration: user/calendars/activitywatch.md
                 - Obsidian Bases Calendar: user/calendars/bases.md
+                - Holidays Calendar: user/calendars/holidays.md
           - Working with Events:
                 - user/events/index.md
                 - Event Management: user/events/manage.md
@@ -200,6 +201,7 @@ nav:
                 - architecture/calendars/architecture.md
                 - Outlook Provider: architecture/calendars/outlook.md
                 - Tasks Integration: architecture/calendars/tasks-integration.md
+                - Task Backlog Integration: architecture/calendars/task-backlog.md
           - Events:
                 - architecture/events/architecture.md
           - Implementations:
@@ -227,6 +229,7 @@ nav:
                 - architecture/dev-logs/index.md
                 - Calendar Load Profiling Audit: architecture/dev-logs/devlog_calendar_load_profiling_2026-04-11.md
                 - RRULE Timezone Date-Shift Fix: architecture/dev-logs/devlog_rrule_timezone_patch.md
+                - Weather Forecast Integration: architecture/dev-logs/devlog_weather_integration.md
     - Reference:
           - Data Integrity and File Modifications: user/reference/data_integrity.md
           - Outbound Network Requests: user/reference/network_requests.md

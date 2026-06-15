@@ -59,18 +59,6 @@ Controls the [FullCalendar display mode](https://fullcalendar.io/docs/event_rend
 - **Cache.** Results are cached per `(country × state × region × holiday types × display style × year)` in `localStorage` for 30 days. Changing any setting invalidates the cache automatically on next load.
 - **Range.** On initial populate, the current year ± 1 are pre-loaded. Additional years are loaded on demand as the user navigates.
 
----
-
 ## Troubleshooting
 
-**No holidays showing**
-: Verify the country code is a valid [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) code (exactly 2 uppercase letters). Check the [supported countries list](https://github.com/commenthol/date-holidays/blob/master/docs/Holidays.md).
-
-**Fewer holidays than expected**
-: The selected holiday type tier may be too narrow. Try **Public + Bank + Observance** or **All types** to include more tiers.
-
-**State/region code not working**
-: State and region codes are lowercase in date-holidays (e.g. `ca` not `CA`). Verify against the [supported countries list](https://github.com/commenthol/date-holidays/blob/master/docs/Holidays.md).
-
-**Wrong holidays for my location**
-: Add the state/province code to narrow down national holidays to your region. Some countries (e.g. Germany `DE`) have significant per-state variation.
+See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#holidays-calendar)** for help with missing holidays, state/region codes, or local variations.

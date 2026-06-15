@@ -82,8 +82,6 @@ If no filters are defined, all vault files are considered.
 
 ## Troubleshooting
 
-- **No events showing:** ensure the Bases plugin is enabled and the selected `.base` file exists; confirm your notes have a `date` (or `start`/`due`) frontmatter field.
-- **Wrong notes included:** refine your Base filters (tags/folder) and ensure the `.base` file is saved.
-- **Categories missing:** add `category` and optional `subCategory` to note frontmatter so titles render with hierarchy.
+See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#bases-calendar)** for help with missing events, filtering issues, or category coloring.
 
 For more about Bases, see the official help: https://help.obsidian.md/bases

@@ -57,15 +57,4 @@ Clearly, this is a significant burden on **free, open-source project**, and the 
 
 ## Troubleshooting
 
-If custom tocken creationg and account connect fails:
-
-- Verify the Azure app is configured for Desktop/Native flow
-- Verify redirect URI is exactly `http://localhost:42813/callback`
-- Ensure proxy has required Microsoft env vars
-- Reconnect the account after any auth config change
-
-If events are missing:
-
-- Revalidate remote calendars from command/settings
-- Confirm the event exists in the selected Outlook calendar
-- Confirm the calendar source is linked to the expected Outlook account
+See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#outlook-calendar)** for help with custom app configuration, redirect URI issues, or missing events.

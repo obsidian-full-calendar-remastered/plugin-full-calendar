@@ -206,11 +206,18 @@ describe('noteUtils', () => {
       expect(result).toBe('---\nkey: value\n---\n# Heading\nContent goes here');
     });
 
-    it('should behave nicely when contents already start with a newline', () => {
+    it('should not duplicate the separator newline when contents already start with a newline', () => {
       const page = '\n# Heading\nContent goes here';
       const yaml = 'key: value';
       const result = replaceFrontmatter(page, yaml);
-      expect(result).toBe('---\nkey: value\n---\n\n# Heading\nContent goes here');
+      expect(result).toBe('---\nkey: value\n---\n# Heading\nContent goes here');
+    });
+
+    it('should collapse repeated blank lines between frontmatter and contents', () => {
+      const page = '---\nkey: old\n---\n\n\n# Heading\nContent goes here';
+      const yaml = 'key: value';
+      const result = replaceFrontmatter(page, yaml);
+      expect(result).toBe('---\nkey: value\n---\n# Heading\nContent goes here');
     });
 
     it('should handle empty contents without error', () => {

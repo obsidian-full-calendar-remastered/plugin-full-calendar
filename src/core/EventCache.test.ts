@@ -760,7 +760,7 @@ describe('editable calendars', () => {
           startTime: '11:00',
           endTime: '12:00',
           endDate: null
-        } as OFCEvent,
+        },
         mockLocation()
       ];
 
@@ -778,9 +778,9 @@ describe('editable calendars', () => {
         startTime: '13:00',
         endTime: '14:00',
         endDate: null
-      } as OFCEvent);
+      });
 
-      expect(calendar.updateEvent).toHaveBeenCalledWith(
+      expect(calendar.updateEvent.mock.calls[0]).toEqual([
         expect.objectContaining({ persistentId: 'series-uid' }),
         expect.objectContaining({ recurrenceId: '2026-06-08T09:00' }),
         expect.objectContaining({
@@ -789,7 +789,7 @@ describe('editable calendars', () => {
           recurrenceId: '2026-06-08T09:00',
           date: '2026-06-11'
         })
-      );
+      ]);
       expect(cache.store.getEventById(id)).toEqual(
         expect.objectContaining({
           uid: 'series-uid',

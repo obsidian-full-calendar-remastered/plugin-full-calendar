@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: June 2, 2026_
+_Last updated: June 17, 2026_
 
 **Full Calendar (Remastered) Plugin** is a privacy-first plugin for Obsidian that allows you to synchronize your calendar data and manage it within Obsidian. 
 
@@ -29,25 +29,46 @@ We do **not** access any other account data or local vault files beyond what is 
 
 The accessed calendar data is used **solely for displaying and managing events** within Obsidian. The plugin caches calendar data during the session and it is discarded when the session ends. **No Data** is stored in any remote servers. All data is fetched in real-time or synced directly between Obsidian and your providers.
 
-## Data Protection and Security
+## Data Protection, Storage, and Security
 
-- Calendar data is transmitted **directly between Obsidian and Google/Microsoft/CalDAV/ICS servers** using secure HTTPS connections (or localhost for local companions).
-- No calendar data is stored on our intermediary server.
-- During the OAuth authentication process, our intermediary server **temporarily receives an authorization code**, which is used only to complete the authentication flow and is **immediately discarded** after use.
-- We do **not store**, share, or process any user data beyond what is necessary to facilitate authentication and access to your calendars.
+### **Security & Data Protection**
+
+We take appropriate technical and organizational measures to protect user data:
+
+* **Encryption in transit:** All calendar and task data is transmitted securely using HTTPS/TLS when communicating with Google, Microsoft, and other providers.
+* **Local storage only:** OAuth tokens and configuration data are stored locally within the user’s Obsidian vault and are NEVER transmitted to or stored on external servers controlled by the plugin / third party.
+* **No persistent external storage:** Calendar data is cached only in memory during runtime and is discarded after the session ends.
+* **Limited data access:** The plugin accesses only the minimum necessary calendar data required to provide its functionality, and data is never shared with third parties.
+* **User-controlled environment:** Data security within the local vault depends on user-controlled protections such as operating system security, filesystem permissions, and Obsidian vault / device-level encryption.
+
+We do not sell, transfer, or use user data for advertising purposes, and we do not access user data outside of the functioning of the plugin.
+
+### **Data Transmission**
+
+Calendar and task data is transmitted directly between the user’s device and the respective calendar providers (Google, Microsoft, CalDAV, ICS) over secure HTTPS connections. The plugin does not proxy or store this data.
+
+### **Intermediary Server Usage**
+
+During OAuth authentication (when using the default client), a temporary intermediary server hosted on Vercel processes the authorization code solely to complete the OAuth flow. This data:
+
+* Is processed in memory only
+* Is not logged or stored
+* Is immediately discarded after use
 
 ## OAuth Scopes
 
 For Google integrations, the plugin requests the following OAuth scopes:
 
-- `https://www.googleapis.com/auth/calendar.events` — View and edit events on all your calendars (core functionality of the plugin).
-- `https://www.googleapis.com/auth/calendar.readonly` — See and download any calendar you can access using your Google Calendar.
+- `https://www.googleapis.com/auth/calendar.events` — View and edit events on all your calendars (required for core calendar synchronization and event management).
+- `https://www.googleapis.com/auth/calendar.readonly` — See and download any calendar you can access using your Google Calendar (required to list and import your calendars).
+- `https://www.googleapis.com/auth/tasks` — Create, edit, organize, and permanently delete your tasks (required for Google Tasks synchronization and management).
+- `email` — View your primary email address. This is used solely to identify and display the connected account inside the plugin settings interface within Obsidian.
 
-These scopes are required to enable synchronization between Google Calendar and Obsidian and are used strictly for their intended purpose.
+These scopes are used strictly for their designated purposes to enable integration with Obsidian.
 
 ## Opt out Policy
 
-- You are free to opt out at any time — simply disconnect your accounts and all your synchronized calendar data will be immediately removed from Obsidian.
+- You are free to opt out at any time — simply disconnect your accounts and all your synchronized calendar data will be immediately removed from FCR Plugin.
 
 ## Contact
 

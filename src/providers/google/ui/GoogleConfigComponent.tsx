@@ -14,6 +14,7 @@ import FullCalendarPlugin from '../../../main';
 import { GoogleApiError } from '../auth/request';
 import { GoogleAuthManager } from '../auth/GoogleAuthManager'; // Import the manager
 import { t } from '../../../features/i18n/i18n';
+import { CredentialStore } from '../../../features/credentials/CredentialStore';
 
 // ADD this new type definition. It accurately describes what the component passes back.
 type SelectedGoogleCalendar = {
@@ -167,8 +168,11 @@ export const GoogleConfigComponent: React.FC<GoogleConfigComponentProps> = ({
       container.empty(); // Clear previous content
 
       accounts.forEach(account => {
+        const hasToken = CredentialStore.hasGoogleRefreshToken(account.id);
+        const displayName =
+          account.email + (hasToken ? '' : ` (${t('settings.credentials.keychainMissing')})`);
         new Setting(container)
-          .setName(account.email)
+          .setName(displayName)
           .addButton(button =>
             button
               .setButtonText(t('google.buttons.selectCalendars'))

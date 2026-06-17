@@ -57,4 +57,5 @@ Clearly, this is a significant burden on **free, open-source project**, and the 
 
 ## Troubleshooting
 
-See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#outlook-calendar)** for help with custom app configuration, redirect URI issues, or missing events.
+*   **Outlook Setup:** See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#outlook-calendar)** for help with custom app configuration, redirect URI issues, or missing events.
+*   **Android and iOS Authentication Workaround:** For step-by-step instructions on authenticating Outlook accounts on mobile devices using vault synchronization, see **[Mobile Authentication Workaround](../guides/troubleshooting.md#mobile-authentication-workaround)**.

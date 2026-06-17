@@ -12,6 +12,7 @@ import { CalendarInfo } from '../../../types';
 import { GoogleAccount } from '../../../types/settings';
 // generateCalendarId import removed - was unused
 import { t } from '../../../features/i18n/i18n';
+import { CredentialStore } from '../../../features/credentials/CredentialStore';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const PROXY_REFRESH_URL = 'https://gcal-proxy-server.vercel.app/api/google/refresh';
@@ -51,14 +52,21 @@ export class GoogleAuthManager {
     isLegacy: boolean // This parameter is now effectively unused but safe to keep
   ): Promise<string | null> {
     const settings = PluginState.getSettings();
-    if (!authObj.refreshToken) {
+    const accountId = 'id' in authObj ? authObj.id : null;
+    const refreshToken = accountId
+      ? CredentialStore.getGoogleRefreshToken(accountId)
+      : authObj.refreshToken;
+    if (!refreshToken) {
       const email = 'email' in authObj ? authObj.email : 'unknown';
-      const id = 'id' in authObj ? authObj.id : 'unknown';
+      const id = accountId || 'unknown';
       console.error(`No refresh token available. Account: ${email} (ID: ${id})`);
       return null;
     }
 
     const clientId = settings.useCustomGoogleClient ? settings.googleClientId : PUBLIC_CLIENT_ID;
+    const clientSecret = settings.useCustomGoogleClient
+      ? CredentialStore.getGoogleClientSecret()
+      : '';
 
     let tokenUrl: string;
     let requestBody: string;
@@ -69,8 +77,8 @@ export class GoogleAuthManager {
       const body = new URLSearchParams({
         grant_type: 'refresh_token',
         client_id: clientId,
-        refresh_token: authObj.refreshToken,
-        client_secret: settings.googleClientSecret
+        refresh_token: refreshToken,
+        client_secret: clientSecret
       });
       requestBody = body.toString();
       requestHeaders = { 'Content-Type': 'application/x-www-form-urlencoded' };
@@ -78,7 +86,7 @@ export class GoogleAuthManager {
       tokenUrl = PROXY_REFRESH_URL;
       const body = {
         client_id: clientId,
-        refresh_token: authObj.refreshToken
+        refresh_token: refreshToken
       };
       requestBody = JSON.stringify(body);
       requestHeaders = { 'Content-Type': 'application/json' };
@@ -95,11 +103,21 @@ export class GoogleAuthManager {
 
       if (response.status >= 200 && response.status < 300) {
         const data = response.json as GoogleTokenResponse;
-        // Mutate the object that was passed in
-        authObj.accessToken = data.access_token;
+        // Mutate the object that was passed in / save tokens
+        if (accountId) {
+          CredentialStore.setGoogleAccessToken(accountId, data.access_token);
+          if (data.refresh_token) {
+            CredentialStore.setGoogleRefreshToken(accountId, data.refresh_token);
+          }
+        } else {
+          authObj.accessToken = data.access_token;
+          if (data.refresh_token) {
+            authObj.refreshToken = data.refresh_token;
+          }
+        }
         authObj.expiryDate = Date.now() + data.expires_in * 1000;
 
-        // Save settings to persist the new token
+        // Save settings to persist the new token expiry
         await PluginState.saveSettings();
         return data.access_token;
       }
@@ -112,11 +130,11 @@ export class GoogleAuthManager {
       // Only wipe credentials if it's a permanent auth error (400 Bad Request, 401 Unauthorized)
       // This protects against 500s or other temporary issues where we shouldn't lose the user's login.
       if (response.status === 400 || response.status === 401) {
-        if (!isLegacy && 'id' in authObj) {
-          const account = PluginState.getSettings().googleAccounts.find(a => a.id === authObj.id);
+        if (!isLegacy && accountId) {
+          const account = PluginState.getSettings().googleAccounts.find(a => a.id === accountId);
           if (account) {
-            account.accessToken = null;
-            account.refreshToken = null;
+            CredentialStore.setGoogleAccessToken(accountId, null);
+            CredentialStore.setGoogleRefreshToken(accountId, null);
             account.expiryDate = null;
           }
         }
@@ -157,8 +175,9 @@ export class GoogleAuthManager {
       return null;
     }
 
-    if (account.accessToken && account.expiryDate && Date.now() < account.expiryDate - 60000) {
-      return account.accessToken;
+    const accessToken = CredentialStore.getGoogleAccessToken(account.id);
+    if (accessToken && account.expiryDate && Date.now() < account.expiryDate - 60000) {
+      return accessToken;
     }
     return this.refreshAccessToken(account, false);
 
@@ -189,7 +208,9 @@ export class GoogleAuthManager {
     const newAccount: GoogleAccount = {
       id: `gcal_${userEmail}`,
       email: userEmail,
-      ...auth
+      refreshToken: null,
+      accessToken: null,
+      expiryDate: auth.expiryDate
     };
 
     const existingAccounts = PluginState.getSettings().googleAccounts || [];
@@ -200,6 +221,11 @@ export class GoogleAuthManager {
       existingAccounts.push(newAccount);
     }
     PluginState.getSettings().googleAccounts = existingAccounts;
+
+    // Save tokens securely
+    CredentialStore.setGoogleRefreshToken(newAccount.id, auth.refreshToken);
+    CredentialStore.setGoogleAccessToken(newAccount.id, auth.accessToken);
+
     await PluginState.saveSettings();
 
     // Notify UI that a Google account was added

@@ -62,7 +62,8 @@ If you prefer to maintain your own OAuth Client ID and Secret for privacy or dev
 
 ## Troubleshooting & Manual Authorization
 
-See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#google-calendar-authentication-manual-flow)** for help with OAuth redirects, manual copy-paste login, or syncing issues.
+*   **Manual Authorization:** See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#google-calendar-authentication-manual-flow)** for help with OAuth redirects and manual copy-paste login.
+*   **Android and iOS Authentication Workaround:** For step-by-step instructions on authenticating Google Calendar/Tasks on mobile devices using vault synchronization, see **[Mobile Authentication Workaround](../guides/troubleshooting.md#mobile-authentication-workaround)**.
 
 ---
 

@@ -29,6 +29,15 @@ The plugin enforces a granular permission model. When a third-party tool request
 *   **Audit regularly**: Review your Authorized Tokens list and revoke access for any plugins you no longer use.
 *   **Least Privilege**: Only grant the minimum scopes required for a plugin to function.
 
+## Secure Credential Storage
+
+Full Calendar supports secure credential storage for sensitive data (Google Calendar, Outlook refresh/access tokens, custom Google client secrets, and CalDAV passwords).
+
+*   **Keychain Storage (Default, Recommended)**: Automatically stores credentials in your OS keychain via Obsidian's native `SecretStorage` API. Plaintext passwords/tokens are nullified inside `data.json` to prevent local exposure.
+*   **Plaintext Storage (Sync Compatibility)**: Enable **Store credentials in plaintext (sync compatibility)** under **Settings → Integrations** if you sync your Obsidian vault across devices and want to avoid re-logging on each device.
+
+For architectural internals and code structure, see [Settings Architecture](../../architecture/settings/architecture.md#credential-storage-and-keychain-migration).
+
 ---
 
 [Reminders](reminders.md) · [Calendar Sources](sources.md) · [Back to Index](index.md)

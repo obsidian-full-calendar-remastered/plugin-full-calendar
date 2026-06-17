@@ -19,6 +19,7 @@ import { t } from '../../../features/i18n/i18n';
 import { PluginState } from '../../../core/PluginState';
 import { CopyTextModal } from '../../../ui/modals/CopyTextModal';
 import { LoadingModal } from '../../../ui/modals/LoadingModal';
+import { CredentialStore } from '../../../features/credentials/CredentialStore';
 
 // =================================================================================================
 // CONSTANTS
@@ -258,7 +259,10 @@ export async function startGoogleLogin(
   const clientId = settings.useCustomGoogleClient ? settings.googleClientId : PUBLIC_CLIENT_ID;
   const redirectUri = isMobile ? MOBILE_REDIRECT_URI : DESKTOP_REDIRECT_URI;
 
-  if (settings.useCustomGoogleClient && (!clientId || !settings.googleClientSecret)) {
+  const clientSecret = settings.useCustomGoogleClient
+    ? CredentialStore.getGoogleClientSecret()
+    : '';
+  if (settings.useCustomGoogleClient && (!clientId || !clientSecret)) {
     showNotice(t('google.auth.customCredsMissing'));
     // Close the mobile window if we opened one
     if (mobileWindow) {
@@ -324,13 +328,16 @@ export async function exchangeCodeForToken(
   if (settings.useCustomGoogleClient) {
     // Legacy path: User provides their own credentials, talk to Google directly.
     tokenUrl = GOOGLE_TOKEN_URL;
+    const clientSecret = settings.useCustomGoogleClient
+      ? CredentialStore.getGoogleClientSecret()
+      : '';
     const body = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: clientId,
       code: code,
       code_verifier: oauthState.pkce.verifier,
       redirect_uri: redirectUri,
-      client_secret: settings.googleClientSecret
+      client_secret: clientSecret
     });
     requestBody = body.toString();
     requestHeaders = { 'Content-Type': 'application/x-www-form-urlencoded' };

@@ -235,9 +235,11 @@ export interface FullCalendarSettings {
   weatherHide: boolean;
   weatherInputMode: 'city' | 'coords';
   weatherUnit?: 'C' | 'F';
+  useLegacyPlaintextCredentials: boolean;
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
+  useLegacyPlaintextCredentials: false,
   calendarSources: [],
   defaultCalendar: 0,
   firstDay: 0,

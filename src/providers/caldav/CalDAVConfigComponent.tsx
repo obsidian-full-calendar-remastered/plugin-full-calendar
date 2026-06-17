@@ -7,6 +7,7 @@ import { PasswordInput } from '../../ui/components/forms/PasswordInput';
 import { CalDAVProviderConfig } from './typesCalDAV';
 import { importCalendars } from './import_caldav';
 import { t } from '../../features/i18n/i18n';
+import { CredentialStore } from '../../features/credentials/CredentialStore';
 
 interface CalDAVConfigComponentProps {
   config: Partial<CalDAVProviderConfig>;
@@ -21,7 +22,12 @@ export const CalDAVConfigComponent: React.FC<CalDAVConfigComponentProps> = ({
 }) => {
   const [url, setUrl] = useState(config.url || '');
   const [username, setUsername] = useState(config.username || '');
-  const [password, setPassword] = useState(config.password || '');
+  const [password, setPassword] = useState(() => {
+    if (config.id) {
+      return CredentialStore.getCalDAVPassword(config.id) || config.password || '';
+    }
+    return config.password || '';
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitText, setSubmitText] = useState(t('settings.calendars.caldav.importButton'));
 

@@ -54,8 +54,20 @@ The `CalendarSettings` component flushes any pending debounced save in its `comp
 - If no TaskNotes source exists, the integration section provides a guided prompt to add a TaskNotes source first.
 - When configured, integration controls update source-level settings (`dispatchMode`) and persist through the standard settings save path.
 
+## Credential Storage and Keychain Migration
+
+To protect sensitive keys and user session data, Full Calendar isolates credential storage using a bi-directional migration system:
+
+- **Storage Manager**: [CredentialStore](../../../src/features/credentials/CredentialStore.ts) wraps all access to tokens and passwords. It queries the `useLegacyPlaintextCredentials` setting to determine whether to read/write to Obsidian's `secretStorage` or fallback to the plaintext `data.json`.
+- **Bi-directional Migration Pipeline**: Inside [utilsSettings.ts](../../../src/ui/settings/utilsSettings.ts), the pure `migrateAndSanitizeSettings(settings)` hook is invoked during settings load and save. It automatically:
+  - Moves raw settings credentials to the OS keychain and nullifies them in the state if legacy mode is disabled.
+  - Pulls credentials from the OS keychain back into settings if legacy mode is enabled.
+- **Modular Renderer**: Setting UI and user-facing controls are decoupled from the main settings view and rendered via [renderCredentialsSettings.ts](../../../src/features/credentials/ui/renderCredentialsSettings.ts).
+- **Localization**: UI warning strings are localized in [en.json](../../../src/features/i18n/locales/en.json) via `settings.credentials.keychainMissing`.
+
 ## Related User Docs
 
 - [Calendar Sources](../../user/settings/sources.md)
 - [Display and Behavior](../../user/settings/fc_config.md)
 - [Reminders and Notifications](../../user/features/reminders.md)
+- [API and Security Settings](../../user/settings/api.md)

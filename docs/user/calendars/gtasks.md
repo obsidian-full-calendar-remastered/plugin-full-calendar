@@ -50,6 +50,11 @@ Keep detailed project notes or task descriptions locally in Obsidian while keepi
 - **No Multi-Day Tasks:** Google Tasks natively only supports single due dates.
 - **No Complex Recurrence:** The Google Tasks API does not support standard recurring calendar rules (such as RRULEs). All synchronized tasks are mapped and handled as single events.
 
+## Troubleshooting & Mobile Support
+
+*   **Android and iOS Authentication Workaround:** Direct mobile authentication can fail due to mobile sandboxing. For step-by-step instructions on authenticating Google Tasks on mobile using vault synchronization, see **[Mobile Authentication Workaround](../guides/troubleshooting.md#mobile-authentication-workaround)**.
+*   **Manual Authorization:** See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#google-calendar-authentication-manual-flow)** for help with manual copy-paste login flows.
+
 ---
 
 [Google Calendar Two-Way Sync](gcal.md) · [Tasks Plugin Integration](tasks-plugin-integration.md) · [Back to Index](index.md)

@@ -8,6 +8,7 @@ import FullCalendarPlugin from '../../../main';
 import { GoogleApiError } from '../../google/auth/request';
 import { GoogleAuthManager } from '../../google/auth/GoogleAuthManager';
 import { t } from '../../../features/i18n/i18n';
+import { CredentialStore } from '../../../features/credentials/CredentialStore';
 
 type SelectedGoogleTaskList = {
   id: string;
@@ -147,8 +148,11 @@ export const GoogleTasksConfigComponent: React.FC<GoogleTasksConfigComponentProp
       container.empty();
 
       accounts.forEach(account => {
+        const hasToken = CredentialStore.hasGoogleRefreshToken(account.id);
+        const displayName =
+          account.email + (hasToken ? '' : ` (${t('settings.credentials.keychainMissing')})`);
         new Setting(container)
-          .setName(account.email)
+          .setName(displayName)
           .addButton(button =>
             button
               .setButtonText(t('google.buttons.selectTaskLists'))

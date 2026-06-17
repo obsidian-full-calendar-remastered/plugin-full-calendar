@@ -1103,6 +1103,13 @@
       "buyMeACoffee": "☕ Buy me a coffee",
       "suggestFeature": "💡 Suggest a new feature",
       "raiseIssue": "🐛 Raise an issue"
+    },
+    "credentials": {
+      "legacyToggle": {
+        "name": "Store credentials in plaintext (sync compatibility)",
+        "desc": "Enable this if you sync your Obsidian vault across devices and want to avoid logging in again on every device. Keep disabled for maximum local security (uses OS keychain)."
+      },
+      "keychainMissing": "Keychain credentials missing on this device"
     }
   },
   "modals": {

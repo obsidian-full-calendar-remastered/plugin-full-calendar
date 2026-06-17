@@ -9,6 +9,17 @@ import { FullCalendarSettings, GoogleAccount, DEFAULT_SETTINGS } from '../../typ
 import { CalendarInfo, generateCalendarId } from '../../types/calendar_settings';
 import { t } from '../../features/i18n/i18n';
 
+interface ObsidianSecretStorage {
+  getSecret(key: string): string;
+  setSecret(key: string, value: string): void;
+}
+
+interface ObsidianApp {
+  secretStorage?: ObsidianSecretStorage;
+}
+
+declare const app: ObsidianApp;
+
 /**
  * Performs all necessary migrations and sanitizations on a loaded settings object.
  * This function is pure and does not modify the plugin state directly.
@@ -56,6 +67,9 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     microsoftClientId: raw.microsoftClientId ?? '',
     microsoftProxyBaseUrl: raw.microsoftProxyBaseUrl ?? '',
     microsoftAccounts: raw.microsoftAccounts || [],
+    enableLocalServer: raw.enableLocalServer ?? false,
+    localServerPort: raw.localServerPort ?? 8540,
+    useLegacyPlaintextCredentials: raw.useLegacyPlaintextCredentials ?? false,
     businessHours: raw.businessHours || {
       enabled: false,
       daysOfWeek: [1, 2, 3, 4, 5],
@@ -210,6 +224,140 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     needsSave = true;
   }
   newSettings.calendarSources = sources;
+
+  // MIGRATION 3: Bi-directional keychain migration if secretStorage is supported
+  if (typeof app !== 'undefined' && app.secretStorage) {
+    const secretStorage = app.secretStorage;
+    const getSecretKey = {
+      googleRefreshToken: (id: string) =>
+        `fcr-gcal-ref-${id.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      googleAccessToken: (id: string) =>
+        `fcr-gcal-acc-${id.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      googleClientSecret: () => `fcr-gcal-custom-secret`,
+      microsoftRefreshToken: (id: string) =>
+        `fcr-ms-ref-${id.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      microsoftAccessToken: (id: string) =>
+        `fcr-ms-acc-${id.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      caldavPassword: (id: string) =>
+        `fcr-caldav-pwd-${id.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
+    };
+
+    if (!newSettings.useLegacyPlaintextCredentials) {
+      // --- Case A: Secure mode (migrate settings -> keychain) ---
+
+      // Google Accounts
+      if (newSettings.googleAccounts) {
+        newSettings.googleAccounts.forEach(acc => {
+          if (acc.refreshToken) {
+            secretStorage.setSecret(getSecretKey.googleRefreshToken(acc.id), acc.refreshToken);
+            acc.refreshToken = null;
+            needsSave = true;
+          }
+          if (acc.accessToken) {
+            secretStorage.setSecret(getSecretKey.googleAccessToken(acc.id), acc.accessToken);
+            acc.accessToken = null;
+            needsSave = true;
+          }
+        });
+      }
+
+      // Microsoft Accounts
+      if (newSettings.microsoftAccounts) {
+        newSettings.microsoftAccounts.forEach(acc => {
+          if (acc.refreshToken) {
+            secretStorage.setSecret(getSecretKey.microsoftRefreshToken(acc.id), acc.refreshToken);
+            acc.refreshToken = null;
+            needsSave = true;
+          }
+          if (acc.accessToken) {
+            secretStorage.setSecret(getSecretKey.microsoftAccessToken(acc.id), acc.accessToken);
+            acc.accessToken = null;
+            needsSave = true;
+          }
+        });
+      }
+
+      // Custom Google Client Secret
+      if (newSettings.googleClientSecret) {
+        secretStorage.setSecret(getSecretKey.googleClientSecret(), newSettings.googleClientSecret);
+        newSettings.googleClientSecret = '';
+        needsSave = true;
+      }
+
+      // CalDAV Passwords
+      if (newSettings.calendarSources) {
+        newSettings.calendarSources.forEach(source => {
+          if (source.type === 'caldav') {
+            if (source.password) {
+              secretStorage.setSecret(getSecretKey.caldavPassword(source.id), source.password);
+              source.password = '';
+              needsSave = true;
+            }
+          }
+        });
+      }
+    } else {
+      // --- Case B: Legacy mode (migrate keychain -> settings) ---
+
+      // Google Accounts
+      if (newSettings.googleAccounts) {
+        newSettings.googleAccounts.forEach(acc => {
+          const storedRef = secretStorage.getSecret(getSecretKey.googleRefreshToken(acc.id));
+          if (storedRef && storedRef !== '') {
+            acc.refreshToken = storedRef;
+            secretStorage.setSecret(getSecretKey.googleRefreshToken(acc.id), '');
+            needsSave = true;
+          }
+          const storedAcc = secretStorage.getSecret(getSecretKey.googleAccessToken(acc.id));
+          if (storedAcc && storedAcc !== '') {
+            acc.accessToken = storedAcc;
+            secretStorage.setSecret(getSecretKey.googleAccessToken(acc.id), '');
+            needsSave = true;
+          }
+        });
+      }
+
+      // Microsoft Accounts
+      if (newSettings.microsoftAccounts) {
+        newSettings.microsoftAccounts.forEach(acc => {
+          const storedRef = secretStorage.getSecret(getSecretKey.microsoftRefreshToken(acc.id));
+          if (storedRef && storedRef !== '') {
+            acc.refreshToken = storedRef;
+            secretStorage.setSecret(getSecretKey.microsoftRefreshToken(acc.id), '');
+            needsSave = true;
+          }
+          const storedAcc = secretStorage.getSecret(getSecretKey.microsoftAccessToken(acc.id));
+          if (storedAcc && storedAcc !== '') {
+            acc.accessToken = storedAcc;
+            secretStorage.setSecret(getSecretKey.microsoftAccessToken(acc.id), '');
+            needsSave = true;
+          }
+        });
+      }
+
+      // Custom Google Client Secret
+      const storedClientSecret = secretStorage.getSecret(getSecretKey.googleClientSecret());
+      if (storedClientSecret && storedClientSecret !== '') {
+        newSettings.googleClientSecret = storedClientSecret;
+        secretStorage.setSecret(getSecretKey.googleClientSecret(), '');
+        needsSave = true;
+      }
+
+      // CalDAV Passwords
+      if (newSettings.calendarSources) {
+        newSettings.calendarSources.forEach(source => {
+          if (source.type === 'caldav') {
+            const storedPwd = secretStorage.getSecret(getSecretKey.caldavPassword(source.id));
+            if (storedPwd && storedPwd !== '') {
+              source.password = storedPwd;
+              secretStorage.setSecret(getSecretKey.caldavPassword(source.id), '');
+              needsSave = true;
+            }
+          }
+        });
+      }
+    }
+  }
 
   // SANITIZATION 1: Correct initial view if timeline is disabled.
   newSettings = sanitizeInitialView(newSettings);

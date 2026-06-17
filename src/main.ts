@@ -18,7 +18,7 @@ import { NotificationManager } from './features/notifications/NotificationManage
 import { FcrReminderManager } from './features/fcr_reminder/FcrReminderManager';
 import { StatusBarManager } from './features/statusbar/StatusBarManager';
 import { LazySettingsTab } from './ui/settings/LazySettingsTab';
-import { ensureCalendarIds, migrateAndSanitizeSettings } from './ui/settings/utilsSettings';
+import { migrateAndSanitizeSettings } from './ui/settings/utilsSettings';
 import { PLUGIN_SLUG } from './types';
 import { DEPRECATED_PROVIDERS } from './ui/settings/deprecations';
 import EventCache from './core/EventCache';
@@ -518,12 +518,12 @@ export default class FullCalendarPlugin extends Plugin {
     // Create a mutable copy to work with.
     const newSettings = { ...PluginState.getSettings() };
 
-    // Sanitize calendar sources before saving to ensure all have IDs.
-    const { sources } = ensureCalendarIds(newSettings.calendarSources);
-    newSettings.calendarSources = sources;
+    // Run the migration and sanitization pipeline to ensure credentials are migrated
+    // and IDs are present before saving to disk.
+    const { settings: migratedSettings } = migrateAndSanitizeSettings(newSettings);
 
     // Now, assign the fully-corrected settings object in one go.
-    PluginState.setSettings(newSettings);
+    PluginState.setSettings(migratedSettings);
 
     await super.saveData(PluginState.getSettings());
 

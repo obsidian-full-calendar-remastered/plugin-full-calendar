@@ -8,6 +8,7 @@ import { OutlookApiError } from '../auth/request';
 import { OutlookAuthManager } from '../auth/OutlookAuthManager';
 import { startOutlookLogin } from '../auth/auth';
 import { t } from '../../../features/i18n/i18n';
+import { CredentialStore } from '../../../features/credentials/CredentialStore';
 
 type SelectedOutlookCalendar = {
   id: string;
@@ -141,8 +142,11 @@ export const OutlookConfigComponent: React.FC<OutlookConfigComponentProps> = ({
     container.empty();
 
     accounts.forEach(account => {
+      const hasToken = CredentialStore.hasMicrosoftRefreshToken(account.id);
+      const displayName =
+        account.email + (hasToken ? '' : ` (${t('settings.credentials.keychainMissing')})`);
       new Setting(container)
-        .setName(account.email)
+        .setName(displayName)
         .addButton(button =>
           button
             .setButtonText(t('outlook.buttons.selectCalendars'))

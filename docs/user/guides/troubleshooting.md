@@ -103,6 +103,20 @@ Use this page as a first response checklist for common issues.
     - Confirm the event exists in the selected Outlook calendar.
     - Confirm the calendar source is linked to the expected Outlook account.
 
+??? question "Google & Outlook: Authentication fails on mobile (Android / iOS)"
+    <a id="mobile-authentication-workaround"></a>
+    Obsidian's strict app sandboxing on iOS and Android can block native OAuth redirect loops, making direct mobile authentication fail. Use the following workaround for now:
+    
+    To authorize Google Calendar, Google Tasks, or Outlook on mobile, use this synchronization workaround:
+    
+    1. **Enable Plaintext Mode on Desktop:** In Full Calendar Settings → Integrations, toggle on **Store credentials in plaintext (sync compatibility)**.
+    2. **Authenticate on Desktop:** Connect your Google or Outlook accounts on your desktop client. Credentials will be written in plaintext directly into `data.json`.
+    3. **Sync to Mobile:** Sync your Obsidian vault to your mobile device.
+    4. **Disable Plaintext Mode on Mobile:** Toggle **Store credentials in plaintext** back to **off** on first on your mobile device. This results in migrating the tokens from plain text into secured format. Now, do the same for desktop.
+    5. **Automated Migration:** The migration script will instantly kick in on both platforms, importing the credentials securely into each local device's keychain storage and clearing the plaintext values from `data.json`.
+    
+    For ongoing tracking and updates on native mobile OAuth, see [GitHub Issue #191](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/191).
+
 ## Special Calendars (Bases & Holidays)
 
 ??? question "Bases Calendar: Troubleshooting missing events, wrong notes, or category coloring"

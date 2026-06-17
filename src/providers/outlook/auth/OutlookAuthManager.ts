@@ -6,6 +6,7 @@ import { CalendarInfo } from '../../../types';
 import { MicrosoftAccount } from '../../../types/settings';
 import { t } from '../../../features/i18n/i18n';
 import { resolveOutlookAuthConfig } from './config';
+import { CredentialStore } from '../../../features/credentials/CredentialStore';
 
 const ME_URL = 'https://graph.microsoft.com/v1.0/me';
 
@@ -25,7 +26,8 @@ export class OutlookAuthManager {
   }
 
   private async refreshAccessToken(account: MicrosoftAccount): Promise<string | null> {
-    if (!account.refreshToken) {
+    const refreshToken = CredentialStore.getMicrosoftRefreshToken(account.id);
+    if (!refreshToken) {
       console.error('No refresh token available for Outlook account:', account.id);
       return null;
     }
@@ -41,25 +43,25 @@ export class OutlookAuthManager {
         method: 'POST',
         url: `${proxyBaseUrl}/api/microsoft/refresh`,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: account.refreshToken }),
+        body: JSON.stringify({ refresh_token: refreshToken }),
         throw: false
       });
 
       if (response.status >= 200 && response.status < 300) {
         const data = response.json as RefreshResponse;
-        account.accessToken = data.access_token;
+        CredentialStore.setMicrosoftAccessToken(account.id, data.access_token);
         account.expiryDate = Date.now() + data.expires_in * 1000;
         if (data.refresh_token) {
-          account.refreshToken = data.refresh_token;
+          CredentialStore.setMicrosoftRefreshToken(account.id, data.refresh_token);
         }
         await PluginState.saveSettings();
-        return account.accessToken;
+        return data.access_token;
       }
 
       console.error('Failed to refresh Outlook access token:', response.status, response.text);
       if (response.status === 400 || response.status === 401) {
-        account.accessToken = null;
-        account.refreshToken = null;
+        CredentialStore.setMicrosoftAccessToken(account.id, null);
+        CredentialStore.setMicrosoftRefreshToken(account.id, null);
         account.expiryDate = null;
         await PluginState.saveSettings();
         showNotice(t('outlook.auth.expired'));
@@ -85,8 +87,9 @@ export class OutlookAuthManager {
       return null;
     }
 
-    if (account.accessToken && account.expiryDate && Date.now() < account.expiryDate - 60000) {
-      return account.accessToken;
+    const accessToken = CredentialStore.getMicrosoftAccessToken(account.id);
+    if (accessToken && account.expiryDate && Date.now() < account.expiryDate - 60000) {
+      return accessToken;
     }
 
     return this.refreshAccessToken(account);
@@ -118,7 +121,9 @@ export class OutlookAuthManager {
     const newAccount: MicrosoftAccount = {
       id: `ms_${identity.id}`,
       email: identity.email,
-      ...auth
+      refreshToken: null,
+      accessToken: null,
+      expiryDate: auth.expiryDate
     };
 
     const existing = PluginState.getSettings().microsoftAccounts || [];
@@ -130,6 +135,11 @@ export class OutlookAuthManager {
     }
 
     PluginState.getSettings().microsoftAccounts = existing;
+
+    // Save tokens securely
+    CredentialStore.setMicrosoftRefreshToken(newAccount.id, auth.refreshToken);
+    CredentialStore.setMicrosoftAccessToken(newAccount.id, auth.accessToken);
+
     await PluginState.saveSettings();
 
     this.plugin.app.workspace.trigger('full-calendar:outlook-account-added');

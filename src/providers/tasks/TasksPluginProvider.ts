@@ -847,6 +847,14 @@ export class TasksPluginProvider
     );
   }
 
+  private getTaskPlanningDateTargets(): TasksDateTarget[] {
+    const {
+      backlogDateTarget,
+      calendarDisplayDateTarget
+    } = PluginState.getSettings().tasksIntegration;
+    return Array.from(new Set<TasksDateTarget>([calendarDisplayDateTarget, backlogDateTarget]));
+  }
+
   private updateTaskLine(
     originalMarkdown: string,
     newDate: Date,
@@ -1023,11 +1031,16 @@ export class TasksPluginProvider
     if (!task) {
       throw new Error(`Cannot find original task to schedule at ${taskId}`);
     }
-    const dateTarget = PluginState.getSettings().tasksIntegration.calendarDisplayDateTarget;
-    const newLine = this.updateTaskLine(task.originalMarkdown, date, dateTarget);
+    const dateTargets = this.getTaskPlanningDateTargets();
+    const newLine = dateTargets.reduce(
+      (line, dateTarget) => this.updateTaskLine(line, date, dateTarget),
+      task.originalMarkdown
+    );
     await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
     task.originalMarkdown = newLine;
-    this.setTaskDate(task, dateTarget, date);
+    for (const dateTarget of dateTargets) {
+      this.setTaskDate(task, dateTarget, date);
+    }
     const tasksApi = (
       this.plugin.app as unknown as {
         plugins?: {
@@ -1058,11 +1071,16 @@ export class TasksPluginProvider
       throw new Error(`Cannot find original task to unschedule at ${taskId}`);
     }
 
-    const dateTarget = PluginState.getSettings().tasksIntegration.calendarDisplayDateTarget;
-    const newLine = this.clearTaskDateLine(task.originalMarkdown, dateTarget);
+    const dateTargets = this.getTaskPlanningDateTargets();
+    const newLine = dateTargets.reduce(
+      (line, dateTarget) => this.clearTaskDateLine(line, dateTarget),
+      task.originalMarkdown
+    );
     await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
     task.originalMarkdown = newLine;
-    this.setTaskDate(task, dateTarget, null);
+    for (const dateTarget of dateTargets) {
+      this.setTaskDate(task, dateTarget, null);
+    }
     task.startTime = null;
     task.endTime = null;
   }

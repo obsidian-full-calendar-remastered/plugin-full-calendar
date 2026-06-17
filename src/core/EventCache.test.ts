@@ -747,6 +747,59 @@ describe('editable calendars', () => {
       );
     });
 
+    it('preserves recurrence identity when updating an existing recurring override', async () => {
+      const overrideEvent: EditableEventResponse = [
+        {
+          title: 'Weekly Meeting',
+          uid: 'series-uid',
+          recurringEventId: 'series-uid',
+          recurrenceId: '2026-06-08T09:00',
+          type: 'single',
+          allDay: false,
+          date: '2026-06-10',
+          startTime: '11:00',
+          endTime: '12:00',
+          endDate: null
+        } as OFCEvent,
+        mockLocation()
+      ];
+
+      const [cache, calendar] = makeEditableCache([overrideEvent]);
+      await cache.populate();
+
+      const id = cache.getAllEvents()[0].events[0].id;
+      calendar.updateEvent.mockResolvedValue(mockLocation());
+
+      await cache.updateEventWithId(id, {
+        title: 'Weekly Meeting',
+        type: 'single',
+        allDay: false,
+        date: '2026-06-11',
+        startTime: '13:00',
+        endTime: '14:00',
+        endDate: null
+      } as OFCEvent);
+
+      expect(calendar.updateEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ persistentId: 'series-uid' }),
+        expect.objectContaining({ recurrenceId: '2026-06-08T09:00' }),
+        expect.objectContaining({
+          uid: 'series-uid',
+          recurringEventId: 'series-uid',
+          recurrenceId: '2026-06-08T09:00',
+          date: '2026-06-11'
+        })
+      );
+      expect(cache.store.getEventById(id)).toEqual(
+        expect.objectContaining({
+          uid: 'series-uid',
+          recurringEventId: 'series-uid',
+          recurrenceId: '2026-06-08T09:00',
+          date: '2026-06-11'
+        })
+      );
+    });
+
     it.each([
       [
         'calendar moves event to a new file',

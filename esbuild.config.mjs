@@ -3,6 +3,7 @@ import process from "process";
 import { builtinModules } from "node:module";
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
 const builtins = [...new Set([...builtinModules, ...builtinModules.map((moduleName) => `node:${moduleName}`)])];
 
@@ -53,11 +54,12 @@ async function build() {
       ...builtins,
     ],
     format: "cjs",
-    target: "es2016",
+    target: "es2022",
     logLevel: "info",
     minify: prod,
     legalComments: prod ? 'none' : 'eof',
-    // drop: prod ? ['console', 'debugger'] : [],
+    pure: prod ? ['console.log'] : [],
+    drop: prod ? ['debugger'] : [],
     alias: {
       'react': 'preact/compat',
       'react-dom/client': 'preact/compat/client',
@@ -73,6 +75,16 @@ async function build() {
           build.onEnd(() => {
 
             const rootDir = process.cwd();
+
+            if (prod) {
+              try {
+                console.log(" | Running Terser minification...");
+                execSync('npx -y terser@latest main.js --compress --mangle -o main.js');
+                console.log(" | Terser minification completed successfully.");
+              } catch (err) {
+                console.warn("⚠️ Terser minification failed:", err);
+              }
+            }
             const devEnvDir = "obsidian-dev-vault/.obsidian/plugins/full-calendar-remastered";
             const oldCssPath = path.join(rootDir, "main.css");
             const newCssPath = path.join(rootDir, "styles.css");
@@ -127,7 +139,7 @@ async function build() {
     console.log('Watching for changes...');
   } else {
     const result = await context.rebuild();
-    // fs.writeFileSync("metafile.json", JSON.stringify(result.metafile));
+    fs.writeFileSync("metafile.json", JSON.stringify(result.metafile));
     context.dispose();
   }
 }

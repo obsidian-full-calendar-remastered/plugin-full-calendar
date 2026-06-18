@@ -538,7 +538,7 @@ export function getEventsFromICS(text: string): OFCEvent[] {
     jCalData = ical.parse(correctedText); // Use the corrected text
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to parse ICS content: ${message}`);
+    throw new Error(`Failed to parse ICS content: ${message}`, { cause: error });
   }
   const component = new ical.Component(jCalData);
   const vevents = component.getAllSubcomponents('vevent');

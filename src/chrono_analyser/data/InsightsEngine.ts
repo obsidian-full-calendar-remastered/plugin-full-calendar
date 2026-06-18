@@ -470,11 +470,14 @@ export class InsightsEngine {
         hhi += share * share;
       }
 
-      let focusText = '';
-      if (hhi > 0.5) focusText = 'highly focused';
-      else if (hhi > 0.25) focusText = 'focused';
-      else if (hhi > 0.1) focusText = 'balanced';
-      else focusText = 'scattered';
+      const focusText =
+        hhi > 0.5
+          ? 'highly focused'
+          : hhi > 0.25
+            ? 'focused'
+            : hhi > 0.1
+              ? 'balanced'
+              : 'scattered';
 
       const topProjectArr = [...lastWeekHoursByProject.entries()].sort((a, b) => b[1] - a[1]);
       const topProjectName =

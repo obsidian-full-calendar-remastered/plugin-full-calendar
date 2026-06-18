@@ -103,7 +103,6 @@ describe('ICS Formatter timezone serialization', () => {
       endDate: null
     } as OFCEvent;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const overrideComponent = createOverrideVEvent(event, '2026-05-20T10:00:00');
     const ics = (overrideComponent as unknown as { toString(): string }).toString();
 
@@ -119,7 +118,6 @@ describe('ICS Formatter timezone serialization', () => {
       endDate: null
     } as OFCEvent;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const overrideComponent = createOverrideVEvent(event, '2026-05-20');
     const ics = (overrideComponent as unknown as { toString(): string }).toString();
 
@@ -202,7 +200,6 @@ describe('ICS Formatter timezone serialization', () => {
       endDate: null
     } as OFCEvent;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const overrideComponent = createOverrideVEvent(task, '2026-05-20T10:00:00');
     const ics = (overrideComponent as unknown as { toString(): string }).toString();
 

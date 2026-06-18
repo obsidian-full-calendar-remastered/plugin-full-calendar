@@ -36,7 +36,8 @@ async function fallbackMobileRequest(req: RequestUrlParam, rootCause: string): P
     const fallbackMessage =
       fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
     throw new Error(
-      `CalDAV request failed on mobile transport. requestUrl error: ${rootCause}; fallback request error: ${fallbackMessage}`
+      `CalDAV request failed on mobile transport. requestUrl error: ${rootCause}; fallback request error: ${fallbackMessage}`,
+      { cause: fallbackError }
     );
   }
 }

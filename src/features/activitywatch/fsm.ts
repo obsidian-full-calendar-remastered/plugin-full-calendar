@@ -94,7 +94,7 @@ export function evaluateRule(rule: TriggerRule, event: CompoundEvent): AWNode | 
 
     if (!rule.matchPattern || !compareString) continue;
 
-    let matched = false;
+    let matched: boolean;
     if (rule.useRegex) {
       try {
         matched = new RegExp(rule.matchPattern, 'i').test(compareString);

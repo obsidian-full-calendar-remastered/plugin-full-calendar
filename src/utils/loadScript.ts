@@ -61,7 +61,9 @@ export async function loadCachedScript(app: App, filename: string, cdnUrl: strin
       await app.vault.adapter.write(assetPath, scriptCode);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      throw new Error(`Failed to download script ${filename} from CDN (${cdnUrl}): ${errMsg}`);
+      throw new Error(`Failed to download script ${filename} from CDN (${cdnUrl}): ${errMsg}`, {
+        cause: err
+      });
     }
   }
 

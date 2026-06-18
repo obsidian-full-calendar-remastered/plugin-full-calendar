@@ -1005,7 +1005,7 @@ export class CalDAVProvider
     } catch (err) {
       console.error('[CalDAVProvider] Failed to fetch events.', err);
       const errorMessage = err instanceof Error ? err.message : String(err);
-      throw new Error(`Failed to fetch events from CalDAV server: ${errorMessage}`);
+      throw new Error(`Failed to fetch events from CalDAV server: ${errorMessage}`, { cause: err });
     }
   }
 

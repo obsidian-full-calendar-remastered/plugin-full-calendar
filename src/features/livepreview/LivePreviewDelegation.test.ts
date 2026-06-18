@@ -316,16 +316,13 @@ describe('LivePreviewDelegation Tests', () => {
     const lastCall = dispatchCalls[0][0];
     expect(lastCall.effects).toBeDefined();
 
-    let hasEffect = false;
     const effects = lastCall.effects;
-    if (Array.isArray(effects)) {
-      hasEffect = effects.some(
-        (e: { is: (effect: unknown) => boolean }) =>
-          typeof e.is === 'function' && e.is(forceUpdateLivePreviewEffect)
-      );
-    } else {
-      hasEffect = typeof effects.is === 'function' && effects.is(forceUpdateLivePreviewEffect);
-    }
+    const hasEffect = Array.isArray(effects)
+      ? effects.some(
+          (e: { is: (effect: unknown) => boolean }) =>
+            typeof e.is === 'function' && e.is(forceUpdateLivePreviewEffect)
+        )
+      : typeof effects.is === 'function' && effects.is(forceUpdateLivePreviewEffect);
     expect(hasEffect).toBe(true);
 
     coordinator.destroy();

@@ -19,7 +19,8 @@
 			"ES7",
 			"ES2022"
 		],
-		"jsx": "react-jsx"
+		"jsx": "react-jsx",
+		"rootDir": "."
 	},
 	"include": [
 		"**/*.d.ts",

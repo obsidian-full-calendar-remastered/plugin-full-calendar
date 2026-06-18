@@ -126,5 +126,11 @@ export default tseslint.config(
         rules: {
             'no-restricted-syntax': 'off'
         }
+    // },
+    // {
+    //     rules: {
+    //         'no-useless-assignment': 'warn',
+    //         'preserve-caught-error': 'warn'
+    //     }
     }
 );

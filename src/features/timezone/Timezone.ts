@@ -250,7 +250,11 @@ export function parseTimezoneAwareString(t: ical.Time): DateTime {
   // The timezone property on ical.Time is what we need.
   // It can be 'Z' for UTC, a Windows identifier like 'W. Europe Standard Time',
   // an IANA identifier like 'Asia/Kolkata', or undefined/null.
-  const rawZone = t.timezone === 'Z' ? 'utc' : t.timezone || undefined;
+  const rawZone =
+    t.timezone === 'Z'
+      ? 'utc'
+      : t.timezone ||
+        (t.zone && t.zone.tzid && t.zone.tzid !== 'floating' ? t.zone.tzid : undefined);
   const zone = normalizeTimezone(rawZone);
 
   let zonedDt = DateTime.fromObject(

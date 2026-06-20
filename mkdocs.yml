@@ -83,6 +83,7 @@ plugins:
           enable_creation_date: true
           type: datetime
     - git-committers:
+          enabled: !ENV [CI, false]
           repository: obsidian-full-calendar-remastered/plugin-full-calendar
           cache_dir: .cache/plugin/git-committers
           branch: main

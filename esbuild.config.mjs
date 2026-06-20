@@ -139,7 +139,7 @@ async function build() {
     console.log('Watching for changes...');
   } else {
     const result = await context.rebuild();
-    fs.writeFileSync("metafile.json", JSON.stringify(result.metafile));
+    // fs.writeFileSync("metafile.json", JSON.stringify(result.metafile));
     context.dispose();
   }
 }

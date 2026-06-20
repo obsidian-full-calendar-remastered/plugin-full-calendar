@@ -683,6 +683,93 @@ async function fetchCalendarObjectsForComponent(
   return { icsList, fellBack: false };
 }
 
+async function fetchAllVTodoObjects(
+  collectionUrl: string,
+  authHeader?: string
+): Promise<CalendarObjectData[]> {
+  const reportBody = `<?xml version="1.0" encoding="utf-8"?>
+<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:prop>
+    <d:getetag/>
+    <c:calendar-data/>
+  </d:prop>
+  <c:filter>
+    <c:comp-filter name="VCALENDAR">
+      <c:comp-filter name="VTODO"/>
+    </c:comp-filter>
+  </c:filter>
+</c:calendar-query>`;
+
+  const reportHeaders: Record<string, string> = {
+    Depth: '1',
+    'Content-Type': 'application/xml; charset=utf-8',
+    Accept: '*/*'
+  };
+  if (authHeader) {
+    reportHeaders['Authorization'] = authHeader;
+  }
+
+  const reportRes = await obsidianFetch(canonCollection(collectionUrl), {
+    method: 'REPORT',
+    headers: reportHeaders,
+    body: reportBody
+  });
+  const xml = await reportRes.text();
+
+  if (reportRes.status < 200 || reportRes.status >= 300) {
+    if (shouldUseCompatibilityFetch(reportRes.status)) {
+      console.warn(
+        `[CalDAVProvider] REPORT for all VTODO ${reportRes.status}; attempting compatibility fallback.`
+      );
+      return fetchCalendarObjectsViaPropfindFallback(collectionUrl, authHeader);
+    }
+    console.error(
+      `[CalDAVProvider] VTODO REPORT request failed`,
+      reportRes.status,
+      xml.slice(0, 800)
+    );
+    throw new Error(`REPORT ${reportRes.status}`);
+  }
+
+  assertNonEmptyText(xml, 'CalDAV VTODO REPORT returned an empty body.');
+  const doc = ensureXmlDocument(xml, 'CalDAV VTODO REPORT');
+  const icsList: CalendarObjectData[] = [];
+  const responses = Array.from(doc.getElementsByTagNameNS('*', 'response'));
+
+  for (const response of responses) {
+    const prop = getSuccessfulPropNode(response);
+    if (!prop) continue;
+
+    const calendarData =
+      prop.getElementsByTagNameNS('urn:ietf:params:xml:ns:caldav', 'calendar-data')[0] ||
+      prop.getElementsByTagNameNS('*', 'calendar-data')[0];
+    if (!calendarData) continue;
+
+    const hrefNode =
+      response.getElementsByTagNameNS('DAV:', 'href')[0] ||
+      response.getElementsByTagNameNS('*', 'href')[0];
+    const href = hrefNode?.textContent?.trim() || '';
+    const etag =
+      prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent ||
+      prop.getElementsByTagNameNS('*', 'getetag')[0]?.textContent ||
+      undefined;
+
+    icsList.push({
+      href,
+      ics: assertIcsPayload(
+        assertNonEmptyText(
+          calendarData.textContent || '',
+          'CalDAV VTODO REPORT returned empty calendar-data payload.'
+        ),
+        'CalDAV VTODO REPORT'
+      ),
+      etag: etag || undefined
+    });
+  }
+
+  return icsList;
+}
+
 // --- Direct REPORT + GET implementation (standards-compliant) ---
 async function fetchCalendarObjects(
   collectionUrl: string,
@@ -1022,7 +1109,7 @@ export class CalDAVProvider
     }
 
     const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
-    const objects = await fetchCalendarObjectsViaPropfindFallback(this.source.homeUrl, authHeader);
+    const objects = await fetchAllVTodoObjects(this.source.homeUrl, authHeader);
     return objects.flatMap(object =>
       parseUnscheduledTasksFromObject(object, this.source.id, this.source.name)
     );
@@ -1052,10 +1139,8 @@ export class CalDAVProvider
   }
 
   async getUndatedTasks(): Promise<CalDAVTaskInboxItem[]> {
-    if (!this.hasLoadedUndatedTasks && !this.undatedTaskLoadPromise) {
-      void this.refreshUndatedTasks()
-        .then(() => PluginState.getProviderRegistry().refreshCalDAVTaskInboxViews())
-        .catch(err => console.warn('[CalDAVProvider] Failed to refresh task inbox.', err));
+    if (!this.hasLoadedUndatedTasks) {
+      return this.refreshUndatedTasks();
     }
 
     return Promise.resolve([...this.undatedTaskCache]);
@@ -1330,7 +1415,7 @@ export class CalDAVProvider
     for (const object of objects) {
       const vcalendar = parseVCalendar(object.ics);
       const todo = findTodoByUid(vcalendar, taskUid);
-      if (!todo || !isUnscheduledTodo(todo)) {
+      if (!todo) {
         continue;
       }
 
@@ -1382,7 +1467,7 @@ export class CalDAVProvider
       return;
     }
 
-    throw new Error(`CalDAV task ${taskUid} was not found or is already scheduled.`);
+    throw new Error(`CalDAV task ${taskUid} was not found.`);
   }
 
   async unscheduleTask(taskId: string): Promise<void> {

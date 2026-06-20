@@ -20,6 +20,7 @@ import {
   TaskNotesConfigComponentProps
 } from './TaskNotesConfigComponent';
 import { t } from '../../features/i18n/i18n';
+import { modifyFrontmatterString } from '../fullnote/frontmatter';
 
 export type EditableEventResponse = [OFCEvent, EventLocation | null];
 
@@ -28,6 +29,7 @@ type TaskNotesTask = {
   title: string;
   status: string;
   dateModified?: string;
+  due?: string;
   scheduled?: string;
   recurrence?: string;
   recurrence_anchor?: 'scheduled' | 'completion';
@@ -47,6 +49,7 @@ type TaskNotesTaskCreationData = {
 };
 
 const TASK_UPDATE_COALESCE_MS = 80;
+const TASKNOTES_COMPANION_LINK_PROPERTIES = ['due-link', 'deadline-link'] as const;
 
 type TaskNotesPluginApi = {
   cacheManager: {
@@ -58,7 +61,7 @@ type TaskNotesPluginApi = {
   taskService: {
     updateProperty(
       task: TaskNotesTask,
-      property: 'scheduled' | 'timeEstimate',
+      property: 'scheduled' | 'due' | 'timeEstimate',
       value: unknown
     ): Promise<TaskNotesTask>;
     toggleStatus?(task: TaskNotesTask): Promise<TaskNotesTask>;
@@ -310,6 +313,66 @@ export class TaskNotesProvider
       diff += 24 * 60;
     }
     return Math.round(diff);
+  }
+
+  private taskNotesDailyNoteLink(date: string | null): string | null {
+    return date ? `"[[${date}]]"` : null;
+  }
+
+  private scheduledDateFromValue(value: string): string {
+    return value.split('T')[0] || value;
+  }
+
+  private frontmatterLineContainsDate(contents: string, property: string, date: string): boolean {
+    const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`^${escapedProperty}:.*${date}`, 'm').test(contents);
+  }
+
+  private async getTaskFileScheduleCompanionUpdates(
+    task: TaskNotesTask,
+    scheduledDate: string,
+    previousDate?: string
+  ): Promise<{ modifications: Record<string, unknown>; shouldUpdateDue: boolean }> {
+    const file = this.plugin.app.vault.getFileByPath(task.path);
+    if (!file) return { modifications: {}, shouldUpdateDue: false };
+
+    const contents = await this.plugin.app.vault.read(file);
+    const modifications: Record<string, unknown> = {
+      'scheduled-link': this.taskNotesDailyNoteLink(scheduledDate)
+    };
+    let shouldUpdateDue = false;
+
+    if (previousDate) {
+      for (const property of TASKNOTES_COMPANION_LINK_PROPERTIES) {
+        if (this.frontmatterLineContainsDate(contents, property, previousDate)) {
+          modifications[property] = this.taskNotesDailyNoteLink(scheduledDate);
+        }
+      }
+
+      shouldUpdateDue = this.frontmatterLineContainsDate(contents, 'due', previousDate);
+
+      if (this.frontmatterLineContainsDate(contents, 'deadline', previousDate)) {
+        modifications.deadline = scheduledDate;
+      }
+    }
+
+    return { modifications, shouldUpdateDue };
+  }
+
+  private async updateTaskFileScheduleCompanionProperties(
+    task: TaskNotesTask,
+    modifications: Record<string, unknown>
+  ): Promise<void> {
+    if (Object.keys(modifications).length === 0) return;
+
+    const file = this.plugin.app.vault.getFileByPath(task.path);
+    if (!file) return;
+
+    const contents = await this.plugin.app.vault.read(file);
+    const updatedContents = modifyFrontmatterString(contents, modifications);
+    if (updatedContents !== contents) {
+      await this.plugin.app.vault.modify(file, updatedContents);
+    }
   }
 
   private isTaskNotesSourceId(): boolean {
@@ -1141,7 +1204,19 @@ export class TaskNotesProvider
       timeEstimateValue = this.computeMinutes(startTime, endTime);
     }
 
+    const previousDate = oldEvent.type === 'single' ? oldEvent.date : undefined;
+    const scheduledDate = this.scheduledDateFromValue(scheduledValue);
+    const { modifications, shouldUpdateDue } = await this.getTaskFileScheduleCompanionUpdates(
+      task,
+      scheduledDate,
+      previousDate
+    );
+
     let updatedTask = await taskNotes.taskService.updateProperty(task, 'scheduled', scheduledValue);
+    if (shouldUpdateDue) {
+      updatedTask = await taskNotes.taskService.updateProperty(updatedTask, 'due', scheduledDate);
+    }
+    await this.updateTaskFileScheduleCompanionProperties(updatedTask, modifications);
 
     try {
       updatedTask = await taskNotes.taskService.updateProperty(

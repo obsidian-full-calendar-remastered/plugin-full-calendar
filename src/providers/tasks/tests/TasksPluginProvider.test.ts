@@ -384,6 +384,62 @@ describe('TasksPluginProvider', () => {
       await expect(provider.getUndatedTasks()).resolves.toEqual([]);
     });
 
+    it('removes rescheduled backlog tasks when backlog and calendar date fields differ', async () => {
+      const file = { path: 'Daily.md' };
+      mockApp.getFileByPath.mockReturnValue(file);
+      mockApp.rewrite
+        .mockImplementationOnce((_file: unknown, update: (content: string) => string) => {
+          const updated = update('- [ ] Backlog task');
+          expect(updated).toBe('- [ ] Backlog task ⏳ 2026-05-02 📅 2026-05-02');
+          return Promise.resolve();
+        })
+        .mockImplementationOnce((_file: unknown, update: (content: string) => string) => {
+          const updated = update('- [ ] Backlog task ⏳ 2026-05-02 📅 2026-05-02');
+          expect(updated).toBe('- [ ] Backlog task');
+          return Promise.resolve();
+        })
+        .mockImplementationOnce((_file: unknown, update: (content: string) => string) => {
+          const updated = update('- [ ] Backlog task');
+          expect(updated).toBe('- [ ] Backlog task ⏳ 2026-05-03 📅 2026-05-03');
+          return Promise.resolve();
+        });
+      mockPlugin.settings.tasksIntegration = {
+        backlogDateTarget: 'dueDate',
+        calendarDisplayDateTarget: 'scheduledDate',
+        openEditModalAfterBacklogDrop: false
+      };
+      mockPlugin.app.workspace.trigger.mockImplementation(
+        (eventName: string, callback: (data: unknown) => void) => {
+          if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+            callback({
+              state: 'Warm',
+              tasks: [
+                {
+                  path: 'Daily.md',
+                  description: 'Backlog task',
+                  taskLocation: { lineNumber: 0 },
+                  originalMarkdown: '- [ ] Backlog task',
+                  isDone: false
+                }
+              ]
+            });
+          }
+        }
+      );
+
+      await provider.getUndatedTasks();
+      await provider.scheduleTask('Daily.md::0', new Date('2026-05-02T00:00:00'));
+      await expect(provider.getUndatedTasks()).resolves.toEqual([]);
+
+      await provider.unscheduleTask('Daily.md::0');
+      await expect(provider.getUndatedTasks()).resolves.toEqual([
+        expect.objectContaining({ title: 'Backlog task' })
+      ]);
+
+      await provider.scheduleTask('Daily.md::0', new Date('2026-05-03T00:00:00'));
+      await expect(provider.getUndatedTasks()).resolves.toEqual([]);
+    });
+
     it('returns scheduled tasks to the backlog by clearing the configured display date and time', async () => {
       const file = { path: 'Daily.md' };
       mockApp.getFileByPath.mockReturnValue(file);

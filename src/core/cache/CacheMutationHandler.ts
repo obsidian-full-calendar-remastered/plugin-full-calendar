@@ -270,6 +270,18 @@ export class CacheMutationHandler {
 
     const { provider, event: oldEvent } = this.ctx.getProviderForEvent(eventId);
     newEvent = this.ensureDefaultTimedDurationOnAllDayTransition(oldEvent, newEvent);
+    if (oldEvent.type === 'single' && newEvent.type === 'single') {
+      newEvent = {
+        ...newEvent,
+        ...(oldEvent.uid && !newEvent.uid ? { uid: oldEvent.uid } : {}),
+        ...(oldEvent.recurringEventId && !newEvent.recurringEventId
+          ? { recurringEventId: oldEvent.recurringEventId }
+          : {}),
+        ...(oldEvent.recurrenceId && !newEvent.recurrenceId
+          ? { recurrenceId: oldEvent.recurrenceId }
+          : {})
+      };
+    }
     const calendarId = originalDetails.calendarId;
 
     if (!provider.getCapabilities().canEdit) {

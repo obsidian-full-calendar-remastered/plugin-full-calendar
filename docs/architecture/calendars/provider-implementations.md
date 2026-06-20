@@ -93,7 +93,7 @@ Full flow and invariants are detailed in [Tasks Integration Architecture](tasks-
 The Tasks integration has two explicit date-field settings:
 
 - `settings.tasksIntegration.backlogDateTarget` controls which incomplete tasks appear in the Tasks Backlog.
-- `settings.tasksIntegration.calendarDisplayDateTarget` controls which Tasks date marker is used for calendar display and calendar/backlog write-back.
+- `settings.tasksIntegration.calendarDisplayDateTarget` controls which Tasks date marker is used for calendar display and calendar event write-back.
 
 Backlog filtering must use `backlogDateTarget`, not a hardcoded definition of "undated":
 
@@ -118,7 +118,7 @@ Backlog filter UI entry points must use the same `backlogDateTarget` setting:
 
 Changing the setting must save plugin settings and call `providerRegistry.refreshBacklogViews()` so all open backlog views re-query the provider. Backlog filtering belongs in `TasksPluginProvider.getUndatedTasks()` because the provider owns the Tasks cache shape and the date-field mapping. UI components should not duplicate that filtering logic.
 
-Calendar event drag/update behavior and backlog drag/drop both write `calendarDisplayDateTarget`. `TasksPluginProvider._taskToOFCEvent()` must also read only `calendarDisplayDateTarget`; do not reintroduce scheduled/due/start fallback priority. Because event-cache contents are derived from the display field, changing `calendarDisplayDateTarget` may require an Obsidian restart or plugin reload for all open views to fully reflect the new policy.
+Calendar event drag/update behavior writes `calendarDisplayDateTarget`. Backlog drag/drop writes `calendarDisplayDateTarget` and also writes `backlogDateTarget` when it differs, so a planned task no longer qualifies as a backlog candidate. Returning a task to the backlog clears both fields when they differ. `TasksPluginProvider._taskToOFCEvent()` must still read only `calendarDisplayDateTarget`; do not reintroduce scheduled/due/start fallback priority. Because event-cache contents are derived from the display field, changing `calendarDisplayDateTarget` may require an Obsidian restart or plugin reload for all open views to fully reflect the new policy.
 
 The `openEditModalAfterBacklogDrop` setting gates the Tasks plugin edit modal after backlog drops. Its default is `false`, so the normal drag/drop path stays fast and non-blocking unless the user explicitly opts into the modal.
 

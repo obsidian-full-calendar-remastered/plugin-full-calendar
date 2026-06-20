@@ -238,20 +238,6 @@ END:VCALENDAR
       </d:multistatus>
     `;
 
-    const mockInboxPropfind = `
-      <d:multistatus xmlns:d="DAV:">
-        <d:response>
-          <d:href>/caldav/user/calendar/events/tasks.ics</d:href>
-          <d:propstat>
-            <d:prop>
-              <d:getetag>"task-etag"</d:getetag>
-            </d:prop>
-            <d:status>HTTP/1.1 200 OK</d:status>
-          </d:propstat>
-        </d:response>
-      </d:multistatus>
-    `;
-
     const mockIcs = `BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VTODO
@@ -269,6 +255,21 @@ STATUS:NEEDS-ACTION
 END:VTODO
 END:VCALENDAR`;
 
+    const mockInboxReport = `
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/tasks.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+              <c:calendar-data><![CDATA[${mockIcs}]]></c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
     mockObsidianFetch
       .mockResolvedValueOnce({
         status: 207,
@@ -276,11 +277,7 @@ END:VCALENDAR`;
       } as Response)
       .mockResolvedValueOnce({
         status: 207,
-        text: () => Promise.resolve(mockInboxPropfind)
-      } as Response)
-      .mockResolvedValueOnce({
-        status: 200,
-        text: () => Promise.resolve(mockIcs)
+        text: () => Promise.resolve(mockInboxReport)
       } as Response);
 
     const tasks = await provider.refreshUndatedTasks();
@@ -295,6 +292,65 @@ END:VCALENDAR`;
       completed: false,
       etag: '"task-etag"'
     });
+  });
+
+  it('loads CalDAV backlog items from remote on a cold provider start', async () => {
+    const mockPropfindResponse = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype>
+                <d:collection/>
+                <c:calendar xmlns:c="urn:ietf:params:xml:ns:caldav"/>
+              </d:resourcetype>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const mockIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-1
+SUMMARY:Backlog After Reload
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR`;
+    const mockInboxReport = `
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/task-1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+              <c:calendar-data><![CDATA[${mockIcs}]]></c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockPropfindResponse)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockInboxReport)
+      } as Response);
+
+    await expect(provider.getTaskBacklogItems()).resolves.toEqual([
+      expect.objectContaining({
+        id: 'caldav::caldav_1::task-1',
+        title: 'Backlog After Reload'
+      })
+    ]);
   });
 
   it('creates an unscheduled CalDAV task for the task inbox', async () => {
@@ -506,6 +562,81 @@ END:VCALENDAR`;
     await expect(provider.getUndatedTasks()).resolves.toEqual([
       expect.objectContaining({ uid: 'task-1', title: 'Schedule Me' })
     ]);
+  });
+
+  it('reschedules a CalDAV task after it was returned to the backlog even when remote dates are stale', async () => {
+    const mockInboxPropfind = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/task-1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+    const mockCollectionPropfind = `
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype>
+                <d:collection/>
+                <c:calendar/>
+              </d:resourcetype>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const scheduledIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-1
+SUMMARY:Schedule Me
+STATUS:NEEDS-ACTION
+DTSTART;TZID=Europe/Amsterdam:20260615T143000
+DUE;TZID=Europe/Amsterdam:20260615T153000
+END:VTODO
+END:VCALENDAR`;
+
+    mockObsidianFetch.mockImplementation((_url, options) => {
+      if (options?.method === 'PROPFIND') {
+        const headers = options.headers as Record<string, string> | undefined;
+        return Promise.resolve({
+          status: 207,
+          text: () =>
+            Promise.resolve(headers?.Depth === '0' ? mockCollectionPropfind : mockInboxPropfind)
+        } as Response);
+      }
+      if (options?.method === 'GET') {
+        return Promise.resolve({
+          status: 200,
+          text: () => Promise.resolve(scheduledIcs)
+        } as Response);
+      }
+      return Promise.resolve({
+        status: 204,
+        statusText: 'No Content'
+      } as Response);
+    });
+
+    await provider.unscheduleTask('task-1');
+    await provider.scheduleTask('caldav::caldav_1::task-1', new Date(2026, 5, 16));
+
+    const putCalls = mockObsidianFetch.mock.calls.filter(([, options]) => options?.method === 'PUT');
+    const body = putCalls[1][1]?.body;
+    if (typeof body !== 'string') {
+      throw new Error('Expected CalDAV reschedule PUT body to be a string');
+    }
+    expect(body).toContain('DUE;VALUE=DATE:20260616');
+    expect(body).not.toContain('DUE;TZID=Europe/Amsterdam:20260615T153000');
   });
 
   it('deletes an unscheduled CalDAV backlog task', async () => {

@@ -12,6 +12,7 @@ import {
 import { TasksBacklogDateTarget } from '../../types/settings';
 import { t } from '../i18n/i18n';
 import { createDocsLinksFragment } from '../../ui/settings/docsLinks';
+import './task-backlog.css';
 
 type BacklogProviderInstance = CalendarProvider<unknown> & TaskBacklogProvider;
 
@@ -43,6 +44,7 @@ export class EmbeddedTaskBacklog extends Component {
   private newTaskTitle = '';
   private selectedProviderId = '';
   private isCreatingTask = false;
+  private showAdvancedFilters = false;
 
   private backlogWrapper!: HTMLElement;
 
@@ -59,7 +61,9 @@ export class EmbeddedTaskBacklog extends Component {
 
   onload(): void {
     // Create child wrapper to isolate styling and prevent breaking container elements
-    this.backlogWrapper = this.containerEl.createDiv({ cls: 'ofc-embedded-backlog' });
+    this.backlogWrapper = this.containerEl.createDiv({
+      cls: 'fcr-task-backlog tasks-backlog-view'
+    });
 
     void this.refresh();
 
@@ -202,25 +206,37 @@ export class EmbeddedTaskBacklog extends Component {
     const showSearch = this.config.showSearch !== false;
     const showDateSelector = this.config.showDateSelector !== false;
     const showFooter = this.config.showFooter !== false;
+    const hasDateSelector =
+      showDateSelector && providers.some(provider => provider.type === 'tasks');
 
-    if (showSearch || showDateSelector) {
+    const openTaskCount = this.getOpenTasks().length;
+
+    if (showSearch || hasDateSelector) {
       const header = contentContainer.createDiv({ cls: 'tasks-backlog-header' });
       const headerTitleRow = header.createDiv({ cls: 'tasks-backlog-title-row' });
-      headerTitleRow.createEl('h3', { text: 'Task backlog' });
-
-      if (showDateSelector && providers.some(provider => provider.type === 'tasks')) {
-        this.renderDateTargetSelector(headerTitleRow);
-      }
+      headerTitleRow.createEl('h3', { text: t('settings.taskBacklog.title') });
 
       if (showSearch) {
-        this.renderSearchBar(header);
+        this.renderSearchBar(header, hasDateSelector);
+      } else if (hasDateSelector) {
+        const controls = header.createDiv({ cls: 'tasks-backlog-controls-row' });
+        this.renderAdvancedFiltersToggle(controls);
+      }
+
+      if (hasDateSelector && this.showAdvancedFilters) {
+        const advanced = header.createDiv({ cls: 'tasks-backlog-advanced-panel' });
+        this.renderDateTargetSelector(advanced);
       }
     }
 
-    const openTaskCount = this.getOpenTasks().length;
     const countText = this.searchQuery.trim()
-      ? `${this.filteredTasks.length} of ${openTaskCount} unscheduled tasks`
-      : `${openTaskCount} unscheduled ${openTaskCount === 1 ? 'task' : 'tasks'}`;
+      ? t('settings.taskBacklog.countFiltered', {
+          shown: this.filteredTasks.length,
+          total: openTaskCount
+        })
+      : openTaskCount === 1
+        ? t('settings.taskBacklog.countUnscheduledSingular', { count: openTaskCount })
+        : t('settings.taskBacklog.countUnscheduledPlural', { count: openTaskCount });
 
     contentContainer.createDiv({
       text: countText,
@@ -244,11 +260,11 @@ export class EmbeddedTaskBacklog extends Component {
 
   private renderNoProviders(container: HTMLElement): void {
     container.createDiv({
-      text: 'No task backlog providers configured.',
+      text: t('settings.taskBacklog.noProvidersTitle'),
       attr: { class: 'tasks-backlog-empty' }
     });
     container.createDiv({
-      text: 'Add a Tasks or CalDAV calendar source to use the backlog view.',
+      text: t('settings.taskBacklog.noProvidersHelp'),
       attr: { class: 'tasks-backlog-help' }
     });
   }
@@ -350,33 +366,64 @@ export class EmbeddedTaskBacklog extends Component {
     const emptyState = container.createDiv({ cls: 'tasks-backlog-empty' });
     if (this.tasks.length > 0 && this.searchQuery.trim()) {
       emptyState.createDiv({
-        text: `No tasks matched "${this.searchQuery}".`
+        text: t('settings.taskBacklog.emptyNoMatchesTitle', {
+          query: this.searchQuery
+        })
       });
       emptyState.createDiv({
-        text: 'Try fewer keywords or search by part of the task title, source, or location.',
+        text: t('settings.taskBacklog.emptyNoMatchesHelp'),
         cls: 'tasks-backlog-help'
       });
       return;
     }
 
-    emptyState.createDiv({ text: 'No unscheduled tasks.' });
+    emptyState.createDiv({ text: t('settings.taskBacklog.emptyUnscheduledTitle') });
     emptyState.createDiv({
-      text: 'Tasks missing their scheduling date will appear here.',
+      text: t('settings.taskBacklog.emptyUnscheduledHelp'),
       cls: 'tasks-backlog-help'
     });
   }
 
-  private renderSearchBar(container: HTMLElement): void {
+  private renderSearchBar(container: HTMLElement, canShowAdvancedFilters: boolean): void {
     const searchRow = container.createDiv({ cls: 'tasks-backlog-search-row' });
-    const input = searchRow.createEl('input', {
+    const searchShell = searchRow.createDiv({ cls: 'tasks-backlog-search-shell' });
+    const searchIcon = searchShell.createSpan({ cls: 'tasks-backlog-search-icon' });
+    setIcon(searchIcon, 'search');
+
+    const input = searchShell.createEl('input', {
       cls: 'tasks-backlog-search-input',
       attr: {
         type: 'search',
-        placeholder: 'Filter by task title, source, or location',
-        'aria-label': 'Filter task backlog by task title, source, or location'
+        placeholder: t('settings.taskBacklog.searchPlaceholder'),
+        'aria-label': t('settings.taskBacklog.searchAriaLabel')
       }
     });
+
+    const clearButton = searchShell.createEl('button', {
+      cls: 'tasks-backlog-search-clear',
+      attr: {
+        type: 'button',
+        'aria-label': t('settings.taskBacklog.clearSearchAriaLabel')
+      }
+    });
+    setIcon(clearButton, 'x');
+
     input.value = this.searchQuery;
+    clearButton.disabled = this.searchQuery.trim().length === 0;
+
+    clearButton.addEventListener('click', () => {
+      if (!this.searchQuery.trim()) {
+        return;
+      }
+      this.searchQuery = '';
+      this.searchSelectionStart = 0;
+      this.searchSelectionEnd = 0;
+      this.shouldRestoreSearchFocus = true;
+      this.currentPage = 1;
+      this.updateDisplayedTasks();
+      this.render();
+    });
+
     input.addEventListener('input', () => {
       this.searchQuery = input.value;
       this.searchSelectionStart = input.selectionStart;
@@ -384,6 +431,43 @@ export class EmbeddedTaskBacklog extends Component {
       this.shouldRestoreSearchFocus = true;
       this.currentPage = 1;
       this.updateDisplayedTasks();
+      this.render();
+    });
+
+    input.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !this.searchQuery.trim()) {
+        return;
+      }
+      event.preventDefault();
+      this.searchQuery = '';
+      this.searchSelectionStart = 0;
+      this.searchSelectionEnd = 0;
+      this.shouldRestoreSearchFocus = true;
+      this.currentPage = 1;
+      this.updateDisplayedTasks();
+      this.render();
+    });
+
+    if (canShowAdvancedFilters) {
+      this.renderAdvancedFiltersToggle(searchRow);
+    }
+  }
+
+  private renderAdvancedFiltersToggle(container: HTMLElement): void {
+    const advancedToggle = container.createEl('button', {
+      cls: 'tasks-backlog-advanced-toggle',
+      text: '...',
+      attr: {
+        type: 'button',
+        'aria-label': this.showAdvancedFilters
+          ? t('settings.taskBacklog.hideAdvancedFiltersAriaLabel')
+          : t('settings.taskBacklog.showAdvancedFiltersAriaLabel'),
+        'aria-expanded': this.showAdvancedFilters ? 'true' : 'false'
+      }
+    });
+
+    advancedToggle.addEventListener('click', () => {
+      this.showAdvancedFilters = !this.showAdvancedFilters;
       this.render();
     });
   }
@@ -413,7 +497,7 @@ export class EmbeddedTaskBacklog extends Component {
 
   private renderDateTargetSelector(container: HTMLElement): void {
     const wrapper = container.createEl('label', { cls: 'tasks-backlog-target' });
-    wrapper.createSpan({ text: 'Missing date' });
+    wrapper.createSpan({ text: t('settings.taskBacklog.missingDateLabel') });
 
     const select = wrapper.createEl('select', {
       cls: 'tasks-backlog-target-select',
@@ -487,27 +571,37 @@ export class EmbeddedTaskBacklog extends Component {
 
       titleRow.createSpan({
         text: task.title,
-        cls: task.completed ? 'tasks-backlog-title tasks-backlog-done' : 'tasks-backlog-title'
+        cls: task.completed ? 'tasks-backlog-title tasks-backlog-done' : 'tasks-backlog-title',
+        attr: { title: task.title }
       });
 
-      const metaText = [task.providerInfo.name, task.subtitle].filter(Boolean).join(' - ');
-      if (metaText) {
-        taskItem.createDiv({
-          text: metaText,
-          cls: 'tasks-backlog-location'
-        });
-      }
-
       if (task.provider.openTaskBacklogItem) {
-        const actions = taskItem.createDiv({ cls: 'tasks-backlog-actions' });
+        const actions = titleRow.createDiv({ cls: 'tasks-backlog-actions' });
         const openButton = actions.createEl('button', {
           cls: 'tasks-backlog-action',
-          attr: { 'aria-label': `Open note for ${task.title}` }
+          attr: {
+            type: 'button',
+            'aria-label': t('settings.taskBacklog.openNoteAriaLabel', { title: task.title })
+          }
         });
         setIcon(openButton, 'file-text');
         openButton.addEventListener('click', event => {
           event.stopPropagation();
           void task.provider.openTaskBacklogItem?.(task.id);
+        });
+      }
+
+      const metaRow = taskItem.createDiv({ cls: 'tasks-backlog-meta-row' });
+      metaRow.createSpan({
+        text: task.providerInfo.name,
+        cls: 'tasks-backlog-source-badge',
+        attr: { title: task.providerInfo.name }
+      });
+      if (task.subtitle) {
+        metaRow.createSpan({
+          text: task.subtitle,
+          cls: 'tasks-backlog-location',
+          attr: { title: task.subtitle }
         });
       }
     }
@@ -610,19 +704,22 @@ export class EmbeddedTaskBacklog extends Component {
     const pagination = container.createDiv({ cls: 'tasks-backlog-pagination' });
 
     const prevBtn = pagination.createEl('button', {
-      text: '< previous',
+      text: t('settings.taskBacklog.paginationPrevious'),
       cls: 'tasks-backlog-nav-btn'
     });
     prevBtn.disabled = this.currentPage === 1;
     prevBtn.addEventListener('click', () => this.goToPreviousPage());
 
     pagination.createSpan({
-      text: `Page ${this.currentPage} of ${totalPages}`,
+      text: t('settings.taskBacklog.paginationPage', {
+        current: this.currentPage,
+        total: totalPages
+      }),
       cls: 'tasks-backlog-page-info'
     });
 
     const nextBtn = pagination.createEl('button', {
-      text: 'Next >',
+      text: t('settings.taskBacklog.paginationNext'),
       cls: 'tasks-backlog-nav-btn'
     });
     nextBtn.disabled = this.currentPage === totalPages;
@@ -630,7 +727,12 @@ export class EmbeddedTaskBacklog extends Component {
 
     if (this.currentPage < totalPages) {
       const loadMoreBtn = pagination.createEl('button', {
-        text: `Load More (${Math.min(this.TASKS_PER_PAGE, this.filteredTasks.length - this.currentPage * this.TASKS_PER_PAGE)} more)`,
+        text: t('settings.taskBacklog.loadMore', {
+          count: Math.min(
+            this.TASKS_PER_PAGE,
+            this.filteredTasks.length - this.currentPage * this.TASKS_PER_PAGE
+          )
+        }),
         cls: 'tasks-backlog-load-more'
       });
       loadMoreBtn.addEventListener('click', () => this.loadMore());

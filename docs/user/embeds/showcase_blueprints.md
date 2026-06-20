@@ -104,3 +104,48 @@ layout:
       showFooter: true
 ```
 ````
+
+---
+
+## Homepage Command Center
+**Image**: ![Homepage Command Center](../../assets/embedded-showcase/Basic3.png)
+**Summary**: Pairs a month overview grid with a weekly agenda panel, enhanced by custom event styling.
+
+Built for dashboard-style planning pages. It keeps a compact month calendar on the left and a list-based week agenda on the right, giving you both macro visibility and upcoming detail in one glance using Obsidian Gruvebox theme v0.2.1.
+
+#### Key Features
+
+* **Two-View Command Layout**: Combines `dayGridMonth` and `listWeek` in a side-by-side dashboard.
+* **Balanced Month-to-Agenda Split**: Uses a 60/40 width ratio so monthly context stays prominent while upcoming items remain readable.
+* **Custom Milestone Styling**: Applies list-view event color overrides for stronger visual emphasis on priority entries.
+
+#### Configuration Code
+  
+
+````yaml
+```fc-calendar
+calendars:
+  - 
+# tagFilter: "#milestone"
+height: 620px
+layout:
+  orientation: horizontal
+  views:
+    # Column 1: Mini Month Overview grid (60% width)
+    - type: calendar
+      view: dayGridMonth
+      width: 60%
+      header: true
+      zoomLevel: 1
+
+    # Column 2: Upcoming Milestones Agenda list (40% width)
+    - type: calendar
+      view: listWeek
+      width: 40%
+      header: true
+      styles:
+        --fc-event-bg-color: "rgba(123, 44, 191, 0.2)"
+        --fc-event-border-color: "#7b2cbf"
+        --fc-event-text-color: "#ffffff"
+```
+````

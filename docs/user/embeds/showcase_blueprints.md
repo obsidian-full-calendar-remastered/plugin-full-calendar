@@ -26,7 +26,7 @@ To add a new showcase item:
 **Image**: ![Multi-View Daily Planner](../../assets/embedded-showcase/Basic1.png)
 **Summary**: A multi-column setup combining a weekly planner, work focus agenda list, and a daily weather forecast.
 
-Designed for daily note dashboards. It locks to the note's date automatically and displays your week's calendar, a list of your weekly goals/tasks, and your weather updates side-by-side.
+Designed for daily note dashboards. It locks to the note's date automatically and displays your week's calendar, a list of your weekly goals/tasks, and your weather updates side-by-side using Obsidian Gruvebox theme v0.2.1.
 
 #### Key Features
 
@@ -40,7 +40,7 @@ Designed for daily note dashboards. It locks to the note's date automatically an
 ```fc-calendar
 defaultDate: auto    # Automatically locks to the date of your Daily Note!
 calendars:
-  - DailyNote
+  - 
 height: 650px    
 layout:
   orientation: horizontal
@@ -62,5 +62,45 @@ layout:
       type: day
       orientation: vertical
       width: 20%
+```
+````
+
+---
+
+## Daily Planner Companion
+**Image**: ![Day Planner with Backlogs](../../assets/embedded-showcase/Basic2.png)
+**Summary**: A split daily dashboard pairing a focused day timeline with an unscheduled task backlog.
+
+Built for daily note dashboards. It auto-locks to the active note date, keeps your day timeline in one pane, and places the task backlog beside it so planning and triage happen together using Obsidian Gruvebox theme v0.2.1.
+
+#### Key Features
+
+* **Automatic Date Locking**: Uses `defaultDate: auto` to sync to the active Daily Note context.
+* **Planning + Backlog Workflow**: Combines a `timeGridDay` calendar panel with a dedicated `backlog` panel.
+* **Balanced Two-Column Layout**: Uses a 65/35 split so scheduling stays primary while backlog actions remain visible.
+
+#### Configuration Code
+
+````yaml
+```fc-calendar
+defaultDate: auto
+calendars:
+  -
+height: 680px
+layout:
+  orientation: horizontal
+  views:
+    # Column 1: Daily schedule (65% width)
+    - type: calendar
+      view: timeGridDay
+      width: 65%
+      header: false
+      weather: true
+
+    # Column 2: Unscheduled Task Backlog (35% width)
+    - type: backlog
+      width: 35%
+      showSearch: true
+      showFooter: true
 ```
 ````

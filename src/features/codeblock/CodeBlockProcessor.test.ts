@@ -1,4 +1,4 @@
-import { EmbeddedCalendar, ViewConfig } from './CodeBlockProcessor';
+import { EmbeddedCalendar, ViewConfig, sanitizeEmbeddedConfig } from './CodeBlockProcessor';
 import { parseRelativeOffset, getEventSources } from './CodeBlockQueryHelper';
 import { DateTime } from 'luxon';
 import { PluginState } from '../../core/PluginState';
@@ -261,5 +261,35 @@ describe('EmbeddedCalendar getSourcesAndConfig filtering by configured name', ()
       calendars: ['NonExistentName']
     });
     expect(result.sources).toHaveLength(0);
+  });
+});
+
+describe('sanitizeEmbeddedConfig', () => {
+  it('drops empty list filters and keeps valid values', () => {
+    const sanitized = sanitizeEmbeddedConfig({
+      defaultDate: 'auto',
+      calendars: [null, '', '   '],
+      categories: ['work', '']
+    });
+
+    expect(sanitized.defaultDate).toBe('auto');
+    expect(sanitized.calendars).toBeUndefined();
+    expect(sanitized.categories).toEqual(['work']);
+  });
+
+  it('treats valueless keys as unset while preserving false and zero', () => {
+    const sanitized = sanitizeEmbeddedConfig({
+      showSearch: false,
+      zoomLevel: 0,
+      header: null,
+      textSearch: '   ',
+      calendars: undefined
+    });
+
+    expect(sanitized.showSearch).toBe(false);
+    expect(sanitized.zoomLevel).toBe(0);
+    expect(sanitized.header).toBeUndefined();
+    expect(sanitized.textSearch).toBeUndefined();
+    expect(sanitized.calendars).toBeUndefined();
   });
 });

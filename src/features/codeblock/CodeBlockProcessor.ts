@@ -57,6 +57,45 @@ export interface CodeBlockConfig extends ViewConfig {
   };
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function sanitizeEmbeddedConfigValue(value: unknown): unknown {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    return value.trim().length === 0 ? undefined : value;
+  }
+
+  if (Array.isArray(value)) {
+    const sanitizedItems = value
+      .map(item => sanitizeEmbeddedConfigValue(item))
+      .filter((item): item is NonNullable<typeof item> => item !== undefined);
+    return sanitizedItems.length > 0 ? sanitizedItems : undefined;
+  }
+
+  if (isPlainRecord(value)) {
+    const sanitizedObject: Record<string, unknown> = {};
+    for (const [key, innerValue] of Object.entries(value)) {
+      const sanitizedValue = sanitizeEmbeddedConfigValue(innerValue);
+      if (sanitizedValue !== undefined) {
+        sanitizedObject[key] = sanitizedValue;
+      }
+    }
+    return Object.keys(sanitizedObject).length > 0 ? sanitizedObject : undefined;
+  }
+
+  return value;
+}
+
+export function sanitizeEmbeddedConfig(config: Record<string, unknown>): Record<string, unknown> {
+  const sanitized = sanitizeEmbeddedConfigValue(config);
+  return isPlainRecord(sanitized) ? sanitized : {};
+}
+
 export class EmbeddedCalendar extends Component implements ViewContext {
   plugin: FullCalendarPlugin;
   app: App;
@@ -369,7 +408,8 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
 
     let parsedConfig: Record<string, unknown> = {};
     try {
-      parsedConfig = (parseYaml(source) || {}) as Record<string, unknown>;
+      const parsed: unknown = parseYaml(source);
+      parsedConfig = sanitizeEmbeddedConfig(isPlainRecord(parsed) ? parsed : {});
     } catch (e) {
       container.createEl('pre', {
         text: `Full Calendar: Failed to parse configuration.\n${e instanceof Error ? e.message : String(e)}`
@@ -387,20 +427,23 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
 
     const mountWidget = async () => {
       const renderItem = async (targetEl: HTMLElement, itemConfig: Record<string, unknown>) => {
-        if (!itemConfig || typeof itemConfig !== 'object') {
+        const normalizedItemConfig = sanitizeEmbeddedConfig(itemConfig);
+
+        if (!normalizedItemConfig || typeof normalizedItemConfig !== 'object') {
+          const itemConfigType = Array.isArray(itemConfig) ? 'array' : typeof itemConfig;
           targetEl.empty();
           targetEl.createEl('pre', {
-            text: `Full Calendar: Invalid item configuration (expected object, got ${String(itemConfig)})`
+            text: `Full Calendar: Invalid item configuration (expected object, got ${itemConfigType})`
           });
           return;
         }
 
         if (
-          itemConfig.styles &&
-          typeof itemConfig.styles === 'object' &&
-          !Array.isArray(itemConfig.styles)
+          normalizedItemConfig.styles &&
+          typeof normalizedItemConfig.styles === 'object' &&
+          !Array.isArray(normalizedItemConfig.styles)
         ) {
-          for (const [key, val] of Object.entries(itemConfig.styles)) {
+          for (const [key, val] of Object.entries(normalizedItemConfig.styles)) {
             const cssKey = key.startsWith('--')
               ? key
               : key.replace(/([A-Z])/g, '-$1').toLowerCase();
@@ -408,14 +451,14 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
           }
         }
 
-        const itemWidth = itemConfig.width;
+        const itemWidth = normalizedItemConfig.width;
         if (typeof itemWidth === 'string' || typeof itemWidth === 'number') {
           targetEl.setCssProps({
             width: String(itemWidth),
             flex: `0 0 ${itemWidth}`
           });
         }
-        const itemHeight = itemConfig.height;
+        const itemHeight = normalizedItemConfig.height;
         if (
           (typeof itemHeight === 'string' || typeof itemHeight === 'number') &&
           itemHeight !== 'fit'
@@ -425,7 +468,7 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
           });
         }
 
-        const strategyName = resolveStrategy(itemConfig);
+        const strategyName = resolveStrategy(normalizedItemConfig);
         const strategy = await getOrLoadStrategy(strategyName, plugin);
         if (!strategy) {
           targetEl.empty();
@@ -433,7 +476,7 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
           return;
         }
 
-        const inst = await strategy.render(targetEl, itemConfig, {
+        const inst = await strategy.render(targetEl, normalizedItemConfig, {
           sourcePath: ctx.sourcePath,
           onUpdate: callback => {
             updateCallbacks.push(callback);

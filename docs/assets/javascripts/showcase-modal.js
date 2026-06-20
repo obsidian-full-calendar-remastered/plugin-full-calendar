@@ -2,6 +2,7 @@
   let activeDetails = null;
   let modalElement = null;
   let modalContent = null;
+  let tocClickBound = false;
 
   // Zoom/pan state variables
   let scale = 1;
@@ -11,8 +12,69 @@
   let startX = 0;
   let startY = 0;
 
+  function isShowcasePage() {
+    return !!document.querySelector('.fc-showcase-grid');
+  }
+
+  function syncShowcasePageClass() {
+    const active = isShowcasePage();
+    document.documentElement.classList.toggle('fc-showcase-page', active);
+    document.body.classList.toggle('fc-showcase-page', active);
+  }
+
+  function getHeaderOffset() {
+    const header = document.querySelector('.md-header');
+    const headerHeight = header instanceof HTMLElement ? header.offsetHeight : 0;
+    return headerHeight + 16;
+  }
+
+  function bindTocAnchorFix() {
+    if (tocClickBound) return;
+
+    document.addEventListener('click', event => {
+      if (!isShowcasePage()) return;
+
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const tocLink = target.closest('.md-sidebar--secondary .md-nav__link[href^="#"]');
+      if (!(tocLink instanceof HTMLAnchorElement)) return;
+
+      const hash = tocLink.getAttribute('href');
+      if (!hash || hash.length < 2) return;
+
+      const targetId = decodeURIComponent(hash.slice(1));
+      const anchorTarget = document.getElementById(targetId);
+      if (!(anchorTarget instanceof HTMLElement)) return;
+
+      let scrollTarget = anchorTarget;
+      if (anchorTarget.classList.contains('fc-showcase-toc-anchor')) {
+        const cardTargetId = anchorTarget.getAttribute('data-card-target');
+        if (cardTargetId) {
+          const cardTarget = document.getElementById(cardTargetId);
+          if (cardTarget instanceof HTMLElement) {
+            scrollTarget = cardTarget;
+          }
+        }
+      }
+
+      event.preventDefault();
+      const scrollTop = scrollTarget.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
+      window.scrollTo({ top: Math.max(scrollTop, 0), behavior: 'smooth' });
+
+      if (window.history && typeof window.history.replaceState === 'function') {
+        window.history.replaceState(null, '', hash);
+      }
+    });
+
+    tocClickBound = true;
+  }
+
   function initShowcaseModal() {
     const grid = document.querySelector('.fc-showcase-grid');
+    syncShowcasePageClass();
+    bindTocAnchorFix();
+
     if (!grid) return;
 
     // Create the modal element if it doesn't exist yet

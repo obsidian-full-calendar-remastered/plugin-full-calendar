@@ -1,10 +1,28 @@
 /* Showcase grid and card styles */
 .fc-showcase-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(var(--fc-showcase-card-min-width, 280px), 1fr));
   gap: 1.5rem;
   margin: 1.5rem 0;
   max-width: 100% !important;
+}
+
+.fc-showcase-toc-anchor {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0 !important;
+  scroll-margin-top: 5rem;
+}
+
+.fc-showcase-toc-anchor .headerlink {
+  display: none !important;
 }
 
 .fc-showcase-card {
@@ -46,7 +64,7 @@
   gap: 0.5rem;
 }
 
-.fc-showcase-card-info h3 {
+.fc-showcase-card-title {
   margin: 0 !important;
   font-size: 1.1rem !important;
   font-weight: 600 !important;
@@ -206,10 +224,59 @@
   padding-bottom: 0 !important;
 }
 
+.fc-modal-info-col .fc-modal-title {
+  margin: 0 0 1rem !important;
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+}
+
 .fc-modal-info-col h4 {
   margin-top: 1.8rem !important;
   margin-bottom: 0.8rem !important;
   font-size: 1.1rem !important;
+}
+
+@media (min-width: 76.25em) {
+  .fc-showcase-page {
+    --fc-showcase-card-min-width: 260px;
+  }
+
+  /* Material hides drawer toggle on desktop by default; enable it for showcase page. */
+  .fc-showcase-page .md-header__button.md-icon[for="__drawer"] {
+    display: inline-flex !important;
+  }
+
+  .fc-showcase-page .md-sidebar--primary {
+    transform: translateX(calc(-100% - 0.75rem));
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  .fc-showcase-page .md-content {
+    margin-left: 0;
+  }
+
+  .fc-showcase-page .md-toggle[data-md-toggle="drawer"]:checked ~ .md-container .md-sidebar--primary {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .fc-showcase-page .md-toggle[data-md-toggle="drawer"]:checked ~ .md-container .md-content {
+    margin-left: revert;
+  }
+
+  /* When the left panel is hidden, use the freed width for more card columns. */
+  .fc-showcase-page .md-toggle[data-md-toggle="drawer"]:not(:checked) ~ .md-container .md-main .md-main__inner.md-grid {
+    max-width: min(98vw, 1900px);
+  }
+
+  /* Restore the normal docs width when the left panel is visible again. */
+  .fc-showcase-page .md-toggle[data-md-toggle="drawer"]:checked ~ .md-container .md-main .md-main__inner.md-grid {
+    max-width: revert;
+  }
 }
 
 /* Modal typography and code font size adjustments */

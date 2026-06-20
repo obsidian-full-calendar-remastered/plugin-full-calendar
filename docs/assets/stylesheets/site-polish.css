@@ -27,6 +27,14 @@
   max-width: var(--fc-content-max-width);
 }
 
+/* Callouts should use their full container width instead of prose line-length caps. */
+.md-typeset .admonition :is(p, ul, ol, blockquote, table),
+.md-typeset details :is(p, ul, ol, blockquote, table),
+.md-typeset .admonition > .admonition-title,
+.md-typeset details > summary {
+  max-width: none;
+}
+
 .md-sidebar .md-nav__link {
   border-radius: var(--fc-nav-radius);
   transition: background-color 120ms ease, color 120ms ease;

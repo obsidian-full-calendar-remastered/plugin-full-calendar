@@ -164,7 +164,8 @@
     "openSidebar": "Open in sidebar",
     "syncActivityWatch": "Sync ActivityWatch",
     "nlpQuickAdd": "FCR Command",
-    "syncFcrReminder": "Sync FCR Reminder Companion"
+    "syncFcrReminder": "Sync FCR Reminder Companion",
+    "shareAvailability": "Share Availability"
   },
   "notices": {
     "settingsUpdated": "Full Calendar has updated your calendar settings to a new format.",
@@ -1779,6 +1780,64 @@
       "cacheReset": "Event cache has been reset.",
       "awNotEnabled": "ActivityWatch is not enabled. Enable it in settings first.",
       "fcrCompanionNotEnabled": "FCR Reminder Companion is not enabled. Enable it in settings first."
+    }
+  },
+  "availability": {
+    "settings": {
+      "header": "Availability Sharing",
+      "headerDesc": "Configure settings for generating availability schedules. All calculations are performed locally and uploaded directly to GitHub.",
+      "links": {
+        "guide": "Availability Guide",
+        "security": "API & Security Settings",
+        "privacy": "Privacy Policy"
+      },
+      "privacyCleanupTitle": "Data Privacy & Cleanup",
+      "privacyCleanupDesc": "No calendar data, schedules, or event details are ever sent to our servers. All calculations occur locally on your device. Published web links are stored as secret Gists under your own GitHub account.",
+      "cleanupTokenHelp": "To clear your Access Token locally, delete the token field above. To delete a published web link, delete the secret Gist from your",
+      "cleanupGistLink": "GitHub Gists Dashboard.",
+      "githubPat": "GitHub Personal Access Token",
+      "githubPatDesc": "Used to upload availability as secret Gists. Requires the \"gist\" scope.",
+      "githubPatLink": "👉 Generate a GitHub token with the Gist scope pre-selected",
+      "exportPath": "Default Export Path",
+      "exportPathDesc": "Vault folder path where availability markdown files will be saved (leave blank for root).",
+      "startTime": "Default Daily Start Time",
+      "startTimeDesc": "Start hour for calculated daily slots when sharing availability.",
+      "endTime": "Default Daily End Time",
+      "endTimeDesc": "End hour for calculated daily slots when sharing availability."
+    },
+    "modal": {
+      "title": "Share Availability",
+      "dateRange": "Date Range",
+      "dateRangeDesc": "Select the start and end dates for the availability period.",
+      "timeRange": "Daily Time Range",
+      "timeRangeDesc": "Select the daily start and end hours for available slots.",
+      "excludeWeekends": "Exclude Weekends",
+      "excludeWeekendsDesc": "Skip Saturday and Sunday availability slots",
+      "anonymize": "Anonymization Level",
+      "anonymizeDesc": "Choose whether to include event titles",
+      "anonymizeFull": "Fully Anonymized (Free/Busy status)",
+      "anonymizeSemi": "Semi-Anonymized (Show Event Titles)",
+      "calendarsTitle": "Calendars to Include",
+      "noCalendars": "No calendars configured.",
+      "btnMarkdown": "Export as Markdown File",
+      "btnWebLink": "Generate Web Link",
+      "setupTitle": "Enable Web Sharing",
+      "setupDesc": "To share your schedule online, the plugin publishes a secret file under your GitHub account. All calendar calculations are performed locally on your device, and zero data is stored or tracked on our servers under any circumstances.",
+      "setupStep1": "Step 1: Generate your GitHub Access Token",
+      "setupStep1Link": "👉 Click here to create a pre-configured token",
+      "setupStep2": "Step 2: Paste your token below to enable",
+      "setupPlaceholder": "github_pat_...",
+      "btnSaveAndGenerate": "Save Token & Generate Link",
+      "btnGenerating": "Generating Link...",
+      "btnBack": "Back",
+      "noticeSuccessMd": "Availability exported to vault at: {{path}}",
+      "noticeSuccessGist": "Availability schedule published! Link copied to clipboard.",
+      "noticeFailedMd": "Export failed: {{error}}",
+      "noticeFailedGist": "Web link generation failed: {{error}}",
+      "successModalTitle": "Web Link Generated!",
+      "successModalDesc": "Your availability schedule is online. Copy the link below to share it with clients or colleagues:",
+      "successModalCopy": "Copy Link",
+      "successModalCopied": "Copied!"
     }
   },
   "linkedNotes": {

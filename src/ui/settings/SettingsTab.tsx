@@ -749,7 +749,8 @@ export class FullCalendarSettingTab extends PluginSettingTab {
           { renderTaskNotesIntegrationSettings },
           { renderApiAccessSettings },
           { renderFcrReminderSettings },
-          { renderCredentialsSettings }
+          { renderCredentialsSettings },
+          { renderAvailabilitySettings }
         ] = await Promise.all([
           import('../../features/activitywatch/ui/renderActivityWatch'),
           import('../../providers/google/ui/renderGoogle'),
@@ -758,10 +759,15 @@ export class FullCalendarSettingTab extends PluginSettingTab {
           import('../../providers/tasknotes/renderTaskNotesIntegration'),
           import('./sections/renderApiAccess'),
           import('../../features/fcr_reminder/ui/renderFcrReminder'),
-          import('../../features/credentials/ui/renderCredentialsSettings')
+          import('../../features/credentials/ui/renderCredentialsSettings'),
+          import('../../features/availability/ui/AvailabilitySettings')
         ]);
 
         renderCredentialsSettings(containerEl, () => {
+          this.renderSettings();
+        });
+
+        renderAvailabilitySettings(containerEl, this.plugin, () => {
           this.renderSettings();
         });
 

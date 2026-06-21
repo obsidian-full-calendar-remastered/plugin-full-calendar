@@ -159,7 +159,8 @@
     "openSidebar": "Im Seitenbereich öffnen",
     "syncActivityWatch": "ActivityWatch synchronisieren",
     "nlpQuickAdd": "FCR Command",
-    "syncFcrReminder": "FCR Reminder Companion synchronisieren"
+    "syncFcrReminder": "FCR Reminder Companion synchronisieren",
+    "shareAvailability": "Share Availability"
   },
   "notices": {
     "settingsUpdated": "Full Calendar hat Ihre Kalendereinstellungen auf ein neues Format aktualisiert.",
@@ -1783,5 +1784,63 @@
   },
   "linkedNotes": {
     "untitledNote": "Unbenannte verknüpfte Notiz"
+  },
+  "availability": {
+    "settings": {
+      "header": "Availability Sharing",
+      "headerDesc": "Configure settings for generating availability schedules and uploading them to GitHub Gists.",
+      "githubPat": "GitHub Personal Access Token",
+      "githubPatDesc": "Used to upload availability as secret Gists. Requires the \"gist\" scope.",
+      "githubPatLink": "👉 Generate a GitHub token with the Gist scope pre-selected",
+      "exportPath": "Default export path",
+      "exportPathDesc": "Vault folder path where availability markdown files will be saved (leave blank for root).",
+      "startTime": "Default Daily start time",
+      "startTimeDesc": "Start hour for calculated daily slots when sharing availability.",
+      "endTime": "Default Daily ennd time",
+      "endTimeDesc": "End hour for calculated daily slots when sharing availability.",
+      "links": {
+        "guide": "Availability Guide",
+        "security": "API & Security Settings",
+        "privacy": "Privacy Policy"
+      },
+      "privacyCleanupTitle": "Data Privacy & Cleanup",
+      "privacyCleanupDesc": "No calendar data, schedules, or event details are ever sent to our servers. All calculations occur locally on your device. Published web links are stored as secret Gists under your own GitHub account.",
+      "cleanupTokenHelp": "To clear your Access Token locally, delete the token field above. To delete a published web link, delete the secret Gist from your",
+      "cleanupGistLink": "GitHub Gists Dashboard."
+    },
+    "modal": {
+      "title": "Share Availability",
+      "excludeWeekends": "Exclude Weekends",
+      "excludeWeekendsDesc": "Skip Saturday and Sunday availability slots",
+      "anonymize": "Anonymization Level",
+      "anonymizeDesc": "Choose whether to include event titles",
+      "anonymizeFull": "Fully Anonymized (Free/Busy status)",
+      "anonymizeSemi": "Semi-Anonymized (Show Event Titles)",
+      "calendarsTitle": "Calendars to Include",
+      "noCalendars": "No calendars configured.",
+      "btnMarkdown": "Export as Markdown File",
+      "btnWebLink": "Generate Web Link",
+      "setupTitle": "Enable Web Sharing",
+      "setupDesc": "To share your schedule online, the plugin publishes a secret file under your GitHub account. No account registration or server database is needed.",
+      "setupStep1": "Step 1: Generate your GitHub Access Token",
+      "setupStep1Link": "👉 Click here to create a pre-configured token",
+      "setupStep2": "Step 2: Paste your token below to enable",
+      "setupPlaceholder": "github_pat_...",
+      "btnSaveAndGenerate": "Save Token & Generate Link",
+      "btnGenerating": "Generating Link...",
+      "noticeSuccessMd": "Availability exported to vault at: {{path}}",
+      "noticeSuccessGist": "Availability schedule published! Link copied to clipboard.",
+      "noticeFailedMd": "Export failed: {{error}}",
+      "noticeFailedGist": "Web link generation failed: {{error}}",
+      "successModalTitle": "Web Link Generated!",
+      "successModalDesc": "Your availability schedule is online. Copy the link below to share it with clients or colleagues:",
+      "successModalCopy": "Copy Link",
+      "successModalCopied": "Copied!",
+      "dateRange": "Date Range",
+      "dateRangeDesc": "Select the start and end dates for the availability period.",
+      "timeRange": "Daily Time Range",
+      "timeRangeDesc": "Select the daily start and end hours for available slots.",
+      "btnBack": "Back"
+    }
   }
 }

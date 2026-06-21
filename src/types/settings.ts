@@ -236,9 +236,17 @@ export interface FullCalendarSettings {
   weatherInputMode: 'city' | 'coords';
   weatherUnit?: 'C' | 'F';
   useLegacyPlaintextCredentials: boolean;
+  githubToken: string | null;
+  availabilityGistId: string | null;
+  availabilityExportPath: string;
+  availabilityDefaultTimeRange: { startTime: string; endTime: string };
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
+  githubToken: null,
+  availabilityGistId: null,
+  availabilityExportPath: '',
+  availabilityDefaultTimeRange: { startTime: '09:00', endTime: '17:00' },
   useLegacyPlaintextCredentials: false,
   calendarSources: [],
   defaultCalendar: 0,

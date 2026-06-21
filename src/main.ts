@@ -298,6 +298,15 @@ export default class FullCalendarPlugin extends Plugin {
       }
     });
     this.addCommand({
+      id: 'full-calendar-share-availability',
+      name: t('commands.shareAvailability') || 'Share Availability',
+      callback: async () => {
+        const { AvailabilityShareModal } =
+          await import('./features/availability/AvailabilityShareModal');
+        new AvailabilityShareModal(this.app).open();
+      }
+    });
+    this.addCommand({
       id: 'full-calendar-reset',
       name: t('commands.resetCache'),
       callback: () => {

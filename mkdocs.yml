@@ -165,6 +165,7 @@ nav:
                 - Note Templating System: user/features/templates.md
                 - Live Preview Decorators: user/features/live-preview.md
                 - Developer API & CLI: user/features/api.md
+                - Share Availability: user/features/availability.md
           - Embedded Calendars:
                   - user/embeds/index.md
                   - Deep Dive Specs: user/embeds/deep_dive.md
@@ -223,6 +224,7 @@ nav:
                 - Linked Notes to Remote Events: architecture/system/features/event-linked-notes.md
                 - Note Templating Architecture: architecture/system/features/templates.md
                 - FCR Reminder Companion App: architecture/system/features/fcr-reminder-architecture.md
+                - Availability Sharing Architecture: architecture/system/features/availability-architecture.md
           - Views Architecture:
                 - architecture/views/architecture.md
                 - Unified Embedded Widgets Architecture: architecture/views/embedded_widgets.md

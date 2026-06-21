@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shared Availability - Full Calendar</title>
+  
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-fontawesome/6.4.0/css/all.min.css">
+  
+  <style>
+    /* CSS Variables for Premium Styling & Theme toggling */
+    :root {
+      --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      
+      /* Light Mode Palette */
+      --bg-primary: #f4f6f9;
+      --bg-card: rgba(255, 255, 255, 0.75);
+      --border-color: rgba(226, 232, 240, 0.8);
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --accent-color: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-light: rgba(59, 130, 246, 0.1);
+      
+      --status-free-bg: rgba(16, 185, 129, 0.1);
+      --status-free-text: #059669;
+      --status-free-border: rgba(16, 185, 129, 0.2);
+      
+      --status-busy-bg: rgba(239, 68, 68, 0.05);
+      --status-busy-text: #dc2626;
+      --status-busy-border: rgba(239, 68, 68, 0.15);
+      
+      --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+      --backdrop-blur: blur(20px);
+    }
+    
+    [data-theme="dark"] {
+      /* Dark Mode Palette */
+      --bg-primary: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --border-color: rgba(71, 85, 105, 0.4);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-color: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-light: rgba(59, 130, 246, 0.2);
+      
+      --status-free-bg: rgba(16, 185, 129, 0.15);
+      --status-free-text: #34d399;
+      --status-free-border: rgba(16, 185, 129, 0.3);
+      
+      --status-busy-bg: rgba(239, 68, 68, 0.1);
+      --status-busy-text: #f87171;
+      --status-busy-border: rgba(239, 68, 68, 0.25);
+      
+      --shadow-premium: 0 20px 40px -15px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(255, 255, 255, 0.02);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, opacity 0.3s ease;
+    }
+    
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      overflow-y: auto;
+    }
+    
+    /* Premium Glassmorphic Card Container */
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: var(--bg-card);
+      backdrop-filter: var(--backdrop-blur);
+      -webkit-backdrop-filter: var(--backdrop-blur);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 2.5rem;
+      box-shadow: var(--shadow-premium);
+      animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Header layout */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .title-area h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .title-area p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    /* Theme Toggle Switch */
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      cursor: pointer;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: var(--shadow-premium);
+    }
+    
+    .theme-toggle:hover {
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+      transform: scale(1.05);
+    }
+    
+    /* Timezone selector styling */
+    .tz-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-primary);
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .tz-container label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .tz-select {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: var(--font-family);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+    }
+    
+    /* Availability Grid & Cards */
+    .schedule-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .day-card {
+      border: 1px solid var(--border-color);
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+    
+    .day-card:hover {
+      border-color: rgba(59, 130, 246, 0.4);
+      box-shadow: 0 4px 20px -5px rgba(59, 130, 246, 0.1);
+    }
+    
+    .day-header {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .day-header i {
+      color: var(--accent-color);
+    }
+    
+    .slots-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+    
+    /* Interactive Slots */
+    .slot-pill {
+      display: flex;
+      flex-direction: column;
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.01);
+    }
+    
+    .slot-pill.free {
+      background-color: var(--status-free-bg);
+      border-color: var(--status-free-border);
+      color: var(--status-free-text);
+    }
+    
+    .slot-pill.free:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+      border-color: var(--accent-color);
+    }
+    
+    .slot-pill.busy {
+      background-color: var(--status-busy-bg);
+      border-color: var(--status-busy-border);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+      opacity: 0.8;
+    }
+    
+    .slot-time {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+    
+    .slot-status {
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.9;
+    }
+    
+    .slot-pill.selected {
+      background-color: var(--accent-color) !important;
+      border-color: var(--accent-color) !important;
+      color: #ffffff !important;
+      transform: scale(0.98);
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+    
+    /* Booking request banner */
+    .booking-panel {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      width: calc(100% - 2rem);
+      max-width: 600px;
+      background: var(--bg-card);
+      backdrop-filter: var(--backdrop-blur);
+      -webkit-backdrop-filter: var(--backdrop-blur);
+      border: 1px solid var(--accent-color);
+      border-radius: 16px;
+      padding: 1.2rem;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      opacity: 0;
+      z-index: 1000;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+    }
+    
+    .booking-panel.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    
+    .booking-info {
+      flex: 1;
+      margin-right: 1rem;
+    }
+    
+    .booking-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-color);
+      margin-bottom: 0.2rem;
+    }
+    
+    .booking-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .booking-action-btn {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-family);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .booking-action-btn:hover {
+      background-color: var(--accent-hover);
+    }
+    
+    /* Footer branding */
+    footer {
+      margin-top: 3rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    
+    footer a {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    footer a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Loader & Error States */
+    .loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 4rem 0;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border-color);
+      border-top-color: var(--accent-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error-card {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+    
+    .error-card i {
+      font-size: 3rem;
+      color: var(--status-busy-text);
+      margin-bottom: 1rem;
+    }
+    
+    .error-card h2 {
+      margin-bottom: 0.5rem;
+    }
+    
+    .error-card p {
+      color: var(--text-secondary);
+    }
+
+    .privacy-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(16, 185, 129, 0.06);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--status-free-text);
+      line-height: 1.4;
+    }
+    
+    .privacy-banner i {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      color: var(--status-free-text);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="privacy-banner">
+      <i class="fa-solid fa-shield-halved"></i>
+      <span><strong>Zero-Server Privacy Guarantee:</strong> All availability calculations are performed locally on the host's device. No schedule, event, or calendar data is ever stored, hosted, or tracked on our servers under any circumstances. This page reads directly from a personal, secret GitHub Gist using client-side code.</span>
+    </div>
+    <div id="app-container">
+      <div class="loader">
+        <div class="spinner"></div>
+        <p style="color: var(--text-secondary); font-weight: 500;">Loading availability schedule...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="booking-panel" id="booking-panel">
+    <div class="booking-info">
+      <div class="booking-title">Selected Slot</div>
+      <div class="booking-text" id="booking-text">No slot selected</div>
+    </div>
+    <button class="booking-action-btn" id="booking-copy-btn">
+      <i class="fa-regular fa-copy"></i> Copy Request
+    </button>
+  </div>
+
+  <footer>
+    Powered by <a href="https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar" target="_blank">Full Calendar Remastered</a> for Obsidian.
+  </footer>
+
+  <!-- Script logic for fetching & client side rendering -->
+  <script type="module">
+    import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/+esm';
+
+    let currentData = null;
+    let viewMode = 'local'; // 'host' or 'local'
+    let selectedSlot = null;
+
+    // Detect system preferred theme
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.body.setAttribute('data-theme', 'dark');
+    }
+    
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+      document.body.setAttribute('data-theme', event.matches ? 'dark' : 'light');
+    });
+
+    // Helper to toggle theme manually
+    window.toggleTheme = function() {
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', newTheme);
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.className = newTheme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
+      }
+    }
+
+    // Parse URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const gistId = urlParams.get('gist');
+    const directUrl = urlParams.get('url');
+
+    const appContainer = document.getElementById('app-container');
+
+    async function loadData() {
+      try {
+        let responseJson = null;
+
+        if (gistId) {
+          const res = await fetch(`https://api.github.com/gists/${gistId}`);
+          if (!res.ok) throw new Error(`Failed to fetch Gist (${res.status})`);
+          const gist = await res.json();
+          const file = gist.files['availability.json'];
+          if (!file) throw new Error("Could not find 'availability.json' in Gist.");
+          responseJson = JSON.parse(file.content);
+        } else if (directUrl) {
+          const res = await fetch(directUrl);
+          if (!res.ok) throw new Error(`Failed to fetch direct URL (${res.status})`);
+          responseJson = await res.json();
+        } else {
+          throw new Error('No sharing ID or data source URL provided.');
+        }
+
+        currentData = responseJson;
+        renderApp();
+      } catch (err) {
+        renderError(err.message);
+      }
+    }
+
+    function renderError(message) {
+      appContainer.innerHTML = `
+        <div class="error-card">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <h2>Failed to Load Schedule</h2>
+          <p>${message}</p>
+        </div>
+      `;
+    }
+
+    function renderApp() {
+      const displayTz = viewMode === 'host' ? currentData.timezone : DateTime.local().zoneName;
+      
+      // Group slots by date
+      const slotsByDay = {};
+      
+      currentData.slots.forEach(slot => {
+        // Convert the absolute ISO string to the target display timezone
+        const startDt = DateTime.fromISO(slot.start).setZone(displayTz);
+        const dateKey = startDt.toISODate();
+        
+        if (!slotsByDay[dateKey]) {
+          slotsByDay[dateKey] = [];
+        }
+        slotsByDay[dateKey].push(slot);
+      });
+      
+      const sortedDays = Object.keys(slotsByDay).sort();
+      const generatedDate = DateTime.fromISO(currentData.generatedAt).toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY);
+
+      let html = `
+        <header>
+          <div class="title-area">
+            <h1>Shared Availability</h1>
+            <p>Generated on ${generatedDate} • Host Timezone: <strong>${currentData.timezone}</strong></p>
+          </div>
+          <div class="controls">
+            <div class="tz-container">
+              <label for="tz-select"><i class="fa-solid fa-earth-americas"></i> View In:</label>
+              <select class="tz-select" id="tz-select" onchange="window.changeTimezone(this.value)">
+                <option value="local" ${viewMode === 'local' ? 'selected' : ''}>Local Time (${DateTime.local().offsetNameShort})</option>
+                <option value="host" ${viewMode === 'host' ? 'selected' : ''}>Host Time (${DateTime.fromISO(currentData.generatedAt, {zone: currentData.timezone}).offsetNameShort})</option>
+              </select>
+            </div>
+            <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle Dark/Light Mode">
+              <i id="theme-icon" class="${document.body.getAttribute('data-theme') === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon'}"></i>
+            </button>
+          </div>
+        </header>
+        
+        <div class="schedule-grid">
+      `;
+      
+      if (sortedDays.length === 0) {
+        html += `<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No slots found in this availability period.</p>`;
+      } else {
+        sortedDays.forEach(dateStr => {
+          const dt = DateTime.fromISO(dateStr, { zone: displayTz });
+          const dayTitle = dt.toLocaleString(DateTime.DATE_HUGE);
+          
+          html += `
+            <div class="day-card">
+              <div class="day-header">
+                <i class="fa-regular fa-calendar-days"></i> ${dayTitle}
+              </div>
+              <div class="slots-container">
+          `;
+          
+          // Sort daily slots
+          const daySlots = slotsByDay[dateStr].sort((a, b) => a.start.localeCompare(b.start));
+          
+          daySlots.forEach(slot => {
+            const startDt = DateTime.fromISO(slot.start).setZone(displayTz);
+            const endDt = DateTime.fromISO(slot.end).setZone(displayTz);
+            const timeStr = `${startDt.toLocaleString(DateTime.TIME_SIMPLE)} - ${endDt.toLocaleString(DateTime.TIME_SIMPLE)}`;
+            const isFree = slot.status === 'free';
+            const isSelected = selectedSlot && selectedSlot.start === slot.start && selectedSlot.end === slot.end;
+            
+            html += `
+              <div class="slot-pill ${slot.status} ${isSelected ? 'selected' : ''}" 
+                   onclick="${isFree ? `window.selectSlot('${slot.start}', '${slot.end}')` : ''}">
+                <div class="slot-time">${timeStr}</div>
+                <div class="slot-status">${isFree ? 'Available' : (slot.title || 'Busy')}</div>
+              </div>
+            `;
+          });
+          
+          html += `
+              </div>
+            </div>
+          `;
+        });
+      }
+      
+      html += `</div>`;
+      appContainer.innerHTML = html;
+    }
+
+    window.changeTimezone = function(value) {
+      viewMode = value;
+      renderApp();
+    };
+
+    window.selectSlot = function(startIso, endIso) {
+      const displayTz = viewMode === 'host' ? currentData.timezone : DateTime.local().zoneName;
+      const startDt = DateTime.fromISO(startIso).setZone(displayTz);
+      const endDt = DateTime.fromISO(endIso).setZone(displayTz);
+      
+      selectedSlot = { start: startIso, end: endIso };
+      
+      // Update UI selection classes
+      renderApp();
+      
+      // Show Booking Panel
+      const panel = document.getElementById('booking-panel');
+      const text = document.getElementById('booking-text');
+      
+      const dayStr = startDt.toLocaleString(DateTime.DATE_HUGE);
+      const timeStr = `${startDt.toLocaleString(DateTime.TIME_SIMPLE)} - ${endDt.toLocaleString(DateTime.TIME_SIMPLE)}`;
+      
+      text.innerHTML = `<strong>${dayStr}</strong> at <strong>${timeStr}</strong> (${displayTz === currentData.timezone ? 'Host' : 'Your'} Time)`;
+      panel.classList.add('visible');
+    };
+
+    // Copy to clipboard booking request template
+    document.getElementById('booking-copy-btn').onclick = async () => {
+      if (!selectedSlot) return;
+      
+      const hostTz = currentData.timezone;
+      const startHost = DateTime.fromISO(selectedSlot.start).setZone(hostTz);
+      const endHost = DateTime.fromISO(selectedSlot.end).setZone(hostTz);
+      
+      const dayHostStr = startHost.toLocaleString(DateTime.DATE_HUGE);
+      const timeHostStr = `${startHost.toLocaleString(DateTime.TIME_SIMPLE)} - ${endHost.toLocaleString(DateTime.TIME_SIMPLE)}`;
+      
+      const message = `Hi! I'd like to book a meeting during your available slot: ${dayHostStr} at ${timeHostStr} (${hostTz}).`;
+      
+      await navigator.clipboard.writeText(message);
+      
+      const copyBtn = document.getElementById('booking-copy-btn');
+      copyBtn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
+      setTimeout(() => {
+        copyBtn.innerHTML = `<i class="fa-regular fa-copy"></i> Copy Request`;
+      }, 2000);
+    };
+
+    // Load data on startup
+    loadData();
+  </script>
+</body>
+</html>

@@ -26,7 +26,8 @@ const getSecretKey = {
   microsoftAccessToken: (accountId: string) =>
     `fcr-ms-acc-${accountId.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
   caldavPassword: (sourceId: string) =>
-    `fcr-caldav-pwd-${sourceId.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
+    `fcr-caldav-pwd-${sourceId.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+  githubToken: () => `fcr-github-token`
 };
 
 export class CredentialStore {
@@ -287,5 +288,43 @@ export class CredentialStore {
         /* ignore */
       }
     }
+  }
+
+  // ==========================================================================
+  // GITHUB TOKEN
+  // ==========================================================================
+
+  static getGitHubToken(): string | null {
+    if (this.useLegacy() || !this.isSecretStorageSupported()) {
+      try {
+        return PluginState.getSettings().githubToken ?? null;
+      } catch {
+        return null;
+      }
+    }
+    const secret = app.secretStorage?.getSecret(getSecretKey.githubToken());
+    return secret && secret !== '' ? secret : null;
+  }
+
+  static setGitHubToken(token: string | null): void {
+    if (this.useLegacy() || !this.isSecretStorageSupported()) {
+      try {
+        PluginState.getSettings().githubToken = token;
+      } catch {
+        /* ignore */
+      }
+    } else {
+      app.secretStorage?.setSecret(getSecretKey.githubToken(), token ?? '');
+      // Clear from settings
+      try {
+        PluginState.getSettings().githubToken = null;
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  static hasGitHubToken(): boolean {
+    return !!this.getGitHubToken();
   }
 }

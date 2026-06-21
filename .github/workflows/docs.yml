@@ -50,6 +50,9 @@ jobs:
           MKDOCS_GIT_COMMITTERS_APIKEY: ${{ secrets.GITHUB_TOKEN }}
         run: mkdocs build
 
+      - name: Generate SEO Assets and Alternates
+        run: python tools/generate_seo_assets.py
+
       - name: Copy i18n locale JSON assets
         run: |
           mkdir -p site/assets/i18n

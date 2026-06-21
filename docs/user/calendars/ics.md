@@ -13,7 +13,7 @@ Calendars are re-fetched automatically from their source at most every five minu
 ### Command Pallette
 Use `Full Calendar: Revalidate remote calendars` to manually revalidate remote calendars directly.
 
-![](../../assets/calendars/sync-setup-ics.gif)
+![Google Calendar private ICS setup walkthrough in plugin settings](../../assets/calendars/sync-setup-ics.gif)
 
 Note: `webcal://` links are automatically converted to `https://` when added.
 

@@ -5,13 +5,14 @@ In addition to clicking on events to edit them directly, you can click-and-drag 
 ## Moving events
 
 Move an event around on a day or between days. This works just as well with all-day events.
-![](../../assets/events/moving-event.gif)
+
+![Moving event by dragging and dropping on calendar view](../../assets/events/moving-event.gif)
 
 ## Drag to change duration
 
 Drag the endpoint of event to change ending time
 
-![](../../assets/events/edit-event-drag.gif)
+![Changing event duration by dragging the bottom edge](../../assets/events/edit-event-drag.gif)
 
 ---
 

@@ -36,7 +36,7 @@ The chosen format applies to new event creation and later edits written through 
 
 Note that only one daily note calendar can be active at a time.
 
-![](../../assets/calendars/dailynote.gif)
+![Daily note inline event parsing walkthrough](../../assets/calendars/dailynote.gif)
 
 ---
 

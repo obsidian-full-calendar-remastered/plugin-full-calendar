@@ -1,5 +1,7 @@
 # mkdocs.yaml
 site_name: Full Calendar Remastered
+site_description: Professional calendar solution for Obsidian with local and remote providers.
+site_author: YouFoundJK & Contributors
 site_url: https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/
 repo_url: https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar
 repo_name: obsidian-full-calendar-remastered/plugin-full-calendar

@@ -61,7 +61,7 @@ Your URL should look something like this:
 `https://p37-caldav.icloud.com/8172357017/calendars/2AC2AE2B4-94BE-4DB8-9078-C6907C5E3388`
 
 
-![](../../assets/calendars/sync-setup-caldav.gif)
+![iCloud CalDAV sync setup workflow](../../assets/calendars/sync-setup-caldav.gif)
 
 > Thanks to [@FlyByNite17](https://github.com/FlyByNite17) ([Issue #211](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/211)) for the iCloud url docs.
 
@@ -96,8 +96,8 @@ If in doubt, you can find the specific URL by navigating to `Settings` -> `Calen
 
 Under `CalDAV URL`, you can copy the URL but make sure you **only** copy up to the trailing slash after your email address as shown in the codeblock just above.
 
-![](../../assets/calendars/fastmail-url.png)
+![Fastmail export settings showing CalDAV URL path](../../assets/calendars/fastmail-url.png)
 
 ### Flythrough
 
-![](../../assets/calendars/sync-setup-fastmail.gif)
+![Fastmail CalDAV setup walkthrough in plugin settings](../../assets/calendars/sync-setup-fastmail.gif)

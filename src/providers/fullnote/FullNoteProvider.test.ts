@@ -363,6 +363,83 @@ describe('FullNoteCalendar Tests', () => {
     );
   });
 
+  it.each([null, 'meeting'])(
+    'loads a single event when frontmatter type is %p',
+    async customType => {
+      const filename = '2026-06-23 Custom Type.md';
+      const obsidian = makeApp(
+        MockAppBuilder.make()
+          .folder(
+            new MockAppBuilder(dirName).file(
+              filename,
+              new FileBuilder().frontmatter({
+                title: 'Custom Type',
+                date: '2026-06-23',
+                type: customType
+              })
+            )
+          )
+          .done()
+      );
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const events = await calendar.getEvents();
+
+      expect(events).toHaveLength(1);
+      expect(events[0][0]).toEqual(
+        expect.objectContaining({
+          title: 'Custom Type',
+          date: '2026-06-23',
+          type: 'single'
+        })
+      );
+    }
+  );
+
+  it.each([
+    [
+      'recurring',
+      {
+        title: 'Recurring Event',
+        type: 'recurring',
+        daysOfWeek: ['M'],
+        startRecur: '2026-06-23'
+      }
+    ],
+    [
+      'rrule',
+      {
+        title: 'RRULE Event',
+        type: 'rrule',
+        startDate: '2026-06-23',
+        rrule: 'FREQ=WEEKLY'
+      }
+    ]
+  ])('preserves the internal %s event type', async (expectedType, frontmatter) => {
+    const filename = `2026-06-23 ${expectedType}.md`;
+    const obsidian = makeApp(
+      MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder(dirName).file(filename, new FileBuilder().frontmatter(frontmatter))
+        )
+        .done()
+    );
+    const calendar = new FullNoteProvider(
+      { directory: dirName, id: 'local_1' },
+      makePlugin(),
+      obsidian
+    );
+
+    const events = await calendar.getEvents();
+
+    expect(events).toHaveLength(1);
+    expect(events[0][0].type).toBe(expectedType);
+  });
+
   it('create and delete workflow succeeds end-to-end', async () => {
     const app = MockAppBuilder.make().folder(new MockAppBuilder(dirName)).done();
     const obsidian = makeApp(app);

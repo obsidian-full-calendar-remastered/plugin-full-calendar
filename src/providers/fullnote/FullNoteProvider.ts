@@ -201,9 +201,15 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
       return [];
     }
 
+    const frontmatter = metadata.frontmatter as Record<string, unknown>;
+    const frontmatterType = frontmatter.type;
+    const eventType =
+      frontmatterType === 'recurring' || frontmatterType === 'rrule' ? frontmatterType : 'single';
+
     const rawEventData = {
-      ...metadata.frontmatter,
-      title: (metadata.frontmatter as { title?: string }).title || file.basename
+      ...frontmatter,
+      type: eventType,
+      title: frontmatter.title || file.basename
     } as Record<string, unknown>;
 
     const event = validateEvent(rawEventData);

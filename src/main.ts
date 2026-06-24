@@ -18,6 +18,7 @@ import { NotificationManager } from './features/notifications/NotificationManage
 import { FcrReminderManager } from './features/fcr_reminder/FcrReminderManager';
 import { StatusBarManager } from './features/statusbar/StatusBarManager';
 import { LazySettingsTab } from './ui/settings/LazySettingsTab';
+import { BreakTimerManager } from './features/break_timer/BreakTimerManager';
 import { migrateAndSanitizeSettings } from './ui/settings/utilsSettings';
 import { PLUGIN_SLUG } from './types';
 import { DEPRECATED_PROVIDERS } from './ui/settings/deprecations';
@@ -57,6 +58,7 @@ export default class FullCalendarPlugin extends Plugin {
   #notificationManager!: NotificationManager;
   #statusBarManager!: StatusBarManager;
   #fcrReminderManager!: FcrReminderManager;
+  #breakTimerManager!: BreakTimerManager;
 
   #isMobile: boolean = false;
   #settingsTab?: LazySettingsTab;
@@ -173,6 +175,8 @@ export default class FullCalendarPlugin extends Plugin {
     this.#statusBarManager.update(PluginState.getSettings());
     this.#fcrReminderManager = new FcrReminderManager(this);
     this.#fcrReminderManager.update(PluginState.getSettings());
+    this.#breakTimerManager = new BreakTimerManager(this);
+    this.#breakTimerManager.update(PluginState.getSettings());
     type WorkspaceEvents = Workspace & {
       on: Workspace['on'] &
         ((
@@ -202,6 +206,12 @@ export default class FullCalendarPlugin extends Plugin {
       workspaceEvents.on(
         'full-calendar:settings-updated',
         this.#fcrReminderManager.update.bind(this.#fcrReminderManager)
+      )
+    );
+    this.registerEvent(
+      workspaceEvents.on(
+        'full-calendar:settings-updated',
+        this.#breakTimerManager.update.bind(this.#breakTimerManager)
       )
     );
     this.registerEvent(
@@ -314,6 +324,13 @@ export default class FullCalendarPlugin extends Plugin {
         this.app.workspace.detachLeavesOfType(FULL_CALENDAR_VIEW_TYPE);
         this.app.workspace.detachLeavesOfType(FULL_CALENDAR_SIDEBAR_VIEW_TYPE);
         showNotice(t('notices.cacheReset'));
+      }
+    });
+    this.addCommand({
+      id: 'full-calendar-trigger-break-timer',
+      name: 'Trigger break timer overlay',
+      callback: () => {
+        this.#breakTimerManager.triggerBreak();
       }
     });
     this.addCommand({
@@ -458,6 +475,9 @@ export default class FullCalendarPlugin extends Plugin {
     }
     if (this.#fcrReminderManager) {
       this.#fcrReminderManager.unload();
+    }
+    if (this.#breakTimerManager) {
+      this.#breakTimerManager.unload();
     }
     PluginState.getProviderRegistry().stopListening();
     PluginState.getCache().stopListening();

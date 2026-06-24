@@ -239,7 +239,15 @@ export interface FullCalendarSettings {
   githubToken: string | null;
   availabilityGistId: string | null;
   availabilityExportPath: string;
+  breakTimer: BreakTimerSettings;
   availabilityDefaultTimeRange: { startTime: string; endTime: string };
+}
+
+export interface BreakTimerSettings {
+  enabled: boolean;
+  intervalMins: number;
+  idleThresholdMins: number;
+  breakDurationSecs: number;
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
@@ -344,7 +352,13 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   weatherInputMode: 'city',
   weatherUnit: 'C',
   linkedNoteTemplate:
-    '# {{title}}\n\n**Date**: {{date}}\n**Time**: {{timeString}}\n**Location**: {{location}}\n**Calendar**: {{calendarName}}\n\n## Description\n{{description}}\n\n## Notes\n- '
+    '# {{title}}\n\n**Date**: {{date}}\n**Time**: {{timeString}}\n**Location**: {{location}}\n**Calendar**: {{calendarName}}\n\n## Description\n{{description}}\n\n## Notes\n- ',
+  breakTimer: {
+    enabled: false,
+    intervalMins: 60,
+    idleThresholdMins: 30,
+    breakDurationSecs: 30
+  }
 };
 
 // Utility functions for workspace management

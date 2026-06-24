@@ -140,7 +140,11 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     weatherLongitude: raw.weatherLongitude ?? DEFAULT_SETTINGS.weatherLongitude,
     weatherHide: raw.weatherHide ?? DEFAULT_SETTINGS.weatherHide,
     weatherInputMode: raw.weatherInputMode ?? DEFAULT_SETTINGS.weatherInputMode,
-    weatherUnit: raw.weatherUnit ?? DEFAULT_SETTINGS.weatherUnit
+    weatherUnit: raw.weatherUnit ?? DEFAULT_SETTINGS.weatherUnit,
+    breakTimer: {
+      ...DEFAULT_SETTINGS.breakTimer,
+      ...((raw as Partial<FullCalendarSettings>).breakTimer || {})
+    }
   } as FullCalendarSettings & { calendarSources: (CalendarInfo | GoogleSourceWithAuth)[] } & {
     googleAuth?: LegacyGoogleAuth;
   };

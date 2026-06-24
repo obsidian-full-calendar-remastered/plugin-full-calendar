@@ -686,18 +686,26 @@ export class FullCalendarSettingTab extends PluginSettingTab {
   ): Promise<void> {
     switch (categoryId) {
       case 'general': {
-        const [{ renderGeneralSettings }, { renderRemindersSettings }, { renderWhatsNew }] =
-          await Promise.all([
-            import('./sections/renderGeneral'),
-            import('../../features/notifications/ui/renderReminders'),
-            import('./changelogs/renderWhatsNew')
-          ]);
+        const [
+          { renderGeneralSettings },
+          { renderRemindersSettings },
+          { renderWhatsNew },
+          { renderBreakTimerSettings }
+        ] = await Promise.all([
+          import('./sections/renderGeneral'),
+          import('../../features/notifications/ui/renderReminders'),
+          import('./changelogs/renderWhatsNew'),
+          import('../../features/break_timer/ui/renderBreakTimerSettings')
+        ]);
 
         this._renderInitialSetupNotice(containerEl);
         renderGeneralSettings(containerEl, this.plugin, () => {
           this.renderSettings();
         });
         renderRemindersSettings(containerEl, this.plugin, () => {
+          this.renderSettings();
+        });
+        renderBreakTimerSettings(containerEl, this.plugin, () => {
           this.renderSettings();
         });
         renderWhatsNew(containerEl, this, () => {

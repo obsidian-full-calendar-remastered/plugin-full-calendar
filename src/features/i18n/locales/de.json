@@ -1127,6 +1127,25 @@
         "desc": "Enable this if you sync your Obsidian vault across devices and want to avoid logging in again on every device. Keep disabled for maximum local security (uses OS keychain)."
       },
       "keychainMissing": "Keychain credentials missing on this device"
+    },
+    "breakTimer": {
+      "title": "Break Timer",
+      "enable": {
+        "label": "Enable break timer",
+        "description": "Periodically remind yourself to take a break with a fullscreen overlay and desktop notification."
+      },
+      "interval": {
+        "label": "Break interval (minutes)",
+        "description": "How long to wait before reminding you to take a break."
+      },
+      "idleThreshold": {
+        "label": "Idle reset threshold (minutes)",
+        "description": "If you are inactive for this long, the break timer resets (no immediate break when you return)."
+      },
+      "duration": {
+        "label": "Break duration (seconds)",
+        "description": "How long the break overlay stays on screen."
+      }
     }
   },
   "modals": {

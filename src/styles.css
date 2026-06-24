@@ -1777,5 +1777,163 @@
   }
 }
 
+/* ==========================================
+   Break Timer Feature Styles
+   ========================================== */
+
+/* Fullscreen blur overlay */
+.ofc-break-timer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 15, 15, 0.7);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-normal);
+  font-family: var(--font-interface);
+}
+
+/* Central glowing glassmorphism card */
+.ofc-break-timer-card {
+  background: rgba(28, 28, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 480px;
+  width: 90%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: ofc-fade-in-scale 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ofc-fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ofc-break-timer-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ff7b00, #ffae00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ofc-break-timer-desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Cat Walking Area */
+.ofc-break-timer-cat-container {
+  width: 100%;
+  height: 120px;
+  position: relative;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.ofc-break-timer-cat {
+  font-family: monospace;
+  font-size: 16px;
+  line-height: 1.25;
+  color: #ffb700;
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: ofc-cat-walk 10s linear infinite;
+  white-space: pre;
+}
+
+@keyframes ofc-cat-walk {
+  0% {
+    transform: translate(-150px, -50%) scaleX(1);
+  }
+  49% {
+    transform: translate(100px, -50%) scaleX(1);
+  }
+  50% {
+    transform: translate(100px, -50%) scaleX(-1);
+  }
+  99% {
+    transform: translate(-150px, -50%) scaleX(-1);
+  }
+  100% {
+    transform: translate(-150px, -50%) scaleX(1);
+  }
+}
+
+/* Progress bar styling */
+.ofc-break-timer-progress-wrapper {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ofc-break-timer-progress-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ff7b00, #ffae00);
+  border-radius: 3px;
+  transition: width 1s linear;
+}
+
+.ofc-break-timer-countdown {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+/* Sleek close button */
+.ofc-break-timer-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-normal);
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.ofc-break-timer-close-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.ofc-break-timer-close-btn:active {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(0);
+}
+
 
 

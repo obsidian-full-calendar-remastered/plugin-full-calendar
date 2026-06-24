@@ -19,13 +19,14 @@
 | Unified Backlog Panel | [Task Backlog](tasks-backlog.md) | Aggregate and schedule tasks across multiple providers |
 | Glance at weather conditions | [Weather Forecasts](weather.md) | Glance at live WMO conditions and temperatures in your daily, weekly, and monthly views |
 | CLI & Automations | [Developer API & CLI](api.md) | Access your calendar programmatically via REST API and PATs |
+| Wellness Break Reminders | [Break Timer](break-timer.md) | Periodically remind yourself to take a break with an animated walking ASCII cat overlay |
 
 ## Feature Directory
 
 - **Power Tool**: [FCR Command (NLP)](nlp.md)
 - Interaction: [Interactions and Gestures](interactions.md)
 - Progression: [Milestones and Progress](milestones.md)
-- Alerting: [Reminders and Notifications](reminders.md) & [FCR Reminder Companion](fcr-reminder.md)
+- Alerting: [Reminders and Notifications](reminders.md), [FCR Reminder Companion](fcr-reminder.md) & [Break Timer](break-timer.md)
 - Global: [Internationalization (i18n)](i18n.md)
 - UI: [Status Bar Integration](statusbar.md)
 - Note Integration: [Event Linked Notes](event-linked-notes.md)
@@ -43,4 +44,4 @@
 
 ---
 
-[NLP](nlp.md) · [Interactions](interactions.md) · [Reminders](reminders.md) · [FCR Reminder](fcr-reminder.md) · [Status Bar](statusbar.md) · [Linked Notes](event-linked-notes.md) · [Templates](templates.md) · [Task Backlog](tasks-backlog.md) · [Weather](weather.md) · [Developer API](api.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)
+[NLP](nlp.md) · [Interactions](interactions.md) · [Reminders](reminders.md) · [FCR Reminder](fcr-reminder.md) · [Status Bar](statusbar.md) · [Linked Notes](event-linked-notes.md) · [Templates](templates.md) · [Task Backlog](tasks-backlog.md) · [Weather](weather.md) · [Developer API](api.md) · [Break Timer](break-timer.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)

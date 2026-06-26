@@ -168,15 +168,7 @@ export default class FullCalendarPlugin extends Plugin {
     PluginState.getCache().reset();
     PluginState.getCache().listenForSettingsChanges(this.app.workspace);
 
-    // Start NotificationManager after providerRegistry is initialized
-    this.#notificationManager = new NotificationManager(this);
-    this.#notificationManager.update(PluginState.getSettings());
-    this.#statusBarManager = new StatusBarManager(this);
-    this.#statusBarManager.update(PluginState.getSettings());
-    this.#fcrReminderManager = new FcrReminderManager(this);
-    this.#fcrReminderManager.update(PluginState.getSettings());
-    this.#breakTimerManager = new BreakTimerManager(this);
-    this.#breakTimerManager.update(PluginState.getSettings());
+    // Start non-critical managers after startup to avoid blocking the main thread
     type WorkspaceEvents = Workspace & {
       on: Workspace['on'] &
         ((
@@ -190,30 +182,48 @@ export default class FullCalendarPlugin extends Plugin {
     };
 
     const workspaceEvents = this.app.workspace as WorkspaceEvents;
-    this.registerEvent(
-      workspaceEvents.on(
-        'full-calendar:settings-updated',
-        this.#notificationManager.update.bind(this.#notificationManager)
-      )
-    );
-    this.registerEvent(
-      workspaceEvents.on(
-        'full-calendar:settings-updated',
-        this.#statusBarManager.update.bind(this.#statusBarManager)
-      )
-    );
-    this.registerEvent(
-      workspaceEvents.on(
-        'full-calendar:settings-updated',
-        this.#fcrReminderManager.update.bind(this.#fcrReminderManager)
-      )
-    );
-    this.registerEvent(
-      workspaceEvents.on(
-        'full-calendar:settings-updated',
-        this.#breakTimerManager.update.bind(this.#breakTimerManager)
-      )
-    );
+
+    const initManagers = () => {
+      this.#notificationManager = new NotificationManager(this);
+      this.#notificationManager.update(PluginState.getSettings());
+      this.#statusBarManager = new StatusBarManager(this);
+      this.#statusBarManager.update(PluginState.getSettings());
+      this.#fcrReminderManager = new FcrReminderManager(this);
+      this.#fcrReminderManager.update(PluginState.getSettings());
+      this.#breakTimerManager = new BreakTimerManager(this);
+      this.#breakTimerManager.update(PluginState.getSettings());
+
+      this.registerEvent(
+        workspaceEvents.on(
+          'full-calendar:settings-updated',
+          (settings: FullCalendarSettings) => this.#notificationManager?.update(settings)
+        )
+      );
+      this.registerEvent(
+        workspaceEvents.on(
+          'full-calendar:settings-updated',
+          (settings: FullCalendarSettings) => this.#statusBarManager?.update(settings)
+        )
+      );
+      this.registerEvent(
+        workspaceEvents.on(
+          'full-calendar:settings-updated',
+          (settings: FullCalendarSettings) => this.#fcrReminderManager?.update(settings)
+        )
+      );
+      this.registerEvent(
+        workspaceEvents.on(
+          'full-calendar:settings-updated',
+          (settings: FullCalendarSettings) => this.#breakTimerManager?.update(settings)
+        )
+      );
+    };
+
+    if (typeof requestIdleCallback !== 'undefined') {
+      window.requestIdleCallback(() => initManagers(), { timeout: 1000 });
+    } else {
+      window.setTimeout(() => initManagers(), 50);
+    }
     this.registerEvent(
       workspaceEvents.on(
         'full-calendar:settings-updated',

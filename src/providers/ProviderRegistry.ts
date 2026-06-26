@@ -4,8 +4,6 @@ import { TFile } from 'obsidian';
 import {
   CalendarProvider,
   CalendarProviderCapabilities,
-  SyncKeyProvider,
-  CanonicalTitleProvider,
   ProviderLoadRetryPolicy,
   TaskBacklogProvider
 } from '../providers/Provider';
@@ -15,6 +13,7 @@ import FullCalendarPlugin from '../main';
 import { ObsidianIO, ObsidianInterface } from '../ObsidianAdapter';
 import { TaskBacklogManager } from '../features/task-backlogs/TaskBacklogManager';
 import { t } from '../features/i18n/i18n';
+import { IdentifierMapManager } from './IdentifierMapManager';
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -58,73 +57,34 @@ export class ProviderRegistry {
   // Properties from IdentifierManager and for linking singletons
   private plugin: FullCalendarPlugin;
   private cache: EventCache | null = null;
-  private pkCounter = 0;
-  private identifierToSessionIdMap: Map<string, string> = new Map();
-  private sessionIdToIdentifierMap: Map<string, string> = new Map();
-  private identifierMapPromise: Promise<void> | null = null;
+  public identifierMapManager: IdentifierMapManager;
 
   // Task backlog manager for lifecycle management
   private taskBacklogManager: TaskBacklogManager;
-
-  private normalizePersistentId(id: string): string {
-    return id.replace(/\\/g, '/');
-  }
 
   private resolveSessionIdFromStoreFallback(
     calendarId: string,
     persistentId: string,
     eventHint?: OFCEvent
   ): string | null {
-    if (!this.cache) {
-      return null;
-    }
-
-    const normalizedPersistentId = this.normalizePersistentId(persistentId);
-    const normalizedEventUid = eventHint?.uid ? this.normalizePersistentId(eventHint.uid) : null;
-
-    const eventsInCalendar = this.cache.store.getEventsInCalendar(calendarId);
-
-    const byPersistentId = eventsInCalendar.find(stored => {
-      const uid = stored.event.uid ? this.normalizePersistentId(stored.event.uid) : null;
-      const locationPath = stored.location?.path
-        ? this.normalizePersistentId(stored.location.path)
-        : null;
-      return uid === normalizedPersistentId || locationPath === normalizedPersistentId;
-    });
-
-    if (byPersistentId) {
-      return byPersistentId.id;
-    }
-
-    if (normalizedEventUid) {
-      const byEventUid = eventsInCalendar.find(stored => {
-        const uid = stored.event.uid ? this.normalizePersistentId(stored.event.uid) : null;
-        return uid === normalizedEventUid;
-      });
-      if (byEventUid) {
-        return byEventUid.id;
-      }
-    }
-
-    return null;
+    return this.identifierMapManager.resolveSessionIdFromStoreFallback(
+      calendarId,
+      persistentId,
+      eventHint
+    );
   }
 
   private repairMappingFromStore(calendarId: string, sessionId: string): void {
-    if (!this.cache) {
-      return;
-    }
-
-    const details = this.cache.store.getEventDetails(sessionId);
-    if (!details) {
-      return;
-    }
-
-    this.addMapping(details.event, calendarId, sessionId);
+    this.identifierMapManager.repairMappingFromStore(calendarId, sessionId);
   }
 
   constructor(plugin: FullCalendarPlugin) {
     this.plugin = plugin;
     this.taskBacklogManager = new TaskBacklogManager(plugin);
+    this.identifierMapManager = new IdentifierMapManager(
+      () => this.cache,
+      id => this.getInstance(id)
+    );
     // initializeInstances is now called from main.ts after settings are loaded.
   }
 
@@ -289,118 +249,39 @@ export class ProviderRegistry {
     this.plugin.app.workspace.trigger('full-calendar:instances-initialized');
   }
 
-  // Methods from IdentifierManager, adapted
+  // Methods from IdentifierManager, delegated
   public generateId(): string {
-    return `${this.pkCounter++}`;
+    return this.identifierMapManager.generateId();
   }
 
   public async getSessionId(globalIdentifier: string): Promise<string | null> {
-    if (this.identifierMapPromise) {
-      await this.identifierMapPromise;
-    }
-    return this.identifierToSessionIdMap.get(globalIdentifier) || null;
+    return this.identifierMapManager.getSessionId(globalIdentifier);
   }
 
   public getGlobalIdentifier(event: OFCEvent, calendarId: string): string | null {
-    const instance = this.instances.get(calendarId);
-    if (!instance) {
-      console.warn(`Could not find provider instance for calendar ID ${calendarId}`);
-      return null;
-    }
-    const handle = instance.getEventHandle(event);
-    if (!handle) {
-      return null;
-    }
-    return `${calendarId}::${handle.persistentId}`;
+    return this.identifierMapManager.getGlobalIdentifier(event, calendarId);
   }
 
-  /**
-   * Computes a lightweight sync key for diffing during bulk sync operations.
-   * Delegates to the provider's computeSyncKey() if it implements SyncKeyProvider,
-   * otherwise falls back to getGlobalIdentifier() (which may be expensive for
-   * providers like DailyNote).
-   *
-   * The key is scoped to the calendarId to ensure global uniqueness.
-   */
   public computeSyncKeyForEvent(event: OFCEvent, calendarId: string): string | null {
-    const instance = this.instances.get(calendarId);
-    if (!instance) return null;
-
-    // Type guard: check if the provider implements SyncKeyProvider
-    if (
-      'computeSyncKey' in instance &&
-      typeof (instance as SyncKeyProvider).computeSyncKey === 'function'
-    ) {
-      const key = (instance as SyncKeyProvider).computeSyncKey(event);
-      return `${calendarId}::${key}`;
-    }
-
-    // Fallback: use the existing (potentially expensive) global identifier
-    return this.getGlobalIdentifier(event, calendarId);
+    return this.identifierMapManager.computeSyncKeyForEvent(event, calendarId);
   }
 
   public getCanonicalTitle(event: OFCEvent, calendarId: string): string {
-    const instance = this.instances.get(calendarId);
-    if (
-      instance &&
-      'getCanonicalTitle' in instance &&
-      typeof (instance as CanonicalTitleProvider).getCanonicalTitle === 'function'
-    ) {
-      return (instance as CanonicalTitleProvider).getCanonicalTitle(event);
-    }
-
-    return event.title;
+    return this.identifierMapManager.getCanonicalTitle(event, calendarId);
   }
 
   public buildMap(store: {
     getAllEvents(): { event: OFCEvent; calendarId: string; id: string }[];
   }): void {
-    // store is EventStore
-    if (!this.cache) return;
-    this.identifierMapPromise = (() => {
-      this.identifierToSessionIdMap.clear();
-      this.sessionIdToIdentifierMap.clear();
-      for (const storedEvent of store.getAllEvents()) {
-        const globalIdentifier = this.getGlobalIdentifier(
-          storedEvent.event,
-          storedEvent.calendarId
-        );
-        if (globalIdentifier) {
-          this.identifierToSessionIdMap.set(globalIdentifier, storedEvent.id);
-          this.sessionIdToIdentifierMap.set(storedEvent.id, globalIdentifier);
-        }
-      }
-      return Promise.resolve();
-    })();
+    this.identifierMapManager.buildMap(store);
   }
 
   public addMapping(event: OFCEvent, calendarId: string, sessionId: string): void {
-    const globalIdentifier = this.getGlobalIdentifier(event, calendarId);
-    if (globalIdentifier) {
-      // If this sessionId already has a mapping (e.g. re-mapping after
-      // optimistic → authoritative correction), clean up the old forward entry
-      // before inserting the new one.
-      const existingGlobalId = this.sessionIdToIdentifierMap.get(sessionId);
-      if (existingGlobalId && existingGlobalId !== globalIdentifier) {
-        this.identifierToSessionIdMap.delete(existingGlobalId);
-      }
-      this.identifierToSessionIdMap.set(globalIdentifier, sessionId);
-      this.sessionIdToIdentifierMap.set(sessionId, globalIdentifier);
-    }
+    this.identifierMapManager.addMapping(event, calendarId, sessionId);
   }
 
-  /**
-   * Removes the identifier mapping for a given session ID.
-   * Uses a reverse-index lookup (O(1)) instead of calling getEventHandle,
-   * which is critical for providers like DailyNote where getEventHandle
-   * performs expensive vault scans.
-   */
   public removeMapping(sessionId: string): void {
-    const globalIdentifier = this.sessionIdToIdentifierMap.get(sessionId);
-    if (globalIdentifier) {
-      this.identifierToSessionIdMap.delete(globalIdentifier);
-      this.sessionIdToIdentifierMap.delete(sessionId);
-    }
+    this.identifierMapManager.removeMapping(sessionId);
   }
 
   public async fetchAllEvents(): Promise<

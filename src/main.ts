@@ -194,27 +194,23 @@ export default class FullCalendarPlugin extends Plugin {
       this.#breakTimerManager.update(PluginState.getSettings());
 
       this.registerEvent(
-        workspaceEvents.on(
-          'full-calendar:settings-updated',
-          (settings: FullCalendarSettings) => this.#notificationManager?.update(settings)
+        workspaceEvents.on('full-calendar:settings-updated', (settings: FullCalendarSettings) =>
+          this.#notificationManager?.update(settings)
         )
       );
       this.registerEvent(
-        workspaceEvents.on(
-          'full-calendar:settings-updated',
-          (settings: FullCalendarSettings) => this.#statusBarManager?.update(settings)
+        workspaceEvents.on('full-calendar:settings-updated', (settings: FullCalendarSettings) =>
+          this.#statusBarManager?.update(settings)
         )
       );
       this.registerEvent(
-        workspaceEvents.on(
-          'full-calendar:settings-updated',
-          (settings: FullCalendarSettings) => this.#fcrReminderManager?.update(settings)
+        workspaceEvents.on('full-calendar:settings-updated', (settings: FullCalendarSettings) =>
+          this.#fcrReminderManager?.update(settings)
         )
       );
       this.registerEvent(
-        workspaceEvents.on(
-          'full-calendar:settings-updated',
-          (settings: FullCalendarSettings) => this.#breakTimerManager?.update(settings)
+        workspaceEvents.on('full-calendar:settings-updated', (settings: FullCalendarSettings) =>
+          this.#breakTimerManager?.update(settings)
         )
       );
     };

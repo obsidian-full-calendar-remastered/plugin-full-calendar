@@ -160,7 +160,8 @@
     "syncActivityWatch": "Sincronizza ActivityWatch",
     "nlpQuickAdd": "FCR Command",
     "syncFcrReminder": "Sincronizza FCR Reminder Companion",
-    "shareAvailability": "Share Availability"
+    "shareAvailability": "Share Availability",
+    "exportIcs": "Export Event Cache as ICS file"
   },
   "notices": {
     "settingsUpdated": "Full Calendar ha aggiornato le impostazioni del calendario a un nuovo formato.",
@@ -1146,6 +1147,11 @@
         "label": "Break duration (seconds)",
         "description": "How long the break overlay stays on screen."
       }
+    },
+    "export": {
+      "header": "ICS Export",
+      "path": "Default Export Path",
+      "pathDesc": "Vault folder where the exported .ics files will be saved by default (e.g., calendars/exports)."
     }
   },
   "modals": {
@@ -1859,7 +1865,23 @@
       "dateRangeDesc": "Select the start and end dates for the availability period.",
       "timeRange": "Daily Time Range",
       "timeRangeDesc": "Select the daily start and end hours for available slots.",
-      "btnBack": "Back"
+      "btnBack": "Back",
+      "warningLargeRange": "Warning: Selecting a date range longer than 90 days may cause performance slowdowns."
     }
+  },
+  "exportModal": {
+    "title": "Export Event Cache",
+    "calendarsTitle": "Calendars to Include",
+    "fileName": "Export File Name",
+    "fileNameDesc": "Name of the generated .ics file.",
+    "targetFolder": "Target Vault Folder",
+    "targetFolderDesc": "Folder in your vault where the file will be saved.",
+    "btnSave": "Save to Vault",
+    "btnDownload": "Download ICS File",
+    "btnCancel": "Cancel",
+    "noCalendars": "No calendars available for export.",
+    "noticeSuccessSave": "Successfully saved calendar export to {{path}}",
+    "noticeFailedSave": "Failed to save calendar export: {{error}}",
+    "noticeNoCalendarsSelected": "Please select at least one calendar to export."
   }
 }

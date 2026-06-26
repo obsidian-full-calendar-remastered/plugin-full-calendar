@@ -33,20 +33,49 @@ export interface AvailabilityResult {
   slots: AvailabilitySlot[];
 }
 
+function parseTime(
+  timeStr: string | undefined,
+  defaultHour: number,
+  defaultMin: number
+): [number, number] {
+  if (!timeStr || typeof timeStr !== 'string') return [defaultHour, defaultMin];
+  const parts = timeStr.split(':');
+  const hour = parseInt(parts[0], 10);
+  const min = parseInt(parts[1], 10);
+  return [
+    isNaN(hour) || hour < 0 || hour > 23 ? defaultHour : hour,
+    isNaN(min) || min < 0 || min > 59 ? defaultMin : min
+  ];
+}
+
 export class AvailabilityService {
   /**
    * Queries events and computes free/busy slots based on the provided options.
    */
   static async computeAvailability(options: AvailabilityOptions): Promise<AvailabilityResult> {
     const settings = PluginState.getSettings();
-    const tz =
-      settings.displayTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'system';
+    let tz =
+      settings.displayTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'local';
+    if (tz === 'system') {
+      tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local';
+    }
 
     const startDt = DateTime.fromISO(options.startDate, { zone: tz }).startOf('day');
     const endDt = DateTime.fromISO(options.endDate, { zone: tz }).endOf('day');
 
     if (!startDt.isValid || !endDt.isValid) {
       throw new Error('Invalid start or end date format.');
+    }
+
+    if (startDt > endDt) {
+      throw new Error('Start date must be before or equal to end date.');
+    }
+
+    const [startHour, startMin] = parseTime(options.startTime, 9, 0);
+    const [endHour, endMin] = parseTime(options.endTime, 17, 0);
+
+    if (startHour > endHour || (startHour === endHour && startMin >= endMin)) {
+      throw new Error('Daily start time must be before end time.');
     }
 
     // Query events from internal API
@@ -78,19 +107,15 @@ export class AvailabilityService {
         continue;
       }
 
-      // Establish the daily window bounds
-      const [startHour, startMin] = options.startTime.split(':').map(Number);
-      const [endHour, endMin] = options.endTime.split(':').map(Number);
-
       const dayStart = currentDay.set({
-        hour: startHour ?? 9,
-        minute: startMin ?? 0,
+        hour: startHour,
+        minute: startMin,
         second: 0,
         millisecond: 0
       });
       const dayEnd = currentDay.set({
-        hour: endHour ?? 17,
-        minute: endMin ?? 0,
+        hour: endHour,
+        minute: endMin,
         second: 0,
         millisecond: 0
       });

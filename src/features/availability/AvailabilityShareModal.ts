@@ -57,6 +57,7 @@ export class AvailabilityShareModal extends Modal {
     startDateInput.value = this.startDateVal;
     startDateInput.addEventListener('change', e => {
       this.startDateVal = (e.target as HTMLInputElement).value;
+      updateRangeWarning();
     });
 
     dateSetting.controlEl.createEl('span', { cls: 'ofc-range-separator' });
@@ -65,7 +66,42 @@ export class AvailabilityShareModal extends Modal {
     endDateInput.value = this.endDateVal;
     endDateInput.addEventListener('change', e => {
       this.endDateVal = (e.target as HTMLInputElement).value;
+      updateRangeWarning();
     });
+
+    const warningEl = configSection.createDiv({
+      cls: 'ofc-availability-range-warning',
+      text:
+        t('availability.modal.warningLargeRange') ||
+        'Warning: Selecting a date range longer than 90 days may cause performance slowdowns.'
+    });
+    warningEl.setCssProps({
+      color: 'var(--text-error)',
+      fontSize: 'var(--font-smaller)',
+      marginTop: '4px',
+      display: 'none'
+    });
+
+    const updateRangeWarning = () => {
+      if (!this.startDateVal || !this.endDateVal) {
+        warningEl.setCssProps({ display: 'none' });
+        return;
+      }
+      const start = DateTime.fromISO(this.startDateVal);
+      const end = DateTime.fromISO(this.endDateVal);
+      if (start.isValid && end.isValid) {
+        const diff = end.diff(start, 'days').days;
+        if (diff > 90) {
+          warningEl.setCssProps({ display: 'block' });
+        } else {
+          warningEl.setCssProps({ display: 'none' });
+        }
+      } else {
+        warningEl.setCssProps({ display: 'none' });
+      }
+    };
+
+    updateRangeWarning();
 
     // 2. Daily Time Range picker (Unified range UI, responsive wrapping)
     const timeSetting = new Setting(configSection)

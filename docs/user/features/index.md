@@ -20,6 +20,7 @@
 | Glance at weather conditions | [Weather Forecasts](weather.md) | Glance at live WMO conditions and temperatures in your daily, weekly, and monthly views |
 | CLI & Automations | [Developer API & CLI](api.md) | Access your calendar programmatically via REST API and PATs |
 | Wellness Break Reminders | [Break Timer](break-timer.md) | Periodically remind yourself to take a break with an animated walking ASCII cat overlay |
+| Export Event Cache | [ICS Export](ics-export.md) | Export your calendar events and tasks as a standard .ics file for use elsewhere |
 
 ## Feature Directory
 
@@ -34,6 +35,7 @@
 - Task Backlog: [Task Backlog](tasks-backlog.md)
 - Weather: [Weather Forecasts](weather.md)
 - Programmatic: [Developer API & CLI](api.md)
+- Export: [ICS Export](ics-export.md)
 
 ## Related Sections
 
@@ -44,4 +46,4 @@
 
 ---
 
-[NLP](nlp.md) · [Interactions](interactions.md) · [Reminders](reminders.md) · [FCR Reminder](fcr-reminder.md) · [Status Bar](statusbar.md) · [Linked Notes](event-linked-notes.md) · [Templates](templates.md) · [Task Backlog](tasks-backlog.md) · [Weather](weather.md) · [Developer API](api.md) · [Break Timer](break-timer.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)
+[NLP](nlp.md) · [Interactions](interactions.md) · [Reminders](reminders.md) · [FCR Reminder](fcr-reminder.md) · [Status Bar](statusbar.md) · [Linked Notes](event-linked-notes.md) · [Templates](templates.md) · [Task Backlog](tasks-backlog.md) · [Weather](weather.md) · [Developer API](api.md) · [Break Timer](break-timer.md) · [ICS Export](ics-export.md) · [NLP Architecture](../../architecture/system/features/nlp-architecture.md)

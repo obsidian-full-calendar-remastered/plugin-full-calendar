@@ -56,3 +56,13 @@ The public-facing schedule viewer is a single, standalone HTML asset located at 
 
 > [!WARNING]
 > Web links point to secret (unlisted) GitHub Gists. While not discoverable via search engines, anyone with the generated URL has read-access to the anonymized JSON payload.
+
+---
+
+## Robustness & Validation
+
+To ensure stability and prevent resource exhaustion, the following validations are executed:
+- **Timezone Sanitization:** If the display timezone is configured as `'system'`, the system resolves it dynamically to the current IANA environment timezone.
+- **Chronological Validation:** Validates that `startDate <= endDate`, throwing an error otherwise.
+- **Time Window Validation:** Validates that `startTime < endTime`, throwing an error if start is after or equal to end. Robustly parses time formats and falls back to default hours (`09:00` and `17:00`) on empty or malformed strings.
+- **Performance Warnings:** Displays a warning notice in the UI for ranges larger than 90 days, warning users of potential slot generation slowdowns.

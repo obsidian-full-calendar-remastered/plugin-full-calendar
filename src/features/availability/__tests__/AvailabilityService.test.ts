@@ -245,4 +245,55 @@ describe('AvailabilityService Unit Tests', () => {
     expect(days.has('2026-06-20')).toBe(false);
     expect(days.has('2026-06-21')).toBe(false);
   });
+
+  test('should throw error when start date is after end date', async () => {
+    const options: AvailabilityOptions = {
+      startDate: '2026-06-23',
+      endDate: '2026-06-22',
+      startTime: '09:00',
+      endTime: '17:00',
+      excludeWeekends: true,
+      calendarIds: [],
+      anonymize: true
+    };
+
+    await expect(AvailabilityService.computeAvailability(options)).rejects.toThrow(
+      'Start date must be before or equal to end date.'
+    );
+  });
+
+  test('should throw error when daily start time is after or equal to end time', async () => {
+    const options: AvailabilityOptions = {
+      startDate: '2026-06-22',
+      endDate: '2026-06-22',
+      startTime: '17:00',
+      endTime: '09:00',
+      excludeWeekends: true,
+      calendarIds: [],
+      anonymize: true
+    };
+
+    await expect(AvailabilityService.computeAvailability(options)).rejects.toThrow(
+      'Daily start time must be before end time.'
+    );
+  });
+
+  test('should fallback to defaults when time values are malformed', async () => {
+    const options: AvailabilityOptions = {
+      startDate: '2026-06-22',
+      endDate: '2026-06-22',
+      startTime: 'invalid', // should fallback to 09:00
+      endTime: '17:xx', // should fallback to 17:00
+      excludeWeekends: true,
+      calendarIds: [],
+      anonymize: true
+    };
+
+    const res = await AvailabilityService.computeAvailability(options);
+    expect(res.slots.length).toBe(1);
+    const startDt = DateTime.fromISO(res.slots[0].start).setZone('America/New_York');
+    const endDt = DateTime.fromISO(res.slots[0].end).setZone('America/New_York');
+    expect(startDt.toFormat('HH:mm')).toBe('09:00');
+    expect(endDt.toFormat('HH:mm')).toBe('17:00');
+  });
 });

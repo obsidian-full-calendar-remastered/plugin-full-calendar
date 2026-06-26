@@ -33,3 +33,6 @@ You can set default options by opening **Settings** -> **Full Calendar** -> [Int
 
 > [!IMPORTANT]
 > To share schedules online, you must supply a GitHub token with the `gist` permission. You can generate a pre-configured token in one click using the helper link in the settings panel or the share dialog.
+
+### Date Range Performance Warning
+When generating availability, selecting a date range longer than **90 days** will cause a warning notice to display in the modal. This is a reminder that computing available slots day-by-day over very large intervals can cause temporary performance degradation in Obsidian. You are still allowed to proceed if needed.

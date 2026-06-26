@@ -1,4 +1,4 @@
-import { eventToIcs, createOverrideVEvent } from './formatter';
+import { eventToIcs, createOverrideVEvent, eventsToIcs } from './formatter';
 import { OFCEvent } from '../../types';
 
 describe('ICS Formatter timezone serialization', () => {
@@ -226,5 +226,45 @@ describe('ICS Formatter timezone serialization', () => {
     expect(ics).toContain('TRIGGER:-PT15M');
     expect(ics).toContain('DESCRIPTION:Alarmed Event');
     expect(ics).toContain('END:VALARM');
+  });
+
+  describe('eventsToIcs', () => {
+    it('should serialize multiple events and tasks into a single VCALENDAR component', () => {
+      const event1 = {
+        type: 'single',
+        title: 'First Event',
+        date: '2026-05-20',
+        startTime: '10:00',
+        endTime: '11:00',
+        allDay: false,
+        endDate: null
+      } as OFCEvent;
+
+      const event2 = {
+        type: 'single',
+        title: 'Second Task',
+        date: '2026-05-21',
+        startTime: '12:00',
+        endTime: '13:00',
+        allDay: false,
+        endDate: null,
+        completed: false
+      } as OFCEvent;
+
+      const ics = eventsToIcs([event1, event2]);
+
+      expect(ics).toContain('BEGIN:VCALENDAR');
+      expect(ics).toContain('BEGIN:VEVENT');
+      expect(ics).toContain('SUMMARY:First Event');
+      expect(ics).toContain('END:VEVENT');
+      expect(ics).toContain('BEGIN:VTODO');
+      expect(ics).toContain('SUMMARY:Second Task');
+      expect(ics).toContain('END:VTODO');
+      expect(ics).toContain('END:VCALENDAR');
+
+      // Check that VCALENDAR occurs exactly once at the outer layer
+      expect(ics.match(/BEGIN:VCALENDAR/g)?.length).toBe(1);
+      expect(ics.match(/END:VCALENDAR/g)?.length).toBe(1);
+    });
   });
 });

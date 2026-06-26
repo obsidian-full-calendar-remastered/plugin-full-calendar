@@ -386,6 +386,23 @@ export function eventToIcs(event: OFCEvent): string {
 }
 
 /**
+ * Converts multiple OFCEvents into a single ICS string.
+ */
+export function eventsToIcs(events: OFCEvent[]): string {
+  const component = new ical.Component('vcalendar');
+
+  component.addPropertyWithValue('version', '2.0');
+  component.addPropertyWithValue('prodid', '-//Obsidian Full Calendar Plugin//NONSGML v1.0//EN');
+
+  for (const event of events) {
+    const sub = isTask(event) ? createVTodoComponent(event) : createVEventComponent(event);
+    component.addSubcomponent(sub);
+  }
+
+  return (component as unknown as { toString(): string }).toString();
+}
+
+/**
  * Creates a VEVENT or VTODO component for an instance override.
  * @param event The new event data for the specific instance.
  * @param originalDate The original start date/time of the instance being modified.

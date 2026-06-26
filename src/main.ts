@@ -317,6 +317,14 @@ export default class FullCalendarPlugin extends Plugin {
       }
     });
     this.addCommand({
+      id: 'full-calendar-export-cache-ics',
+      name: t('commands.exportIcs') || 'Export Event Cache as ICS file',
+      callback: async () => {
+        const { IcsExportModal } = await import('./features/export/IcsExportModal');
+        new IcsExportModal(this.app).open();
+      }
+    });
+    this.addCommand({
       id: 'full-calendar-reset',
       name: t('commands.resetCache'),
       callback: () => {

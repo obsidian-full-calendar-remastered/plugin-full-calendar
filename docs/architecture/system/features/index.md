@@ -17,6 +17,7 @@
 | Event Linked Notes | Linking local markdown notes to remote events via reactive indexing. | `LinkedNoteIndex`, `TemplateEngine`, `noteUtils`, UI / Providers |
 | Note Templates | Shared rendering contract for generated local and linked notes. | `TemplateEngine`, provider create flows, linked note manager |
 | Break Timer | System-wide idle evaluation, multi-window hooks, and fullscreen wellness card overlay coordination. | `PluginState`, `activeDocument`/`activeWindow`, settings UI |
+| ICS Export | Event cache serialization into iCalendar RFC 5545 format with select-filters. | `eventsToIcs`, `App Vault`, browser download APIs |
 
 ## Architecture rule
 
@@ -36,4 +37,5 @@ Feature modules may transform, filter, and react, but they must not replace core
 - [Event Linked Notes Architecture](event-linked-notes.md)
 - [Note Templating Architecture](templates.md)
 - [Break Timer Architecture](break-timer-architecture.md)
+- [ICS Export Architecture](ics-export-architecture.md)
 - [ActivityWatch Architecture](../../activitywatch/index.md)

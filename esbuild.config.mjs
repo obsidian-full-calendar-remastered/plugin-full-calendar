@@ -66,10 +66,15 @@ async function build() {
       'react': 'preact/compat',
       'react-dom/client': 'preact/compat/client',
       'react-dom': 'preact/compat',
+      'moment': path.resolve('./src/stubs/moment-shim.ts'),
+      'moment-timezone': path.resolve('./src/stubs/moment-timezone-shim.ts'),
       ...(isLean ? {
         'plotly.js': path.resolve('./src/stubs/plotly-stub.ts'),
         'date-holidays': path.resolve('./src/stubs/holidays-stub.ts'),
-      } : {}),
+      } : {
+        'plotly.js': path.resolve('./vendor/plotly-custom.min.js'),
+        'date-holidays': path.resolve('./vendor/date-holidays-custom.min.js'),
+      }),
     },
     sourcemap: prod ? false : "inline",
     treeShaking: true,

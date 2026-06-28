@@ -259,7 +259,7 @@ export function renderApiAccessSettings(
     .addToggle(toggle => {
       toggle.setValue(settings.enableLocalServer).onChange(value => {
         void (async () => {
-          settings.enableLocalServer = value;
+          PluginState.getSettings().enableLocalServer = value;
           await PluginState.saveSettings();
           onChange();
         })();
@@ -277,8 +277,8 @@ export function renderApiAccessSettings(
           void (async () => {
             const port = parseInt(value, 10);
             if (!isNaN(port) && port >= 1024 && port <= 65535) {
-              settings.localServerPort = port;
-              await PluginState.saveSettings();
+              PluginState.getSettings().localServerPort = port;
+              await PluginState.saveSettings(false);
             }
           })();
         });
@@ -349,7 +349,7 @@ export function renderApiAccessSettings(
             .onClick(() => {
               void (async () => {
                 delete tokenStore[token];
-                settings.apiTokens = tokenStore;
+                PluginState.getSettings().apiTokens = tokenStore;
                 await PluginState.saveSettings();
                 onChange();
               })();
@@ -388,7 +388,7 @@ export function renderApiAccessSettings(
                 grantedScopes: scopes
               };
             });
-            settings.apiTokens = tokenStore;
+            PluginState.getSettings().apiTokens = tokenStore;
             void PluginState.saveSettings();
             onChange();
           });
@@ -404,7 +404,7 @@ export function renderApiAccessSettings(
               entries.forEach(([token]) => {
                 delete tokenStore[token];
               });
-              settings.apiTokens = tokenStore;
+              PluginState.getSettings().apiTokens = tokenStore;
               await PluginState.saveSettings();
               onChange();
             })();

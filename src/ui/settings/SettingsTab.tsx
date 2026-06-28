@@ -339,6 +339,12 @@ export class FullCalendarSettingTab extends PluginSettingTab {
     this.reactRoots = [];
   }
 
+  hide(): void {
+    void PluginState.flushDebouncedSave();
+    this.unmountReactRoots();
+    super.hide();
+  }
+
   display(): void {
     this.renderSettings();
   }

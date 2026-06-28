@@ -14,6 +14,9 @@ let _internalAPI: InternalAPI | null = null;
 let _saveSettings: (() => Promise<void>) | null = null;
 let _persistData: (() => Promise<void>) | null = null;
 let _loadSettings: (() => Promise<void>) | null = null;
+let _debounceTimer: number | null = null;
+let _pendingSavePromise: Promise<void> | null = null;
+let _pendingSaveResolvers: (() => void)[] = [];
 let _nonBlockingProcess:
   | ((
       files: TFile[],
@@ -78,12 +81,54 @@ export const PluginState = {
     _internalAPI = api;
   },
 
-  saveSettings(): Promise<void> {
+  saveSettings(immediate = true): Promise<void> {
     if (!_saveSettings) throw new Error('PluginState: saveSettings not initialized');
-    return _saveSettings();
+
+    if (immediate) {
+      if (_debounceTimer) {
+        window.clearTimeout(_debounceTimer);
+        _debounceTimer = null;
+      }
+      const promise = _saveSettings();
+      const resolvers = [..._pendingSaveResolvers];
+      _pendingSaveResolvers = [];
+      _pendingSavePromise = null;
+      void promise.then(() => {
+        resolvers.forEach(resolve => resolve());
+      });
+      return promise;
+    }
+
+    if (_debounceTimer) {
+      window.clearTimeout(_debounceTimer);
+    }
+    if (!_pendingSavePromise) {
+      _pendingSavePromise = new Promise<void>(resolve => {
+        _pendingSaveResolvers.push(resolve);
+      });
+    }
+    _debounceTimer = window.setTimeout(() => {
+      _debounceTimer = null;
+      if (!_saveSettings) return;
+      const promise = _saveSettings();
+      const resolvers = [..._pendingSaveResolvers];
+      _pendingSaveResolvers = [];
+      _pendingSavePromise = null;
+      void promise.then(() => {
+        resolvers.forEach(resolve => resolve());
+      });
+    }, 500);
+
+    return _pendingSavePromise;
   },
   setSaveSettings(saveSettings: () => Promise<void>) {
     _saveSettings = saveSettings;
+  },
+
+  async flushDebouncedSave(): Promise<void> {
+    if (_debounceTimer) {
+      await this.saveSettings(true);
+    }
   },
 
   persistData(): Promise<void> {
@@ -155,6 +200,13 @@ export const PluginState = {
   },
 
   clear() {
+    if (_debounceTimer) {
+      window.clearTimeout(_debounceTimer);
+      _debounceTimer = null;
+    }
+    _pendingSavePromise = null;
+    _pendingSaveResolvers = [];
+
     _plugin = null;
     _settings = null;
     _cache = null;

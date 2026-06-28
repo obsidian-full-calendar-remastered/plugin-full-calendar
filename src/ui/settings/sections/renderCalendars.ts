@@ -76,9 +76,9 @@ export function renderCalendarManagement(
       text
         .setPlaceholder(t('settings.general.linkedNoteTemplate.placeholder'))
         .setValue(PluginState.getSettings().linkedNoteTemplate || '')
-        .onChange(async value => {
+        .onChange(value => {
           PluginState.getSettings().linkedNoteTemplate = value;
-          await PluginState.saveSettings();
+          void PluginState.saveSettings(false);
         });
       text.inputEl.rows = 8;
       text.inputEl.cols = 50;

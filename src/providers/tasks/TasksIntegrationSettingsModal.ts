@@ -5,8 +5,6 @@ import { t } from '../../features/i18n/i18n';
 import { TasksBacklogDateTarget, TasksDateTarget, TasksDisplayFormat } from '../../types/settings';
 
 export class TasksIntegrationSettingsModal extends Modal {
-  private debounceTimer: number | null = null;
-
   constructor(
     private plugin: FullCalendarPlugin,
     private onChange: () => void
@@ -87,17 +85,11 @@ export class TasksIntegrationSettingsModal extends Modal {
           .setValue(settings.backlogQuery ?? '')
           .onChange(value => {
             PluginState.getSettings().tasksIntegration.backlogQuery = value;
-            if (this.debounceTimer) {
-              window.clearTimeout(this.debounceTimer);
-            }
-            this.debounceTimer = window.setTimeout(() => {
-              void (async () => {
-                this.debounceTimer = null;
-                await PluginState.saveSettings();
-                PluginState.getProviderRegistry().refreshBacklogViews();
-                this.onChange();
-              })();
-            }, 500);
+            void (async () => {
+              await PluginState.saveSettings(false);
+              PluginState.getProviderRegistry().refreshBacklogViews();
+              this.onChange();
+            })();
           });
         text.inputEl.rows = 6;
         text.inputEl.cols = 50;
@@ -122,15 +114,7 @@ export class TasksIntegrationSettingsModal extends Modal {
   }
 
   onClose(): void {
-    if (this.debounceTimer) {
-      window.clearTimeout(this.debounceTimer);
-      this.debounceTimer = null;
-      void (async () => {
-        await PluginState.saveSettings();
-        PluginState.getProviderRegistry().refreshBacklogViews();
-        this.onChange();
-      })();
-    }
+    void PluginState.flushDebouncedSave();
     this.contentEl.empty();
   }
 }

@@ -39,9 +39,9 @@ export class AvailabilitySettingsModal extends Modal {
       )
       .addText(text => {
         text.inputEl.type = 'password';
-        text.setValue(CredentialStore.getGitHubToken() || '').onChange(async value => {
+        text.setValue(CredentialStore.getGitHubToken() || '').onChange(value => {
           CredentialStore.setGitHubToken(value ? value.trim() : null);
-          await PluginState.saveSettings();
+          void PluginState.saveSettings(false);
         });
       });
 
@@ -94,9 +94,9 @@ export class AvailabilitySettingsModal extends Modal {
         text
           .setValue(PluginState.getSettings().availabilityExportPath || '')
           .setPlaceholder('E.g., calendars/availability')
-          .onChange(async value => {
+          .onChange(value => {
             PluginState.getSettings().availabilityExportPath = value.trim();
-            await PluginState.saveSettings();
+            void PluginState.saveSettings(false);
           });
       });
 
@@ -150,6 +150,7 @@ export class AvailabilitySettingsModal extends Modal {
   }
 
   onClose(): void {
+    void PluginState.flushDebouncedSave();
     super.onClose();
     this.onChange();
   }

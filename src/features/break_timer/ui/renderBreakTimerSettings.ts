@@ -35,11 +35,11 @@ export function renderBreakTimerSettings(
       .addText(text => {
         text.inputEl.type = 'number';
         text.setValue(String(PluginState.getSettings().breakTimer.intervalMins));
-        text.onChange(async val => {
+        text.onChange(val => {
           const parsed = parseInt(val, 10);
           if (!isNaN(parsed) && parsed > 0) {
             PluginState.getSettings().breakTimer.intervalMins = parsed;
-            await PluginState.saveSettings();
+            void PluginState.saveSettings(false);
           }
         });
       });
@@ -50,11 +50,11 @@ export function renderBreakTimerSettings(
       .addText(text => {
         text.inputEl.type = 'number';
         text.setValue(String(PluginState.getSettings().breakTimer.idleThresholdMins));
-        text.onChange(async val => {
+        text.onChange(val => {
           const parsed = parseInt(val, 10);
           if (!isNaN(parsed) && parsed >= 0) {
             PluginState.getSettings().breakTimer.idleThresholdMins = parsed;
-            await PluginState.saveSettings();
+            void PluginState.saveSettings(false);
           }
         });
       });
@@ -65,11 +65,11 @@ export function renderBreakTimerSettings(
       .addText(text => {
         text.inputEl.type = 'number';
         text.setValue(String(PluginState.getSettings().breakTimer.breakDurationSecs));
-        text.onChange(async val => {
+        text.onChange(val => {
           const parsed = parseInt(val, 10);
           if (!isNaN(parsed) && parsed > 0) {
             PluginState.getSettings().breakTimer.breakDurationSecs = parsed;
-            await PluginState.saveSettings();
+            void PluginState.saveSettings(false);
           }
         });
       });

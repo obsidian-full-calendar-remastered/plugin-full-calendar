@@ -31,7 +31,7 @@ export function renderFcrReminderSettings(
     .addToggle(toggle => {
       toggle.setValue(companionSettings.enabled);
       toggle.onChange(async val => {
-        companionSettings.enabled = val;
+        PluginState.getSettings().fcrReminderCompanion.enabled = val;
         await PluginState.saveSettings();
         rerender();
       });
@@ -47,9 +47,9 @@ export function renderFcrReminderSettings(
         text.inputEl.type = 'text';
         text.setPlaceholder(t('settings.fcrReminder.apiUrl.placeholder'));
         text.setValue(companionSettings.apiUrl || t('settings.fcrReminder.apiUrl.placeholder'));
-        text.onChange(async val => {
-          companionSettings.apiUrl = val.trim();
-          await PluginState.saveSettings();
+        text.onChange(val => {
+          PluginState.getSettings().fcrReminderCompanion.apiUrl = val.trim();
+          void PluginState.saveSettings(false);
         });
       });
 

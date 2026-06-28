@@ -4,88 +4,94 @@
  * @license See LICENSE.md
  */
 
-export function showBreakTimerOverlay(durationSecs: number, onClose: () => void): () => void {
+import { normalizePath } from 'obsidian';
+import FullCalendarPlugin from '../../main';
+
+export function showBreakTimerOverlay(
+  plugin: FullCalendarPlugin,
+  durationSecs: number,
+  onClose: () => void
+): () => void {
   const doc = activeDocument;
+  const app = plugin.app;
 
   // Create overlay container
   const overlay = doc.createElement('div');
   overlay.className = 'ofc-break-timer-overlay';
 
-  // Create card
-  const card = doc.createElement('div');
-  card.className = 'ofc-break-timer-card';
-  overlay.appendChild(card);
+  // Video element
+  const video = doc.createElement('video');
+  video.className = 'ofc-break-timer-video';
+  video.autoplay = true;
+  video.muted = true;
+  video.playsInline = true;
+  overlay.appendChild(video);
 
-  // Title
-  const title = doc.createElement('h2');
-  title.className = 'ofc-break-timer-title';
-  title.innerText = 'Time to take a break!';
-  card.appendChild(title);
+  const pluginId = 'full-calendar-remastered';
+  const path1 = normalizePath(
+    `${app.vault.configDir}/plugins/${pluginId}/assets/assets_neko1.webm`
+  );
+  const path2 = normalizePath(
+    `${app.vault.configDir}/plugins/${pluginId}/assets/assets_neko2.webm`
+  );
 
-  // Subtitle/Description
-  const desc = doc.createElement('p');
-  desc.className = 'ofc-break-timer-desc';
-  desc.innerText = 'Rest your eyes, stand up, and stretch a bit.';
-  card.appendChild(desc);
+  const loadVideos = async () => {
+    try {
+      const exists1 = await app.vault.adapter.exists(path1);
+      const exists2 = await app.vault.adapter.exists(path2);
 
-  // Animated ASCII Cat Container
-  const catContainer = doc.createElement('div');
-  catContainer.className = 'ofc-break-timer-cat-container';
-  card.appendChild(catContainer);
+      if (exists1 && exists2) {
+        const src1 = app.vault.adapter.getResourcePath(path1);
+        const src2 = app.vault.adapter.getResourcePath(path2);
 
-  const catPre = doc.createElement('pre');
-  catPre.className = 'ofc-break-timer-cat';
-  catContainer.appendChild(catPre);
+        video.src = src1;
+        video.loop = false;
+        video.addEventListener('ended', () => {
+          video.src = src2;
+          video.loop = true;
+          video.play().catch(e => console.error('Error playing video 2:', e));
+        });
 
-  // 4 Walk frames
-  const catFrames = [
-    // Frame 0
-    `  /\\_/\\_____
- ( o.o )    )
-  > ^ <    / 
-  | |  | |`,
-    // Frame 1
-    `  /\\_/\\_____
- ( =.= )    )
-  > ^ <    / 
-  / /  / /`,
-    // Frame 2
-    `  /\\_/\\_____  ~
- ( o.o )   )/
-  > ^ <   /  
-  | |  | |`,
-    // Frame 3
-    `  /\\_/\\_____
- ( =.= )    )
-  > ^ <    / 
-  \\ \\  \\ \\`
-  ];
+        video.addEventListener('canplay', () => {
+          video.classList.add('ofc-break-timer-video-loaded');
+        });
 
-  let frameIdx = 0;
-  catPre.textContent = catFrames[frameIdx];
-  const frameInterval = window.setInterval(() => {
-    frameIdx = (frameIdx + 1) % catFrames.length;
-    catPre.textContent = catFrames[frameIdx];
-  }, 250);
+        video.play().catch(e => console.error('Error playing video 1:', e));
+      } else {
+        console.warn(
+          'Break timer video assets are missing locally. Fallback gradient will display.'
+        );
+      }
+    } catch (err) {
+      console.error('Error setting up break timer videos:', err);
+    }
+  };
 
-  // Progress bar wrapper
-  const progressWrapper = doc.createElement('div');
-  progressWrapper.className = 'ofc-break-timer-progress-wrapper';
-  card.appendChild(progressWrapper);
+  void loadVideos();
 
-  const progressBar = doc.createElement('div');
-  progressBar.className = 'ofc-break-timer-progress-bar';
-  progressWrapper.appendChild(progressBar);
+  // Bottom controls container
+  const controls = doc.createElement('div');
+  controls.className = 'ofc-break-timer-controls';
+  overlay.appendChild(controls);
 
   // Countdown text
   const countdown = doc.createElement('div');
   countdown.className = 'ofc-break-timer-countdown';
-  card.appendChild(countdown);
+  controls.appendChild(countdown);
 
   let secondsLeft = durationSecs;
   const updateCountdown = () => {
     countdown.innerText = `Resuming in ${secondsLeft} second${secondsLeft === 1 ? '' : 's'}...`;
-    progressBar.style.width = `${(secondsLeft / durationSecs) * 100}%`;
+    
+    // Dynamic background opacity fading from 0.75 down to 0.15
+    const minAlpha = 0.15;
+    const maxAlpha = 0.75;
+    const ratio = secondsLeft / durationSecs;
+    const currentAlpha = minAlpha + (maxAlpha - minAlpha) * ratio;
+
+    overlay.setCssProps({
+      backgroundColor: `rgba(0, 0, 0, ${currentAlpha})`
+    });
   };
   updateCountdown();
 
@@ -103,12 +109,18 @@ export function showBreakTimerOverlay(durationSecs: number, onClose: () => void)
   // Close / Skip Button
   const button = doc.createElement('button');
   button.className = 'ofc-break-timer-close-btn';
-  button.innerText = 'Skip break';
-  card.appendChild(button);
+  button.innerText = 'Shoo cat';
+  controls.appendChild(button);
 
   const cleanup = () => {
-    window.clearInterval(frameInterval);
     window.clearInterval(countdownInterval);
+    try {
+      video.pause();
+      video.src = '';
+      video.load();
+    } catch {
+      // Ignore
+    }
     if (overlay.parentNode) {
       overlay.parentNode.removeChild(overlay);
     }

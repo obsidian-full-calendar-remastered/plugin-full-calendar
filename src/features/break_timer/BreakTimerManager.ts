@@ -4,6 +4,8 @@
  * @license See LICENSE.md
  */
 
+import { requestUrl, normalizePath } from 'obsidian';
+import { showNotice } from '../../utils/showNotice';
 import { PluginState } from '../../core/PluginState';
 import { FullCalendarSettings } from '../../types/settings';
 import FullCalendarPlugin from '../../main';
@@ -38,12 +40,14 @@ export class BreakTimerManager {
       this.nextBreakTime = Date.now() + breakSettings.intervalMins * 60 * 1000;
       this.registerListeners();
       this.startCheckLoop();
+      void this.ensureAssets();
     } else if (!breakSettings.enabled && isRunning) {
       this.unload();
     } else if (breakSettings.enabled && isRunning) {
       // Re-calculate next break time if interval or settings changed
       const currentIntervalMs = breakSettings.intervalMins * 60 * 1000;
       this.nextBreakTime = this.lastActiveTime + currentIntervalMs;
+      void this.ensureAssets();
     }
   }
 
@@ -163,12 +167,16 @@ export class BreakTimerManager {
     this.triggerNotification();
 
     // 2. Launch fullscreen overlay
-    this.activeOverlayCleanup = showBreakTimerOverlay(settings.breakDurationSecs, () => {
-      this.activeOverlayCleanup = null;
-      // Schedule next break
-      this.nextBreakTime = Date.now() + settings.intervalMins * 60 * 1000;
-      this.lastActiveTime = Date.now();
-    });
+    this.activeOverlayCleanup = showBreakTimerOverlay(
+      this.plugin,
+      settings.breakDurationSecs,
+      () => {
+        this.activeOverlayCleanup = null;
+        // Schedule next break
+        this.nextBreakTime = Date.now() + settings.intervalMins * 60 * 1000;
+        this.lastActiveTime = Date.now();
+      }
+    );
   }
 
   private triggerNotification(): void {
@@ -190,6 +198,72 @@ export class BreakTimerManager {
       }
     } catch (e) {
       console.warn('Failed to trigger OS notification:', e);
+    }
+  }
+
+  private async ensureAssets(): Promise<void> {
+    const app = this.plugin.app;
+    const pluginId = 'full-calendar-remastered';
+    const assetsFolder = normalizePath(`${app.vault.configDir}/plugins/${pluginId}/assets`);
+    const filenames = ['assets_neko1.webm', 'assets_neko2.webm'];
+
+    // Ensure assets folder exists
+    let folderExists = false;
+    try {
+      folderExists = await app.vault.adapter.exists(assetsFolder);
+    } catch {
+      // Ignore
+    }
+    if (!folderExists) {
+      try {
+        await app.vault.adapter.mkdir(assetsFolder);
+      } catch (e) {
+        console.error('Failed to create assets folder:', e);
+      }
+    }
+
+    const githubBaseUrls = [
+      'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/break-timer',
+    ];
+
+    for (const filename of filenames) {
+      const assetPath = normalizePath(`${assetsFolder}/${filename}`);
+      let fileExists = false;
+      try {
+        fileExists = await app.vault.adapter.exists(assetPath);
+      } catch {
+        // Ignore
+      }
+
+      if (!fileExists) {
+        showNotice(`Downloading break timer asset ${filename}...`);
+
+        let downloaded = false;
+        const errors: string[] = [];
+        for (const baseUrl of githubBaseUrls) {
+          const url = `${baseUrl}/${filename}`;
+          try {
+            const response = await requestUrl({ url, method: 'GET' });
+            if (response.status === 200 && response.arrayBuffer) {
+              await app.vault.adapter.writeBinary(assetPath, response.arrayBuffer);
+              showNotice(`Successfully downloaded ${filename}`);
+              downloaded = true;
+              break;
+            }
+          } catch (err) {
+            errors.push(`${url}: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+
+        if (!downloaded) {
+          console.error(
+            `Failed to download break timer asset ${filename} from all fallback URLs:\n${errors.join('\n')}`
+          );
+          showNotice(
+            `Failed to download break timer asset ${filename}. Check console for details.`
+          );
+        }
+      }
     }
   }
 }

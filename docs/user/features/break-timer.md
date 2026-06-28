@@ -2,6 +2,8 @@
 
 The **Break Timer** is a wellness feature designed to help you avoid strain and maintain healthy habits by periodically reminding you to step away from your screen.
 
+> Inspiration and asset credits by [zokuzoku/cat-gatekeeper](https://github.com/zokuzoku/cat-gatekeeper) under MIT license.
+
 ## How it works
 
 Once enabled, the Break Timer monitors your active computer usage within Obsidian. When the configured break interval is reached, it:

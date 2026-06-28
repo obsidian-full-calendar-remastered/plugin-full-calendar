@@ -1776,9 +1776,190 @@
     font-size: 14px;
   }
 }
+/* Minimal Weather Variant Styles */
+.ofc-weather-widget-day.is-minimal,
+.ofc-weather-widget-week.is-minimal {
+  gap: 8px;
+}
 
+.ofc-weather-widget-day.is-minimal .ofc-weather-hourly-item,
+.ofc-weather-widget-week.is-minimal .ofc-weather-week-item {
+  padding: 4px 6px;
+  gap: 8px;
+  font-size: 0.82em;
+  background-color: var(--background-secondary);
+}
+
+.ofc-weather-widget-day.is-minimal.is-horizontal .ofc-weather-hourly-item {
+  min-width: 45px;
+}
+
+.ofc-weather-widget-week.is-minimal.is-horizontal .ofc-weather-week-item {
+  min-width: 65px;
+}
+
+.ofc-weather-widget-day.is-minimal.is-vertical .ofc-weather-hourly-item,
+.ofc-weather-widget-week.is-minimal.is-vertical .ofc-weather-week-item {
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.ofc-generated-token-container {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.ofc-token-display-input {
+  flex-grow: 1;
+  margin-right: 10px;
+}
+
+.ofc-loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+/* --- Availability Share Modal Responsive Styling --- */
+
+/* Base Range Settings (Desktop/Tablet) */
+.ofc-availability-share-modal .ofc-responsive-range-setting .setting-item-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ofc-availability-share-modal .ofc-responsive-range-setting .setting-item-control input[type="date"] {
+  width: 135px;
+}
+
+.ofc-availability-share-modal .ofc-responsive-range-setting .setting-item-control input[type="time"] {
+  width: 110px;
+}
+
+.ofc-range-separator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ofc-range-separator::after {
+  content: "→";
+  font-weight: bold;
+  color: var(--text-muted);
+}
+
+/* Anonymization Dropdown - Always stack vertically to prevent label squishing */
+.ofc-availability-share-modal .ofc-responsive-dropdown-setting.setting-item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.ofc-availability-share-modal .ofc-responsive-dropdown-setting .setting-item-info {
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.ofc-availability-share-modal .ofc-responsive-dropdown-setting .setting-item-control {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.ofc-availability-share-modal .ofc-responsive-dropdown-setting .setting-item-control select {
+  width: 100%;
+}
+
+/* Onboarding Setup Panel Styling */
+.ofc-availability-setup-panel {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 15px;
+  background-color: var(--background-secondary);
+}
+
+/* Button Row & Buttons */
+.ofc-availability-button-row {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.ofc-availability-action-buttons,
+.ofc-availability-setup-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* Mobile & Narrow Viewports Responsiveness (<= 600px) */
+@media (max-width: 600px) {
+  /* Stack standard setting items vertically */
+  .ofc-availability-share-modal .setting-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  .ofc-availability-share-modal .setting-item-info {
+    margin-right: 0;
+    margin-bottom: 4px;
+    width: 100%;
+  }
+
+  .ofc-availability-share-modal .setting-item-control {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .ofc-availability-share-modal .setting-item-control select,
+  .ofc-availability-share-modal .setting-item-control input[type="text"] {
+    width: 100%;
+  }
+
+  /* Stack range picker inputs vertically and center them */
+  .ofc-availability-share-modal .ofc-responsive-range-setting .setting-item-control {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+  }
+
+  /* Change separator to vertical down arrow */
+  .ofc-range-separator::after {
+    content: "↓";
+  }
+
+  .ofc-range-separator {
+    margin: 4px 0;
+    align-self: center;
+  }
+
+  /* Stack buttons vertically and stretch to full width */
+  .ofc-availability-button-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ofc-availability-action-buttons,
+  .ofc-availability-setup-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .ofc-availability-button-row button {
+    width: 100%;
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
 /* ==========================================
-   Break Timer Feature Styles
+  Break Timer Feature Styles (WebM Video Overlay)
    ========================================== */
 
 /* Fullscreen blur overlay */
@@ -1788,152 +1969,99 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(15, 15, 15, 0.7);
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
   z-index: 99999;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
   display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   align-items: center;
-  justify-content: center;
-  color: var(--text-normal);
-  font-family: var(--font-interface);
+  padding-bottom: 5vh;
+  box-sizing: border-box;
+  transition: background-color 1s linear;
 }
 
-/* Central glowing glassmorphism card */
-.ofc-break-timer-card {
-  background: rgba(28, 28, 30, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.02);
-  border-radius: 16px;
-  padding: 40px;
-  max-width: 480px;
-  width: 90%;
-  text-align: center;
+/* Background video */
+.ofc-break-timer-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.ofc-break-timer-video-loaded {
+  opacity: 1;
+}
+
+/* Top left controls container */
+.ofc-break-timer-controls {
+  position: absolute;
+  top: 24px;
+  left: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  animation: ofc-fade-in-scale 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes ofc-fade-in-scale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.ofc-break-timer-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #ff7b00, #ffae00);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.ofc-break-timer-desc {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-/* Cat Walking Area */
-.ofc-break-timer-cat-container {
-  width: 100%;
-  height: 120px;
-  position: relative;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-}
-
-.ofc-break-timer-cat {
-  font-family: monospace;
-  font-size: 16px;
-  line-height: 1.25;
-  color: #ffb700;
-  margin: 0;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  animation: ofc-cat-walk 10s linear infinite;
-  white-space: pre;
-}
-
-@keyframes ofc-cat-walk {
-  0% {
-    transform: translate(-150px, -50%) scaleX(1);
-  }
-  49% {
-    transform: translate(100px, -50%) scaleX(1);
-  }
-  50% {
-    transform: translate(100px, -50%) scaleX(-1);
-  }
-  99% {
-    transform: translate(-150px, -50%) scaleX(-1);
-  }
-  100% {
-    transform: translate(-150px, -50%) scaleX(1);
-  }
-}
-
-/* Progress bar styling */
-.ofc-break-timer-progress-wrapper {
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.ofc-break-timer-progress-bar {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg, #ff7b00, #ffae00);
-  border-radius: 3px;
-  transition: width 1s linear;
-}
-
-.ofc-break-timer-countdown {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text-normal);
-}
-
-/* Sleek close button */
-.ofc-break-timer-close-btn {
-  background: rgba(255, 255, 255, 0.06);
+  gap: 12px;
+  background: rgba(20, 20, 20, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-normal);
-  padding: 10px 24px;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 20px;
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  width: 260px;
+  max-width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+  text-align: center;
+  animation: ofc-fade-in-down 0.5s ease-out;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+/* Countdown label */
+.ofc-break-timer-countdown {
+  font-size: 1.1em;
   font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 4px 0;
+}
+
+/* Skip / Close button */
+.ofc-break-timer-close-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 0.95em;
+  font-weight: 600;
+  color: white;
+  background: var(--interactive-accent);
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
   outline: none;
 }
 
 .ofc-break-timer-close-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--interactive-accent-hover);
   transform: translateY(-1px);
 }
 
 .ofc-break-timer-close-btn:active {
-  background: rgba(255, 255, 255, 0.04);
   transform: translateY(0);
 }
 
-
-
+@keyframes ofc-fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

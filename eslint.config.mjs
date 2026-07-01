@@ -126,6 +126,12 @@ export default tseslint.config(
         rules: {
             'no-restricted-syntax': 'off'
         }
+    },
+    {
+        files: ['src/stubs/*.ts'],
+        rules: {
+            'import/no-nodejs-modules': 'off'
+        }
     // },
     // {
     //     rules: {

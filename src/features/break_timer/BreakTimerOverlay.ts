@@ -82,7 +82,7 @@ export function showBreakTimerOverlay(
   let secondsLeft = durationSecs;
   const updateCountdown = () => {
     countdown.innerText = `Resuming in ${secondsLeft} second${secondsLeft === 1 ? '' : 's'}...`;
-    
+
     // Dynamic background opacity fading from 0.75 down to 0.15
     const minAlpha = 0.15;
     const maxAlpha = 0.75;

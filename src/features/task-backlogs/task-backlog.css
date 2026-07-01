@@ -299,8 +299,7 @@
 .fcr-task-backlog.tasks-backlog-view .tasks-backlog-location:hover {
   color: var(--text-normal);
   cursor: help;
-  text-decoration: underline;
-  text-decoration-style: dotted;
+  border-bottom: 1px dotted;
 }
 
 .fcr-task-backlog.tasks-backlog-view .tasks-backlog-pagination {

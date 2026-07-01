@@ -1,21 +1,26 @@
-/* eslint-disable */
-declare var module: any;
 import { moment } from 'obsidian';
 
+interface TzShim {
+  (...args: unknown[]): unknown;
+  tz: ((date: unknown, timezone: string) => unknown) & { guess(): string };
+  [key: string]: unknown;
+}
+
 // A minimal moment-timezone shim that uses standard moment and doesn't bundle any timezone database.
-const tzShim: any = function (...args: any[]) {
-  return (moment as any)(...args);
-};
+const tzShim = function (...args: unknown[]) {
+  return (moment as unknown as (...args: unknown[]) => unknown)(...args);
+} as unknown as TzShim;
 
 // Copy all properties from moment
 Object.assign(tzShim, moment);
 
-tzShim.tz = function (date: any, timezone: string) {
-  return (moment as any)(date);
-};
+tzShim.tz = Object.assign(
+  (date: unknown, timezone: string) => (moment as unknown as (date: unknown) => unknown)(date),
+  {
+    guess() {
+      return 'UTC';
+    }
+  }
+);
 
-tzShim.tz.guess = function () {
-  return 'UTC';
-};
-
-module.exports = tzShim;
+export default tzShim;

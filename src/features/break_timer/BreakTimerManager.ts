@@ -223,7 +223,7 @@ export class BreakTimerManager {
     }
 
     const githubBaseUrls = [
-      'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/break-timer',
+      'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/break-timer'
     ];
 
     for (const filename of filenames) {

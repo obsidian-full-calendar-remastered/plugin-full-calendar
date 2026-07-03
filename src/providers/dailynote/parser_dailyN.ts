@@ -80,6 +80,14 @@ const getHeadingPosition = (
   return { start: startingPos.end, end: endingPos?.start || endOfDoc };
 };
 
+/**
+ * Escapes newline characters in a string value before writing it as an inline
+ * attribute. Literal `\n` / `\r` in the serialized text would break the list
+ * item across multiple lines and corrupt the parser on the next read.
+ */
+const escapeInlineAttributeString = (s: string): string =>
+  s.replace(/\r\n/g, '\\n').replace(/\r/g, '\\n').replace(/\n/g, '\\n');
+
 const serializeInlineAttributeValue = (value: unknown): string => {
   if (typeof value === 'object' && value !== null && 'value' in value) {
     const nestedValue = (value as Record<string, unknown>)['value'];
@@ -88,11 +96,13 @@ const serializeInlineAttributeValue = (value: unknown): string => {
       typeof nestedValue === 'number' ||
       typeof nestedValue === 'boolean'
     ) {
-      return String(nestedValue);
+      const raw = String(nestedValue);
+      return typeof nestedValue === 'string' ? escapeInlineAttributeString(raw) : raw;
     }
   }
 
-  return String(value);
+  const raw = String(value);
+  return typeof value === 'string' ? escapeInlineAttributeString(raw) : raw;
 };
 
 export const getListsUnderHeading = (
@@ -171,9 +181,20 @@ const makeListItem = (
 // PUBLIC API
 // =================================================================================================
 
+/**
+ * Unescapes the literal `\n` sequences that were written by
+ * `serializeInlineAttributeValue`, restoring real newlines in string values.
+ */
+const unescapeInlineAttributeString = (s: string): string => s.replace(/\\n/g, '\n');
+
 export function getInlineAttributes(s: string): Record<string, string | boolean> {
   return Object.fromEntries(
-    Array.from(s.matchAll(inlineFieldRegex)).map(m => [m[1], parseBool(m[2])])
+    Array.from(s.matchAll(inlineFieldRegex)).map(m => {
+      const parsed = parseBool(m[2]);
+      // Only unescape string values — booleans don't need it.
+      const value = typeof parsed === 'string' ? unescapeInlineAttributeString(parsed) : parsed;
+      return [m[1], value];
+    })
   );
 }
 

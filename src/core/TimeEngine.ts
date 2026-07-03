@@ -277,9 +277,47 @@ export class TimeEngine {
 
             const occurrences = rule.between(now.toJSDate(), lookaheadEnd.toJSDate());
             for (const occDate of occurrences) {
-              const start = DateTime.fromJSDate(occDate);
-              const dateStr = start.toISODate();
+              // `rrule` encodes all occurrences at the same UTC instant as
+              // `dtstart`, so DateTime.fromJSDate() gives the correct local
+              // *calendar date* but the *hour* can drift by ±1 h whenever the
+              // occurrence falls in a different DST period than `dtstart`.
+              // For timed events we already have the authoritative wall-clock
+              // time in event.startTime, so we pin that onto the correctly-
+              // dated baseDate instead of relying on rrule's shifted hour.
+              const baseDate = DateTime.fromJSDate(occDate);
+              const dateStr = baseDate.toISODate();
               if (dateStr && event.skipDates.includes(dateStr)) continue;
+
+              let start: DateTime;
+              if (!event.allDay && event.startTime && dateStr) {
+                const [h, m] = event.startTime.split(':').map(Number);
+                if (event.timezone) {
+                  // Event has an explicit timezone (e.g. CalDAV/Google): build
+                  // the occurrence in that zone so the UTC offset is correct.
+                  const zone =
+                    event.timezone === 'Z' || event.timezone.toLowerCase() === 'utc'
+                      ? 'utc'
+                      : event.timezone;
+                  start = DateTime.fromObject(
+                    {
+                      year: baseDate.year,
+                      month: baseDate.month,
+                      day: baseDate.day,
+                      hour: h,
+                      minute: m,
+                      second: 0,
+                      millisecond: 0
+                    },
+                    { zone }
+                  );
+                } else {
+                  // No explicit timezone: pin the wall-clock time in local zone
+                  // so DST transitions don't shift the notification time.
+                  start = baseDate.set({ hour: h, minute: m, second: 0, millisecond: 0 });
+                }
+              } else {
+                start = baseDate;
+              }
 
               let end: DateTime;
               if (!event.allDay && event.startTime && event.endTime) {

@@ -19,7 +19,8 @@ import type {
   EventApi,
   EventClickArg,
   EventHoveringArg,
-  EventSourceInput
+  EventSourceInput,
+  LocaleSingularArg
 } from '@fullcalendar/core';
 
 import { Menu, activeDocument, type App } from 'obsidian';
@@ -38,6 +39,7 @@ import {
 } from '../../../../features/weather/Weather';
 import { WeatherDetailModal } from '../../../../features/weather/WeatherDetailModal';
 import { openDailyNoteForDate } from '../../../../features/daily-notes/openDailyNote';
+import { i18n } from '../../../../features/i18n/i18n';
 
 interface ExtraRenderProps {
   eventClick?: (info: EventClickArg) => void;
@@ -103,15 +105,40 @@ export async function renderCalendar(
   const interactionDocument = activeDocument ?? containerEl.ownerDocument;
   const mirrorParent = (activeDocument ?? containerEl.ownerDocument).body;
 
-  // Lazy-load FullCalendar core and plugins only when rendering
-  const [core, list, rrule, daygrid, timegrid, interaction, luxon] = await Promise.all([
+  // Map plugin locale codes to FullCalendar locale identifiers.
+  // 'en' needs no locale override (FullCalendar defaults to English).
+  // 'zh' maps to 'zh-cn' because FullCalendar ships no bare 'zh' locale.
+  const pluginLang = i18n.language ?? 'en';
+  let fcLocalePromise: Promise<{ default: LocaleSingularArg } | null>;
+  switch (pluginLang) {
+    case 'de':
+      fcLocalePromise = import('@fullcalendar/core/locales/de.js');
+      break;
+    case 'fr':
+      fcLocalePromise = import('@fullcalendar/core/locales/fr.js');
+      break;
+    case 'it':
+      fcLocalePromise = import('@fullcalendar/core/locales/it.js');
+      break;
+    case 'es':
+      fcLocalePromise = import('@fullcalendar/core/locales/es.js');
+      break;
+    case 'zh':
+      fcLocalePromise = import('@fullcalendar/core/locales/zh-cn.js');
+      break;
+    default:
+      fcLocalePromise = Promise.resolve(null);
+  }
+
+  const [core, list, rrule, daygrid, timegrid, interaction, luxon, fcLocale] = await Promise.all([
     import('@fullcalendar/core'),
     import('@fullcalendar/list'),
     import('@fullcalendar/rrule'),
     import('@fullcalendar/daygrid'),
     import('@fullcalendar/timegrid'),
     import('@fullcalendar/interaction'),
-    import('@fullcalendar/luxon3')
+    import('@fullcalendar/luxon3'),
+    fcLocalePromise
   ]);
 
   // Optionally load scheduler plugin only when needed
@@ -812,6 +839,9 @@ export async function renderCalendar(
     customButtons: customButtonConfig,
     timeZone: settings?.timeZone,
     height: settings?.height,
+    // Set the FullCalendar locale so month names, day names, and toolbar button
+    // labels match the user's Obsidian language selection.
+    ...(fcLocale ? { locale: fcLocale.default } : {}),
     plugins: [
       // View plugins
       dayGridPlugin,

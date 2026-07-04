@@ -20,6 +20,8 @@ Creates one-note-per-event records, supports full CRUD, and uses robust filename
 
 **Location & Description Mapping**: Parses and writes `location` (geographic/logical address) and `description` (multiline text) dynamically inside the note's YAML frontmatter block.
 
+**Recurrence rules**: Supports weekly, monthly (including specific weekday `repeatOn`), yearly, and daily (`fcrDaily` with optional `repeatInterval`) recurring events. Files for daily recurring events are named with `(Every day)` or `(Every X days)` to provide clean visual identification.
+
 ### Daily Note Provider
 
 Parses list items under configured heading and performs line-targeted updates. Implements a persistent locally-allocated `uid` mechanism (`[uid:: N]`) instead of legacy deduplication matching, enabling deterministic title edits and O(1) hinted line lookups during sync updates.

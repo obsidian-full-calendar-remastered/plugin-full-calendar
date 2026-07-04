@@ -137,6 +137,68 @@ describe('ChronoAnalyser Utils - skipDates handling', () => {
       expect(count).toBe(2); // Only Wed 8th and Fri 10th remain
     });
   });
+  describe('daily and complex recurrence expansions', () => {
+    it('should expand daily event with interval', () => {
+      const dailyEvent: OFCEvent = {
+        type: 'recurring',
+        id: 'test-daily',
+        title: 'Daily Medication',
+        fcrDaily: true,
+        repeatInterval: 3,
+        startRecur: '2023-11-01',
+        endRecur: '2023-11-15',
+        allDay: true,
+        skipDates: ['2023-11-07'],
+        endDate: null
+      };
+      const record = createTimeRecord(dailyEvent);
+
+      const instances = getRecurringInstances(
+        record,
+        new Date('2023-11-01'),
+        new Date('2023-11-15')
+      );
+
+      // Starting Nov 1 (Wednesday):
+      // Nov 1, Nov 4, Nov 7 (skipped), Nov 10, Nov 13.
+      expect(instances).toHaveLength(4);
+      expect(instances.map(d => d.toISOString().split('T')[0])).toEqual([
+        '2023-11-01',
+        '2023-11-04',
+        '2023-11-10',
+        '2023-11-13'
+      ]);
+    });
+
+    it('should expand monthly event on specific weekday (repeatOn)', () => {
+      const repeatOnEvent: OFCEvent = {
+        type: 'recurring',
+        id: 'test-repeaton',
+        title: 'Monthly repeatOn Event',
+        repeatOn: { week: 2, weekday: 0 }, // 2nd Sunday of the month
+        startRecur: '2023-11-01',
+        endRecur: '2023-12-31',
+        allDay: true,
+        skipDates: [],
+        endDate: null
+      };
+      const record = createTimeRecord(repeatOnEvent);
+
+      const instances = getRecurringInstances(
+        record,
+        new Date('2023-11-01'),
+        new Date('2023-12-31')
+      );
+
+      // In Nov 2023, Sundays are: 5th, 12th (2nd), 19th, 26th
+      // In Dec 2023, Sundays are: 3rd, 10th (2nd), 17th, 24th, 31st
+      expect(instances).toHaveLength(2);
+      expect(instances.map(d => d.toISOString().split('T')[0])).toEqual([
+        '2023-11-12',
+        '2023-12-10'
+      ]);
+    });
+  });
 
   describe('non-recurring events', () => {
     it('should return empty array for single events', () => {

@@ -1242,11 +1242,14 @@
           "label": "Repeticiones",
           "options": {
             "none": "Ninguna",
+            "daily": "Diario",
             "weekly": "Semanal",
             "monthly": "Mensual",
             "yearly": "Anual"
           },
           "repeatEvery": "Repetir cada",
+          "day": "día",
+          "days": "días",
           "week": "semana",
           "weeks": "semanas",
           "month": "mes",

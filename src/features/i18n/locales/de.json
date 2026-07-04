@@ -1242,11 +1242,14 @@
           "label": "Wiederholt sich",
           "options": {
             "none": "Keine",
+            "daily": "Täglich",
             "weekly": "Wöchentlich",
             "monthly": "Monatlich",
             "yearly": "Jährlich"
           },
           "repeatEvery": "Wiederhole alle",
+          "day": "Tag",
+          "days": "Tage",
           "week": "Woche",
           "weeks": "Wochen",
           "month": "Monat",

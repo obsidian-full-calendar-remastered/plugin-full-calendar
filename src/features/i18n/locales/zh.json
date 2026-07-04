@@ -1242,11 +1242,14 @@
           "label": "重复",
           "options": {
             "none": "无",
+            "daily": "每日",
             "weekly": "每周",
             "monthly": "每月",
             "yearly": "每年"
           },
           "repeatEvery": "每",
+          "day": "天",
+          "days": "天",
           "week": "周",
           "weeks": "周",
           "month": "月",

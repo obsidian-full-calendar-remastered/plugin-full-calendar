@@ -102,6 +102,8 @@ function getRecurringEventRule(event: Extract<OFCEvent, { type: 'recurring' }>):
       S: 'SA'
     };
     parts.push('FREQ=WEEKLY', `BYDAY=${event.daysOfWeek.map(day => weekdays[day]).join(',')}`);
+  } else if (event.fcrDaily) {
+    parts.push('FREQ=DAILY');
   } else {
     parts.push('FREQ=DAILY');
   }

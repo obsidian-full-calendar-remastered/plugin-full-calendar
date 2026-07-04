@@ -255,9 +255,24 @@ export class TimeEngine {
                 F: RRule.FR,
                 S: RRule.SA
               };
-              if (event.daysOfWeek) {
+              if (event.fcrDaily) {
+                ruleOptions.freq = RRule.DAILY;
+              } else if (event.daysOfWeek) {
                 ruleOptions.freq = RRule.WEEKLY;
                 ruleOptions.byweekday = event.daysOfWeek.map(c => weekdays[c]);
+              } else if (event.repeatOn) {
+                ruleOptions.freq = RRule.MONTHLY;
+                const weekdaysList = [
+                  RRule.SU,
+                  RRule.MO,
+                  RRule.TU,
+                  RRule.WE,
+                  RRule.TH,
+                  RRule.FR,
+                  RRule.SA
+                ];
+                const rruleWeekday = weekdaysList[event.repeatOn.weekday];
+                ruleOptions.byweekday = [rruleWeekday.nth(event.repeatOn.week)];
               } else if (event.dayOfMonth) {
                 ruleOptions.freq = RRule.MONTHLY;
                 ruleOptions.bymonthday = event.dayOfMonth;
@@ -265,6 +280,9 @@ export class TimeEngine {
                   ruleOptions.freq = RRule.YEARLY;
                   ruleOptions.bymonth = event.month;
                 }
+              }
+              if (event.repeatInterval && event.repeatInterval > 1) {
+                ruleOptions.interval = event.repeatInterval;
               }
               if (event.endRecur) {
                 ruleOptions.until = parseEventDateTime(event.endRecur).endOf('day').toJSDate();

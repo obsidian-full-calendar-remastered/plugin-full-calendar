@@ -335,6 +335,29 @@ describe('schema parsing tests', () => {
         }
       `);
     });
+    it('recurs daily with repeatInterval', () => {
+      expect(
+        parseEvent({
+          title: 'Test Daily',
+          allDay: true,
+          type: 'recurring',
+          fcrDaily: true,
+          repeatInterval: 3,
+          startRecur: '2023-01-05'
+        })
+      ).toMatchInlineSnapshot(`
+        {
+          "allDay": true,
+          "endDate": null,
+          "fcrDaily": true,
+          "repeatInterval": 3,
+          "skipDates": [],
+          "startRecur": "2023-01-05",
+          "title": "Test Daily",
+          "type": "recurring",
+        }
+      `);
+    });
   });
 
   describe('rrule events', () => {

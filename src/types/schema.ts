@@ -115,6 +115,7 @@ export const EventSchema = z
           weekday: z.number().int().min(0).max(6) // 0-6 for Sun-Sat
         })
         .optional(),
+      fcrDaily: z.boolean().optional(),
       // --- ADDITIONS END ---
       startRecur: ParsedDate.optional(),
       endRecur: ParsedDate.optional(),
@@ -137,7 +138,17 @@ export const EventSchema = z
     const monthlyOrYearlyDefined = data.dayOfMonth !== undefined;
     // --- ADDITION ---
     const positionalMonthlyDefined = data.repeatOn !== undefined;
+    const dailyDefined = data.fcrDaily === true;
     // --- END ADDITION ---
+
+    if (dailyDefined && (weeklyDefined || monthlyOrYearlyDefined || positionalMonthlyDefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'A daily recurring event cannot define weekly, monthly, or yearly recurrence rules.',
+        path: ['fcrDaily']
+      });
+    }
 
     if (weeklyDefined && monthlyOrYearlyDefined) {
       ctx.addIssue({
@@ -149,11 +160,11 @@ export const EventSchema = z
     }
 
     // --- MODIFIED CHECK ---
-    if (!weeklyDefined && !monthlyOrYearlyDefined && !positionalMonthlyDefined) {
+    if (!weeklyDefined && !monthlyOrYearlyDefined && !positionalMonthlyDefined && !dailyDefined) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
-          'A recurring event must define a recurrence rule (either daysOfWeek, dayOfMonth, or repeatOn).'
+          'A recurring event must define a recurrence rule (either daysOfWeek, dayOfMonth, repeatOn, or fcrDaily).'
       });
     }
     // --- END MODIFIED CHECK ---

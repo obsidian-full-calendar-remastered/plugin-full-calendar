@@ -3,7 +3,7 @@
  * These helpers are used for date manipulation, duration calculation, and other reusable logic.
  */
 
-import { rrulestr } from 'rrule';
+import { RRule, rrulestr } from 'rrule';
 import { OFCEvent } from '../../types';
 import { TimeRecord } from './types';
 
@@ -99,128 +99,110 @@ export function calculateDuration(
   }
 }
 
-function getRecurrenceDateRange(
-  metadata: OFCEvent,
-  filterStartDate: Date | null,
-  filterEndDate: Date | null
-): { effectiveStart: Date; effectiveEnd: Date; targetDays: number[] } | null {
-  // TYPE GUARD: Ensure we are dealing with a recurring event.
-  if (metadata.type !== 'recurring') return null;
-
-  const {
-    startRecur: metaStartRecurStr,
-    endRecur: metaEndRecurStr,
-    daysOfWeek: metaDaysOfWeek
-  } = metadata;
-  if (!metaStartRecurStr || !metaDaysOfWeek) return null;
-
-  let recurrenceStart: Date | null = null;
-  const tempStartDate = new Date(metaStartRecurStr);
-  if (!isNaN(tempStartDate.getTime())) {
-    recurrenceStart = new Date(
-      Date.UTC(tempStartDate.getFullYear(), tempStartDate.getMonth(), tempStartDate.getDate())
-    );
-  }
-  if (!recurrenceStart) return null;
-
-  let recurrenceEnd: Date = new Date(Date.UTC(9999, 11, 31));
-  if (metaEndRecurStr) {
-    const tempEndDate = new Date(metaEndRecurStr);
-    if (!isNaN(tempEndDate.getTime())) {
-      recurrenceEnd = new Date(
-        Date.UTC(tempEndDate.getFullYear(), tempEndDate.getMonth(), tempEndDate.getDate())
-      );
-    }
-  }
-
-  const effectiveStart = new Date(
-    Math.max(recurrenceStart.getTime(), filterStartDate?.getTime() || recurrenceStart.getTime())
-  );
-  const effectiveEnd = new Date(
-    Math.min(recurrenceEnd.getTime(), filterEndDate?.getTime() || recurrenceEnd.getTime())
-  );
-
-  if (effectiveStart > effectiveEnd) return null;
-
-  const targetDays = (
-    Array.isArray(metaDaysOfWeek)
-      ? metaDaysOfWeek
-      : String(metaDaysOfWeek)
-          .replace(/[[\]\s]/g, '')
-          .split(',')
-  )
-    .map(d => getDayOfWeekNumber(d))
-    .filter((d): d is number => d !== undefined);
-
-  if (targetDays.length === 0) return null;
-
-  return { effectiveStart, effectiveEnd, targetDays };
-}
-
-/**
- * NEW FUNCTION: Returns an array of dates for each occurrence of a recurring event within a range.
- * Filters out any dates that exist in the event's skipDates array.
- */
 export function getRecurringInstances(
   record: TimeRecord,
   filterStartDate: Date | null,
   filterEndDate: Date | null
 ): Date[] {
   if (record.metadata.type !== 'recurring') return [];
-  const rangeInfo = getRecurrenceDateRange(record.metadata, filterStartDate, filterEndDate);
-  if (!rangeInfo) return [];
+  const event = record.metadata;
 
-  const { effectiveStart, effectiveEnd, targetDays } = rangeInfo;
-  const instances: Date[] = [];
-  const currentDate = new Date(effectiveStart.getTime());
+  try {
+    const dtstart = event.startRecur ? new Date(event.startRecur) : new Date('1970-01-01');
+    if (isNaN(dtstart.getTime())) return [];
 
-  // Get skipDates as a Set of ISO date strings for fast lookup
-  const skipDatesSet = new Set(record.metadata.skipDates || []);
+    const weekdays = {
+      U: RRule.SU,
+      M: RRule.MO,
+      T: RRule.TU,
+      W: RRule.WE,
+      R: RRule.TH,
+      F: RRule.FR,
+      S: RRule.SA
+    };
 
-  while (currentDate.getTime() <= effectiveEnd.getTime()) {
-    if (targetDays.includes(currentDate.getUTCDay())) {
-      const dateStr = getISODate(currentDate);
-      // Only include the date if it's not in the skipDates list
-      if (dateStr && !skipDatesSet.has(dateStr)) {
-        instances.push(new Date(currentDate.getTime()));
+    const ruleOptions: Partial<import('rrule').Options> = { dtstart };
+
+    if (event.fcrDaily) {
+      ruleOptions.freq = RRule.DAILY;
+    } else if (event.daysOfWeek && event.daysOfWeek.length > 0) {
+      ruleOptions.freq = RRule.WEEKLY;
+      ruleOptions.byweekday = event.daysOfWeek.map(c => weekdays[c]);
+    } else if (event.repeatOn) {
+      ruleOptions.freq = RRule.MONTHLY;
+      const weekdaysList = [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA];
+      const rruleWeekday = weekdaysList[event.repeatOn.weekday];
+      ruleOptions.byweekday = [rruleWeekday.nth(event.repeatOn.week)];
+    } else if (event.dayOfMonth) {
+      ruleOptions.freq = RRule.MONTHLY;
+      ruleOptions.bymonthday = event.dayOfMonth;
+      if (event.month) {
+        ruleOptions.freq = RRule.YEARLY;
+        ruleOptions.bymonth = event.month;
+      }
+    } else {
+      return [];
+    }
+
+    if (event.repeatInterval && event.repeatInterval > 1) {
+      ruleOptions.interval = event.repeatInterval;
+    }
+
+    if (event.endRecur) {
+      const endRecurDate = new Date(event.endRecur);
+      if (!isNaN(endRecurDate.getTime())) {
+        const until = new Date(
+          Date.UTC(
+            endRecurDate.getFullYear(),
+            endRecurDate.getMonth(),
+            endRecurDate.getDate(),
+            23,
+            59,
+            59
+          )
+        );
+        ruleOptions.until = until;
       }
     }
-    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+
+    const rule = new RRule(ruleOptions);
+
+    const rangeStart = filterStartDate || new Date('1900-01-01');
+    const rangeEnd = filterEndDate || new Date('2100-12-31');
+
+    const instances = rule.between(rangeStart, rangeEnd, true);
+
+    const skipDatesSet = new Set(event.skipDates || []);
+
+    return instances.filter(date => {
+      const dateStr = getISODate(date);
+      return dateStr && !skipDatesSet.has(dateStr);
+    });
+  } catch (error) {
+    console.warn('Failed to expand recurring instances:', event, error);
+    return [];
   }
-  return instances;
 }
 
-/**
- * Calculates how many times a recurring event occurs within a given date range.
- * Excludes any dates that exist in the event's skipDates array.
- */
 export function calculateRecurringInstancesInDateRange(
   metadata: OFCEvent,
   filterStartDate: Date | null,
   filterEndDate: Date | null
 ): number {
   if (metadata.type !== 'recurring') return 0;
-  const rangeInfo = getRecurrenceDateRange(metadata, filterStartDate, filterEndDate);
-  if (!rangeInfo) return 0;
-
-  const { effectiveStart, effectiveEnd, targetDays } = rangeInfo;
-  let count = 0;
-  const currentDate = new Date(effectiveStart.getTime());
-
-  // Get skipDates as a Set of ISO date strings for fast lookup
-  const skipDatesSet = new Set(metadata.skipDates || []);
-
-  while (currentDate.getTime() <= effectiveEnd.getTime()) {
-    if (targetDays.includes(currentDate.getUTCDay())) {
-      const dateStr = getISODate(currentDate);
-      // Only count the date if it's not in the skipDates list
-      if (dateStr && !skipDatesSet.has(dateStr)) {
-        count++;
-      }
-    }
-    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-  }
-  return count;
+  const dummyRecord: TimeRecord = {
+    metadata,
+    project: '',
+    duration: 0,
+    date: new Date(),
+    _id: '',
+    path: '',
+    hierarchy: '',
+    subproject: '',
+    subprojectFull: '',
+    file: ''
+  };
+  return getRecurringInstances(dummyRecord, filterStartDate, filterEndDate).length;
 }
 
 /**

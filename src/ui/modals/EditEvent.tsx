@@ -82,7 +82,7 @@ const DaySelect = ({
   );
 };
 
-type RecurrenceType = 'none' | 'weekly' | 'monthly' | 'yearly';
+type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 interface EditEventProps {
   submit: (frontmatter: OFCEvent, calendarIndex: number) => Promise<void>;
@@ -106,6 +106,9 @@ interface EditEventProps {
 function getInitialRecurrenceType(event?: Partial<OFCEvent>): RecurrenceType {
   if (event?.type !== 'recurring') {
     return 'none';
+  }
+  if (event.fcrDaily) {
+    return 'daily';
   }
   if (event.daysOfWeek && event.daysOfWeek.length > 0) {
     return 'weekly';
@@ -279,7 +282,9 @@ export const EditEvent = ({
         repeatInterval: repeatInterval > 1 ? repeatInterval : undefined
       };
 
-      if (recurrenceType === 'weekly') {
+      if (recurrenceType === 'daily') {
+        recurringData.fcrDaily = true;
+      } else if (recurrenceType === 'weekly') {
         recurringData.daysOfWeek = daysOfWeek as ('U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S')[];
       } else if (recurrenceType === 'monthly' && date) {
         // START MODIFICATION
@@ -630,6 +635,9 @@ export const EditEvent = ({
                   title={recurringTooltip}
                 >
                   <option value="none">{t('modals.editEvent.fields.repeats.options.none')}</option>
+                  <option value="daily">
+                    {t('modals.editEvent.fields.repeats.options.daily')}
+                  </option>
                   <option value="weekly">
                     {t('modals.editEvent.fields.repeats.options.weekly')}
                   </option>
@@ -655,6 +663,10 @@ export const EditEvent = ({
                     className="u-w-60px"
                   />
                   <span>
+                    {recurrenceType === 'daily' &&
+                      (repeatInterval > 1
+                        ? t('modals.editEvent.fields.repeats.days')
+                        : t('modals.editEvent.fields.repeats.day'))}
                     {recurrenceType === 'weekly' &&
                       (repeatInterval > 1
                         ? t('modals.editEvent.fields.repeats.weeks')

@@ -5,9 +5,10 @@ The recurring event system in Full Calendar is designed to be both powerful and 
 ## Creating a Recurring Event
 
 1.  Create a new event or edit an existing one to open the event modal.
-2.  In the **Repeats** dropdown, select the frequency: Weekly, Monthly, or Yearly.
+2.  In the **Repeats** dropdown, select the frequency: Daily, Weekly, Monthly, or Yearly.
+    -   **Daily:** The event will repeat every day or every X days (e.g., every 3 days).
     -   **Weekly:** Choose the specific days of the week the event should repeat on.
-    -   **Monthly:** The event will repeat on the same day of the month as the start date (e.g., the 15th).
+    -   **Monthly:** The event will repeat on the same day of the month as the start date (e.g., the 15th), or on a specific weekday (e.g., second Sunday).
     -   **Yearly:** The event will repeat on the same month and day as the start date (e.g., every January 15th).
 3.  Optionally, set a **Start Repeat** and **End Repeat** date to define the range of the recurrence.
 4.  Save the event. A single source item will be created that represents the entire series.

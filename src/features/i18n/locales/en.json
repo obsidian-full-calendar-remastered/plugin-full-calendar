@@ -1253,11 +1253,14 @@
           "label": "Repeats",
           "options": {
             "none": "None",
+            "daily": "Daily",
             "weekly": "Weekly",
             "monthly": "Monthly",
             "yearly": "Yearly"
           },
           "repeatEvery": "Repeat every",
+          "day": "day",
+          "days": "days",
           "week": "week",
           "weeks": "weeks",
           "month": "month",

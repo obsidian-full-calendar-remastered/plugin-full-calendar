@@ -214,7 +214,9 @@ export function toEventInput(
     const weekdays = { U: 'SU', M: 'MO', T: 'TU', W: 'WE', R: 'TH', F: 'FR', S: 'SA' };
     const rruleWeekdays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
-    if (event.daysOfWeek?.length) {
+    if (event.fcrDaily) {
+      rruleString = 'FREQ=DAILY';
+    } else if (event.daysOfWeek?.length) {
       const byday = event.daysOfWeek.map((c: keyof typeof weekdays) => weekdays[c]);
       rruleString = `FREQ=WEEKLY;BYDAY=${byday.join(',')}`;
     } else if (event.repeatOn) {
@@ -315,7 +317,10 @@ export function toEventInput(
     baseEvent.extendedProps = {
       ...baseEvent.extendedProps,
       isTask: !!event.isTask,
-      ...(event.allDay ? {} : { sourceTimezone: sourceZone })
+      ...(event.allDay ? {} : { sourceTimezone: sourceZone }),
+      fcrDaily: event.fcrDaily,
+      repeatInterval: event.repeatInterval,
+      repeatOn: event.repeatOn
     };
 
     // Tell FullCalendar it’s all-day when relevant
@@ -534,7 +539,8 @@ export function fromEventApi(
     (!event.allDay && (event.extendedProps.sourceTimezone as string)) ||
     settings.displayTimezone ||
     Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const isRecurring: boolean = event.extendedProps.daysOfWeek !== undefined;
+  const isRecurring: boolean =
+    event.extendedProps.daysOfWeek !== undefined || event.extendedProps.fcrDaily === true;
   const startDate = event.allDay
     ? (event.startStr ? DateTime.fromISO(event.startStr).toISODate() : null) ||
       DateTime.fromJSDate(event.start as Date).toISODate() ||
@@ -581,15 +587,26 @@ export function fromEventApi(
       ? {
           type: 'recurring' as const,
           endDate: null,
-          daysOfWeek: (extendedProps.daysOfWeek as number[]).map((i: number) => DAYS[i]) as (
-            | 'U'
-            | 'M'
-            | 'T'
-            | 'W'
-            | 'R'
-            | 'F'
-            | 'S'
-          )[],
+          ...(extendedProps.fcrDaily ? { fcrDaily: true } : {}),
+          ...(extendedProps.repeatInterval
+            ? { repeatInterval: extendedProps.repeatInterval as number }
+            : {}),
+          ...(extendedProps.repeatOn
+            ? { repeatOn: extendedProps.repeatOn as { week: number; weekday: number } }
+            : {}),
+          ...(extendedProps.daysOfWeek
+            ? {
+                daysOfWeek: (extendedProps.daysOfWeek as number[]).map((i: number) => DAYS[i]) as (
+                  | 'U'
+                  | 'M'
+                  | 'T'
+                  | 'W'
+                  | 'R'
+                  | 'F'
+                  | 'S'
+                )[]
+              }
+            : {}),
           startRecur: extendedProps.startRecur
             ? getDate(extendedProps.startRecur as Date, sourceZone)
             : undefined,

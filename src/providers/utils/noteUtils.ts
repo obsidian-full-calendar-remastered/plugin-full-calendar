@@ -26,6 +26,10 @@ export const basenameFromEvent = (event: OFCEvent, settings: TitleSettingsLike):
     case 'single':
       return `${event.date} ${sanitizedTitle}`;
     case 'recurring': {
+      if (event.fcrDaily) {
+        const interval = event.repeatInterval || 1;
+        return `(Every ${interval > 1 ? `${interval} days` : 'day'}) ${sanitizedTitle}`;
+      }
       if (event.daysOfWeek && event.daysOfWeek.length > 0) {
         return `(Every ${event.daysOfWeek.join(',')}) ${sanitizedTitle}`;
       }

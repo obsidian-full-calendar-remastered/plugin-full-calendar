@@ -242,6 +242,7 @@ export interface FullCalendarSettings {
   icsExportPath: string;
   breakTimer: BreakTimerSettings;
   availabilityDefaultTimeRange: { startTime: string; endTime: string };
+  openDailyNoteOnDateClick: boolean;
 }
 
 export interface BreakTimerSettings {
@@ -355,6 +356,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   weatherUnit: 'C',
   linkedNoteTemplate:
     '# {{title}}\n\n**Date**: {{date}}\n**Time**: {{timeString}}\n**Location**: {{location}}\n**Calendar**: {{calendarName}}\n\n## Description\n{{description}}\n\n## Notes\n- ',
+  openDailyNoteOnDateClick: false,
   breakTimer: {
     enabled: false,
     intervalMins: 60,

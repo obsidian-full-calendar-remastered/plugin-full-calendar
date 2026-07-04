@@ -712,8 +712,11 @@ export async function renderCalendar(
     });
   };
 
-  const bindDailyNoteHeaderClick = (el: HTMLElement, date: Date): void => {
-    const dateLabel = el.querySelector<HTMLElement>('.fc-col-header-cell-cushion');
+  const bindDailyNoteClick = (el: HTMLElement, date: Date, selector: string): void => {
+    if (!PluginState.getSettings().openDailyNoteOnDateClick) {
+      return;
+    }
+    const dateLabel = el.querySelector<HTMLElement>(selector);
     if (!dateLabel || dateLabel.dataset.ofcDailyNoteBound === 'true') {
       return;
     }
@@ -791,7 +794,7 @@ export async function renderCalendar(
   const cal = new CalendarCtor(containerEl, {
     dayHeaderDidMount: arg => {
       if (arg.view.type.startsWith('timeGrid')) {
-        bindDailyNoteHeaderClick(arg.el, arg.date);
+        bindDailyNoteClick(arg.el, arg.date, '.fc-col-header-cell-cushion');
       }
       const pluginSettings = PluginState.getSettings();
       if (settings?.weatherHide || pluginSettings.weatherHide) {
@@ -813,6 +816,7 @@ export async function renderCalendar(
       }
     },
     dayCellDidMount: arg => {
+      bindDailyNoteClick(arg.el, arg.date, '.fc-daygrid-day-number');
       const pluginSettings = PluginState.getSettings();
       if (
         settings?.weatherHide ||

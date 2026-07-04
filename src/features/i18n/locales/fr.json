@@ -281,6 +281,10 @@
         "label": "Cliquer sur un jour en vue mois pour créer un événement",
         "description": "Désactivez pour ouvrir la vue jour au lieu de créer un événement."
       },
+      "openDailyNoteOnDateClick": {
+        "label": "Ouvrir la note quotidienne au clic sur la date",
+        "description": "Clic gauche sur les en-têtes de colonne de date ou les numéros de jour de la vue mensuelle pour ouvrir ou créer la note quotidienne."
+      },
       "linkedNotesDirectory": {
         "label": "Répertoire des notes liées",
         "description": "Choisissez le chemin du dossier où les notes liées aux événements seront créées.",

@@ -66,3 +66,11 @@ Daily Note calendars support two modes, configurable in Settings → General →
 - Strict: Event times are stamped with the current Display Timezone and are treated as anchored timestamps when written back.
 
 In both modes, events are rendered in the Display Timezone you choose for the calendar view.
+
+---
+
+## Navigation to Daily Notes
+
+If the **Open daily note on date click** option is enabled in **Settings → General**, you can left-click directly on date headers in Week/Day views and the day number cushion in Month view to open (or create) the corresponding daily note file.
+
+Left-clicking on the main day cell body in Month view will continue to open the "Create Event" modal.

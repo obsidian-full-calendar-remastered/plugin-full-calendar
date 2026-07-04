@@ -16,6 +16,7 @@ This page describes how settings are modeled and applied.
 - Features own their setting UI and behavior handlers.
 - Settings updates propagate to views, cache, and providers.
 - If a setting is exposed in more than one UI location, each control must write the same typed settings field and trigger the same downstream refresh path. For example, the Tasks backlog date-field selector in Settings and in the Tasks Backlog view both write `tasksIntegration.backlogDateTarget` and refresh backlog views through the provider registry.
+- **Open Daily Note on click**: The `openDailyNoteOnDateClick` setting enables/disables navigation from calendar header date labels and Month view day number links to Obsidian Daily Notes. The click handler stops event propagation to prevent triggering the month view create event modal.
 
 ## Debounced Settings Save and Flush Lifecycle
 

@@ -141,6 +141,8 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     weatherHide: raw.weatherHide ?? DEFAULT_SETTINGS.weatherHide,
     weatherInputMode: raw.weatherInputMode ?? DEFAULT_SETTINGS.weatherInputMode,
     weatherUnit: raw.weatherUnit ?? DEFAULT_SETTINGS.weatherUnit,
+    openDailyNoteOnDateClick:
+      raw.openDailyNoteOnDateClick ?? DEFAULT_SETTINGS.openDailyNoteOnDateClick,
     breakTimer: {
       ...DEFAULT_SETTINGS.breakTimer,
       ...((raw as Partial<FullCalendarSettings>).breakTimer || {})

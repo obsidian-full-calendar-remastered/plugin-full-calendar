@@ -221,4 +221,18 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
       expect(mockSecretStorage['fcr-caldav-pwd-cal2']).toBe('');
     });
   });
+
+  it('should fallback to defaults when openDailyNoteOnDateClick is missing or preserve it when present', () => {
+    const rawSettings = { ...DEFAULT_SETTINGS } as Partial<typeof DEFAULT_SETTINGS>;
+    delete rawSettings.openDailyNoteOnDateClick;
+
+    const { settings: settingsDefault } = migrateAndSanitizeSettings(rawSettings);
+    expect(settingsDefault.openDailyNoteOnDateClick).toBe(false);
+
+    const { settings: settingsCustom } = migrateAndSanitizeSettings({
+      ...rawSettings,
+      openDailyNoteOnDateClick: true
+    });
+    expect(settingsCustom.openDailyNoteOnDateClick).toBe(true);
+  });
 });

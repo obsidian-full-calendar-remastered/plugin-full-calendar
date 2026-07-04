@@ -281,6 +281,10 @@
         "label": "在月视图中点击日期创建事件",
         "description": "关闭此选项则点击时打开日视图。"
       },
+      "openDailyNoteOnDateClick": {
+        "label": "点击日期打开日记",
+        "description": "左键点击日期列标题或月视图中的日期数字，以打开或创建对应的日记。"
+      },
       "linkedNotesDirectory": {
         "label": "链接笔记目录",
         "description": "选择用于创建事件链接笔记的文件夹路径。",

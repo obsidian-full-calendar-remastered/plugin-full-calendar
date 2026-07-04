@@ -281,6 +281,10 @@
         "label": "Klicken Sie auf einen Tag in der Monatsansicht, um ein Ereignis zu erstellen",
         "description": "Deaktivieren, um stattdessen die Tagesansicht zu öffnen."
       },
+      "openDailyNoteOnDateClick": {
+        "label": "Tagesnotiz bei Klick auf Datum öffnen",
+        "description": "Linksklick auf Datum-Spaltenüberschriften oder Monatsansicht-Tagesnummern, um die Tagesnotiz zu öffnen oder zu erstellen."
+      },
       "linkedNotesDirectory": {
         "label": "Verzeichnis für verknüpfte Notizen",
         "description": "Wählen Sie den Ordnerpfad, in dem Ereignis-Verknüpfungsnotizen erstellt werden.",

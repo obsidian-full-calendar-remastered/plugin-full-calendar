@@ -113,6 +113,21 @@ export function renderGeneralSettings(
       });
     });
 
+  new Setting(containerEl)
+    .setName(t('settings.general.openDailyNoteOnDateClick.label'))
+    .setDesc(
+      createDescWithDocs(t('settings.general.openDailyNoteOnDateClick.description'), [
+        { text: t('settings.calendars.docs.dailyNote'), path: 'user/calendars/dailynote' }
+      ])
+    )
+    .addToggle(toggle => {
+      toggle.setValue(PluginState.getSettings().openDailyNoteOnDateClick);
+      toggle.onChange(async val => {
+        PluginState.getSettings().openDailyNoteOnDateClick = val;
+        await PluginState.saveSettings();
+      });
+    });
+
   // Render modular Weather Settings
   renderWeatherSettings(containerEl, _plugin, _rerender);
 }

@@ -281,6 +281,10 @@
         "label": "Haz clic en un día en la vista mensual para crear evento",
         "description": "Desactiva para abrir la vista diaria al hacer clic."
       },
+      "openDailyNoteOnDateClick": {
+        "label": "Abrir nota diaria al hacer clic en la fecha",
+        "description": "Haz clic izquierdo en los encabezados de columna de fecha o en los números de día de la vista mensual para abrir o crear la nota diaria."
+      },
       "linkedNotesDirectory": {
         "label": "Directorio de notas vinculadas",
         "description": "Elija la ruta de la carpeta donde se crearán las notas vinculadas a eventos.",

@@ -3,7 +3,7 @@
 Easily add, edit, and delete events from your Microsoft Outlook calendars in Full Calendar.
 
 !!! tip "Power Up with Categories"
-    Google Calendar events fully support **[Advanced Categories](../events/categories.md)**. Use a title like `Personal - Doctor` to automatically apply your "Personal" color and styling.
+    Google Calendar events fully support [Advanced Categories](../events/categories.md). Use a title like `Personal - Doctor` to automatically apply your "Personal" color and styling.
 
 !!! warn "Not possible for Work / Institutional Calendars"
     Due to Microsoft policies, adding a work or institutional calendar will not be possible. See [here](#note-for-institutional-university-accounts) for more details
@@ -13,6 +13,7 @@ Easily add, edit, and delete events from your Microsoft Outlook calendars in Ful
 - Read events from Outlook calendars
 - Create, update, and delete single events
 - Multi-account support via connected Outlook accounts
+- **Video Conferencing & Links**: Automatically extracts MS Teams/Zoom/etc. meeting URLs from `onlineMeetingUrl` and maps them directly to location/description fields (rendered as clickable links in the [Event Details modal](../events/manage.md#video-conference--linkification-support); see [Video Conference & Linkification Support](../events/manage.md#video-conference--linkification-support)).
 
 Current limitation:
 
@@ -57,5 +58,5 @@ Clearly, this is a significant burden on **free, open-source project**, and the 
 
 ## Troubleshooting
 
-*   **Outlook Setup:** See the **[Central Troubleshooting Guide](../guides/troubleshooting.md#outlook-calendar)** for help with custom app configuration, redirect URI issues, or missing events.
-*   **Android and iOS Authentication Workaround:** For step-by-step instructions on authenticating Outlook accounts on mobile devices using vault synchronization, see **[Mobile Authentication Workaround](../guides/troubleshooting.md#mobile-authentication-workaround)**.
+*   **Outlook Setup:** See the [Central Troubleshooting Guide](../guides/troubleshooting.md#outlook-calendar) for help with custom app configuration, redirect URI issues, or missing events.
+*   **Android and iOS Authentication Workaround:** For step-by-step instructions on authenticating Outlook accounts on mobile devices using vault synchronization, see [Mobile Authentication Workaround](../guides/troubleshooting.md#mobile-authentication-workaround).

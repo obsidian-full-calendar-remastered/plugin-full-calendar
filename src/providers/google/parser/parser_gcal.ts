@@ -14,6 +14,7 @@ import { DateTime } from 'luxon';
 import { OFCEvent } from '../../../types/schema';
 import { constructTitle } from '../../../features/category/categoryParser';
 import { rrulestr } from 'rrule';
+import { injectMeetingUrl } from '../../../utils/meetingUrl';
 
 /**
  * Transforms a single event object from the Google Calendar API into the OFCEvent format.
@@ -57,6 +58,16 @@ export interface GoogleEventLike {
     self?: boolean;
     responseStatus?: string;
   }[];
+  conferenceData?: {
+    entryPoints?: {
+      entryPointType?: string;
+      uri?: string;
+      label?: string;
+    }[];
+    conferenceSolution?: {
+      name?: string;
+    };
+  };
 }
 
 export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
@@ -89,8 +100,28 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
 
   // Title and Category Parsing
   eventData.title = gEvent.summary;
-  eventData.location = gEvent.location;
-  eventData.description = gEvent.description;
+
+  let location = gEvent.location || '';
+  let description = gEvent.description || '';
+  let meetingUrl = '';
+  if (gEvent.conferenceData && Array.isArray(gEvent.conferenceData.entryPoints)) {
+    const videoEntryPoint = gEvent.conferenceData.entryPoints.find(
+      ep => ep.entryPointType === 'video' && ep.uri
+    );
+    if (videoEntryPoint && videoEntryPoint.uri) {
+      meetingUrl = videoEntryPoint.uri;
+    }
+  }
+
+  if (meetingUrl) {
+    const injected = injectMeetingUrl(meetingUrl, location, description);
+    location = injected.location;
+    description = injected.description;
+  }
+
+  eventData.location = location || undefined;
+  eventData.description = description || undefined;
+
   const popupReminder = gEvent.reminders?.overrides?.find(
     reminder => reminder.method === 'popup' && typeof reminder.minutes === 'number'
   );

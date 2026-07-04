@@ -10,7 +10,7 @@ The note's filename is also managed by the plugin to ensure it's easy to find, t
     Users who want to treat events as first-class notes, adding rich context like meeting agendas, personal reflections, or related tasks. This is the only calendar type that supports all features, including multi-day events.
 
 !!! tip "Power Up with Categories"
-    Full Note calendars work seamlessly with the **[Advanced Categories](../events/categories.md)** feature, allowing you to color-code your events and organize them for timeline views. It's highly recommended!
+    Full Note calendars work seamlessly with the [Advanced Categories](../events/categories.md) feature, allowing you to color-code your events and organize them for timeline views. It's highly recommended!
 
 ## Setup
 
@@ -25,7 +25,7 @@ The note's filename is also managed by the plugin to ensure it's easy to find, t
 
 You can define a custom Markdown template to automatically populate the body content of newly created event notes inside your Full Note calendar directory. This template uses double-braced placeholders (e.g., `{{title}}`, `{{date}}`, etc.) to embed event metadata.
 
-For details on syntax, list of placeholders, and default layouts, see the **[Note Templating System Guide](../features/templates.md)**.
+For details on syntax, list of placeholders, and default layouts, see the [Note Templating System Guide](../features/templates.md).
 
 ## Frontmatter Schema
 
@@ -42,6 +42,9 @@ When you create or edit an event note, the plugin manages its YAML frontmatter. 
 | `startTime` | Time | Start time for timed events (`HH:mm`). |
 | `endTime` | Time | End time for timed events (`HH:mm`). |
 | `timezone` | String | The source timezone anchor (e.g., `America/New_York`). |
+
+!!! tip "Interactive Locations & Descriptions"
+    URLs in the `location` and `description` fields are automatically linkified and rendered as clickable hyperlinks in the [Event Details modal](../events/manage.md#video-conference--linkification-support). For details, see [Video Conference & Linkification Support](../events/manage.md#video-conference--linkification-support).
 
 ---
 

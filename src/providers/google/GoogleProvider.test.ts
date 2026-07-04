@@ -387,3 +387,41 @@ describe('GoogleProvider declined events', () => {
     expect(event?.title).toBe('Other Declined Event');
   });
 });
+
+describe('GoogleProvider conference mapping', () => {
+  it('maps conferenceData to location if location is empty', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Google Meet Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      location: '',
+      description: 'Meet description',
+      conferenceData: {
+        entryPoints: [{ entryPointType: 'video', uri: 'https://meet.google.com/abc-def-ghi' }]
+      }
+    });
+
+    expect(event?.location).toBe('https://meet.google.com/abc-def-ghi');
+    expect(event?.description).toBe('Meet description');
+  });
+
+  it('appends conferenceData to description if location is not empty', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Google Meet Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      location: 'Room 101',
+      description: 'Meet description',
+      conferenceData: {
+        entryPoints: [{ entryPointType: 'video', uri: 'https://meet.google.com/abc-def-ghi' }]
+      }
+    });
+
+    expect(event?.location).toBe('Room 101');
+    expect(event?.description).toBe(
+      'Meet description\n\nmeeting URL: https://meet.google.com/abc-def-ghi'
+    );
+  });
+});

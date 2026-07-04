@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 import { OFCEvent } from '../../../types/schema';
 import { constructTitle } from '../../../features/category/categoryParser';
+import { injectMeetingUrl } from '../../../utils/meetingUrl';
 
 export interface OutlookEventLike {
   id?: string;
@@ -42,6 +43,16 @@ export interface OutlookEventLike {
   } | null;
   isReminderOn?: boolean;
   reminderMinutesBeforeStart?: number;
+  location?: {
+    displayName?: string;
+  } | null;
+  body?: {
+    content?: string;
+    contentType?: 'html' | 'text';
+  } | null;
+  bodyPreview?: string;
+  isOnlineMeeting?: boolean;
+  onlineMeetingUrl?: string;
 }
 
 const OUTLOOK_DAY_TO_CHAR: Record<string, 'U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S'> = {
@@ -92,6 +103,17 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
     return null;
   }
 
+  let location = event.location?.displayName || '';
+  let description = event.bodyPreview || event.body?.content || '';
+  if (event.onlineMeetingUrl) {
+    const injected = injectMeetingUrl(event.onlineMeetingUrl, location, description);
+    location = injected.location;
+    description = injected.description;
+  }
+
+  const locationVal = location || undefined;
+  const descriptionVal = description || undefined;
+
   const recurringEventId = event.seriesMasterId ?? undefined;
 
   if (event.type === 'seriesMaster' && event.recurrence?.pattern) {
@@ -107,7 +129,9 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
       startRecur: range?.startDate || start.toISODate() || undefined,
       endRecur: range?.type === 'endDate' ? range?.endDate : undefined,
       isTask: false,
-      skipDates: []
+      skipDates: [],
+      location: locationVal,
+      description: descriptionVal
     };
     if (event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number') {
       recurringBase.alarms = [
@@ -182,6 +206,8 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
       allDay: true,
       date: start.toISODate() || '',
       endDate: inclusiveEnd || null,
+      location: locationVal,
+      description: descriptionVal,
       ...(event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number'
         ? {
             alarms: [
@@ -203,6 +229,8 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
     endDate: end.toISODate() !== start.toISODate() ? end.toISODate() : null,
     endTime: end.toFormat('HH:mm'),
     timezone: event.start.timeZone || undefined,
+    location: locationVal,
+    description: descriptionVal,
     ...(event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number'
       ? {
           alarms: [{ minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' as const }]
@@ -215,6 +243,19 @@ export function toOutlookEvent(event: OFCEvent): object {
   const payload: Record<string, unknown> = {
     subject: constructTitle(event.category, event.subCategory, event.title)
   };
+
+  if (event.location) {
+    payload.location = {
+      displayName: event.location
+    };
+  }
+
+  if (event.description) {
+    payload.body = {
+      contentType: 'text',
+      content: event.description
+    };
+  }
 
   if (event.alarms && event.alarms.length > 0) {
     payload.isReminderOn = true;

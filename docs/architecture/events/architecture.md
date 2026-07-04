@@ -21,6 +21,7 @@ This page describes how event logic is organized.
 - Recurring deletes are centralized in `RecurringEventManager.handleDelete`. Any GUI path that calls `EventCache.deleteEvent()` for a recurring master or linked override must show the same recurring-delete modal unless the caller explicitly uses `force`.
 - Dragging or resizing a recurring occurrence opens `RescheduleRecurringModal`, allowing either an occurrence override or a whole-sequence update. Single events bypass this modal and use the normal update path.
 - ICS serialization treats both internal recurrence shapes as provider-recurring data: `type: rrule` is serialized from its raw `rrule`, and `type: recurring` is converted into an RFC 5545 `RRULE` before writing to CalDAV/ICS providers.
+- Video conference and linkification support is implemented in a provider-agnostic, schema-unmodified manner. Remote meeting URLs (e.g. from Google Calendar's `conferenceData`, Outlook's `onlineMeetingUrl`, iCalendar's `CONFERENCE` or X-properties) are extracted at the parser stage and merged into the canonical `location` or `description` fields using a shared helper `injectMeetingUrl` (empty location gets the URL; non-empty location appends the URL to the description). In the UI, the `linkify` utility recursively splits text on HTTP/HTTPS bounds to render clickable `<a>` tags.
 
 ## Related User Docs
 

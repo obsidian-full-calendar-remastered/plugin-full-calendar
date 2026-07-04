@@ -17,6 +17,7 @@ import { rrulestr } from 'rrule';
 
 import ical from 'ical.js';
 import { OFCEvent, validateEvent } from '../../types';
+import { injectMeetingUrl } from '../../utils/meetingUrl';
 
 import { parseTimezoneAwareString } from '../../features/timezone/Timezone';
 
@@ -133,10 +134,33 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
   // Simplified: just use the title directly
   const eventData = { title: summary };
 
-  const description = String(
+  const conferenceProp = input.component.getFirstProperty('conference');
+  const conferenceUrl = conferenceProp ? String(conferenceProp.getFirstValue()) : '';
+
+  const teamsMeetingProp = input.component.getFirstProperty('x-microsoft-skypeteamsmeetingurl');
+  const teamsMeetingUrl = teamsMeetingProp ? String(teamsMeetingProp.getFirstValue()) : '';
+
+  const msConfLinkProp = input.component.getFirstProperty('x-microsoft-onlinemeetingconflink');
+  const msConfLinkUrl = msConfLinkProp ? String(msConfLinkProp.getFirstValue()) : '';
+
+  const meetingUrl = conferenceUrl || teamsMeetingUrl || msConfLinkUrl || '';
+
+  const initialDescription = String(
     input.component.getFirstProperty('description')?.getFirstValue() || ''
   );
-  const location = String(input.component.getFirstProperty('location')?.getFirstValue() || '');
+  const initialLocation = String(
+    input.component.getFirstProperty('location')?.getFirstValue() || ''
+  );
+
+  let description = initialDescription;
+  let location = initialLocation;
+
+  if (meetingUrl) {
+    const injected = injectMeetingUrl(meetingUrl, location, description);
+    location = injected.location;
+    description = injected.description;
+  }
+
   // Use extractEventUrl helper or input.component.getFirstProperty('url')
   const url = extractEventUrl(input);
   const alarms = extractProviderAlarms(input.component);
@@ -221,6 +245,7 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
       timezone,
       ...recurringTiming,
       description,
+      location: location || undefined,
       ...(alarms ? { alarms } : {}),
       url:
         url ||
@@ -276,6 +301,7 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
     timezone,
     ...singleTiming,
     description,
+    location: location || undefined,
     ...(alarms ? { alarms } : {}),
     url:
       url ||
@@ -312,8 +338,29 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
   const isAllDay = baseTime ? baseTime.isDate : true;
   const timezone = isAllDay ? undefined : startDate.zoneName || undefined;
 
-  const description = String(todo.getFirstPropertyValue('description') || '');
-  const location = String(todo.getFirstPropertyValue('location') || '');
+  const conferenceProp = todo.getFirstProperty('conference');
+  const conferenceUrl = conferenceProp ? String(conferenceProp.getFirstValue()) : '';
+
+  const teamsMeetingProp = todo.getFirstProperty('x-microsoft-skypeteamsmeetingurl');
+  const teamsMeetingUrl = teamsMeetingProp ? String(teamsMeetingProp.getFirstValue()) : '';
+
+  const msConfLinkProp = todo.getFirstProperty('x-microsoft-onlinemeetingconflink');
+  const msConfLinkUrl = msConfLinkProp ? String(msConfLinkProp.getFirstValue()) : '';
+
+  const meetingUrl = conferenceUrl || teamsMeetingUrl || msConfLinkUrl || '';
+
+  const initialDescription = String(todo.getFirstPropertyValue('description') || '');
+  const initialLocation = String(todo.getFirstPropertyValue('location') || '');
+
+  let description = initialDescription;
+  let location = initialLocation;
+
+  if (meetingUrl) {
+    const injected = injectMeetingUrl(meetingUrl, location, description);
+    location = injected.location;
+    description = injected.description;
+  }
+
   const url = String(todo.getFirstPropertyValue('url') || '');
   const alarms = extractProviderAlarms(todo);
   const recurrenceIdProp = todo.getFirstProperty('recurrence-id');
@@ -414,6 +461,7 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
       ...recurringTiming,
       isTask: true,
       description,
+      location: location || undefined,
       ...(alarms ? { alarms } : {}),
       url:
         url ||
@@ -477,6 +525,7 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
     ...singleTiming,
     completed: completedValue,
     description,
+    location: location || undefined,
     ...(alarms ? { alarms } : {}),
     url:
       url ||

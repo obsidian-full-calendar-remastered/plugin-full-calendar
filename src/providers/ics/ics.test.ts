@@ -479,4 +479,48 @@ END:VCALENDAR`;
     expect(task.endDate).toBe('2026-05-22');
     expect(task.completed).toBe(false);
   });
+
+  it('parses VEVENT with CONFERENCE and X-MICROSOFT properties', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:event-with-conference
+SUMMARY:Conference Event
+DTSTART:20260615T100000Z
+DTEND:20260615T110000Z
+CONFERENCE;VALUE=URI:https://meet.google.com/xyz-pdq-abc
+X-MICROSOFT-SKYPETEAMSMEETINGURL:https://teams.microsoft.com/l/meetup-join/123
+LOCATION:Room 302
+DESCRIPTION:Let's discuss.
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    const event = events[0];
+    expect(event.location).toBe('Room 302');
+    expect(event.description).toBe(
+      "Let's discuss.\n\nmeeting URL: https://meet.google.com/xyz-pdq-abc"
+    );
+  });
+
+  it('parses VEVENT and injects conference URL to empty location', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:event-with-conference-empty-loc
+SUMMARY:Conference Event Empty Loc
+DTSTART:20260615T100000Z
+DTEND:20260615T110000Z
+CONFERENCE;VALUE=URI:https://meet.google.com/xyz-pdq-abc
+DESCRIPTION:Let's discuss.
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    const event = events[0];
+    expect(event.location).toBe('https://meet.google.com/xyz-pdq-abc');
+    expect(event.description).toBe("Let's discuss.");
+  });
 });

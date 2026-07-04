@@ -163,6 +163,7 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
       url.searchParams.set('timeMax', timeMax.toISOString());
       url.searchParams.set('singleEvents', 'false');
       url.searchParams.set('maxResults', '2500');
+      url.searchParams.set('conferenceDataVersion', '1');
 
       const data = await makeAuthenticatedRequest<{ items?: GoogleEventLike[] }>(
         token,
@@ -246,7 +247,7 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
 
     const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
       this.source.calendarId
-    )}/events`;
+    )}/events?conferenceDataVersion=1`;
     const body = toGoogleEvent(event);
     const createdGEvent = await makeAuthenticatedRequest<GoogleEventLike>(token, url, 'POST', body);
 
@@ -395,7 +396,7 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
 
       const newGEvent = await makeAuthenticatedRequest<GoogleEventLike>(
         token,
-        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(this.source.calendarId)}/events`,
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(this.source.calendarId)}/events?conferenceDataVersion=1`,
         'POST',
         body
       );

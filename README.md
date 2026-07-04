@@ -34,7 +34,7 @@ Integrations include
 
 > This is the remastered edition of original [Full Calender plugin](https://github.com/obsidian-community/obsidian-full-calendar) by [Davis Haupt](https://davi.sh/), with the [core additions](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/whats_new/).
 
-The FullCalendar library is released under the [GPLv3 license](https://fullcalendar.io/license). It's an awesome piece of work, and it would not have been possible to make something like this plugin so easily without it.
+The FullCalendar Standard library is released under the [MIT License](https://opensource.org/licenses/MIT). FullCalendar Premium, including [Premium Plugins](https://fullcalendar.io/docs/plugin-index) and the `fullcalendar-scheduler` bundle, are utilized under the [GPLv3 license](http://www.gnu.org/licenses/gpl-3.0.en.html) as part of FullCalendar's [GPLv3 open-source project](https://fullcalendar.io/license) provision. It's an awesome piece of work, and it would not have been possible to make something like this plugin so easily without it.
 
 ## Installation
 

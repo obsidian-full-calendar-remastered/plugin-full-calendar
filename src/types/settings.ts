@@ -239,7 +239,6 @@ export interface FullCalendarSettings {
   githubToken: string | null;
   availabilityGistId: string | null;
   availabilityExportPath: string;
-  icsExportPath: string;
   breakTimer: BreakTimerSettings;
   availabilityDefaultTimeRange: { startTime: string; endTime: string };
   openDailyNoteOnDateClick: boolean;
@@ -256,7 +255,6 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   githubToken: null,
   availabilityGistId: null,
   availabilityExportPath: '',
-  icsExportPath: '',
   availabilityDefaultTimeRange: { startTime: '09:00', endTime: '17:00' },
   useLegacyPlaintextCredentials: false,
   calendarSources: [],

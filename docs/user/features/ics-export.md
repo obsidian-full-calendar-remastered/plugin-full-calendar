@@ -12,6 +12,14 @@ The **Export Event Cache** feature allows you to export your calendar events as 
    - **Export File Name**: Customize the name of the exported file (defaults to `full-calendar-export-<yyyyMMdd-HHmmss>.ics`).
    - **Target Vault Folder**: Specify a folder in your vault where the file will be saved.
    - **Calendars to Include**: Toggle individual calendars on or off to select exactly which events should be included in the export.
+   - **Filter Events Section**:
+     - **Export Period**: Select "Export All Events" (entire history) or "Specific Date Range" (with side-by-side date inputs).
+     - **Include Types**: Choose "Events and Tasks", "Events Only", or "Tasks Only".
+     - **Task Completion Status**: Filter tasks by "All Tasks", "Incomplete Tasks Only", or "Completed Tasks Only".
+     - **Include All-Day Events**: Toggle to include or exclude all-day events/tasks.
+     - **Exclude Weekends**: Toggle to skip events occurring on Saturdays or Sundays.
+     - **Filter by Daily Time Range**: Restrict timed events to specific daily hours (e.g. 09:00 to 17:00).
+     - **Categories to Include**: Select which categories (e.g., Errands, Work, Personal) to include in the export.
 4. Select one of the export options:
    - **Save to Vault**: Saves the `.ics` file directly into your vault at the target folder path. If the file already exists, it will be overwritten.
    - **Download ICS File**: Triggers a browser-level file download to save the `.ics` file directly to your system's download folder.

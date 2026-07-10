@@ -38,6 +38,13 @@ The `IcsExportModal` orchestrates the user interaction:
 - **Calendar Registry Integration:** Retrieves all active calendars using `PluginState.getProviderRegistry().getAllSources()`.
 - **Toggle Settings:** Renders toggle items for each calendar so users can selectively export subsets of calendars.
 - **Export Paths:** Persists default export folder path configurations to the `icsExportPath` plugin settings.
+- **Advanced Filtration Controls:**
+  - **Export Period:** Options for "Export All Events" (entire history) or "Specific Date Range" (with side-by-side date pickers).
+  - **Daily Time Range Filter:** Restricts exported timed events to a daily time window (with side-by-side time pickers).
+  - **Include All-Day Events:** Toggle to include or exclude all-day events/tasks.
+  - **Exclude Weekends:** Toggle to filter out weekend occurrences.
+  - **Categories to Include:** Checklist dynamically populated from unique categories present in the event store.
+  - **Include Types & Task Completion:** Dropdowns to filter by events, tasks, and task completion status.
 - **Save to Vault Pipeline:** Resolves file paths, automatically creates target subfolders if they do not exist, checks for file existence, and writes to disk utilizing `app.vault`.
 - **Direct Download Pipeline:** Uses standard HTML5 Blob ObjectURLs (`URL.createObjectURL`) to trigger local browser download prompts, working seamlessly across desktop and mobile.
 

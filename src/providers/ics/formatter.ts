@@ -1,7 +1,7 @@
 import { OFCEvent } from '../../types';
 import ical from 'ical.js';
 import { DateTime } from 'luxon';
-import { isTask } from '../../types/tasks';
+import { constructTitle } from '../../features/category/categoryParser';
 
 /**
  * Formats a Luxon DateTime into an iCal DATE-TIME string (YYYYMMDDTHHMMSSZ or local).
@@ -141,6 +141,43 @@ function addRecurrenceRule(component: ical.Component, rule: string): void {
 }
 
 /**
+ * Deduplicates and reconstructs the literal full title of an event (Category - Subcategory - Title)
+ * to avoid double categories/subcategories if they are already present in the title string.
+ */
+function getLiteralFullTitle(event: OFCEvent): string {
+  const category = event.category;
+  const subCategory = event.subCategory;
+  const title = event.title || '';
+
+  if (!category && !subCategory) {
+    return title;
+  }
+
+  const parts = title
+    .split(' - ')
+    .map(p => p.trim())
+    .filter(Boolean);
+
+  if (category && parts[0] === category) {
+    parts.shift();
+  }
+
+  if (subCategory && parts[0] === subCategory) {
+    parts.shift();
+  }
+
+  if (category && parts[0] === category) {
+    parts.shift();
+  }
+  if (subCategory && parts[0] === subCategory) {
+    parts.shift();
+  }
+
+  const cleanTitle = parts.join(' - ');
+  return constructTitle(category, subCategory, cleanTitle);
+}
+
+/**
  * Helper to generate the VEVENT component structure.
  */
 function createVEventComponent(event: OFCEvent, isOverride = false): ical.Component {
@@ -154,10 +191,11 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
   }
 
   // Summary (Title)
-  vevent.addPropertyWithValue('summary', event.title);
+  const fullTitle = getLiteralFullTitle(event);
+  vevent.addPropertyWithValue('summary', fullTitle);
 
   // DTSTAMP (Required by RFC 5545)
-  vevent.addPropertyWithValue('dtstamp', ical.Time.now());
+  vevent.addPropertyWithValue('dtstamp', ical.Time.fromJSDate(new Date(), true));
 
   // START Date/Time extraction based on event type
   let datePart: string;
@@ -241,138 +279,6 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
 }
 
 /**
- * Helper to generate the VTODO component structure.
- */
-function createVTodoComponent(event: OFCEvent, isOverride = false): ical.Component {
-  const vtodo = new ical.Component('vtodo');
-
-  // UID
-  if (event.uid) {
-    vtodo.addPropertyWithValue('uid', event.uid);
-  } else {
-    vtodo.addPropertyWithValue('uid', window.crypto.randomUUID());
-  }
-
-  // Summary (Title)
-  vtodo.addPropertyWithValue('summary', event.title);
-
-  // DTSTAMP (Required by RFC 5545)
-  vtodo.addPropertyWithValue('dtstamp', ical.Time.now());
-
-  // START Date/Time extraction based on event type
-  let datePart: string;
-  if (event.type === 'single') {
-    datePart = event.date;
-  } else if (event.type === 'rrule') {
-    datePart = event.startDate;
-  } else {
-    // 'recurring' type
-    datePart = event.startRecur || DateTime.now().toISODate();
-  }
-
-  // DTSTART & DUE
-  let startDt: DateTime;
-  let dueDt: DateTime;
-
-  if (event.allDay) {
-    startDt = DateTime.fromISO(datePart);
-    if (event.type === 'single' && event.endDate) {
-      dueDt = DateTime.fromISO(event.endDate);
-    } else {
-      dueDt = startDt;
-    }
-  } else {
-    // Not all day
-    const startTime = (event as unknown as { startTime?: string }).startTime || '00:00';
-    const endTime = (event as unknown as { endTime?: string }).endTime || '00:00';
-    const opts = event.timezone ? { zone: event.timezone } : {};
-
-    startDt = DateTime.fromISO(`${datePart}T${startTime}`, opts);
-
-    if (event.type === 'single' && event.endDate) {
-      dueDt = DateTime.fromISO(`${event.endDate}T${endTime}`, opts);
-    } else {
-      dueDt = DateTime.fromISO(`${datePart}T${endTime}`, opts);
-      if (dueDt < startDt) {
-        dueDt = dueDt.plus({ days: 1 });
-      }
-    }
-  }
-
-  addTimeProperty(vtodo, 'dtstart', startDt, event.allDay, event.timezone);
-  addTimeProperty(vtodo, 'due', dueDt, event.allDay, event.timezone);
-
-  // Description
-  if (event.description) {
-    vtodo.addPropertyWithValue('description', event.description);
-  }
-
-  addProviderAlarms(vtodo, event);
-
-  // Location/URL mapping:
-  if (event.url) {
-    vtodo.addPropertyWithValue('url', event.url);
-  } else if (
-    event.location &&
-    typeof event.location === 'string' &&
-    event.location.startsWith('http')
-  ) {
-    vtodo.addPropertyWithValue('url', event.location);
-  }
-  if (event.location) {
-    vtodo.addPropertyWithValue('location', event.location);
-  }
-
-  // Completed status
-  if (event.type === 'single' && event.completed) {
-    vtodo.addPropertyWithValue('status', 'COMPLETED');
-    try {
-      if (typeof event.completed === 'string') {
-        const completedDt = DateTime.fromISO(event.completed).toUTC();
-        if (completedDt.isValid) {
-          addTimeProperty(vtodo, 'completed', completedDt, false, 'UTC');
-        }
-      }
-    } catch (e) {
-      console.error('Failed to parse completed date', e);
-    }
-  } else if (event.type === 'single' && event.completed === false) {
-    vtodo.addPropertyWithValue('status', 'NEEDS-ACTION');
-  } else {
-    vtodo.addPropertyWithValue('status', 'NEEDS-ACTION');
-  }
-
-  // Recurrence (RRULE) - Only for master events, not overrides usually
-  if (!isOverride && event.type === 'rrule' && event.rrule) {
-    addRecurrenceRule(vtodo, event.rrule);
-  } else if (!isOverride && event.type === 'recurring') {
-    addRecurrenceRule(vtodo, getRecurringEventRule(event));
-  }
-
-  // EXDATE - Only for master events
-  if (
-    !isOverride &&
-    (event.type === 'rrule' || event.type === 'recurring') &&
-    event.skipDates &&
-    event.skipDates.length > 0
-  ) {
-    for (const skipDate of event.skipDates) {
-      let exDt: DateTime;
-      if (event.allDay) {
-        exDt = DateTime.fromISO(skipDate);
-      } else {
-        const startTime = (event as unknown as { startTime?: string }).startTime || '00:00';
-        const opts = event.timezone ? { zone: event.timezone } : {};
-        exDt = DateTime.fromISO(`${skipDate}T${startTime}`, opts);
-      }
-      addTimeProperty(vtodo, 'exdate', exDt, event.allDay, event.timezone);
-    }
-  }
-
-  return vtodo;
-}
-
-/**
  * Converts an OFCEvent to an ICS string.
  */
 export function eventToIcs(event: OFCEvent): string {
@@ -381,7 +287,9 @@ export function eventToIcs(event: OFCEvent): string {
   component.addPropertyWithValue('version', '2.0');
   component.addPropertyWithValue('prodid', '-//Obsidian Full Calendar Plugin//NONSGML v1.0//EN');
 
-  const sub = isTask(event) ? createVTodoComponent(event) : createVEventComponent(event);
+  const sub = event.recurrenceId
+    ? createOverrideVEvent(event, event.recurrenceId)
+    : createVEventComponent(event);
   component.addSubcomponent(sub);
 
   return (component as unknown as { toString(): string }).toString();
@@ -396,8 +304,59 @@ export function eventsToIcs(events: OFCEvent[]): string {
   component.addPropertyWithValue('version', '2.0');
   component.addPropertyWithValue('prodid', '-//Obsidian Full Calendar Plugin//NONSGML v1.0//EN');
 
-  for (const event of events) {
-    const sub = isTask(event) ? createVTodoComponent(event) : createVEventComponent(event);
+  const clonedEvents = events.map(e => ({ ...e }));
+
+  const getCleanIdentifier = (idStr: string | undefined): string | null => {
+    if (!idStr) return null;
+    return idStr.split('/').pop()?.replace(/\.md$/i, '') || null;
+  };
+
+  const matchMaster = (override: OFCEvent, master: OFCEvent): boolean => {
+    if (override.uid && master.uid && override.uid === master.uid) {
+      return true;
+    }
+    const parentId = override.recurringEventId || override.uid;
+    if (!parentId) return false;
+
+    const parentFile = getCleanIdentifier(parentId);
+    if (!parentFile) return false;
+
+    if (master.uid && (master.uid === parentId || getCleanIdentifier(master.uid) === parentFile)) {
+      return true;
+    }
+    if (master.id && (master.id === parentId || getCleanIdentifier(master.id) === parentFile)) {
+      return true;
+    }
+    return false;
+  };
+
+  // First assign UID to masters if they don't have one
+  for (const event of clonedEvents) {
+    if (event.type === 'recurring' || event.type === 'rrule') {
+      if (!event.uid) {
+        event.uid = window.crypto.randomUUID();
+      }
+    }
+  }
+
+  // Then reconcile override UIDs with their masters
+  for (const event of clonedEvents) {
+    if (event.recurrenceId || event.recurringEventId) {
+      const master = clonedEvents.find(
+        candidate =>
+          (candidate.type === 'recurring' || candidate.type === 'rrule') &&
+          matchMaster(event, candidate)
+      );
+      if (master && master.uid) {
+        event.uid = master.uid;
+      }
+    }
+  }
+
+  for (const event of clonedEvents) {
+    const sub = event.recurrenceId
+      ? createOverrideVEvent(event, event.recurrenceId)
+      : createVEventComponent(event);
     component.addSubcomponent(sub);
   }
 
@@ -410,10 +369,8 @@ export function eventsToIcs(events: OFCEvent[]): string {
  * @param originalDate The original start date/time of the instance being modified.
  */
 export function createOverrideVEvent(event: OFCEvent, originalDate: string): ical.Component {
-  // 1. Create the base VEVENT or VTODO with new data
-  const sub = isTask(event)
-    ? createVTodoComponent(event, true)
-    : createVEventComponent(event, true);
+  // 1. Create the base VEVENT with new data
+  const sub = createVEventComponent(event, true);
 
   // 2. Add RECURRENCE-ID
   const isDate = originalDate.length === 10;

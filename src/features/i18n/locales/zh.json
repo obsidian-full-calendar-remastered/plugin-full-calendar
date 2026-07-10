@@ -1151,11 +1151,6 @@
         "label": "Break duration (seconds)",
         "description": "How long the break overlay stays on screen."
       }
-    },
-    "export": {
-      "header": "ICS Export",
-      "path": "Default Export Path",
-      "pathDesc": "Vault folder where the exported .ics files will be saved by default (e.g., calendars/exports)."
     }
   },
   "modals": {
@@ -1889,6 +1884,32 @@
     "noCalendars": "No calendars available for export.",
     "noticeSuccessSave": "Successfully saved calendar export to {{path}}",
     "noticeFailedSave": "Failed to save calendar export: {{error}}",
-    "noticeNoCalendarsSelected": "Please select at least one calendar to export."
+    "noticeNoCalendarsSelected": "Please select at least one calendar to export.",
+    "filterTitle": "Filter Events",
+    "includeTypes": "Include Types",
+    "includeTypesDesc": "Select whether to include events, tasks, or both.",
+    "includeTypesAll": "Events and Tasks",
+    "includeTypesEvents": "Events Only",
+    "includeTypesTasks": "Tasks Only",
+    "taskStatus": "Task Completion Status",
+    "taskStatusDesc": "Filter tasks by their completion status.",
+    "taskStatusAll": "All Tasks",
+    "taskStatusIncomplete": "Incomplete Tasks Only",
+    "taskStatusCompleted": "Completed Tasks Only",
+    "period": "Export Period",
+    "periodDesc": "Select whether to export all events or a specific date range.",
+    "periodAll": "Export All Events",
+    "periodRange": "Specific Date Range",
+    "dateRange": "Date Range",
+    "dateRangeDesc": "Select the start and end dates to export.",
+    "includeAllDay": "Include All-Day Events",
+    "includeAllDayDesc": "Toggle whether to include all-day events/tasks.",
+    "excludeWeekends": "Exclude Weekends",
+    "excludeWeekendsDesc": "Filter out events that occur on Saturdays or Sundays.",
+    "filterDailyTimeRange": "Filter by Daily Time Range",
+    "filterDailyTimeRangeDesc": "Only export timed events occurring between specific hours of the day.",
+    "dailyTimeRange": "Daily Hours",
+    "dailyTimeRangeDesc": "Select the daily time window.",
+    "categoriesTitle": "Categories to Include"
   }
 }

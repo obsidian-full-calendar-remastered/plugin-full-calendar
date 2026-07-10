@@ -69,21 +69,87 @@ export function renderCalendarManagement(
         });
     });
 
+  if (!PluginState.getSettings().enableLinkedNoteTemplatesPreset) {
+    new Setting(containerEl)
+      .setName(t('settings.general.linkedNoteTemplate.label'))
+      .setDesc(t('settings.general.linkedNoteTemplate.description'))
+      .addTextArea(text => {
+        text
+          .setPlaceholder(t('settings.general.linkedNoteTemplate.placeholder'))
+          .setValue(PluginState.getSettings().linkedNoteTemplate || '')
+          .onChange(value => {
+            PluginState.getSettings().linkedNoteTemplate = value;
+            void PluginState.saveSettings(false);
+          });
+        text.inputEl.rows = 8;
+        text.inputEl.cols = 50;
+        text.inputEl.setCssProps({ width: '100%' });
+      });
+  }
+
   new Setting(containerEl)
-    .setName(t('settings.general.linkedNoteTemplate.label'))
-    .setDesc(t('settings.general.linkedNoteTemplate.description'))
-    .addTextArea(text => {
-      text
-        .setPlaceholder(t('settings.general.linkedNoteTemplate.placeholder'))
-        .setValue(PluginState.getSettings().linkedNoteTemplate || '')
-        .onChange(value => {
-          PluginState.getSettings().linkedNoteTemplate = value;
-          void PluginState.saveSettings(false);
+    .setName(t('settings.general.enableLinkedNoteTemplatesPreset.label'))
+    .setDesc(t('settings.general.enableLinkedNoteTemplatesPreset.description'))
+    .addToggle(toggle => {
+      toggle
+        .setValue(PluginState.getSettings().enableLinkedNoteTemplatesPreset || false)
+        .onChange(async value => {
+          PluginState.getSettings().enableLinkedNoteTemplatesPreset = value;
+          await PluginState.saveSettings();
+          tab.renderSettings();
         });
-      text.inputEl.rows = 8;
-      text.inputEl.cols = 50;
-      text.inputEl.setCssProps({ width: '100%' });
     });
+
+  if (PluginState.getSettings().enableLinkedNoteTemplatesPreset) {
+    const presetContainer = containerEl.createDiv({ cls: 'ofc-settings-preset-container' });
+
+    const presets = PluginState.getSettings().linkedNoteTemplatesPresets || [];
+
+    // 1. Render currently added presets
+    presets.forEach((presetPath, index) => {
+      const filename = presetPath.split('/').pop() || presetPath;
+      new Setting(presetContainer)
+        .setName(filename)
+        .setDesc(presetPath)
+        .addButton(button => {
+          button
+            .setButtonText(t('settings.general.linkedNoteTemplatesPresets.removeButton'))
+            .setClass('mod-warning')
+            .onClick(async () => {
+              presets.splice(index, 1);
+              PluginState.getSettings().linkedNoteTemplatesPresets = presets;
+              await PluginState.saveSettings();
+              tab.renderSettings();
+            });
+        });
+    });
+
+    // 2. Row to select and add a new preset template note from the vault
+    const markdownFiles = plugin.app.vault.getMarkdownFiles();
+    const markdownPaths = markdownFiles.map(f => f.path);
+    const availablePaths = markdownPaths.filter(p => !presets.includes(p));
+
+    new Setting(presetContainer)
+      .setName(t('settings.general.linkedNoteTemplatesPresets.addLabel'))
+      .setDesc(t('settings.general.linkedNoteTemplatesPresets.addDesc'))
+      .addDropdown(dropdown => {
+        dropdown.addOption('', t('settings.general.linkedNoteTemplatesPresets.addPlaceholder'));
+        availablePaths
+          .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+          .forEach(p => {
+            dropdown.addOption(p, p);
+          });
+
+        dropdown.onChange(async value => {
+          if (value) {
+            presets.push(value);
+            PluginState.getSettings().linkedNoteTemplatesPresets = presets;
+            await PluginState.saveSettings();
+            tab.renderSettings();
+          }
+        });
+      });
+  }
 
   containerEl.createEl('hr', { cls: 'settings-view-new-divider' });
 

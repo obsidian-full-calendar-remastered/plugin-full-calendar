@@ -2065,3 +2065,26 @@
     transform: translateY(0);
   }
 }
+
+/* Template select modal styling */
+.ofc-preset-item {
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background-color 0.2s;
+}
+
+.ofc-preset-item:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+/* Settings preset container styling */
+.ofc-settings-preset-container {
+  padding-left: 16px;
+  border-left: 2px solid var(--interactive-accent);
+  margin-bottom: 16px;
+}

@@ -99,14 +99,19 @@ export class ICSProvider implements CalendarProvider<ICSProviderConfig>, SyncKey
     this.linkedNoteIndex.destroy();
   }
 
-  async createLinkedNote(event: OFCEvent, instanceDate?: string): Promise<TFile | null> {
+  async createLinkedNote(
+    event: OFCEvent,
+    instanceDate?: string,
+    templateContentOverride?: string
+  ): Promise<TFile | null> {
     return createLinkedNoteForProvider({
       app: this.plugin.app,
       event,
       calendarId: this.source.id,
       calendarName: this.displayName,
       linkedNoteIndex: this.linkedNoteIndex,
-      instanceDate
+      instanceDate,
+      templateContentOverride
     });
   }
 

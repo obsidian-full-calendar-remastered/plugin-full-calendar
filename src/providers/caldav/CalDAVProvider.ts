@@ -925,14 +925,19 @@ export class CalDAVProvider
     this.linkedNoteIndex.destroy();
   }
 
-  async createLinkedNote(event: OFCEvent, instanceDate?: string): Promise<TFile | null> {
+  async createLinkedNote(
+    event: OFCEvent,
+    instanceDate?: string,
+    templateContentOverride?: string
+  ): Promise<TFile | null> {
     const file = await createLinkedNoteForProvider({
       app: this.plugin.app,
       event,
       calendarId: this.source.id,
       calendarName: this.source.name,
       linkedNoteIndex: this.linkedNoteIndex,
-      instanceDate
+      instanceDate,
+      templateContentOverride
     });
     if (file && isTask(event)) {
       await this.updateLinkedTaskNoteDates(event, file);

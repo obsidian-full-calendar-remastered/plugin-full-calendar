@@ -79,6 +79,13 @@ Write a custom template that will populate the body of every new note. You can u
 - 
 ```
 
+### 4️⃣ Template Presets (Power Users)
+If you require different layouts/templates for different types of events, enable the **Enable template presets** setting.
+
+* **Decoupling from Default**: Enabling this setting hides the default "Linked note template" editor row. Instead, you configure one or more note files inside your vault to serve as your templates list.
+* **Selection Modal**: When creating or linking a remote event note, Obsidian will display a modal prompting you to select which template preset to load the note with.
+* **Configuration**: Select any existing markdown note in your vault via the dropdown to add it to your active presets list.
+
 ---
 
 ## Privacy & Robustness Invariants

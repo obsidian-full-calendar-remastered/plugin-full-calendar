@@ -135,6 +135,11 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     caldavTaskInboxLastCalendarId:
       raw.caldavTaskInboxLastCalendarId ?? DEFAULT_SETTINGS.caldavTaskInboxLastCalendarId,
     linkedNoteTemplate: raw.linkedNoteTemplate ?? DEFAULT_SETTINGS.linkedNoteTemplate,
+    enableLinkedNoteTemplatesPreset:
+      raw.enableLinkedNoteTemplatesPreset ?? DEFAULT_SETTINGS.enableLinkedNoteTemplatesPreset,
+    linkedNoteTemplatesPresets: Array.isArray(raw.linkedNoteTemplatesPresets)
+      ? raw.linkedNoteTemplatesPresets
+      : DEFAULT_SETTINGS.linkedNoteTemplatesPresets,
     weatherCity: raw.weatherCity ?? DEFAULT_SETTINGS.weatherCity,
     weatherLatitude: raw.weatherLatitude ?? DEFAULT_SETTINGS.weatherLatitude,
     weatherLongitude: raw.weatherLongitude ?? DEFAULT_SETTINGS.weatherLongitude,

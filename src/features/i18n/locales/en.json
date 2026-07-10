@@ -194,6 +194,8 @@
     "cannotOpenRemote": "Cannot open note for a remote event.",
     "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
     "failedToCreateLinkedNote": "Failed to create linked note.",
+    "templateFileNotFoundPreset": "Template preset note file '{{path}}' was not found. Note creation aborted.",
+    "noPresetsConfigured": "No template presets are configured. Please add at least one template preset in settings.",
     "bulkCategorization": {
       "noNotesFound": "No local event notes found to categorize.",
       "complete": "Bulk categorization complete."
@@ -305,6 +307,16 @@
         "label": "Linked note template",
         "description": "Define the template used for creating new linked notes. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
         "placeholder": "Enter note Markdown template..."
+      },
+      "enableLinkedNoteTemplatesPreset": {
+        "label": "Enable template presets",
+        "description": "Select multiple template notes from your vault to choose from when creating new linked notes."
+      },
+      "linkedNoteTemplatesPresets": {
+        "addLabel": "Add template preset",
+        "addDesc": "Select a template file from your vault to add to the presets list.",
+        "addPlaceholder": "Choose a template note to add...",
+        "removeButton": "Remove"
       }
     },
     "reminders": {
@@ -1159,6 +1171,11 @@
     }
   },
   "modals": {
+    "linkedNotePreset": {
+      "title": "Select a Template Preset",
+      "description": "Choose a template to use for creating this linked note:",
+      "cancel": "Cancel"
+    },
     "reminder": {
       "snoozeFor": "Snooze for",
       "dismiss": "Dismiss",

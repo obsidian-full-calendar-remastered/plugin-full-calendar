@@ -157,6 +157,53 @@ describe('GoogleProvider createLinkedNote', () => {
     expect(file).toBeNull();
     expect(showNotice).toHaveBeenCalledWith(t('notices.configureLinkedNotesDirFirst'));
   });
+
+  it('should preserve and merge existing template frontmatter properties', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      linkedNotesDirectory: 'Calendar/Notes',
+      linkedNoteTemplate: '---\ntags: [event, test-tag]\nmy-prop: "custom-value"\n---\n# {{title}}'
+    });
+
+    const file = (await provider.createLinkedNote(mockEvent)) as MockCreatedFile | null;
+    expect(file).toBeDefined();
+    expect(file!.content).toContain('tags: [event, test-tag]');
+    expect(file!.content).toContain('my-prop: "custom-value"');
+    expect(file!.content).toContain('fc-event-uid: "google-uid-123"');
+    expect(file!.content).toContain('fc-calendar-id: "google_1"');
+  });
+
+  it('should use templateContentOverride if passed directly', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      linkedNotesDirectory: 'Calendar/Notes',
+      linkedNoteTemplate: 'Original Template: {{title}}'
+    });
+
+    const file = (await provider.createLinkedNote(
+      mockEvent,
+      undefined,
+      'Overridden Template: {{title}}'
+    )) as MockCreatedFile | null;
+    expect(file).toBeDefined();
+    expect(file!.content).toContain('Overridden Template: Test Dynamic Note Event');
+    expect(file!.content).not.toContain('Original Template:');
+  });
+
+  it('should support complex YAML structures in the template, like arrays and custom properties', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      linkedNotesDirectory: 'Calendar/Notes',
+      linkedNoteTemplate: `---\ntype: meeting\nmeetingType: daily\ndate: 2022-12-13\nparticipants:\n  - [[example person]]\n---\n# {{title}}`
+    });
+
+    const file = (await provider.createLinkedNote(mockEvent)) as MockCreatedFile | null;
+    expect(file).toBeDefined();
+    expect(file!.content).toContain('type: meeting');
+    expect(file!.content).toContain('meetingType: daily');
+    expect(file!.content).toContain('date: 2022-12-13');
+    expect(file!.content).toContain('participants:');
+    expect(file!.content).toContain('  - [[example person]]');
+    expect(file!.content).toContain('fc-event-uid: "google-uid-123"');
+    expect(file!.content).toContain('fc-calendar-id: "google_1"');
+  });
 });
 
 describe('GoogleProvider getEvents', () => {

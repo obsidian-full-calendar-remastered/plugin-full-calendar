@@ -216,7 +216,9 @@
     "failedToCreateLinkedNote": "Échec de la création de la note liée.",
     "fcrReminderSynced": "FCR Reminder Companion synchronisé avec succès.",
     "fcrReminderCompanionOfflineBold": "ATTENTION : Le démon FCR Reminder Companion est hors ligne. Vous NE recevrez PAS de notifications de bureau natives tant qu'il n'est pas démarré.",
-    "chronoAnalyserChartLoadFailed": "Failed to load charting library. Please check your internet connection."
+    "chronoAnalyserChartLoadFailed": "Failed to load charting library. Please check your internet connection.",
+    "templateFileNotFoundPreset": "Template preset note file '{{path}}' was not found. Note creation aborted.",
+    "noPresetsConfigured": "No template presets are configured. Please add at least one template preset in settings."
   },
   "eventCache": {
     "calendarNotFound": "Impossible d'ajouter l'événement : calendrier avec l'ID {{calendarId}} introuvable.",
@@ -300,6 +302,16 @@
         "description": "Choose whether recurring event occurrences share one title-based note or use separate date-specific notes.",
         "deadline": "Deadline-based (one note per occurrence)",
         "name": "Name-based (one note per event series)"
+      },
+      "enableLinkedNoteTemplatesPreset": {
+        "label": "Enable template presets",
+        "description": "Select multiple template notes from your vault to choose from when creating new linked notes."
+      },
+      "linkedNoteTemplatesPresets": {
+        "addLabel": "Add template preset",
+        "addDesc": "Select a template file from your vault to add to the presets list.",
+        "addPlaceholder": "Choose a template note to add...",
+        "removeButton": "Remove"
       }
     },
     "reminders": {
@@ -1526,6 +1538,11 @@
         "description": "Update the recurring event itself so every occurrence follows the new schedule.",
         "button": "Move Sequence"
       },
+      "cancel": "Cancel"
+    },
+    "linkedNotePreset": {
+      "title": "Select a Template Preset",
+      "description": "Choose a template to use for creating this linked note:",
       "cancel": "Cancel"
     }
   },

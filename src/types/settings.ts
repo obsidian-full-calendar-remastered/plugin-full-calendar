@@ -226,6 +226,8 @@ export interface FullCalendarSettings {
   currentVersion: string | null;
   linkedNotesDirectory: string;
   linkedNoteTemplate: string;
+  enableLinkedNoteTemplatesPreset: boolean;
+  linkedNoteTemplatesPresets: string[];
   linkedNoteLinkStrategy: LinkedNoteLinkStrategy;
   taskBacklogLastProviderId: string;
   caldavTaskInboxLastCalendarId: string;
@@ -354,6 +356,8 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   weatherUnit: 'C',
   linkedNoteTemplate:
     '# {{title}}\n\n**Date**: {{date}}\n**Time**: {{timeString}}\n**Location**: {{location}}\n**Calendar**: {{calendarName}}\n\n## Description\n{{description}}\n\n## Notes\n- ',
+  enableLinkedNoteTemplatesPreset: false,
+  linkedNoteTemplatesPresets: [],
   openDailyNoteOnDateClick: false,
   breakTimer: {
     enabled: false,

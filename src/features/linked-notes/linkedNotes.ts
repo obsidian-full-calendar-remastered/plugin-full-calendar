@@ -6,13 +6,10 @@ import { ObsidianIO } from '../../ObsidianAdapter';
 import { showNotice } from '../../utils/showNotice';
 import { t } from '../i18n/i18n';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
-import {
-  serializeFrontmatter,
-  findUniquePath,
-  sanitizeTitleForFilename
-} from '../../providers/utils/noteUtils';
-import { modifyFrontmatterString, replaceFrontmatter } from '../../providers/fullnote/frontmatter';
+import { findUniquePath, sanitizeTitleForFilename } from '../../providers/utils/noteUtils';
+import { modifyFrontmatterString } from '../../providers/fullnote/frontmatter';
 import FullCalendarPlugin from '../../main';
+import { chooseTemplatePreset } from './TemplatePresetSelectModal';
 
 const linkedNoteCreationPromises = new Map<string, Promise<TFile | null>>();
 
@@ -73,7 +70,8 @@ export async function createLinkedNoteForProvider({
   calendarId,
   calendarName,
   linkedNoteIndex,
-  instanceDate
+  instanceDate,
+  templateContentOverride
 }: {
   app: App;
   event: OFCEvent;
@@ -81,6 +79,7 @@ export async function createLinkedNoteForProvider({
   calendarName: string;
   linkedNoteIndex: LinkedNoteIndex;
   instanceDate?: string;
+  templateContentOverride?: string;
 }): Promise<TFile | null> {
   const identityInstanceDate = linkedNoteIdentityInstanceDate(instanceDate);
   const directory = PluginState.getSettings().linkedNotesDirectory;
@@ -111,7 +110,8 @@ export async function createLinkedNoteForProvider({
     calendarId,
     calendarName,
     instanceDate,
-    identityInstanceDate
+    identityInstanceDate,
+    templateContentOverride
   }).finally(() => {
     linkedNoteCreationPromises.delete(creationKey);
   });
@@ -125,7 +125,8 @@ async function createLinkedNoteFile({
   calendarId,
   calendarName,
   instanceDate,
-  identityInstanceDate
+  identityInstanceDate,
+  templateContentOverride
 }: {
   app: App;
   event: OFCEvent;
@@ -133,6 +134,7 @@ async function createLinkedNoteFile({
   calendarName: string;
   instanceDate?: string;
   identityInstanceDate?: string;
+  templateContentOverride?: string;
 }): Promise<TFile | null> {
   const settings = PluginState.getSettings();
   const directory = settings.linkedNotesDirectory;
@@ -141,20 +143,21 @@ async function createLinkedNoteFile({
     return null;
   }
 
-  const template = settings.linkedNoteTemplate || TemplateEngine.DEFAULT_TEMPLATE;
+  const template =
+    templateContentOverride !== undefined
+      ? templateContentOverride
+      : settings.linkedNoteTemplate || TemplateEngine.DEFAULT_TEMPLATE;
   const bodyContent = TemplateEngine.render(template, event, calendarName, instanceDate);
 
   const frontmatter: Record<string, unknown> = {
-    'fc-event-uid': event.uid || event.id,
-    'fc-calendar-id': calendarId
+    'fc-event-uid': quotedFrontmatterString(event.uid || event.id || ''),
+    'fc-calendar-id': quotedFrontmatterString(calendarId)
   };
   if (identityInstanceDate) {
-    frontmatter['fc-event-recurrence-id'] = identityInstanceDate;
+    frontmatter['fc-event-recurrence-id'] = quotedFrontmatterString(identityInstanceDate);
   }
 
-  const yaml = serializeFrontmatter(frontmatter);
-  // Smart reuse of FullNote's replaceFrontmatter utility
-  const fileContent = replaceFrontmatter(bodyContent, yaml);
+  const fileContent = modifyFrontmatterString(bodyContent, frontmatter);
 
   let baseFilename = sanitizeTitleForFilename(event.title || t('linkedNotes.untitledNote'));
   if (identityInstanceDate) {
@@ -182,7 +185,11 @@ export async function openOrCreateLinkedNote(
   const provider = PluginState.getProviderRegistry().getInstance(calendarId);
   const linkedNoteProvider = provider as unknown as {
     linkedNoteIndex?: LinkedNoteIndex;
-    createLinkedNote?: (event: OFCEvent, instanceDate?: string) => Promise<TFile | null>;
+    createLinkedNote?: (
+      event: OFCEvent,
+      instanceDate?: string,
+      templateContentOverride?: string
+    ) => Promise<TFile | null>;
   };
   if (!linkedNoteProvider) {
     showNotice(t('notices.cannotOpenRemote'));
@@ -227,7 +234,37 @@ export async function openOrCreateLinkedNote(
   // 3. Otherwise create a new note
   if (typeof linkedNoteProvider.createLinkedNote === 'function') {
     try {
-      const file = await linkedNoteProvider.createLinkedNote(event, instanceDate);
+      let templateContentOverride: string | undefined = undefined;
+      if (settings.enableLinkedNoteTemplatesPreset) {
+        if (
+          !settings.linkedNoteTemplatesPresets ||
+          settings.linkedNoteTemplatesPresets.length === 0
+        ) {
+          showNotice(t('notices.noPresetsConfigured'));
+          return;
+        }
+        const selectedPreset = await chooseTemplatePreset(
+          plugin.app,
+          settings.linkedNoteTemplatesPresets
+        );
+        if (selectedPreset === null) {
+          // User cancelled template selection, abort note creation
+          return;
+        }
+        const file = plugin.app.vault.getFileByPath(selectedPreset);
+        if (file instanceof TFile) {
+          templateContentOverride = await plugin.app.vault.read(file);
+        } else {
+          showNotice(t('notices.templateFileNotFoundPreset', { path: selectedPreset }));
+          return;
+        }
+      }
+
+      const file = await linkedNoteProvider.createLinkedNote(
+        event,
+        instanceDate,
+        templateContentOverride
+      );
       if (file) {
         const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);
         await leaf.openFile(file);

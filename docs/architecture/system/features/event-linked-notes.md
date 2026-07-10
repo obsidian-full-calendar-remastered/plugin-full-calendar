@@ -82,6 +82,14 @@ For deadline-based mapping:
 
 For name-based mapping, the exact title path is the first lookup key and intentionally makes equal titles share a note. The stable calendar ID and master event UID are attached to the file as a secondary identity so later renames or moves remain resolvable.
 
+### 6️⃣ Template Presets & Selection (Power Users)
+To support multiple custom layouts based on user choice:
+* **Decoupled Settings**: When `enableLinkedNoteTemplatesPreset` is enabled in settings, the default template rendering path is bypassed.
+* **Vault-Based Presets**: The user specifies note paths from their vault to act as template files.
+* **Selector Modal UI**: The note creation flow (triggered inside `openOrCreateLinkedNote`) displays a React modal calling `chooseTemplatePreset`.
+* **Signature Overrides**: The remote providers' `createLinkedNote()` signature and the central `createLinkedNoteForProvider()` helper accept an optional `templateContentOverride: string` parameter. If present, it overrides the default settings template completely.
+* **Preserving Custom Frontmatter**: The template file contents (including any predefined tags or YAML frontmatter parameters) are merged with the calendar identity parameters using `modifyFrontmatterString` instead of doing a complete overwrite, preserving user-defined metadata.
+
 ---
 
 ## Data Flow

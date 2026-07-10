@@ -178,10 +178,17 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       });
     }
 
-    await this.renderSingleCalendar(this.contentEl, this.config);
-
-    // Keep reactive to cache updates
+    // Register the update callback BEFORE the async render so that any cache
+    // updates (e.g. remote Google/CalDAV events arriving mid-await) are not
+    // silently dropped.  We track whether an update fired during the render
+    // window and apply it once the calendar instance exists.
+    let pendingUpdate = false;
     this.callback = () => {
+      if (this.calendars.length === 0) {
+        // Calendar not yet mounted — remember that a refresh is needed.
+        pendingUpdate = true;
+        return;
+      }
       this.calendars.forEach(calendar => {
         const { sources: updatedSources } = this.getSourcesAndConfig(this.config);
         window.requestAnimationFrame(() => {
@@ -191,6 +198,14 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       });
     };
     this.widgetCtx.onUpdate(this.callback);
+
+    await this.renderSingleCalendar(this.contentEl, this.config);
+
+    // If a cache update arrived while we were awaiting renderSingleCalendar
+    // (or the populate() above), apply it now that the calendar is mounted.
+    if (pendingUpdate && this.callback) {
+      this.callback();
+    }
   }
 
   private async renderSingleCalendar(el: HTMLElement, config: ViewConfig): Promise<void> {

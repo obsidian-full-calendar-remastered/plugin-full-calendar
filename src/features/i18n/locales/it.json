@@ -1885,7 +1885,8 @@
       "timeRange": "Daily Time Range",
       "timeRangeDesc": "Select the daily start and end hours for available slots.",
       "btnBack": "Back",
-      "warningLargeRange": "Warning: Selecting a date range longer than 90 days may cause performance slowdowns."
+      "warningLargeRange": "Warning: Selecting a date range longer than 90 days may cause performance slowdowns.",
+      "introDesc": "Configure your availability options below to export a formatted Markdown schedule to your vault, or generate a secure, interactive web booking page."
     }
   },
   "exportModal": {

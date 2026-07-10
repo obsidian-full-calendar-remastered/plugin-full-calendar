@@ -1851,6 +1851,7 @@
     },
     "modal": {
       "title": "Share Availability",
+      "introDesc": "Configure your availability options below to export a formatted Markdown schedule to your vault, or generate a secure, interactive web booking page.",
       "dateRange": "Date Range",
       "dateRangeDesc": "Select the start and end dates for the availability period.",
       "timeRange": "Daily Time Range",

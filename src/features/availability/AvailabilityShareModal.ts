@@ -14,6 +14,7 @@ import { GithubGistService } from './GithubGistService';
 import { CalendarInfo } from '../../types/calendar_settings';
 import { t } from '../i18n/i18n';
 import { openExternalUrl } from '../../utils/openExternalUrl';
+import { createDescWithDocs } from '../../ui/settings/docsLinks';
 
 export class AvailabilityShareModal extends Modal {
   private startDateVal: string = DateTime.now().toISODate() || '';
@@ -36,6 +37,14 @@ export class AvailabilityShareModal extends Modal {
       text: t('availability.modal.title')
     });
 
+    // Intro description with Docs link
+    const descDiv = contentEl.createEl('p', { cls: 'setting-item-description' });
+    descDiv.appendChild(
+      createDescWithDocs(t('availability.modal.introDesc'), [
+        { text: t('global.learnMoreLink') || 'Learn more', path: 'user/features/availability' }
+      ])
+    );
+
     const settings = PluginState.getSettings();
     if (settings.availabilityDefaultTimeRange) {
       this.startTimeVal = settings.availabilityDefaultTimeRange.startTime;
@@ -49,7 +58,11 @@ export class AvailabilityShareModal extends Modal {
     const dateSetting = new Setting(configSection)
       .setClass('ofc-responsive-range-setting')
       .setName(t('availability.modal.dateRange'))
-      .setDesc(t('availability.modal.dateRangeDesc'));
+      .setDesc(
+        createDescWithDocs(t('availability.modal.dateRangeDesc'), [
+          { text: t('global.learnMoreLink') || 'Learn more', path: 'user/features/availability' }
+        ])
+      );
 
     dateSetting.controlEl.empty();
 
@@ -70,15 +83,12 @@ export class AvailabilityShareModal extends Modal {
     });
 
     const warningEl = configSection.createDiv({
-      cls: 'ofc-availability-range-warning',
+      cls: 'ofc-warning-box',
       text:
         t('availability.modal.warningLargeRange') ||
         'Warning: Selecting a date range longer than 90 days may cause performance slowdowns.'
     });
     warningEl.setCssProps({
-      color: 'var(--text-error)',
-      fontSize: 'var(--font-smaller)',
-      marginTop: '4px',
       display: 'none'
     });
 
@@ -107,7 +117,11 @@ export class AvailabilityShareModal extends Modal {
     const timeSetting = new Setting(configSection)
       .setClass('ofc-responsive-range-setting')
       .setName(t('availability.modal.timeRange'))
-      .setDesc(t('availability.modal.timeRangeDesc'));
+      .setDesc(
+        createDescWithDocs(t('availability.modal.timeRangeDesc'), [
+          { text: t('global.learnMoreLink') || 'Learn more', path: 'user/features/availability' }
+        ])
+      );
 
     timeSetting.controlEl.empty();
 
@@ -128,7 +142,11 @@ export class AvailabilityShareModal extends Modal {
     // 3. Exclude Weekends Toggle
     new Setting(configSection)
       .setName(t('availability.modal.excludeWeekends'))
-      .setDesc(t('availability.modal.excludeWeekendsDesc'))
+      .setDesc(
+        createDescWithDocs(t('availability.modal.excludeWeekendsDesc'), [
+          { text: t('global.learnMoreLink') || 'Learn more', path: 'user/features/availability' }
+        ])
+      )
       .addToggle(toggle => {
         toggle.setValue(this.excludeWeekendsVal).onChange(val => {
           this.excludeWeekendsVal = val;
@@ -139,7 +157,11 @@ export class AvailabilityShareModal extends Modal {
     new Setting(configSection)
       .setClass('ofc-responsive-dropdown-setting')
       .setName(t('availability.modal.anonymize'))
-      .setDesc(t('availability.modal.anonymizeDesc'))
+      .setDesc(
+        createDescWithDocs(t('availability.modal.anonymizeDesc'), [
+          { text: t('global.learnMoreLink') || 'Learn more', path: 'user/features/availability' }
+        ])
+      )
       .addDropdown(dropdown => {
         dropdown
           .addOption('full', t('availability.modal.anonymizeFull'))
@@ -198,11 +220,14 @@ export class AvailabilityShareModal extends Modal {
     }
 
     // --- Onboarding / Gist Setup Panel (initially hidden) ---
-    const setupPanel = contentEl.createDiv({ cls: 'ofc-availability-setup-panel' });
-    setupPanel.setCssProps({ display: 'none' }); // dynamically toggled, rest is in stylesheet
+    const setupPanel = contentEl.createDiv({ cls: 'ofc-setup-card' });
+    setupPanel.setCssProps({ display: 'none' });
 
     setupPanel.createEl('h3', { text: t('availability.modal.setupTitle') });
-    setupPanel.createEl('p', { text: t('availability.modal.setupDesc'), cls: 'ofc-setup-desc' });
+    setupPanel.createEl('p', {
+      text: t('availability.modal.setupDesc'),
+      cls: 'setting-item-description'
+    });
 
     // Step 1
     const step1Setting = new Setting(setupPanel).setName(t('availability.modal.setupStep1'));
@@ -228,11 +253,9 @@ export class AvailabilityShareModal extends Modal {
       });
     });
 
-    // --- Action Button Row ---
-    const buttonRow = contentEl.createDiv({ cls: 'ofc-availability-button-row' });
-
-    // Action buttons container
-    const actionButtons = buttonRow.createDiv({ cls: 'ofc-availability-action-buttons' });
+    // --- Action Buttons ---
+    const actionButtons = contentEl.createDiv({ cls: 'ofc-workspace-modal-buttons' });
+    actionButtons.setCssProps({ marginTop: '2rem' });
 
     actionButtons.createEl('button', { text: t('availability.modal.btnMarkdown') }, button => {
       button.addEventListener('click', () => {
@@ -266,9 +289,9 @@ export class AvailabilityShareModal extends Modal {
       }
     );
 
-    // Setup onboarding buttons container
-    const setupButtons = buttonRow.createDiv({ cls: 'ofc-availability-setup-buttons' });
-    setupButtons.setCssProps({ display: 'none' });
+    // --- Setup Buttons ---
+    const setupButtons = contentEl.createDiv({ cls: 'ofc-workspace-modal-buttons' });
+    setupButtons.setCssProps({ display: 'none', marginTop: '2rem' });
 
     setupButtons.createEl('button', { text: t('availability.modal.btnBack') || 'Back' }, button => {
       button.addEventListener('click', () => {

@@ -4,14 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shared Availability - Full Calendar</title>
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/branding/icon-dark.png">
   
   <!-- Premium Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- FontAwesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-fontawesome/6.4.0/css/all.min.css">
   
   <style>
     /* CSS Variables for Premium Styling & Theme toggling */
@@ -28,7 +26,7 @@
       --accent-hover: #2563eb;
       --accent-light: rgba(59, 130, 246, 0.1);
       
-      --status-free-bg: rgba(16, 185, 129, 0.1);
+      --status-free-bg: rgba(16, 185, 129, 0.08);
       --status-free-text: #059669;
       --status-free-border: rgba(16, 185, 129, 0.2);
       
@@ -51,11 +49,11 @@
       --accent-hover: #60a5fa;
       --accent-light: rgba(59, 130, 246, 0.2);
       
-      --status-free-bg: rgba(16, 185, 129, 0.15);
+      --status-free-bg: rgba(16, 185, 129, 0.12);
       --status-free-text: #34d399;
-      --status-free-border: rgba(16, 185, 129, 0.3);
+      --status-free-border: rgba(16, 185, 129, 0.25);
       
-      --status-busy-bg: rgba(239, 68, 68, 0.1);
+      --status-busy-bg: rgba(239, 68, 68, 0.08);
       --status-busy-text: #f87171;
       --status-busy-border: rgba(239, 68, 68, 0.25);
       
@@ -133,30 +131,16 @@
       gap: 1rem;
     }
     
-    /* Theme Toggle Switch */
-    .theme-toggle {
-      background: none;
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      cursor: pointer;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      box-shadow: var(--shadow-premium);
+
+    
+    /* Custom Timezone Select Dropdown */
+    .tz-custom-select {
+      position: relative;
+      display: inline-block;
+      user-select: none;
     }
     
-    .theme-toggle:hover {
-      border-color: var(--accent-color);
-      color: var(--accent-color);
-      transform: scale(1.05);
-    }
-    
-    /* Timezone selector styling */
-    .tz-container {
+    .tz-trigger-btn {
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -164,54 +148,329 @@
       padding: 0.5rem 1rem;
       border-radius: 12px;
       border: 1px solid var(--border-color);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     
-    .tz-container label {
+    .tz-trigger-btn:hover {
+      border-color: var(--accent-color);
+    }
+    
+    .tz-trigger-btn .chevron {
+      transition: transform 0.2s;
+    }
+    
+    .tz-custom-select.active .tz-trigger-btn .chevron {
+      transform: rotate(180deg);
+    }
+    
+    .tz-dropdown-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      width: 280px;
+      background: var(--bg-card);
+      backdrop-filter: var(--backdrop-blur);
+      -webkit-backdrop-filter: var(--backdrop-blur);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      overflow: hidden;
+      animation: dropdownFadeIn 0.2s ease;
+    }
+    
+    @keyframes dropdownFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .tz-custom-select.active .tz-dropdown-menu {
+      display: block;
+    }
+    
+    .tz-search-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(0, 0, 0, 0.01);
+    }
+    
+    .tz-search-input {
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: var(--font-family);
       font-size: 0.85rem;
+      font-weight: 500;
+      outline: none;
+      width: 100%;
+    }
+    
+    .tz-options-list {
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+    }
+    
+    /* Scrollbar */
+    .tz-options-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .tz-options-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .tz-options-list::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+    
+    .tz-option-group-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.5rem 1rem 0.25rem 1rem;
+    }
+    
+    .tz-option-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: background-color 0.15s, color 0.15s;
+    }
+    
+    .tz-option-item:hover {
+      background-color: var(--accent-light);
+      color: var(--accent-color);
+    }
+    
+    .tz-option-item.selected {
+      background-color: var(--accent-color);
+      color: #ffffff;
+      font-weight: 600;
+    }
+    
+    .tz-option-item.selected .tz-option-offset,
+    .tz-option-item.selected .tz-option-sub {
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .tz-option-offset {
+      font-size: 0.75rem;
       color: var(--text-secondary);
       font-weight: 500;
     }
     
-    .tz-select {
-      background: transparent;
-      border: none;
-      color: var(--text-primary);
-      font-family: var(--font-family);
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      outline: none;
+    .tz-option-sub {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-left: 0.25rem;
     }
     
-    /* Availability Grid & Cards */
-    .schedule-grid {
+    .tz-divider {
+      height: 1px;
+      background-color: var(--border-color);
+      margin: 0.4rem 0;
+    }
+    
+    /* Split Layout */
+    .app-layout {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 340px 1fr;
+      gap: 2.5rem;
+    }
+    
+    @media (max-width: 850px) {
+      .app-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      .container {
+        padding: 1.5rem;
+      }
+      header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1.25rem;
+      }
+      .title-area {
+        width: 100%;
+      }
+      .controls {
+        width: 100%;
+        justify-content: center;
+      }
+      .tz-dropdown-menu {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      @keyframes dropdownFadeIn {
+        from { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+    }
+    
+    /* Custom Mini-Calendar styling */
+    .calendar-container {
+      background: rgba(0, 0, 0, 0.015);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      height: fit-content;
+    }
+    
+    [data-theme="dark"] .calendar-container {
+      background: rgba(255, 255, 255, 0.01);
+    }
+    
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    
+    .calendar-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .calendar-nav-btn {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .calendar-nav-btn:hover:not(:disabled) {
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+    }
+    
+    .calendar-nav-btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+    
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      position: relative;
+      cursor: default;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      user-select: none;
+    }
+    
+    .calendar-day.other-month {
+      opacity: 0.2;
+    }
+    
+    .calendar-day.active-month {
+      color: var(--text-primary);
+    }
+    
+    .calendar-day.has-availability {
+      cursor: pointer;
+      font-weight: 600;
+      background: var(--status-free-bg);
+      border-color: var(--status-free-border);
+      color: var(--status-free-text);
+    }
+    
+    .calendar-day.has-availability:hover {
+      border-color: var(--accent-color);
+      transform: translateY(-1px);
+    }
+    
+    .calendar-day.selected {
+      background-color: var(--accent-color) !important;
+      border-color: var(--accent-color) !important;
+      color: #ffffff !important;
+      font-weight: 700;
+      transform: scale(0.98);
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+    }
+    
+    .calendar-day .day-dot {
+      width: 4px;
+      height: 4px;
+      background-color: var(--status-free-text);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 6px;
+    }
+    
+    .calendar-day.selected .day-dot {
+      background-color: #ffffff;
+    }
+
+    /* Slots Section styling */
+    .slots-section {
+      display: flex;
+      flex-direction: column;
       gap: 1.5rem;
     }
     
-    .day-card {
-      border: 1px solid var(--border-color);
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 16px;
-      padding: 1.5rem;
-    }
-    
-    .day-card:hover {
-      border-color: rgba(59, 130, 246, 0.4);
-      box-shadow: 0 4px 20px -5px rgba(59, 130, 246, 0.1);
-    }
-    
-    .day-header {
-      font-size: 1.15rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
+    .slots-header {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-primary);
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
     }
     
-    .day-header i {
+    .slots-header i, .slots-header svg {
       color: var(--accent-color);
     }
     
@@ -390,8 +649,7 @@
       padding: 4rem 2rem;
     }
     
-    .error-card i {
-      font-size: 3rem;
+    .error-card svg {
       color: var(--status-busy-text);
       margin-bottom: 1rem;
     }
@@ -404,33 +662,37 @@
       color: var(--text-secondary);
     }
 
-    .privacy-banner {
-      display: flex;
+    /* Demo Data Alert Banner */
+    .demo-banner {
+      display: none;
       align-items: center;
       gap: 0.75rem;
-      background: rgba(16, 185, 129, 0.06);
-      border: 1px solid rgba(16, 185, 129, 0.15);
-      border-radius: 12px;
-      padding: 0.75rem 1rem;
-      margin-bottom: 1.5rem;
-      font-size: 0.85rem;
-      color: var(--status-free-text);
-      line-height: 1.4;
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+      color: var(--accent-color);
+      line-height: 1.5;
+      animation: fadeIn 0.4s ease;
     }
     
-    .privacy-banner i {
-      font-size: 1.1rem;
+    /* Icon styling overrides */
+    .icon {
+      display: inline-block;
+      vertical-align: middle;
       flex-shrink: 0;
-      color: var(--status-free-text);
     }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <div class="privacy-banner">
-      <i class="fa-solid fa-shield-halved"></i>
-      <span><strong>Zero-Server Privacy Guarantee:</strong> All availability calculations are performed locally on the host's device. No schedule, event, or calendar data is ever stored, hosted, or tracked on our servers under any circumstances. This page reads directly from a personal, secret GitHub Gist using client-side code.</span>
+    <div class="demo-banner" id="demo-banner">
+      <!-- Inline Info SVG -->
+      <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      <span><strong>Demo Mode:</strong> You are viewing mock availability. To see actual availability, use the link shared by <a href="https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/availability/" target="_blank" style="color: inherit; text-decoration: underline; font-weight: 600;">the host</a>.</span>
     </div>
     <div id="app-container">
       <div class="loader">
@@ -446,7 +708,9 @@
       <div class="booking-text" id="booking-text">No slot selected</div>
     </div>
     <button class="booking-action-btn" id="booking-copy-btn">
-      <i class="fa-regular fa-copy"></i> Copy Request
+      <!-- Initial copy icon -->
+      <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      <span>Copy Request</span>
     </button>
   </div>
 
@@ -461,6 +725,42 @@
     let currentData = null;
     let viewMode = 'local'; // 'host' or 'local'
     let selectedSlot = null;
+    let selectedDateStr = null; // 'YYYY-MM-DD'
+    let calendarMonth = null; // DateTime instance representing the visible month
+
+    const KEY_TIMEZONES = [
+      'UTC',
+      'Africa/Cairo',
+      'Africa/Johannesburg',
+      'America/Anchorage',
+      'America/Chicago',
+      'America/Denver',
+      'America/Los_Angeles',
+      'America/New_York',
+      'America/Sao_Paulo',
+      'Asia/Dubai',
+      'Asia/Kolkata',
+      'Asia/Singapore',
+      'Asia/Tokyo',
+      'Atlantic/Azores',
+      'Australia/Perth',
+      'Australia/Sydney',
+      'Europe/Berlin',
+      'Europe/London',
+      'Europe/Moscow',
+      'Europe/Paris',
+      'Pacific/Auckland',
+      'Pacific/Honolulu'
+    ];
+
+    // SVG icons as strings
+    const globeSvg = `<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`;
+    const calendarSvg = `<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>`;
+    const copySvg = `<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+    const checkSvg = `<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const alertSvg = `<svg class="icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    const chevronLeftSvg = `<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`;
+    const chevronRightSvg = `<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
 
     // Detect system preferred theme
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -471,16 +771,7 @@
       document.body.setAttribute('data-theme', event.matches ? 'dark' : 'light');
     });
 
-    // Helper to toggle theme manually
-    window.toggleTheme = function() {
-      const currentTheme = document.body.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      document.body.setAttribute('data-theme', newTheme);
-      const icon = document.getElementById('theme-icon');
-      if (icon) {
-        icon.className = newTheme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
-      }
-    }
+
 
     // Parse URL parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -488,6 +779,83 @@
     const directUrl = urlParams.get('url');
 
     const appContainer = document.getElementById('app-container');
+
+    // Helper to generate dynamic, professional mock availability spanning three months
+    function generateMockData() {
+      const localTz = DateTime.local().zoneName || 'America/New_York';
+      const now = DateTime.local().setZone(localTz);
+      const slots = [];
+      
+      function addSlot(dayOffset, hour, minute, durationMinutes, status, title = 'Busy') {
+        const date = now.plus({ days: dayOffset }).set({ hour, minute, second: 0, millisecond: 0 });
+        const start = date.toUTC().toISO();
+        const end = date.plus({ minutes: durationMinutes }).toUTC().toISO();
+        slots.push({ start, end, status, title });
+      }
+      
+      // Today: some free & some busy
+      addSlot(0, 9, 0, 30, 'free');
+      addSlot(0, 9, 30, 30, 'free');
+      addSlot(0, 10, 0, 60, 'busy', 'Weekly Sync');
+      addSlot(0, 14, 0, 30, 'free');
+      addSlot(0, 14, 30, 30, 'busy', 'Focus Time');
+      addSlot(0, 15, 0, 60, 'free');
+      
+      // Tomorrow: mostly free
+      addSlot(1, 10, 0, 30, 'free');
+      addSlot(1, 10, 30, 30, 'free');
+      addSlot(1, 11, 0, 30, 'free');
+      addSlot(1, 13, 0, 60, 'busy', 'Lunch Sync');
+      addSlot(1, 14, 0, 30, 'free');
+      addSlot(1, 14, 30, 30, 'free');
+      
+      // Day after tomorrow
+      addSlot(2, 9, 0, 45, 'busy', 'Dentist Visit');
+      addSlot(2, 10, 0, 30, 'free');
+      addSlot(2, 11, 0, 30, 'free');
+      addSlot(2, 14, 0, 60, 'free');
+      addSlot(2, 15, 30, 30, 'free');
+      
+      // Next week
+      addSlot(4, 9, 30, 30, 'free');
+      addSlot(4, 10, 0, 30, 'free');
+      addSlot(4, 13, 0, 60, 'free');
+      addSlot(4, 15, 0, 30, 'busy', 'Team Standup');
+      
+      addSlot(5, 10, 0, 30, 'free');
+      addSlot(5, 11, 0, 30, 'free');
+      addSlot(5, 14, 0, 30, 'free');
+      addSlot(5, 14, 30, 30, 'busy', 'Product Sync');
+      
+      addSlot(7, 9, 0, 30, 'free');
+      addSlot(7, 10, 0, 30, 'free');
+      addSlot(7, 14, 0, 30, 'free');
+      
+      addSlot(8, 11, 0, 30, 'free');
+      addSlot(8, 13, 30, 30, 'free');
+      addSlot(8, 15, 0, 30, 'free');
+      
+      addSlot(11, 10, 0, 30, 'free');
+      addSlot(11, 14, 0, 30, 'free');
+
+      // Next month (approx +25 to +40 days) - guarantees navigation testability
+      addSlot(25, 9, 0, 30, 'free');
+      addSlot(25, 13, 0, 30, 'free');
+      addSlot(32, 10, 0, 30, 'free');
+      addSlot(35, 11, 0, 60, 'free');
+      addSlot(38, 14, 0, 30, 'free');
+
+      // Two months from now (approx +60 to +65 days)
+      addSlot(60, 9, 30, 30, 'free');
+      addSlot(62, 10, 30, 30, 'busy', 'Client Review');
+      addSlot(65, 15, 0, 60, 'free');
+
+      return {
+        timezone: localTz,
+        generatedAt: now.toISO(),
+        slots: slots
+      };
+    }
 
     async function loadData() {
       try {
@@ -500,17 +868,21 @@
           const file = gist.files['availability.json'];
           if (!file) throw new Error("Could not find 'availability.json' in Gist.");
           responseJson = JSON.parse(file.content);
+          document.getElementById('demo-banner').style.display = 'none';
         } else if (directUrl) {
           const res = await fetch(directUrl);
           if (!res.ok) throw new Error(`Failed to fetch direct URL (${res.status})`);
           responseJson = await res.json();
+          document.getElementById('demo-banner').style.display = 'none';
         } else {
-          throw new Error('No sharing ID or data source URL provided.');
+          responseJson = generateMockData();
+          document.getElementById('demo-banner').style.display = 'flex';
         }
 
         currentData = responseJson;
         renderApp();
       } catch (err) {
+        document.getElementById('demo-banner').style.display = 'none';
         renderError(err.message);
       }
     }
@@ -518,7 +890,7 @@
     function renderError(message) {
       appContainer.innerHTML = `
         <div class="error-card">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+          ${alertSvg}
           <h2>Failed to Load Schedule</h2>
           <p>${message}</p>
         </div>
@@ -526,13 +898,17 @@
     }
 
     function renderApp() {
-      const displayTz = viewMode === 'host' ? currentData.timezone : DateTime.local().zoneName;
+      let displayTz = DateTime.local().zoneName;
+      if (viewMode === 'host') {
+        displayTz = currentData.timezone;
+      } else if (viewMode !== 'local') {
+        displayTz = viewMode;
+      }
       
       // Group slots by date
       const slotsByDay = {};
       
       currentData.slots.forEach(slot => {
-        // Convert the absolute ISO string to the target display timezone
         const startDt = DateTime.fromISO(slot.start).setZone(displayTz);
         const dateKey = startDt.toISODate();
         
@@ -543,7 +919,42 @@
       });
       
       const sortedDays = Object.keys(slotsByDay).sort();
+      
+      // Ensure we have a default selected date
+      if (sortedDays.length > 0) {
+        if (!selectedDateStr || !slotsByDay[selectedDateStr]) {
+          const firstFreeDay = sortedDays.find(day => slotsByDay[day].some(s => s.status === 'free'));
+          selectedDateStr = firstFreeDay || sortedDays[0];
+          calendarMonth = DateTime.fromISO(selectedDateStr).startOf('month');
+        }
+      }
+      
+      if (!calendarMonth && selectedDateStr) {
+        calendarMonth = DateTime.fromISO(selectedDateStr).startOf('month');
+      } else if (!calendarMonth) {
+        calendarMonth = DateTime.local().startOf('month');
+      }
+      
       const generatedDate = DateTime.fromISO(currentData.generatedAt).toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY);
+
+      if (sortedDays.length === 0) {
+        appContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No slots found in this availability period.</p>`;
+        return;
+      }
+
+      // Determine active timezone text
+      let currentLabel = 'Local Time';
+      let currentOffset = DateTime.now().offsetNameShort;
+      
+      if (viewMode === 'host') {
+        currentLabel = 'Host Time';
+        currentOffset = DateTime.fromISO(currentData.generatedAt, { zone: currentData.timezone }).offsetNameShort;
+      } else if (viewMode !== 'local') {
+        currentLabel = viewMode.replace('_', ' ').split('/').pop();
+        currentOffset = DateTime.now().setZone(viewMode).offsetNameShort;
+      }
+      
+      const labelText = `${currentLabel} (${currentOffset})`;
 
       let html = `
         <header>
@@ -552,80 +963,304 @@
             <p>Generated on ${generatedDate} • Host Timezone: <strong>${currentData.timezone}</strong></p>
           </div>
           <div class="controls">
-            <div class="tz-container">
-              <label for="tz-select"><i class="fa-solid fa-earth-americas"></i> View In:</label>
-              <select class="tz-select" id="tz-select" onchange="window.changeTimezone(this.value)">
-                <option value="local" ${viewMode === 'local' ? 'selected' : ''}>Local Time (${DateTime.local().offsetNameShort})</option>
-                <option value="host" ${viewMode === 'host' ? 'selected' : ''}>Host Time (${DateTime.fromISO(currentData.generatedAt, {zone: currentData.timezone}).offsetNameShort})</option>
-              </select>
+            <div class="tz-custom-select" id="tz-custom-select-container">
+              <div class="tz-trigger-btn" onclick="window.toggleTzDropdown(event)">
+                ${globeSvg}
+                <span id="tz-current-label">${labelText}</span>
+                <svg class="icon chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.25rem;"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <div class="tz-dropdown-menu" id="tz-dropdown-menu">
+                <div class="tz-search-wrapper">
+                  <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <input type="text" class="tz-search-input" id="tz-search-input" placeholder="Search timezone..." oninput="window.filterTzOptions(this.value)" autocomplete="off">
+                </div>
+                <div class="tz-options-list" id="tz-options-list">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
             </div>
-            <button class="theme-toggle" onclick="window.toggleTheme()" title="Toggle Dark/Light Mode">
-              <i id="theme-icon" class="${document.body.getAttribute('data-theme') === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon'}"></i>
-            </button>
           </div>
         </header>
         
-        <div class="schedule-grid">
+        <div class="app-layout">
+          <!-- Left side calendar picker -->
+          <div class="calendar-container" id="calendar-container"></div>
+          
+          <!-- Right side slots selector -->
+          <div class="slots-section" id="slots-section"></div>
+        </div>
       `;
       
-      if (sortedDays.length === 0) {
-        html += `<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No slots found in this availability period.</p>`;
-      } else {
-        sortedDays.forEach(dateStr => {
-          const dt = DateTime.fromISO(dateStr, { zone: displayTz });
-          const dayTitle = dt.toLocaleString(DateTime.DATE_HUGE);
-          
+      appContainer.innerHTML = html;
+      
+      renderCalendar(slotsByDay, sortedDays);
+      renderSlots(slotsByDay);
+      renderTzOptions();
+    }
+
+    function renderCalendar(slotsByDay, sortedDays) {
+      const container = document.getElementById('calendar-container');
+      if (!container) return;
+      
+      const minDate = DateTime.fromISO(sortedDays[0]).startOf('month');
+      const maxDate = DateTime.fromISO(sortedDays[sortedDays.length - 1]).startOf('month');
+      
+      const isPrevDisabled = calendarMonth <= minDate;
+      const isNextDisabled = calendarMonth >= maxDate;
+      
+      const monthTitle = calendarMonth.toFormat('MMMM yyyy');
+      
+      let html = `
+        <div class="calendar-header">
+          <button class="calendar-nav-btn" onclick="window.prevMonth()" ${isPrevDisabled ? 'disabled' : ''} title="Previous Month">
+            ${chevronLeftSvg}
+          </button>
+          <div class="calendar-title">${monthTitle}</div>
+          <button class="calendar-nav-btn" onclick="window.nextMonth()" ${isNextDisabled ? 'disabled' : ''} title="Next Month">
+            ${chevronRightSvg}
+          </button>
+        </div>
+        <div class="calendar-weekdays">
+          <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+        </div>
+        <div class="calendar-grid">
+      `;
+      
+      const monthStart = calendarMonth.startOf('month');
+      const startOffset = monthStart.weekday % 7;
+      let currentCalDay = monthStart.minus({ days: startOffset });
+      
+      for (let i = 0; i < 42; i++) {
+        const dateStr = currentCalDay.toISODate();
+        const isOtherMonth = currentCalDay.month !== calendarMonth.month;
+        const slotsForDay = slotsByDay[dateStr] || [];
+        const hasAvail = slotsForDay.some(s => s.status === 'free');
+        const isSelected = selectedDateStr === dateStr;
+        
+        html += `
+          <div class="calendar-day ${isOtherMonth ? 'other-month' : 'active-month'} ${hasAvail ? 'has-availability' : ''} ${isSelected ? 'selected' : ''}"
+               onclick="${hasAvail ? `window.selectDate('${dateStr}')` : ''}"
+               title="${hasAvail ? `${slotsForDay.filter(s => s.status === 'free').length} available slot(s)` : ''}">
+            ${currentCalDay.day}
+            ${hasAvail ? `<div class="day-dot"></div>` : ''}
+          </div>
+        `;
+        currentCalDay = currentCalDay.plus({ days: 1 });
+      }
+      
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function renderSlots(slotsByDay) {
+      const container = document.getElementById('slots-section');
+      if (!container) return;
+      
+      if (!selectedDateStr || !slotsByDay[selectedDateStr]) {
+        container.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No date selected or slots available.</p>`;
+        return;
+      }
+      
+      let displayTz = DateTime.local().zoneName;
+      if (viewMode === 'host') {
+        displayTz = currentData.timezone;
+      } else if (viewMode !== 'local') {
+        displayTz = viewMode;
+      }
+      const dt = DateTime.fromISO(selectedDateStr, { zone: displayTz });
+      const dayTitle = dt.toLocaleString(DateTime.DATE_HUGE);
+      
+      let html = `
+        <div class="slots-header">
+          ${calendarSvg} Slots for ${dayTitle}
+        </div>
+        <div class="slots-container">
+      `;
+      
+      const daySlots = slotsByDay[selectedDateStr].sort((a, b) => a.start.localeCompare(b.start));
+      
+      daySlots.forEach(slot => {
+        const startDt = DateTime.fromISO(slot.start).setZone(displayTz);
+        const endDt = DateTime.fromISO(slot.end).setZone(displayTz);
+        const timeStr = `${startDt.toLocaleString(DateTime.TIME_SIMPLE)} - ${endDt.toLocaleString(DateTime.TIME_SIMPLE)}`;
+        const isFree = slot.status === 'free';
+        const isSelected = selectedSlot && selectedSlot.start === slot.start && selectedSlot.end === slot.end;
+        
+        html += `
+          <div class="slot-pill ${slot.status} ${isSelected ? 'selected' : ''}" 
+               onclick="${isFree ? `window.selectSlot('${slot.start}', '${slot.end}')` : ''}">
+            <div class="slot-time">${timeStr}</div>
+            <div class="slot-status">${isFree ? 'Available' : (slot.title || 'Busy')}</div>
+          </div>
+        `;
+      });
+      
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    // Populate custom search dropdown options
+    function renderTzOptions(query = '') {
+      const listContainer = document.getElementById('tz-options-list');
+      if (!listContainer) return;
+      
+      const q = query.toLowerCase().trim();
+      
+      // Helper to normalize offsets (e.g. "+05" becomes "+5", "-04" becomes "-4")
+      function normalizeOffsetSearch(text) {
+        return text.toLowerCase().replace(/([+-])0+(\d)/g, '$1$2');
+      }
+      const normQ = normalizeOffsetSearch(q);
+      
+      const localOffset = DateTime.now().offsetNameShort;
+      const hostOffset = DateTime.fromISO(currentData.generatedAt, { zone: currentData.timezone }).offsetNameShort;
+      
+      let html = '';
+      
+      // Quick Zones
+      const quickZones = [
+        { value: 'local', label: 'Local Time', offset: localOffset },
+        { value: 'host', label: 'Host Time', offset: hostOffset }
+      ];
+      
+      const filteredQuick = quickZones.filter(z => {
+        const nameMatch = z.label.toLowerCase().includes(q) || z.value.toLowerCase().includes(q);
+        const offsetMatch = normalizeOffsetSearch(z.offset).includes(normQ);
+        return nameMatch || offsetMatch;
+      });
+      
+      if (filteredQuick.length > 0) {
+        html += `<div class="tz-option-group-title">Quick Zones</div>`;
+        filteredQuick.forEach(z => {
+          const isSelected = viewMode === z.value;
           html += `
-            <div class="day-card">
-              <div class="day-header">
-                <i class="fa-regular fa-calendar-days"></i> ${dayTitle}
-              </div>
-              <div class="slots-container">
-          `;
-          
-          // Sort daily slots
-          const daySlots = slotsByDay[dateStr].sort((a, b) => a.start.localeCompare(b.start));
-          
-          daySlots.forEach(slot => {
-            const startDt = DateTime.fromISO(slot.start).setZone(displayTz);
-            const endDt = DateTime.fromISO(slot.end).setZone(displayTz);
-            const timeStr = `${startDt.toLocaleString(DateTime.TIME_SIMPLE)} - ${endDt.toLocaleString(DateTime.TIME_SIMPLE)}`;
-            const isFree = slot.status === 'free';
-            const isSelected = selectedSlot && selectedSlot.start === slot.start && selectedSlot.end === slot.end;
-            
-            html += `
-              <div class="slot-pill ${slot.status} ${isSelected ? 'selected' : ''}" 
-                   onclick="${isFree ? `window.selectSlot('${slot.start}', '${slot.end}')` : ''}">
-                <div class="slot-time">${timeStr}</div>
-                <div class="slot-status">${isFree ? 'Available' : (slot.title || 'Busy')}</div>
-              </div>
-            `;
-          });
-          
-          html += `
-              </div>
+            <div class="tz-option-item ${isSelected ? 'selected' : ''}" onclick="window.selectTz('${z.value}')">
+              <span>${z.label}</span>
+              <span class="tz-option-offset">${z.offset}</span>
             </div>
           `;
         });
       }
       
-      html += `</div>`;
-      appContainer.innerHTML = html;
+      // All Zones
+      const filteredAll = KEY_TIMEZONES.filter(z => {
+        const nameMatch = z.toLowerCase().includes(q) || z.replace('_', ' ').toLowerCase().includes(q);
+        const offset = DateTime.now().setZone(z).offsetNameShort;
+        const offsetMatch = normalizeOffsetSearch(offset).includes(normQ);
+        return nameMatch || offsetMatch;
+      });
+      
+      if (filteredAll.length > 0) {
+        if (filteredQuick.length > 0) {
+          html += `<div class="tz-divider"></div>`;
+        }
+        html += `<div class="tz-option-group-title">All Zones</div>`;
+        filteredAll.forEach(z => {
+          const isSelected = viewMode === z;
+          const offset = DateTime.now().setZone(z).offsetNameShort;
+          const displayLabel = z.replace('_', ' ').split('/').pop();
+          const displaySub = z.split('/')[0];
+          
+          html += `
+            <div class="tz-option-item ${isSelected ? 'selected' : ''}" onclick="window.selectTz('${z}')">
+              <span class="tz-option-name">${displayLabel} <span class="tz-option-sub">${displaySub}</span></span>
+              <span class="tz-option-offset">${offset}</span>
+            </div>
+          `;
+        });
+      }
+      
+      if (filteredQuick.length === 0 && filteredAll.length === 0) {
+        html = `<div style="padding: 1rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">No zones match search</div>`;
+      }
+      
+      listContainer.innerHTML = html;
     }
 
-    window.changeTimezone = function(value) {
+    // Toggle dropdown open/closed
+    window.toggleTzDropdown = function(event) {
+      event.stopPropagation();
+      const container = document.getElementById('tz-custom-select-container');
+      if (!container) return;
+      
+      const isActive = container.classList.contains('active');
+      
+      window.closeTzDropdown();
+      
+      if (!isActive) {
+        container.classList.add('active');
+        const searchInput = document.getElementById('tz-search-input');
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.focus();
+        }
+        renderTzOptions('');
+      }
+    };
+
+    window.closeTzDropdown = function() {
+      const container = document.getElementById('tz-custom-select-container');
+      if (container) {
+        container.classList.remove('active');
+      }
+    };
+
+    window.filterTzOptions = function(query) {
+      renderTzOptions(query);
+    };
+
+    window.selectTz = function(value) {
       viewMode = value;
+      selectedDateStr = null;
+      selectedSlot = null;
+      const panel = document.getElementById('booking-panel');
+      if (panel) panel.classList.remove('visible');
+      window.closeTzDropdown();
+      renderApp();
+    };
+
+    // Close dropdown on click outside
+    document.addEventListener('click', function(event) {
+      const container = document.getElementById('tz-custom-select-container');
+      if (container && !container.contains(event.target)) {
+        window.closeTzDropdown();
+      }
+    });
+
+    // Close dropdown on Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        window.closeTzDropdown();
+      }
+    });
+
+    window.prevMonth = function() {
+      calendarMonth = calendarMonth.minus({ months: 1 });
+      renderApp();
+    };
+
+    window.nextMonth = function() {
+      calendarMonth = calendarMonth.plus({ months: 1 });
+      renderApp();
+    };
+
+    window.selectDate = function(dateStr) {
+      selectedDateStr = dateStr;
       renderApp();
     };
 
     window.selectSlot = function(startIso, endIso) {
-      const displayTz = viewMode === 'host' ? currentData.timezone : DateTime.local().zoneName;
+      let displayTz = DateTime.local().zoneName;
+      if (viewMode === 'host') {
+        displayTz = currentData.timezone;
+      } else if (viewMode !== 'local') {
+        displayTz = viewMode;
+      }
       const startDt = DateTime.fromISO(startIso).setZone(displayTz);
       const endDt = DateTime.fromISO(endIso).setZone(displayTz);
       
       selectedSlot = { start: startIso, end: endIso };
       
-      // Update UI selection classes
       renderApp();
       
       // Show Booking Panel
@@ -655,9 +1290,9 @@
       await navigator.clipboard.writeText(message);
       
       const copyBtn = document.getElementById('booking-copy-btn');
-      copyBtn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
+      copyBtn.innerHTML = `${checkSvg} <span>Copied!</span>`;
       setTimeout(() => {
-        copyBtn.innerHTML = `<i class="fa-regular fa-copy"></i> Copy Request`;
+        copyBtn.innerHTML = `${copySvg} <span>Copy Request</span>`;
       }, 2000);
     };
 

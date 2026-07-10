@@ -1,38 +1,95 @@
 # Share Availability
 
-The **Share Availability** feature allows you to calculate and share your available time slots with clients and colleagues. You can generate a clean local Markdown schedule in your vault, or upload a secure online availability page hosted via GitHub Gist.
+!!! abstract "Feature Overview"
+    Calculate and share your available time slots with clients, colleagues, and collaborators without exposing your personal calendars! **Share Availability** scans your selected remote and local calendars, solves for overlapping event busy periods, and produces clean schedules. You can export a beautifully formatted Markdown schedule directly to your vault, or publish a secure, client-side interactive booking page using a secret [GitHub Gist](../settings/api.md).
 
 ---
 
 ## Output Formats
 
-### 1. Local Markdown Document
-Choosing **Export as Markdown File** creates a formatted `.md` schedule directly in your vault. 
-- Grouped by day with emojis (✨ for available slots, 🟥 for busy times).
-- Uses your display timezone configurations by default.
-- Automatically opens the document in a new workspace pane.
+=== "Local Markdown File"
+    Exporting as a Markdown file creates a formatted `.md` schedule directly in your vault. 
+    
+    *   **Visual Highlights**: Grouped chronologically by day using status emojis (✨ for open slots, 🟥 for busy periods).
+    *   **Timezone Aware**: Uses your configured display timezone by default.
+    *   **Instant Access**: The generated file is saved to your default export path and automatically opened in a new Obsidian workspace tab.
+    
+    #### Markdown Output Example
+    ```markdown
+    # Shared Availability
+    
+    ## Wednesday, May 20, 2026
+    - ✨ 09:00 AM - 10:30 AM (Available)
+    - 🟥 10:30 AM - 12:00 PM (Busy)
+    - ✨ 12:00 PM - 05:00 PM (Available)
+    ```
 
-### 2. Live Web Link
-Choosing **Generate Web Link** uploads your anonymized daily schedule to a secret, unlisted GitHub Gist under your own account.
-- **Zero Server Storage**: Your calendar slots are fetched client-side directly from GitHub. None of your data resides on our servers.
-- **Timezone Conversion**: Viewers can toggle between your timezone and their local browser timezone.
-- **Interactive Booking**: Viewers can click any available time slot to generate a copyable text booking request.
+=== "Secret Web Viewer Link"
+    Generating a web link uploads your anonymized slot schedule to a secret, unlisted GitHub Gist under your personal account.
+    
+    *   **Timezone Conversion**: Viewers can toggle between your timezone and their local browser timezone.
+    *   **Interactive Booking**: Viewers click any available slot to generate a pre-formatted copyable booking request (e.g. *"I would like to book the slot on Wednesday, May 20 from 2:00 PM to 3:00 PM"*).
+    *   **Data Minimization**: The Gist only contains anonymous start and end times (e.g. `2026-05-20T09:00:00Z`); no private event titles, descriptions, or calendars are ever uploaded.
 
 ---
 
-## Configuration
+## How It Works: The Slot Solver
 
-> [!NOTE]
-> All availability calculations automatically ignore all-day events (such as birthdays and holidays) so they do not block your weekly schedule.
+!!! info "Local Processing Pipeline"
+    The core [AvailabilityService](../../architecture/system/features/availability-architecture.md#1-slot-solver-availabilityservice) uses a client-side layout solver:
+    1.  **Gathers Calendar Events**: Queries all checked calendar sources (such as [Google Calendar](../calendars/gcal.md), [CalDAV](../calendars/caldav.md), or [ICS](../calendars/ics.md)) within the requested window.
+    2.  **Ignores All-Day Events**: All-day items (e.g., birthdays, holidays) are automatically skipped so they do not block your day.
+    3.  **Merges Busy Intervals**: Adjacent or overlapping busy events are combined into continuous blocked periods.
+    4.  **Generates Free Slots**: Computes the remaining time gaps that lie within your configured daily start/end bounds.
 
-### Setup Settings
-You can set default options by opening **Settings** -> **Full Calendar** -> [Integrations](file:///d:/Codes/plugin-full-calendar/src/ui/settings/SettingsTab.tsx#L743):
-- **Default Export Path**: Specify a default folder for your Markdown files.
-- **Default Daily Time Range**: Pre-populate daily start and end hours (e.g., `09:00` to `17:00`).
-- **GitHub Personal Access Token**: Input your token to enable web sharing. 
+---
 
-> [!IMPORTANT]
-> To share schedules online, you must supply a GitHub token with the `gist` permission. You can generate a pre-configured token in one click using the helper link in the settings panel or the share dialog.
+## Configuration Settings
 
-### Date Range Performance Warning
-When generating availability, selecting a date range longer than **90 days** will cause a warning notice to display in the modal. This is a reminder that computing available slots day-by-day over very large intervals can cause temporary performance degradation in Obsidian. You are still allowed to proceed if needed.
+To customize the default behavior, open [Settings → Integrations](../settings/sources.md) and scroll to **Availability Sharing**:
+
+| Setting | Purpose | Default / Example |
+|---|---|---|
+| **Default Export Path** | Vault folder path where Markdown schedules are saved. | `calendars/availability` |
+| **Default Daily Start Time** | Start hour for calculated daily slots. | `09:00` |
+| **Default Daily End Time** | End hour for calculated daily slots. | `17:00` |
+| **GitHub Access Token** | Personal token with `gist` scope to upload web schedules. | `github_pat_...` |
+
+### Setting Up Web Sharing
+
+!!! success "Privacy First: Zero Server Storage"
+    All availability computations are executed locally. Published web links are hosted entirely serverless using secret GitHub Gists. **No schedule, calendar, or user data is ever sent to or stored on our servers.**
+
+To authorize online sharing:
+1.  Click the helper link in the settings panel or the share modal to open the [GitHub Token Creation Page](https://github.com/settings/tokens/new?scopes=gist&description=Obsidian%20Full%20Calendar%20Availability%20Sharing).
+2.  Generate a Personal Access Token (Classic) with the **`gist`** scope enabled.
+3.  Copy and paste the token into the plugin's settings.
+
+---
+
+## Safety Invariants & Warnings
+
+!!! warning "Performance Boundaries"
+    Generating schedules for date ranges longer than **90 days** triggers a performance warning notice in the modal. Scanning and calculating availability slot-by-slot over large ranges can cause temporary Obsidian lag. For maximum speed, keep ranges within 30–60 days.
+
+!!! note "Secret Gist Security"
+    Gists generated by this feature are **secret** (unlisted), meaning they are not indexed by search engines. However, anyone who possesses the generated URL has read-access to the anonymous JSON payload. You can delete or manage published schedules at any time from your GitHub Gists dashboard.
+
+---
+
+### 📚 Related Resources
+
+=== "Integrations & Setup"
+    *   [Google Calendar Setup](../calendars/gcal.md) — Set up two-way Google Calendar synchronization.
+    *   [CalDAV Sync](../calendars/caldav.md) — Connect iCloud, Nextcloud, Fastmail, and CalDAV servers.
+    *   [ICS Calendars](../calendars/ics.md) — Integrate remote and local `.ics` files.
+    *   [Outlook Setup](../calendars/outlook.md) — Integrate Outlook/Exchange accounts.
+
+=== "Developer Reference"
+    *   [Availability Sharing Architecture](../../architecture/system/features/availability-architecture.md) — Pipeline details, slot solving algorithms, and security guidelines.
+    *   [API Security](../settings/api.md) — Credentials management and token security specs.
+
+---
+
+[Share Availability](availability.md) · [ICS Export](ics-export.md) · [Break Timer](break-timer.md) · [Event Linked Notes](event-linked-notes.md) · [Back to Index](../index.md)
+

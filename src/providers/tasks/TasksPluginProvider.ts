@@ -197,44 +197,52 @@ export class TasksPluginProvider
   static getConfigurationComponent(): FCReactComponent<TasksConfigComponentProps> {
     return TasksConfigComponent;
   }
-  /**
-   * Adds or removes the done date (✅) from a task's markdown line.
-   * @param originalMarkdown The original line of the task.
-   * @param isDone The desired completion state.
-   * @returns The modified task line.
-   */
-  private setDoneState(originalMarkdown: string, isDone: boolean): string {
-    const doneDateRegex = /\s*✅\s*\d{4}-\d{2}-\d{2}/;
-    const blockLinkRegex = /(\s*\^[a-zA-Z0-9-]+)$/;
-    let updated = originalMarkdown;
+  private async toggleTaskWithTasksApi(task: CalendarTask, isDone: boolean): Promise<void> {
+    const tasksApi = (
+      this.plugin.app as unknown as {
+        plugins?: {
+          plugins?: Record<
+            string,
+            {
+              apiV1?: {
+                executeToggleTaskDoneCommand?: (line: string, path: string) => string;
+              };
+            }
+          >;
+        };
+      }
+    ).plugins?.plugins?.['obsidian-tasks-plugin']?.apiV1;
 
-    if (isDone) {
-      // Change '- [ ]' to '- [x]'
-      updated = updated.replace(/^- \[ \]/, '- [x]');
-      // Add done date if not present
-      if (!doneDateRegex.test(updated)) {
-        const doneDate = DateTime.now().toFormat('yyyy-MM-dd');
-        const doneComponent = ` ✅ ${doneDate}`;
-        const blockLinkMatch = updated.match(blockLinkRegex);
-        if (blockLinkMatch) {
-          const contentWithoutBlockLink = updated.replace(blockLinkRegex, '');
-          updated = `${contentWithoutBlockLink.trim()}${doneComponent}${blockLinkMatch[1]}`;
-        } else {
-          updated = `${updated.trim()}${doneComponent}`;
-        }
-      }
-    } else {
-      // Change '- [x]' to '- [ ]'
-      updated = updated.replace(/^- \[x\]/, '- [ ]');
-      // Remove done date if present
-      updated = updated.replace(doneDateRegex, '').trim();
-      // Preserve block link if present
-      const blockLinkMatch = originalMarkdown.match(blockLinkRegex);
-      if (blockLinkMatch && !updated.endsWith(blockLinkMatch[1])) {
-        updated += blockLinkMatch[1];
-      }
+    if (typeof tasksApi?.executeToggleTaskDoneCommand !== 'function') {
+      throw new Error('Unable to toggle task status: the Obsidian Tasks API is unavailable.');
     }
-    return updated;
+    const executeToggleTaskDoneCommand = tasksApi.executeToggleTaskDoneCommand;
+
+    const file = this.app.getFileByPath(task.filePath);
+    if (!file) throw new Error(`File not found: ${task.filePath}`);
+
+    await this.app.rewrite(file, content => {
+      const newline = content.includes('\r\n') ? '\r\n' : '\n';
+      const lines = content.split(/\r?\n/);
+      const lineIndex = task.lineNumber - 1;
+      const currentLine = lines[lineIndex];
+      if (currentLine !== task.originalMarkdown) {
+        throw new Error(
+          'Unable to toggle task status: the task line changed. Wait for sync and try again.'
+        );
+      }
+
+      const standardCheckbox = currentLine.match(/^\s*[-*+]\s+\[([ xX])\]/);
+      if (standardCheckbox) {
+        const currentIsDone = standardCheckbox[1].toLowerCase() === 'x';
+        if (currentIsDone === isDone) return content;
+      }
+
+      const replacement = executeToggleTaskDoneCommand(currentLine, task.filePath);
+      const replacementLines = replacement.split(/\r?\n/);
+      lines.splice(lineIndex, 1, ...replacementLines);
+      return lines.join(newline);
+    });
   }
 
   public async toggleComplete(eventId: string, isDone: boolean): Promise<boolean> {
@@ -251,16 +259,7 @@ export class TasksPluginProvider
         throw new Error(`Task with persistent ID ${event.uid} not found in provider cache.`);
       }
 
-      const newLine = this.setDoneState(task.originalMarkdown, isDone);
-
-      // If the line didn't change, we don't need to do anything.
-      if (newLine === task.originalMarkdown) {
-        return true;
-      }
-
-      // 1. Perform the I/O to update the file.
-      // The line number on the task object is 1-based, which is what replaceTaskInFile expects.
-      await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
+      await this.toggleTaskWithTasksApi(task, isDone);
 
       // 2. Optimistically update the cache.
       // The file watcher will eventually confirm this, but we want immediate UI feedback.
@@ -273,7 +272,6 @@ export class TasksPluginProvider
       };
 
       // Update our internal task model to match the optimistic state.
-      task.originalMarkdown = newLine;
       task.isDone = isDone;
 
       // Push the update to the EventCache.
@@ -722,13 +720,7 @@ export class TasksPluginProvider
         throw new Error(`Task with persistent ID ${taskId} not found in provider cache.`);
       }
 
-      const newLine = this.setDoneState(task.originalMarkdown, isDone);
-      if (newLine === task.originalMarkdown) {
-        return true;
-      }
-
-      await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
-      task.originalMarkdown = newLine;
+      await this.toggleTaskWithTasksApi(task, isDone);
       task.isDone = isDone;
       PluginState.getProviderRegistry().refreshBacklogViews();
       return true;

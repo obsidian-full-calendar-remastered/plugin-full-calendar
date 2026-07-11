@@ -14,6 +14,7 @@ import { PluginState } from '../../../core/PluginState';
 import type EventCache from '../../../core/EventCache';
 import { DEFAULT_SETTINGS, FullCalendarSettings } from '../../../types/settings';
 import type { ProviderRegistry } from '../../ProviderRegistry';
+import type { CalendarTask } from '../taskPayloadAdapter';
 
 // Mock the dependencies
 jest.mock('../../../ObsidianAdapter');
@@ -37,7 +38,10 @@ type MockPlugin = {
       plugins?: Record<
         string,
         {
-          apiV1?: { editTaskLineModal: jest.Mock };
+          apiV1?: {
+            editTaskLineModal?: jest.Mock;
+            executeToggleTaskDoneCommand?: jest.Mock;
+          };
           settings?: { globalQuery?: string };
         }
       >;
@@ -137,6 +141,125 @@ describe('TasksPluginProvider', () => {
         allowGenericTaskActions: false,
         providesNativeTaskSemantics: true
       });
+    });
+  });
+
+  describe('task completion through the Tasks API', () => {
+    const task = (originalMarkdown: string, lineNumber = 1, isDone = false) =>
+      ({
+        id: `Tasks.md::${lineNumber - 1}`,
+        title: 'Task',
+        filePath: 'Tasks.md',
+        lineNumber,
+        originalMarkdown,
+        isDone
+      }) as CalendarTask;
+
+    const toggle = async (calendarTask: CalendarTask, isDone = true) => {
+      (provider as unknown as { allTasks: CalendarTask[] }).allTasks = [calendarTask];
+      return provider.setTaskBacklogItemComplete(calendarTask.id, isDone);
+    };
+
+    const arrangeFile = (content: string, replacement?: string) => {
+      let fileContent = content;
+      mockApp.getFileByPath.mockReturnValue({ path: 'Tasks.md' });
+      mockApp.rewrite.mockImplementation(
+        async (_file: unknown, rewrite: (content: string) => string | Promise<string>) => {
+          fileContent = await rewrite(fileContent);
+        }
+      );
+      const executeToggleTaskDoneCommand = replacement
+        ? jest.fn().mockReturnValue(replacement)
+        : undefined;
+      mockPlugin.app.plugins = {
+        plugins: {
+          'obsidian-tasks-plugin': {
+            apiV1: { executeToggleTaskDoneCommand }
+          }
+        }
+      };
+      return {
+        content: () => fileContent,
+        executeToggleTaskDoneCommand
+      };
+    };
+
+    it('writes the completed markdown returned for a normal task', async () => {
+      const original = '- [ ] 普通任务 ⏳ 2026-07-07';
+      const completed = '- [x] 普通任务 ⏳ 2026-07-07 ✅ 2026-07-10';
+      const file = arrangeFile(original, completed);
+
+      await expect(toggle(task(original))).resolves.toBe(true);
+
+      expect(file.content()).toBe(completed);
+      expect(file.executeToggleTaskDoneCommand).toHaveBeenCalledWith(original, 'Tasks.md');
+    });
+
+    it('uses the live markdown state when the Tasks cache completion state is stale', async () => {
+      const original = '- [ ] stale cache task ⏳ 2026-07-07';
+      const completed = '- [x] stale cache task ⏳ 2026-07-07 ✅ 2026-07-10';
+      const file = arrangeFile(original, completed);
+
+      await expect(toggle(task(original, 1, true), true)).resolves.toBe(true);
+
+      expect(file.content()).toBe(completed);
+      expect(file.executeToggleTaskDoneCommand).toHaveBeenCalledTimes(1);
+    });
+
+    it('writes every line returned for a recurring task', async () => {
+      const original = '- [ ] 棉兰（周二） 🔁 every week on Tuesday ⏳ 2026-07-07';
+      const replacement =
+        '- [x] 棉兰（周二） 🔁 every week on Tuesday ⏳ 2026-07-07 ✅ 2026-07-10\n' +
+        '- [ ] 棉兰（周二） 🔁 every week on Tuesday ⏳ 2026-07-14';
+      const file = arrangeFile(`before\n${original}\nafter`, replacement);
+
+      await expect(toggle(task(original, 2))).resolves.toBe(true);
+
+      expect(file.content()).toBe(`before\n${replacement}\nafter`);
+    });
+
+    it('preserves indentation and CRLF when Tasks returns recurring subtasks', async () => {
+      const original = '    - [ ] 子任务 🔁 every day ⏳ 2026-07-07';
+      const replacement =
+        '    - [x] 子任务 🔁 every day ⏳ 2026-07-07 ✅ 2026-07-10\n' +
+        '    - [ ] 子任务 🔁 every day ⏳ 2026-07-08';
+      const file = arrangeFile(`parent\r\n${original}\r\nend`, replacement);
+
+      await expect(toggle(task(original, 2))).resolves.toBe(true);
+
+      expect(file.content()).toBe(`parent\r\n${replacement.replace(/\n/g, '\r\n')}\r\nend`);
+    });
+
+    it('keeps the Tasks API block ID output unchanged', async () => {
+      const original = '- [ ] 循环任务 🔁 every week ⏳ 2026-07-07 ^task-id';
+      const replacement =
+        '- [x] 循环任务 🔁 every week ⏳ 2026-07-07 ✅ 2026-07-10 ^task-id\n' +
+        '- [ ] 循环任务 🔁 every week ⏳ 2026-07-14';
+      const file = arrangeFile(original, replacement);
+
+      await expect(toggle(task(original))).resolves.toBe(true);
+
+      expect(file.content()).toBe(replacement);
+      expect(file.content().match(/\^task-id/g)).toHaveLength(1);
+    });
+
+    it('does not modify a recurring task when the Tasks API is unavailable', async () => {
+      const original = '- [ ] 循环任务 🔁 every week ⏳ 2026-07-07';
+      const file = arrangeFile(original);
+
+      await expect(toggle(task(original))).resolves.toBe(false);
+      expect(file.content()).toBe(original);
+      expect(mockApp.rewrite).not.toHaveBeenCalled();
+    });
+
+    it('refuses to write when the cached task line is stale', async () => {
+      const cached = '- [ ] old task ⏳ 2026-07-07';
+      const current = '- [ ] changed task ⏳ 2026-07-07';
+      const file = arrangeFile(current, '- [x] old task ⏳ 2026-07-07 ✅ 2026-07-10');
+
+      await expect(toggle(task(cached))).resolves.toBe(false);
+      expect(file.content()).toBe(current);
+      expect(file.executeToggleTaskDoneCommand).not.toHaveBeenCalled();
     });
   });
 
@@ -523,12 +646,20 @@ describe('TasksPluginProvider', () => {
 
     it('marks backlog tasks complete through the backlog checkbox action', async () => {
       const file = { path: 'Daily.md' };
+      const completed = '- [x] Backlog task ✅ 2026-07-10';
       mockApp.getFileByPath.mockReturnValue(file);
       mockApp.rewrite.mockImplementation((_file: unknown, update: (content: string) => string) => {
         const updated = update('- [ ] Backlog task');
-        expect(updated).toMatch(/^- \[x\] Backlog task ✅ \d{4}-\d{2}-\d{2}$/);
+        expect(updated).toBe(completed);
         return Promise.resolve();
       });
+      mockPlugin.app.plugins = {
+        plugins: {
+          'obsidian-tasks-plugin': {
+            apiV1: { executeToggleTaskDoneCommand: jest.fn().mockReturnValue(completed) }
+          }
+        }
+      };
       mockPlugin.app.workspace.trigger.mockImplementation(
         (eventName: string, callback: (data: unknown) => void) => {
           if (eventName === 'obsidian-tasks-plugin:request-cache-update') {

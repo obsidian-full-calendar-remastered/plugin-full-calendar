@@ -203,17 +203,30 @@ export class GoogleAuthManager {
     refreshToken: string;
     accessToken: string;
     expiryDate: number;
+    grantedScopes: string;
   }): Promise<GoogleAccount> {
     const userEmail = await this.getUserEmail(auth.accessToken);
+    const existingAccounts = PluginState.getSettings().googleAccounts || [];
+    const existingAccount = existingAccounts.find(a => a.id === `gcal_${userEmail}`);
+
+    // Merge new scopes with any previously granted scopes so that re-authorizing
+    // one provider (e.g. tasks) never forgets scopes from another (e.g. calendar).
+    const mergedScopeTokens = Array.from(
+      new Set([
+        ...(existingAccount?.grantedScopes ?? '').split(' ').filter(Boolean),
+        ...auth.grantedScopes.split(' ').filter(Boolean)
+      ])
+    );
+
     const newAccount: GoogleAccount = {
       id: `gcal_${userEmail}`,
       email: userEmail,
       refreshToken: null,
       accessToken: null,
-      expiryDate: auth.expiryDate
+      expiryDate: auth.expiryDate,
+      grantedScopes: mergedScopeTokens.join(' ')
     };
 
-    const existingAccounts = PluginState.getSettings().googleAccounts || [];
     const index = existingAccounts.findIndex(a => a.id === newAccount.id);
     if (index !== -1) {
       existingAccounts[index] = newAccount;

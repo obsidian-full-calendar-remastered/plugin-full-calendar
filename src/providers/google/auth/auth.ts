@@ -54,7 +54,7 @@ type DesktopUrlModule = {
 };
 
 interface GlobalAuthState {
-  pkce: { verifier: string; state: string } | null;
+  pkce: { verifier: string; state: string; scopes: string } | null;
   server: DesktopServer | null;
   waitingModal: LoadingModal | null;
 }
@@ -253,8 +253,8 @@ export async function startGoogleLogin(
   const verifier = generateRandomString(128);
   const challenge = await generateCodeChallenge(verifier);
 
-  // Store the verifier and state to be used in the callback.
-  oauthState.pkce = { verifier, state };
+  // Store the verifier and state now; scopes will be added after computation below.
+  oauthState.pkce = { verifier, state, scopes: '' };
 
   const clientId = settings.useCustomGoogleClient ? settings.googleClientId : PUBLIC_CLIENT_ID;
   const redirectUri = isMobile ? MOBILE_REDIRECT_URI : DESKTOP_REDIRECT_URI;
@@ -271,7 +271,23 @@ export async function startGoogleLogin(
     return;
   }
 
-  const scopes = flowType === 'tasks' ? TASKS_SCOPES : CALENDAR_SCOPES;
+  // Start with the scopes required for the requested flow type.
+  const requestedScopes = flowType === 'tasks' ? TASKS_SCOPES : CALENDAR_SCOPES;
+
+  // Merge in any scopes already granted to existing accounts so that re-authorizing
+  // one provider (e.g. tasks) does not revoke the other provider's access (e.g. calendar)
+  // on the same Google account. Google replaces the token's scopes on every OAuth flow,
+  // so we must always include the union of all previously-granted scopes.
+  // See: https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/332
+  const existingGrantedScopes = (PluginState.getSettings().googleAccounts || [])
+    .flatMap(a => (a.grantedScopes ?? '').split(' '))
+    .filter(Boolean);
+  const allScopeTokens = Array.from(
+    new Set([...requestedScopes.split(' '), ...existingGrantedScopes])
+  );
+  const scopes = allScopeTokens.join(' ');
+  // Update pkce with the computed scopes so they are available in the callback.
+  oauthState.pkce.scopes = scopes;
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -385,7 +401,8 @@ export async function exchangeCodeForToken(
     await authManager.addAccount({
       refreshToken: data.refresh_token,
       accessToken: data.access_token,
-      expiryDate: Date.now() + data.expires_in * 1000
+      expiryDate: Date.now() + data.expires_in * 1000,
+      grantedScopes: oauthState.pkce!.scopes
     });
     // --- END REPLACEMENT BLOCK ---
 

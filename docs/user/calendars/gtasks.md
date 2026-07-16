@@ -3,7 +3,7 @@
 Manage and schedule your tasks from Google Tasks directly inside Obsidian using **OAuth 2.0 authentication**.
 
 !!! success "Verified Integration"
-    Google Tasks shares the same secure, verified Google OAuth infrastructure as our Google Calendar integration. You only need to authenticate your Google Account once to gain access to both Google Calendar and Google Tasks.
+    Google Tasks shares the same secure, verified Google OAuth infrastructure as our Google Calendar integration. Each provider requests only its own required permissions, and the plugin automatically combines (unions) scopes across providers on the same account so that connecting Google Tasks never removes your Google Calendar access, and vice versa.
 
 ---
 
@@ -13,7 +13,7 @@ Manage and schedule your tasks from Google Tasks directly inside Obsidian using 
 If you haven't already connected a Google account:
 1. Open **[Full Calendar Settings](../settings/index.md) → [Calendar Sources](../settings/sources.md)**.
 2. Under **Integrations**, ensure your Google Account is connected.
-3. If you connected your account in a previous version of the plugin, you may need to **Reconnect** the account to authorize the new Google Tasks API permission scope (`https://www.googleapis.com/auth/tasks`).
+3. If you connected your account in a previous version of the plugin (before v0.13.5), you may need to **Reconnect** the account once to rebuild the permission record that lets both Google Calendar and Google Tasks coexist on the same account without revoking each other.
 
 ### 2️⃣ Adding Google Tasks Calendars
 1. In the **Calendars** section of the settings, select **Google Tasks** from the source type dropdown and click **+**.

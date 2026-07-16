@@ -55,6 +55,7 @@ If you prefer to maintain your own OAuth Client ID and Secret for privacy or dev
 ## Feature Notes
 
 - **Two-Way Sync**: Changes made in Obsidian (create, edit, delete) are instantly reflected in Google Calendar.
+- **Google Tasks Coexistence**: Connecting [Google Tasks](gtasks.md) under the same Google account is fully safe. Each provider requests only its own OAuth permissions, and the plugin automatically preserves both providers' access — connecting Tasks never removes your Calendar authorization, and vice versa.
 - **Video Conferencing**: Automatically extracts meeting links (e.g., Google Meet, Zoom) from `conferenceData` and injects them into the event's location or description (rendered as clickable hyperlinks in the [Event Details modal](../events/manage.md#video-conference--linkification-support)). See the [Video Conference & Linkification Guide](../events/manage.md#video-conference--linkification-support).
 - **Recurring Events**: Supports exceptions and cancellations. Deleting a single instance in a series creates a proper "cancelled" instance in the Google API.
 - **Timezone Management**: Events are normalized to your [Display Timezone](../settings/fc_config.md) while respecting the original source timezone for recurrence rules.

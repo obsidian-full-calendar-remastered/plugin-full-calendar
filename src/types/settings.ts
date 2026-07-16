@@ -145,6 +145,10 @@ export interface GoogleAccount {
   refreshToken: string | null;
   accessToken: string | null;
   expiryDate: number | null;
+  /** Space-separated OAuth scopes granted to this account. Used to compute the union scope
+   *  when re-authorizing so that adding one provider (e.g. tasks) never revokes another
+   *  provider's access (e.g. calendar) on the same Google account. */
+  grantedScopes?: string;
 }
 
 export interface MicrosoftAccount {

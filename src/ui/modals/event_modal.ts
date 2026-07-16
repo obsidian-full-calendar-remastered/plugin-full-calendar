@@ -30,6 +30,7 @@ import { EventDetails } from './EventDetails';
 import FullCalendarPlugin from '../../main';
 import { ConfirmModal } from './ConfirmModal';
 import { openOrCreateLinkedNote } from '../../utils/eventActions';
+import { openLinkedFileInExistingLeafOrNew } from '../../utils/leafUtils';
 import { t } from '../../features/i18n/i18n';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
 
@@ -211,8 +212,7 @@ export function launchEditModal(
           if (location) {
             const file = plugin.app.vault.getAbstractFileByPath(location.path);
             if (file instanceof TFile) {
-              const leaf = plugin.app.workspace.getLeaf(true);
-              await leaf.openFile(file);
+              await openLinkedFileInExistingLeafOrNew(plugin.app, file);
             }
           } else {
             await openOrCreateLinkedNote(plugin, calId, eventToEdit, true, instanceDate);
@@ -287,8 +287,7 @@ export function launchEventDetailsModal(
               if (location) {
                 const file = plugin.app.vault.getAbstractFileByPath(location.path);
                 if (file instanceof TFile) {
-                  const leaf = plugin.app.workspace.getLeaf(true);
-                  await leaf.openFile(file);
+                  await openLinkedFileInExistingLeafOrNew(plugin.app, file);
                 }
               } else if (hasCreateLinkedNote) {
                 await openOrCreateLinkedNote(plugin, calendarId, event, false, instanceDate);

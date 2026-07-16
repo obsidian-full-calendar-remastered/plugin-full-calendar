@@ -19,6 +19,8 @@ import EventCache from '../core/EventCache';
 import { MarkdownView, TFile, Vault, Workspace } from 'obsidian';
 import { t } from '../features/i18n/i18n';
 
+export { openLinkedFileInExistingLeafOrNew } from './leafUtils';
+
 /**
  * Open a file in a NEW PANE (new tab view) to a given event.
  * @param cache

@@ -1638,6 +1638,7 @@
       "contextMenu": {
         "turnIntoTask": "Transformer en tâche",
         "removeCheckbox": "Supprimer la case à cocher",
+        "openLinkedNote": "Ouvrir la note liée",
         "goToNote": "Aller à la note",
         "delete": "Supprimer",
         "noActions": "Aucune action disponible sur les événements distants"

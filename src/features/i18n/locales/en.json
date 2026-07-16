@@ -1705,6 +1705,7 @@
       "contextMenu": {
         "turnIntoTask": "Turn into task",
         "removeCheckbox": "Remove checkbox",
+        "openLinkedNote": "Open linked note",
         "goToNote": "Go to note",
         "delete": "Delete",
         "noActions": "No actions available on remote events"

@@ -10,6 +10,7 @@ import { findUniquePath, sanitizeTitleForFilename } from '../../providers/utils/
 import { modifyFrontmatterString } from '../../providers/fullnote/frontmatter';
 import FullCalendarPlugin from '../../main';
 import { chooseTemplatePreset } from './TemplatePresetSelectModal';
+import { openLinkedFileInExistingLeafOrNew } from '../../utils/leafUtils';
 
 const linkedNoteCreationPromises = new Map<string, Promise<TFile | null>>();
 
@@ -212,8 +213,7 @@ export async function openOrCreateLinkedNote(
       settings.linkedNotesDirectory
     );
     if (titleFile) {
-      const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);
-      await leaf.openFile(titleFile);
+      await openLinkedFileInExistingLeafOrNew(plugin.app, titleFile);
       return;
     }
   }
@@ -225,8 +225,7 @@ export async function openOrCreateLinkedNote(
       identityInstanceDate
     );
     if (existingFile) {
-      const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);
-      await leaf.openFile(existingFile);
+      await openLinkedFileInExistingLeafOrNew(plugin.app, existingFile);
       return;
     }
   }
@@ -266,8 +265,8 @@ export async function openOrCreateLinkedNote(
         templateContentOverride
       );
       if (file) {
-        const leaf = plugin.app.workspace.getLeaf(openInNewLeaf);
-        await leaf.openFile(file);
+        // Newly created notes cannot already be open, so this always opens a fresh tab.
+        await openLinkedFileInExistingLeafOrNew(plugin.app, file);
       }
     } catch (e) {
       console.error(e);

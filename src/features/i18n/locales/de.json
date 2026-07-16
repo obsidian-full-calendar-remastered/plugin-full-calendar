@@ -1638,6 +1638,7 @@
       "contextMenu": {
         "turnIntoTask": "In eine Aufgabe verwandeln",
         "removeCheckbox": "Kontrollkästchen entfernen",
+        "openLinkedNote": "Verknüpfte Notiz öffnen",
         "goToNote": "Gehe zur Notiz",
         "delete": "Löschen",
         "noActions": "Keine Aktionen für Remote-Ereignisse verfügbar"

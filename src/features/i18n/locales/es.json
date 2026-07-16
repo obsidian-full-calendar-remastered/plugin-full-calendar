@@ -1638,6 +1638,7 @@
       "contextMenu": {
         "turnIntoTask": "Convertir en tarea",
         "removeCheckbox": "Quitar casilla",
+        "openLinkedNote": "Abrir nota vinculada",
         "goToNote": "Ir a la nota",
         "delete": "Eliminar",
         "noActions": "No hay acciones disponibles en eventos remotos"

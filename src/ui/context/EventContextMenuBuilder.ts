@@ -9,6 +9,8 @@ import {
   ProviderEventContext
 } from '../../providers/Provider';
 import { t } from '../../features/i18n/i18n';
+import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
+import { OFCEvent } from '../../types';
 
 type ActionGroup = EventContextAction[];
 
@@ -103,7 +105,7 @@ export async function openEventContextMenu(
       hasPriorItems
     );
     addActionGroup(menu, await buildProviderActions(provider, context), hasPriorItems);
-    addActionGroup(menu, buildNavigationActions(plugin, context), hasPriorItems);
+    addActionGroup(menu, await buildNavigationActions(plugin, context), hasPriorItems);
     addActionGroup(menu, buildDeleteActions(plugin, context), hasPriorItems);
   }
 
@@ -186,12 +188,35 @@ async function buildProviderActions(
   return (await provider.getEventContextActions?.(context)) ?? [];
 }
 
-function buildNavigationActions(
+async function buildNavigationActions(
   plugin: FullCalendarPlugin,
   context: ProviderEventContext
-): ActionGroup {
-  return [
-    {
+): Promise<ActionGroup> {
+  const actions: ActionGroup = [];
+
+  // For providers that support linked notes (Google, CalDAV, Outlook, ICS, Holidays),
+  // offer a single "Open linked note" action that creates the note when none exists yet.
+  const provider = PluginState.getProviderRegistry().getInstance(context.calendarId);
+  const linkedNoteProvider = provider as unknown as {
+    linkedNoteIndex?: LinkedNoteIndex;
+    createLinkedNote?: (event: OFCEvent, instanceDate?: string) => Promise<unknown>;
+  };
+  if (provider && typeof linkedNoteProvider.createLinkedNote === 'function') {
+    // Derive the instanceDate for recurring events the same way buildDeleteActions does.
+    const instanceDate =
+      context.start instanceof Date ? context.start.toISOString().slice(0, 10) : undefined;
+    actions.push({
+      id: 'navigation:open-linked-note',
+      title: t('ui.view.contextMenu.openLinkedNote'),
+      icon: 'file-text',
+      run: async () => {
+        const { openOrCreateLinkedNote } = await import('../../utils/eventActions');
+        await openOrCreateLinkedNote(plugin, context.calendarId, context.event, true, instanceDate);
+      }
+    });
+  } else {
+    // Local-note providers: navigate directly to the note file.
+    actions.push({
       id: 'navigation:go-to-note',
       title: t('ui.view.contextMenu.goToNote'),
       icon: 'file-text',
@@ -203,8 +228,10 @@ function buildNavigationActions(
           openFileForEvent(PluginState.getCache(), plugin.app, context.eventId)
         );
       }
-    }
-  ];
+    });
+  }
+
+  return actions;
 }
 
 function buildDeleteActions(

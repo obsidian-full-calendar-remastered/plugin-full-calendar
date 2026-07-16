@@ -10,6 +10,10 @@
 | `LinkedNoteIndex` | Reactive index matching remote event UIDs and recurrence IDs to Obsidian file paths. Supports compound key mapping (`eventUid::recurrenceId`) for instance-level note lookup. | Listens to Obsidian vault events; decoupled from [EventStore](../event-storage.md#eventstore-model). |
 | `TemplateEngine` | Renders a clean markdown body from event fields using a custom layout. | Pure functional renderer; no file system or vault side effects. |
 | `createLinkedNoteForProvider` | Centralized helper that resolves or creates a linked note according to the configured strategy. | Combines exact title-path lookup, `LinkedNoteIndex`, `TemplateEngine`, `noteUtils`, and frontmatter utilities in a single DRY entry point. |
+| `openOrCreateLinkedNote` | Single open/create orchestrator shared by all three UI entry points (popup note button, Ctrl/Cmd+click, context menu). Delegates to `createLinkedNote` on the provider; uses `openLinkedFileInExistingLeafOrNew` to reveal an already-open tab. | Consumes provider and workspace APIs; no direct vault I/O. |
+| `openLinkedFileInExistingLeafOrNew` | Tab-reuse utility. Walks `getLeavesOfType('markdown')` for an already-open leaf; reveals and focuses it. Falls through to a fresh tab only when the file is not yet open. Kept in `utils/leafUtils.ts` to avoid a circular import with `eventActions`. | Pure Obsidian workspace adapter; no event or note business logic. |
+| `EventContextMenuBuilder` | Builds the right-click context menu. For providers with `createLinkedNote`, the `buildNavigationActions` function replaces the local-only "Go to note" item with an "Open linked note" item that calls `openOrCreateLinkedNote` with the correct `instanceDate` for recurring events. | UI-only; reads provider capabilities from `ProviderRegistry`. |
+| `ViewEventInteractionHandler` | Handles all direct calendar interactions. Ctrl/Cmd+click now falls through to `openOrCreateLinkedNote` when the provider supports linked notes but no note exists yet. | Delegates to `openOrCreateLinkedNote`; no direct vault I/O. |
 | `noteUtils` | General file-handling, title sanitization, and YAML serialization. | Shared file utility layer; DRY wrapper around Obsidian API. |
 | Remote Providers | Delegate to `createLinkedNoteForProvider` for note creation; query `LinkedNoteIndex` during event reads. | Zero manual frontmatter construction in providers. |
 
@@ -96,19 +100,33 @@ To support multiple custom layouts based on user choice:
 
 ```mermaid
 sequenceDiagram
-    participant UI as EventDetails UI (Modal)
+    participant UI as UI Entry Point<br/>(Popup / Ctrl+click / Context Menu)
     participant LN as linkedNotes.ts (Centralized)
+    participant LF as leafUtils.ts (Tab Reuse)
     participant GP as GoogleProvider / Remote Provider
     participant LNI as LinkedNoteIndex
     participant TE as TemplateEngine
     participant V as Obsidian Vault
+
+    Note over UI,V: All Entry Points — Existing Note (tab reuse)
+    UI->>LN: openOrCreateLinkedNote(plugin, calId, event, _, instanceDate)
+    LN->>LNI: getFileForEventAfterHydration(uid, instanceDate)
+    LNI-->>LN: returns existing TFile
+    LN->>LF: openLinkedFileInExistingLeafOrNew(app, file)
+    LF->>LF: getLeavesOfType('markdown') — find open leaf
+    alt leaf already open
+        LF-->>UI: revealLeaf + setActiveLeaf (no new tab)
+    else not open
+        LF-->>UI: getLeaf(true).openFile(file)
+    end
 
     Note over UI,V: Name-Based Resolution
     UI->>LN: open/create linked note
     LN->>V: check exact sanitized title path
     alt title file exists
         LN->>V: update managed calendar/UID properties only
-        LN-->>UI: open existing title file
+        LN-->>LF: openLinkedFileInExistingLeafOrNew
+        LF-->>UI: open/reveal file
     else title file absent
         LN->>LNI: fallback lookup by UID
     end
@@ -118,8 +136,8 @@ sequenceDiagram
     LNI-->>GP: returns local file path (if exists)
     GP-->>UI: returns event details containing note path
 
-    Note over UI,V: Write Path (Creation)
-    UI->>LN: openOrCreateLinkedNote(plugin, calId, event, openInNewLeaf, instanceDate)
+    Note over UI,V: Write Path (Creation — always fresh tab)
+    UI->>LN: openOrCreateLinkedNote(plugin, calId, event, _, instanceDate)
     LN->>GP: provider.createLinkedNote(event, instanceDate)
     GP->>LN: createLinkedNoteForProvider({app, event, calendarId, ..., instanceDate})
     LN->>TE: TemplateEngine.render(template, event, calendarName, instanceDate)
@@ -127,7 +145,8 @@ sequenceDiagram
     LN->>V: ObsidianIO.create(path, frontmatter + body)
     V-->>LNI: trigger vault "create" / "changed" event
     LNI->>LNI: Re-index new note UID mapping reactively
-    LN-->>UI: opens newly created Obsidian note
+    LN->>LF: openLinkedFileInExistingLeafOrNew(app, newFile)
+    LF-->>UI: getLeaf(true).openFile(newFile)  [always fresh — brand-new file]
 ```
 
 ---
@@ -140,17 +159,22 @@ sequenceDiagram
 * **Never suffix name-based files**: Name mode must reuse or create the exact sanitized title path. Collision suffixes are reserved for deadline-based creation.
 * **Locale-independent tests**: When asserting date or time strings in the template test suite, always calculate the expected outcome dynamically using Luxon's local formatter to prevent timezone/locale mismatches on test machines.
 * **Never duplicate logic in providers**: All note creation must go through `createLinkedNoteForProvider`. Providers must not construct frontmatter, render templates, or create files independently.
+* **Use `openLinkedFileInExistingLeafOrNew` for all open-note paths**: Any code that opens a linked note for the user must call this helper (from `utils/leafUtils.ts`) instead of calling `workspace.getLeaf(true).openFile()` directly, so tab-reuse behaviour is consistent across all entry points.
+* **Pass `instanceDate` through all entry points**: Every UI entry point (popup, Ctrl/Cmd+click, context menu) must derive and forward the clicked instance's date to `openOrCreateLinkedNote`. Omitting it causes per-instance notes to be missed in deadline-based mode, resulting in duplicate series-level notes.
 
 ---
 
 ## Integration Anchors
 
-*   [`src/features/linked-notes/linkedNotes.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/linkedNotes.ts) — Centralized note creation helper and open/create orchestrator.
+*   [`src/features/linked-notes/linkedNotes.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/linkedNotes.ts) — Centralized note creation helper and open/create orchestrator (`openOrCreateLinkedNote`).
 *   [`src/features/linked-notes/TemplateEngine.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/TemplateEngine.ts) — Note body templating engine.
 *   [`src/providers/utils/noteUtils.ts`](file:///d:/Codes/plugin-full-calendar/src/providers/utils/noteUtils.ts) — Shared note/file path & serialization utilities.
 *   [`src/providers/utils/LinkedNoteIndex.ts`](file:///d:/Codes/plugin-full-calendar/src/providers/utils/LinkedNoteIndex.ts) — Reactive frontmatter-driven indexer.
 *   [`src/providers/fullnote/frontmatter.ts`](file:///d:/Codes/plugin-full-calendar/src/providers/fullnote/frontmatter.ts) — Frontmatter parsing and serialization.
-*   [`src/utils/eventActions.ts`](file:///d:/Codes/plugin-full-calendar/src/utils/eventActions.ts) — Re-exports `openOrCreateLinkedNote` for UI access.
+*   [`src/utils/leafUtils.ts`](file:///d:/Codes/plugin-full-calendar/src/utils/leafUtils.ts) — Tab-reuse helper (`openLinkedFileInExistingLeafOrNew`). Kept separate from `eventActions` to avoid a circular import.
+*   [`src/utils/eventActions.ts`](file:///d:/Codes/plugin-full-calendar/src/utils/eventActions.ts) — Re-exports `openOrCreateLinkedNote` and `openLinkedFileInExistingLeafOrNew` for UI access.
+*   [`src/ui/calendar/ViewEventInteractionHandler.ts`](file:///d:/Codes/plugin-full-calendar/src/ui/calendar/ViewEventInteractionHandler.ts) — Ctrl/Cmd+click handler; falls through to `openOrCreateLinkedNote` when no linked note exists yet.
+*   [`src/ui/context/EventContextMenuBuilder.ts`](file:///d:/Codes/plugin-full-calendar/src/ui/context/EventContextMenuBuilder.ts) — Right-click context menu; provides "Open linked note" for remote-provider events.
 *   [`src/ui/modals/event_modal.ts`](file:///d:/Codes/plugin-full-calendar/src/ui/modals/event_modal.ts) — Event modal with "Open Note" button integration.
 *   [`src/ui/settings/sections/renderCalendars.ts`](file:///d:/Codes/plugin-full-calendar/src/ui/settings/sections/renderCalendars.ts) — Linked note settings UI (directory picker, link strategy, and template editor).
 

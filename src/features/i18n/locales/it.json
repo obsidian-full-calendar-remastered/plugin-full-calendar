@@ -1638,6 +1638,7 @@
       "contextMenu": {
         "turnIntoTask": "Trasformare in attività",
         "removeCheckbox": "Rimuovi la casella di controllo",
+        "openLinkedNote": "Apri nota collegata",
         "goToNote": "Vai alla nota",
         "delete": "Eliminare",
         "noActions": "Nessuna azione disponibile sugli eventi remoti"

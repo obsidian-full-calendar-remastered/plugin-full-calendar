@@ -13,6 +13,7 @@ import { dateEndpointsToFrontmatter, fromEventApi } from '../../core/interop';
 import { ViewContext } from './ViewContext';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
 import { OFCEvent } from '../../types';
+import { openLinkedFileInExistingLeafOrNew } from '../../utils/leafUtils';
 
 const shiftIsoDate = (date: string | undefined, days: number): string | undefined => {
   if (!date || days === 0) {
@@ -126,8 +127,17 @@ export class ViewEventInteractionHandler {
               instanceDate
             );
             if (linkedFile) {
-              const leaf = this.ctx.app.workspace.getLeaf(true);
-              await leaf.openFile(linkedFile);
+              // Reuse an existing tab if this note is already open.
+              await openLinkedFileInExistingLeafOrNew(this.ctx.app, linkedFile);
+              return;
+            }
+            // No existing linked note — if the provider can create one, do so now.
+            const linkedNoteProvider = provider as unknown as {
+              createLinkedNote?: (event: OFCEvent, instanceDate?: string) => Promise<unknown>;
+            };
+            if (typeof linkedNoteProvider.createLinkedNote === 'function') {
+              const { openOrCreateLinkedNote } = await import('../../utils/eventActions');
+              await openOrCreateLinkedNote(this.ctx.plugin, calendarId, event, true, instanceDate);
               return;
             }
           }

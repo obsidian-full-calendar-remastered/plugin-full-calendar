@@ -31,7 +31,7 @@ This page documents direct interactions in the calendar UI.
 
 - Left/Right arrow keys: previous or next range when the calendar view is focused.
 - Arrow keys are ignored for calendar navigation while typing in inputs/editors.
-- Ctrl/Cmd + click event: open note directly.
+- Ctrl/Cmd + click event: open the associated note directly. For remote events (Google, CalDAV, Outlook, ICS) this also **creates** the linked note when none exists yet, then opens it.
 - Ctrl/Cmd + hover event: trigger note preview (requires Obsidian Page Preview support).
 - Ctrl/Cmd + mouse wheel: zoom the time axis for supported views.
 
@@ -49,7 +49,16 @@ Typical progression in standard time-grid views:
 
 Editable events include:
 - Turn into task / Remove checkbox
-- Go to note
+- **Open linked note** — shown for remote events whose provider supports linked notes (Google, CalDAV, Outlook, ICS, Holidays). Creates the note on first use, opens it on subsequent uses.
+- Go to note — shown for local note events (frontmatter / daily note sources).
 - Delete
+
+## Opening Linked Notes — Smart Tab Reuse
+
+All paths that open a linked note (Ctrl/Cmd+click, context menu, event popup note button) share the same behaviour:
+
+- **Existing tab reused**: if the note is already open in a tab, that tab is focused and brought to the front — no duplicate tabs.
+- **Fresh tab for new notes**: a brand-new note (just created) always opens in a new tab, because it cannot already be open.
+- **Recurring events**: the correct per-instance note is resolved automatically in both link strategies (deadline-based and name-based).
 
 See also: [Hover and Context Menu](../events/hover_context.md)

@@ -17,6 +17,7 @@
 | Event-domain architecture scope | [Events Architecture](../events/architecture.md) |
 | Safe extension workflow | [Extending the Plugin](extending.md) |
 | Verification policy and docs-test alignment | [Testing and Validation](testing.md) |
+| Scoping rules and packaging of stylesheets | [Styling Architecture & CSS Audit](styling.md) |
 
 ## Layer Model (At a Glance)
 
@@ -89,3 +90,5 @@ State owner and orchestration: `src/core/EventCache.ts`
 Storage and indexing: `src/core/EventStore.ts`  
 Provider routing: `src/providers/ProviderRegistry.ts`  
 Workspace/view shaping: `src/core/ViewEnhancer.ts`
+
+Compact index: [Overview](overview.md) · [EventCache](eventcache.md) · [Filtering & Sorting](event-filtering-sorting.md) · [Storage](event-storage.md) · [Interop](interop.md) · [API Architecture](api-architecture.md) · [API Blueprint](api-integration-blueprint.md) · [Data Flow](data-flow.md) · [Core Systems](core-systems.md) · [Features](features/index.md) · [ActivityWatch](../activitywatch/index.md) · [Providers](../calendars/architecture.md) · [Chrono](../chrono_analyser/architecture.md) · [Styling](styling.md)

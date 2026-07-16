@@ -963,44 +963,18 @@
 
 /* Multi-view layout container styles */
 .ofc-embedded-widget-container.ofc-layout-horizontal,
-.ofc-embedded-calendar-container.ofc-layout-horizontal {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 16px;
-  width: 100%;
-  padding: 8px;
-}
-
-.ofc-embedded-widget-container.ofc-layout-horizontal .ofc-layout-view-item,
-.ofc-embedded-calendar-container.ofc-layout-horizontal .ofc-layout-view-item {
-  flex: 1;
-  min-width: 0;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
+.ofc-embedded-calendar-container.ofc-layout-horizontal,
 .ofc-embedded-widget-container.ofc-layout-vertical,
 .ofc-embedded-calendar-container.ofc-layout-vertical {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 16px;
-  width: 100%;
   padding: 8px;
 }
 
-.ofc-embedded-widget-container.ofc-layout-vertical .ofc-layout-view-item,
-.ofc-embedded-calendar-container.ofc-layout-vertical .ofc-layout-view-item {
-  width: 100%;
+.ofc-embedded-widget-container .ofc-layout-view-item,
+.ofc-embedded-calendar-container .ofc-layout-view-item {
   background-color: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
   padding: 8px;
-  box-sizing: border-box;
 }
 
 /* Weather Integration Styling */
@@ -1776,188 +1750,7 @@
     font-size: 14px;
   }
 }
-/* Minimal Weather Variant Styles */
-.ofc-weather-widget-day.is-minimal,
-.ofc-weather-widget-week.is-minimal {
-  gap: 8px;
-}
 
-.ofc-weather-widget-day.is-minimal .ofc-weather-hourly-item,
-.ofc-weather-widget-week.is-minimal .ofc-weather-week-item {
-  padding: 4px 6px;
-  gap: 8px;
-  font-size: 0.82em;
-  background-color: var(--background-secondary);
-}
-
-.ofc-weather-widget-day.is-minimal.is-horizontal .ofc-weather-hourly-item {
-  min-width: 45px;
-}
-
-.ofc-weather-widget-week.is-minimal.is-horizontal .ofc-weather-week-item {
-  min-width: 65px;
-}
-
-.ofc-weather-widget-day.is-minimal.is-vertical .ofc-weather-hourly-item,
-.ofc-weather-widget-week.is-minimal.is-vertical .ofc-weather-week-item {
-  flex-direction: row;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.ofc-generated-token-container {
-  display: flex;
-  margin-bottom: 20px;
-}
-
-.ofc-token-display-input {
-  flex-grow: 1;
-  margin-right: 10px;
-}
-
-.ofc-loading-spinner-container {
-  display: flex;
-  justify-content: center;
-  margin: 20px 0;
-}
-
-/* --- Availability Share Modal Responsive Styling --- */
-
-/* Base Range Settings (Desktop/Tablet) */
-.ofc-availability-share-modal .ofc-responsive-range-setting .setting-item-control {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.ofc-availability-share-modal .ofc-responsive-range-setting .setting-item-control input[type="date"] {
-  width: 135px;
-}
-
-.ofc-availability-share-modal .ofc-responsive-range-setting .setting-item-control input[type="time"] {
-  width: 110px;
-}
-
-.ofc-range-separator {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ofc-range-separator::after {
-  content: "→";
-  font-weight: bold;
-  color: var(--text-muted);
-}
-
-/* Anonymization Dropdown - Always stack vertically to prevent label squishing */
-.ofc-availability-share-modal .ofc-responsive-dropdown-setting.setting-item {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-
-.ofc-availability-share-modal .ofc-responsive-dropdown-setting .setting-item-info {
-  margin-bottom: 4px;
-  width: 100%;
-}
-
-.ofc-availability-share-modal .ofc-responsive-dropdown-setting .setting-item-control {
-  width: 100%;
-  justify-content: flex-start;
-}
-
-.ofc-availability-share-modal .ofc-responsive-dropdown-setting .setting-item-control select {
-  width: 100%;
-}
-
-/* Onboarding Setup Panel Styling */
-.ofc-availability-setup-panel {
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  padding: 16px;
-  margin-top: 15px;
-  background-color: var(--background-secondary);
-}
-
-/* Button Row & Buttons */
-.ofc-availability-button-row {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
-.ofc-availability-action-buttons,
-.ofc-availability-setup-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-/* Mobile & Narrow Viewports Responsiveness (<= 600px) */
-@media (max-width: 600px) {
-  /* Stack standard setting items vertically */
-  .ofc-availability-share-modal .setting-item {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 12px 0;
-  }
-
-  .ofc-availability-share-modal .setting-item-info {
-    margin-right: 0;
-    margin-bottom: 4px;
-    width: 100%;
-  }
-
-  .ofc-availability-share-modal .setting-item-control {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .ofc-availability-share-modal .setting-item-control select,
-  .ofc-availability-share-modal .setting-item-control input[type="text"] {
-    width: 100%;
-  }
-
-  /* Stack range picker inputs vertically and center them */
-  .ofc-availability-share-modal .ofc-responsive-range-setting .setting-item-control {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    gap: 8px;
-  }
-
-  /* Change separator to vertical down arrow */
-  .ofc-range-separator::after {
-    content: "↓";
-  }
-
-  .ofc-range-separator {
-    margin: 4px 0;
-    align-self: center;
-  }
-
-  /* Stack buttons vertically and stretch to full width */
-  .ofc-availability-button-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .ofc-availability-action-buttons,
-  .ofc-availability-setup-buttons {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-  }
-
-  .ofc-availability-button-row button {
-    width: 100%;
-    padding: 8px 16px;
-    font-size: 14px;
-  }
-}
 /* ==========================================
   Break Timer Feature Styles (WebM Video Overlay)
    ========================================== */

@@ -8,6 +8,7 @@
 .is-phone .ofc-calendar-shell {
     padding-left: max(8px, env(safe-area-inset-left, 0px));
     padding-right: max(8px, env(safe-area-inset-right, 0px));
+    padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
 }
 
 .is-phone .ofc-calendar-shell .fc,
@@ -930,12 +931,12 @@
    Mobile Calendar View - Toolbar & Controls
    ----------------------------------------------------------------------------- */
 
-/* Larger, more touch-friendly toolbar buttons */
+/* Optimized touch-friendly toolbar buttons to prevent layout overflow */
 .is-phone .fc .fc-button {
-    padding: var(--size-4-2) var(--size-4-3);
-    font-size: 0.9rem;
-    min-height: 36px;
-    min-width: 40px;
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    min-height: 32px;
+    min-width: 32px;
     border-radius: var(--radius-m);
     font-weight: 500;
 }
@@ -947,13 +948,16 @@
 
 /* Footer toolbar improvements for mobile */
 .is-phone .fc .fc-toolbar.fc-footer-toolbar {
-    padding: 10px 0;
-    gap: 6px;
+    padding: 8px 8px;
+    gap: 4px;
     background: var(--background-secondary);
     border-top: 1px solid var(--background-modifier-border);
     margin-top: 0;
     flex-wrap: nowrap;
     justify-content: space-between;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .is-phone .fc .fc-toolbar.fc-footer-toolbar .fc-toolbar-chunk {
@@ -961,6 +965,24 @@
     gap: 4px;
     flex-wrap: nowrap;
     justify-content: flex-start;
+}
+
+/* When search is active on mobile, hide standard navigation buttons to make room for the input */
+.is-phone .fc .fc-toolbar.fc-footer-toolbar.ofc-search-active .fc-prev-button,
+.is-phone .fc .fc-toolbar.fc-footer-toolbar.ofc-search-active .fc-today-button,
+.is-phone .fc .fc-toolbar.fc-footer-toolbar.ofc-search-active .fc-next-button {
+    display: none;
+}
+
+/* Header toolbar improvements for mobile title */
+.is-phone .fc .fc-toolbar.fc-header-toolbar {
+    margin-bottom: var(--size-4-2);
+    padding: 0 var(--size-4-2);
+}
+
+.is-phone .fc .fc-toolbar.fc-header-toolbar .fc-toolbar-title {
+    font-size: 1.2rem;
+    font-weight: 600;
 }
 
 /* -----------------------------------------------------------------------------
@@ -1382,4 +1404,124 @@
     width: 100%;
     min-height: 48px;
     box-sizing: border-box;
+}
+
+/* -----------------------------------------------------------------------------
+   Mobile Calendar View - Month View Dot Event & Agenda Redesign
+   ----------------------------------------------------------------------------- */
+
+/* Style events as small dots in month view on mobile phone */
+.is-phone .fc-daygrid-month .fc-daygrid-day-events {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px;
+    padding: 2px;
+    min-height: 12px;
+}
+
+.is-phone .fc-daygrid-month .fc-daygrid-event {
+    width: 6px;
+    height: 6px;
+    min-height: 6px;
+    min-width: 6px;
+    max-width: 6px;
+    border-radius: 50%;
+    padding: 0;
+    margin: 0;
+    background-color: var(--event-color, var(--interactive-accent));
+    border: none;
+    display: inline-block;
+    box-shadow: none;
+}
+
+.is-phone .fc-daygrid-month .fc-daygrid-event .fc-event-main,
+.is-phone .fc-daygrid-month .fc-daygrid-event .fc-event-title,
+.is-phone .fc-daygrid-month .fc-daygrid-event .fc-event-time,
+.is-phone .fc-daygrid-month .fc-daygrid-day-bottom {
+    display: none;
+}
+
+/* Selected day cell styling */
+.is-phone .fc .fc-daygrid-day.ofc-day-selected {
+    background-color: var(--background-modifier-hover);
+    box-shadow: inset 0 0 0 2px var(--interactive-accent);
+}
+
+/* Agenda list at the bottom of month view */
+.ofc-mobile-agenda {
+    display: none;
+    flex-direction: column;
+    height: 45%;
+    width: 100%;
+    background-color: var(--background-primary);
+    border-top: 1px solid var(--background-modifier-border);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.ofc-mobile-agenda-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    background-color: var(--background-secondary);
+}
+
+.ofc-mobile-agenda-header h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.ofc-mobile-agenda-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.ofc-mobile-agenda-empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.ofc-mobile-agenda-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--background-modifier-border-focus);
+    transition: background-color 0.1s ease;
+}
+
+.ofc-mobile-agenda-item:active {
+    background-color: var(--background-modifier-hover);
+}
+
+.ofc-mobile-agenda-item-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.ofc-mobile-agenda-item-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    width: 110px;
+    flex-shrink: 0;
+    font-weight: 500;
+}
+
+.ofc-mobile-agenda-item-title {
+    font-size: 0.88rem;
+    color: var(--text-normal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1;
 }

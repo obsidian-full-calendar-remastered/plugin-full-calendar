@@ -167,6 +167,33 @@ export class CalendarView extends ItemView implements ViewContext {
         { passive: false }
       );
 
+      this.registerDomEvent(
+        calendarEl,
+        'touchstart',
+        (event: TouchEvent) => {
+          this.zoomHandler.handleTouchStart(event);
+        },
+        { passive: true }
+      );
+
+      this.registerDomEvent(
+        calendarEl,
+        'touchmove',
+        (event: TouchEvent) => {
+          this.zoomHandler.handleTouchMove(event);
+        },
+        { passive: false }
+      );
+
+      this.registerDomEvent(
+        calendarEl,
+        'touchend',
+        (event: TouchEvent) => {
+          this.zoomHandler.handleTouchEnd(event);
+        },
+        { passive: true }
+      );
+
       if (
         PluginState.getSettings().calendarSources.filter(
           (s: CalendarInfo) => s.type !== 'FOR_TEST_ONLY'

@@ -23,7 +23,7 @@ import type {
   LocaleSingularArg
 } from '@fullcalendar/core';
 
-import { Menu, activeDocument, type App } from 'obsidian';
+import { Menu, activeDocument, Platform, type App } from 'obsidian';
 import type { PluginDef } from '@fullcalendar/core';
 import type { RecurringInstanceState } from '../../../../providers/Provider';
 import { createDateNavigation } from '../../../../features/navigation/DateNavigation';
@@ -156,7 +156,7 @@ export async function renderCalendar(
     return measuredWidth > 0 ? measuredWidth : window.innerWidth;
   };
 
-  const isMobile = getResponsiveWidth() < MOBILE_BREAKPOINT;
+  const isMobile = Platform.isPhone || getResponsiveWidth() < MOBILE_BREAKPOINT;
   const isNarrow = settings?.forceNarrow || isMobile;
 
   // Apply RRULE monkeypatch on every render to capture the latest settings.timeZone.
@@ -199,6 +199,119 @@ export async function renderCalendar(
       }
       return eventClick(info);
     });
+
+  const parentEl = containerEl.parentElement;
+  let agendaEl: HTMLElement | null = null;
+  let cal: Calendar | null = null;
+
+  const getOrCreateAgendaEl = (): HTMLElement | null => {
+    if (!isNarrow) return null;
+    if (agendaEl) return agendaEl;
+    if (!parentEl) return null;
+    agendaEl = parentEl.querySelector<HTMLElement>('.ofc-mobile-agenda');
+    if (!agendaEl) {
+      agendaEl = parentEl.createDiv({ cls: 'ofc-mobile-agenda' });
+    }
+    return agendaEl;
+  };
+
+  const hideMobileAgenda = () => {
+    const el = getOrCreateAgendaEl();
+    if (el) {
+      el.setCssProps({ display: 'none' });
+    }
+    containerEl.setCssProps({ height: '100%' });
+    if (cal) {
+      cal.updateSize();
+    }
+  };
+
+  const updateMobileAgenda = (date: Date) => {
+    const el = getOrCreateAgendaEl();
+    if (!el || !cal) return;
+
+    el.setCssProps({ display: 'flex' });
+    containerEl.setCssProps({ height: '55%' });
+    cal.updateSize();
+
+    el.empty();
+
+    const headerEl = el.createDiv({ cls: 'ofc-mobile-agenda-header' });
+    const formattedDate = new Intl.DateTimeFormat(undefined, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+    headerEl.createEl('h4', { text: formattedDate });
+
+    const listEl = el.createDiv({ cls: 'ofc-mobile-agenda-list' });
+
+    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
+
+    const dayEvents = cal.getEvents().filter((event: EventApi) => {
+      if (event.extendedProps?.isShadow) return false;
+      const eventStart = event.start?.getTime() || 0;
+      const eventEnd = event.end?.getTime() || eventStart;
+      return eventStart < endOfDay && eventEnd > startOfDay;
+    });
+
+    if (dayEvents.length === 0) {
+      listEl.createDiv({ cls: 'ofc-mobile-agenda-empty', text: 'No events' });
+      return;
+    }
+
+    dayEvents.sort((a: EventApi, b: EventApi) => {
+      if (a.allDay && !b.allDay) return -1;
+      if (!a.allDay && b.allDay) return 1;
+      const aStart = a.start?.getTime() || 0;
+      const bStart = b.start?.getTime() || 0;
+      return aStart - bStart;
+    });
+
+    dayEvents.forEach((event: EventApi) => {
+      const itemEl = listEl.createDiv({ cls: 'ofc-mobile-agenda-item' });
+
+      const dotEl = itemEl.createDiv({ cls: 'ofc-mobile-agenda-item-dot' });
+      const eventColor = event.backgroundColor || event.borderColor || 'var(--interactive-accent)';
+      dotEl.setCssProps({ backgroundColor: eventColor });
+
+      const timeEl = itemEl.createDiv({ cls: 'ofc-mobile-agenda-item-time' });
+      if (event.allDay) {
+        timeEl.setText('All day');
+      } else if (event.start) {
+        const startStr = new Intl.DateTimeFormat(undefined, {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: !settings?.timeFormat24h
+        }).format(event.start);
+
+        let endStr = '';
+        if (event.end) {
+          endStr = ` - ${new Intl.DateTimeFormat(undefined, {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: !settings?.timeFormat24h
+          }).format(event.end)}`;
+        }
+        timeEl.setText(`${startStr}${endStr}`);
+      }
+
+      itemEl.createDiv({ cls: 'ofc-mobile-agenda-item-title', text: event.title });
+
+      itemEl.addEventListener('click', ev => {
+        if (wrappedEventClick && cal) {
+          wrappedEventClick({
+            event,
+            el: itemEl,
+            jsEvent: ev,
+            view: cal.view
+          } as unknown as EventClickArg);
+        }
+      });
+    });
+  };
+
   const modifyEventCallback =
     modifyEvent &&
     (({
@@ -229,7 +342,7 @@ export async function renderCalendar(
   };
 
   const getToolbarLayout = (windowWidth: number): ToolbarLayout => {
-    const narrow = !!settings?.forceNarrow || windowWidth < MOBILE_BREAKPOINT;
+    const narrow = !!settings?.forceNarrow || Platform.isPhone || windowWidth < MOBILE_BREAKPOINT;
 
     const hasButton = (name: string): boolean => {
       if (['prev', 'next', 'prevYear', 'nextYear', 'today', 'title'].includes(name)) {
@@ -260,10 +373,14 @@ export async function renderCalendar(
     if (narrow) {
       return {
         mode: 'narrow',
-        headerToolbar: false,
+        headerToolbar: {
+          left: 'title',
+          center: '',
+          right: ''
+        },
         footerToolbar: {
           left: filterToolbarString('prev,today,next search'),
-          right: filterToolbarString('views,more')
+          right: filterToolbarString('more')
         }
       };
     }
@@ -391,7 +508,7 @@ export async function renderCalendar(
     for (const [viewName, viewLabel] of Object.entries(viewOptions) as [string, string][]) {
       menu.addItem(item =>
         item.setTitle(viewLabel).onClick(() => {
-          cal.changeView(viewName);
+          cal?.changeView(viewName);
         })
       );
     }
@@ -449,7 +566,7 @@ export async function renderCalendar(
         });
       });
 
-      if (currentToolbarMode === 'compact-desktop') {
+      if (currentToolbarMode === 'compact-desktop' || currentToolbarMode === 'narrow') {
         menu.addSeparator();
         addViewOptionsToMenu(menu, currentToolbarMode);
       }
@@ -458,12 +575,12 @@ export async function renderCalendar(
         menu.addSeparator();
         menu.addItem(item =>
           item.setTitle('Timeline week').onClick(() => {
-            cal.changeView('resourceTimelineWeek');
+            cal?.changeView('resourceTimelineWeek');
           })
         );
         menu.addItem(item =>
           item.setTitle('Timeline day').onClick(() => {
-            cal.changeView('resourceTimelineDay');
+            cal?.changeView('resourceTimelineDay');
           })
         );
       }
@@ -480,12 +597,12 @@ export async function renderCalendar(
         const menu = new Menu();
         menu.addItem(item =>
           item.setTitle('Timeline week').onClick(() => {
-            cal.changeView('resourceTimelineWeek');
+            cal?.changeView('resourceTimelineWeek');
           })
         );
         menu.addItem(item =>
           item.setTitle('Timeline day').onClick(() => {
-            cal.changeView('resourceTimelineDay');
+            cal?.changeView('resourceTimelineDay');
           })
         );
         menu.showAtMouseEvent(ev);
@@ -577,7 +694,7 @@ export async function renderCalendar(
   };
 
   const updateCurrentOrNextEventHighlight = () => {
-    const nextUpcomingEventIds = findCurrentOrNextEventIds(cal.getEvents());
+    const nextUpcomingEventIds = findCurrentOrNextEventIds(cal?.getEvents() || []);
 
     for (const oldId of currentUpcomingEventIds) {
       if (!nextUpcomingEventIds.has(oldId)) {
@@ -791,7 +908,7 @@ export async function renderCalendar(
     }
   };
 
-  const cal = new CalendarCtor(containerEl, {
+  cal = new CalendarCtor(containerEl, {
     dayHeaderDidMount: arg => {
       if (arg.view.type.startsWith('timeGrid')) {
         bindDailyNoteClick(arg.el, arg.date, '.fc-col-header-cell-cushion');
@@ -833,8 +950,35 @@ export async function renderCalendar(
         pendingCells.push({ dateStr, el: arg.el });
       }
     },
-    datesSet: (info: { view: { activeStart: Date; activeEnd: Date } }) => {
+    datesSet: (info: { view: { activeStart: Date; activeEnd: Date; type: string } }) => {
       void handleViewChangeAndFetchWeather(info.view);
+
+      if (isNarrow && info.view.type === 'dayGridMonth') {
+        const today = new Date();
+        const targetDate =
+          today >= info.view.activeStart && today < info.view.activeEnd
+            ? today
+            : info.view.activeStart;
+
+        const year = targetDate.getFullYear();
+        const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+        const day = String(targetDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        window.requestAnimationFrame(() => {
+          containerEl.querySelectorAll('.fc-daygrid-day').forEach(el => {
+            if (el.getAttribute('data-date') === dateStr) {
+              el.classList.add('ofc-day-selected');
+            } else {
+              el.classList.remove('ofc-day-selected');
+            }
+          });
+        });
+
+        updateMobileAgenda(targetDate);
+      } else {
+        hideMobileAgenda();
+      }
     },
     // Only include schedulerLicenseKey when resource-timeline plugin is loaded
     ...(showResourceViews && resourceTimelinePlugin
@@ -903,10 +1047,10 @@ export async function renderCalendar(
 
       currentToolbarMode = nextToolbarLayout.mode;
       if (settings?.headerToolbar !== false) {
-        cal.setOption('headerToolbar', nextToolbarLayout.headerToolbar);
+        cal?.setOption('headerToolbar', nextToolbarLayout.headerToolbar);
       }
       if (settings?.footerToolbar !== false) {
-        cal.setOption('footerToolbar', nextToolbarLayout.footerToolbar);
+        cal?.setOption('footerToolbar', nextToolbarLayout.footerToolbar);
       }
     },
 
@@ -953,6 +1097,16 @@ export async function renderCalendar(
       if (info.jsEvent.button === 2 && dateRightClick) {
         info.jsEvent.preventDefault();
         dateRightClick(info.date, info.jsEvent);
+        return;
+      }
+
+      // Mobile click selects day and updates agenda list
+      if (isNarrow && info.view.type === 'dayGridMonth') {
+        containerEl.querySelectorAll('.fc-daygrid-day').forEach(el => {
+          el.classList.remove('ofc-day-selected');
+        });
+        info.dayEl.classList.add('ofc-day-selected');
+        updateMobileAgenda(info.date);
       }
     },
 
@@ -1129,8 +1283,13 @@ export async function renderCalendar(
     }
 
     if (searchButtonEl.dataset.ofcSearchBound === 'true' && keepWrapEl) {
-      keepWrapEl.setCssProps({ width: searchExpanded || searchQuery ? '180px' : '0px' });
+      const isSearchActive = searchExpanded || !!searchQuery;
+      keepWrapEl.setCssProps({
+        width: isSearchActive ? (Platform.isPhone ? '140px' : '180px') : '0px'
+      });
       keepWrapEl.toggleClass('is-active-query', !!searchQuery);
+      const toolbarEl = searchButtonEl.closest('.fc-toolbar');
+      toolbarEl?.classList.toggle('ofc-search-active', isSearchActive);
       return;
     }
 
@@ -1178,10 +1337,15 @@ export async function renderCalendar(
     searchInputEl.value = searchQuery;
 
     const syncState = () => {
-      inputWrapEl.setCssProps({ width: searchExpanded || searchQuery ? '180px' : '0px' });
+      const isSearchActive = searchExpanded || !!searchQuery;
+      inputWrapEl.setCssProps({
+        width: isSearchActive ? (Platform.isPhone ? '140px' : '180px') : '0px'
+      });
       clearButtonEl.setCssProps({ display: searchQuery ? 'inline-flex' : 'none' });
-      searchButtonEl.toggleClass('is-active', searchExpanded || !!searchQuery);
+      searchButtonEl.toggleClass('is-active', isSearchActive);
       inputWrapEl.toggleClass('is-active-query', !!searchQuery);
+      const toolbarEl = searchButtonEl.closest('.fc-toolbar');
+      toolbarEl?.classList.toggle('ofc-search-active', isSearchActive);
     };
 
     searchButtonEl.addEventListener('click', () => {
@@ -1340,6 +1504,9 @@ export async function renderCalendar(
     containerEl.removeEventListener('touchend', onTouchEndNavigate);
     window.clearInterval(activeHighlightInterval);
     interactionDocument.removeEventListener('visibilitychange', onVisibilityChange);
+    if (agendaEl) {
+      agendaEl.remove();
+    }
     originalDestroy();
   };
 

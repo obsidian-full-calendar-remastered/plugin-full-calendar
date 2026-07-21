@@ -62,12 +62,7 @@ export function replaceFrontmatter(page: string, newFrontmatter: string): string
 }
 
 type PrintableAtom =
-  | Record<string, unknown>
-  | (number | string)[]
-  | number
-  | string
-  | boolean
-  | null;
+  Record<string, unknown> | (number | string)[] | number | string | boolean | null;
 
 function stringifyYamlLine(k: string, v: PrintableAtom): string {
   if (v === null) return `${k}:`;

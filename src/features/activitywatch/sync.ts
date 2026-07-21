@@ -136,8 +136,7 @@ export async function syncActivityWatch(
 
     let seedStates: SeedState[] = [];
     let boundaryMatchedProfile:
-      | NonNullable<FullCalendarSettings['activityWatch']['profiles']>[number]
-      | undefined;
+      NonNullable<FullCalendarSettings['activityWatch']['profiles']>[number] | undefined;
     if (!isCustomStrategy && settings.lastSyncTime > 0) {
       const boundaryEvent = findBoundaryOverlappingActivityWatchEvent(sessionIndex, boundaryMs);
       if (boundaryEvent) {

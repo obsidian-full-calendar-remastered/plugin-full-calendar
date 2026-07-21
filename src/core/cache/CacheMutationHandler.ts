@@ -506,8 +506,7 @@ export class CacheMutationHandler {
     }
 
     const provider = this.ctx.calendars.get(details.calendarId) as
-      | (CalendarProvider<unknown> & TaskBacklogProvider)
-      | undefined;
+      (CalendarProvider<unknown> & TaskBacklogProvider) | undefined;
     if (!provider?.unscheduleTask) {
       throw new Error(`Task provider does not support returning tasks to the backlog.`);
     }

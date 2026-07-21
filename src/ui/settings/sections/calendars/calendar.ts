@@ -90,12 +90,7 @@ interface ExtraRenderProps {
 }
 
 type TimeGridDayHeaderFormat =
-  | 'ddmm-day'
-  | 'mmdd-day'
-  | 'day-ddmm'
-  | 'day-mmdd'
-  | 'ddmmyyyy-day'
-  | 'mmddyyyy-day';
+  'ddmm-day' | 'mmdd-day' | 'day-ddmm' | 'day-mmdd' | 'ddmmyyyy-day' | 'mmddyyyy-day';
 
 export async function renderCalendar(
   containerEl: HTMLElement,

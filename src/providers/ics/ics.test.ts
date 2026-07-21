@@ -263,8 +263,7 @@ END:VCALENDAR`;
 
     // Verify rrule event exists and is properly formed
     const rruleEvent = events.find(e => e.type === 'rrule' && e.uid === 'course-sosc-1420') as
-      | ((typeof events)[0] & { type: 'rrule' })
-      | undefined;
+      ((typeof events)[0] & { type: 'rrule' }) | undefined;
     expect(rruleEvent).toBeDefined();
     expect(rruleEvent?.title).toBe('SOSC 1420 (L1)');
     expect(rruleEvent?.rrule).toContain('FREQ=WEEKLY');
@@ -274,8 +273,7 @@ END:VCALENDAR`;
 
     // Verify exception event exists
     const exceptionEvent = events.find(e => e.type === 'single' && e.uid === 'course-sosc-1420') as
-      | ((typeof events)[0] & { type: 'single' })
-      | undefined;
+      ((typeof events)[0] & { type: 'single' }) | undefined;
     expect(exceptionEvent).toBeDefined();
     expect(exceptionEvent?.title).toBe('SOSC 1420 (L1) + MidTerm');
     expect(exceptionEvent?.date).toBe('2026-03-17');

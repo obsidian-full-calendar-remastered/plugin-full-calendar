@@ -343,13 +343,7 @@ function buildOutlookRecurrence(event: Extract<OFCEvent, { type: 'recurring' }>)
 
   if (event.month && event.repeatOn) {
     const weekday = ['U', 'M', 'T', 'W', 'R', 'F', 'S'][event.repeatOn.weekday] as
-      | 'U'
-      | 'M'
-      | 'T'
-      | 'W'
-      | 'R'
-      | 'F'
-      | 'S';
+      'U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S';
     pattern = {
       type: 'relativeYearly',
       interval,
@@ -366,13 +360,7 @@ function buildOutlookRecurrence(event: Extract<OFCEvent, { type: 'recurring' }>)
     };
   } else if (event.repeatOn) {
     const weekday = ['U', 'M', 'T', 'W', 'R', 'F', 'S'][event.repeatOn.weekday] as
-      | 'U'
-      | 'M'
-      | 'T'
-      | 'W'
-      | 'R'
-      | 'F'
-      | 'S';
+      'U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S';
     pattern = {
       type: 'relativeMonthly',
       interval,

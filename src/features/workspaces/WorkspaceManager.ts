@@ -294,8 +294,7 @@ export class WorkspaceManager {
 
     return events.filter(event => {
       const props = event.extendedProps as
-        | { category?: string; originalEvent?: { category?: string } }
-        | undefined;
+        { category?: string; originalEvent?: { category?: string } } | undefined;
       const fromExtended = props?.category || props?.originalEvent?.category;
       let category: string | undefined = fromExtended;
 

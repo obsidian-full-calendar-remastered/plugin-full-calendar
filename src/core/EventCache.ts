@@ -44,8 +44,7 @@ export default class EventCache {
   private _plugin: FullCalendarPlugin;
   private _store = new EventStore();
   private recurringEventManager:
-    | import('../features/recur_events/RecurringEventManager').RecurringEventManager
-    | null = null;
+    import('../features/recur_events/RecurringEventManager').RecurringEventManager | null = null;
   private timeEngine: TimeEngine;
 
   private viewConfigListener: (() => void) | null = null;

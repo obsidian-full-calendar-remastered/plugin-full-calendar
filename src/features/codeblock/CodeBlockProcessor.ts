@@ -433,8 +433,7 @@ export function registerCodeBlockProcessor(plugin: FullCalendarPlugin) {
     }
 
     const layout = parsedConfig.layout as
-      | { orientation?: 'horizontal' | 'vertical'; views?: Record<string, unknown>[] }
-      | undefined;
+      { orientation?: 'horizontal' | 'vertical'; views?: Record<string, unknown>[] } | undefined;
     const hasLayout = layout && layout.views && layout.views.length > 0;
 
     const instances: EmbeddedWidgetInstance[] = [];

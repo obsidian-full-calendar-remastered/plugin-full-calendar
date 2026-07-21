@@ -3,12 +3,7 @@ import { CalendarTask } from './taskPayloadAdapter';
 export interface QueryRule {
   field: 'path' | 'folder' | 'description' | 'tag' | 'tags' | 'priority';
   operator:
-    | 'includes'
-    | 'does not include'
-    | 'regex matches'
-    | 'regex does not match'
-    | 'is'
-    | 'is not';
+    'includes' | 'does not include' | 'regex matches' | 'regex does not match' | 'is' | 'is not';
   value: string;
 }
 

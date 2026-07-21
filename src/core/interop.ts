@@ -597,13 +597,7 @@ export function fromEventApi(
           ...(extendedProps.daysOfWeek
             ? {
                 daysOfWeek: (extendedProps.daysOfWeek as number[]).map((i: number) => DAYS[i]) as (
-                  | 'U'
-                  | 'M'
-                  | 'T'
-                  | 'W'
-                  | 'R'
-                  | 'F'
-                  | 'S'
+                  'U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S'
                 )[]
               }
             : {}),

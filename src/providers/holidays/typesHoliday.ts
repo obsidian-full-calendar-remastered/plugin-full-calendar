@@ -18,11 +18,7 @@ import { HolidaysTypes } from 'date-holidays';
  * into `date-holidays` type arrays by the provider at runtime.
  */
 export type HolidayTypeFilter =
-  | 'public'
-  | 'public_bank'
-  | 'public_bank_observance'
-  | 'all_except_optional'
-  | 'all';
+  'public' | 'public_bank' | 'public_bank_observance' | 'all_except_optional' | 'all';
 
 /**
  * Maps a HolidayTypeFilter tier to the array of `date-holidays`

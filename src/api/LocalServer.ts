@@ -273,8 +273,7 @@ export class LocalServer {
             unknown
           >;
           const options = body.options as
-            | { silent?: boolean; instanceDate?: string; force?: boolean }
-            | undefined;
+            { silent?: boolean; instanceDate?: string; force?: boolean } | undefined;
           await authorizedApi.deleteEvent(eventId, options);
           this.sendJson(res, 200, { success: true });
           return;

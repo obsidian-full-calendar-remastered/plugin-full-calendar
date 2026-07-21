@@ -239,8 +239,7 @@ export async function dispatchNLPAction(action: NLPActionObject): Promise<void> 
       const leaf = plugin.app.workspace.getLeavesOfType('full-calendar-view')[0];
       if (leaf?.view && 'fullCalendarView' in (leaf.view as unknown as Record<string, unknown>)) {
         const fcView = (leaf.view as unknown as Record<string, unknown>)['fullCalendarView'] as
-          | { gotoDate: (date: string) => void }
-          | undefined;
+          { gotoDate: (date: string) => void } | undefined;
         fcView?.gotoDate(action.date);
       }
     } catch {

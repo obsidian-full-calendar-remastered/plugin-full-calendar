@@ -193,7 +193,7 @@ export class AvailabilityService {
           status: 'busy',
           title: busy.title
         });
-        currentMarker = busy.end > currentMarker ? busy.end : currentMarker;
+        currentMarker = busy.end > currentMarker ? (busy.end as DateTime<true>) : currentMarker;
       }
 
       if (currentMarker < dayEnd) {

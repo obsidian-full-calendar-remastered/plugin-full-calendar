@@ -257,8 +257,7 @@ export class UIService {
   } {
     const metric =
       (this.rootEl.querySelector<HTMLSelectElement>('#metricSelect')?.value as
-        | 'duration'
-        | 'count') || 'duration';
+        'duration' | 'count') || 'duration';
     const hierarchyFilter =
       this.rootEl
         .querySelector<HTMLInputElement>('#hierarchyFilterInput')
@@ -284,8 +283,7 @@ export class UIService {
 
     const newChartType =
       (this.rootEl.querySelector<HTMLSelectElement>('#analysisTypeSelect')?.value as
-        | ChartType
-        | undefined) ?? null;
+        ChartType | undefined) ?? null;
     return { filters, newChartType, metric };
   }
 

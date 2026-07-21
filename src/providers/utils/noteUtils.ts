@@ -117,12 +117,7 @@ export const waitForMetadataWithTimeout = async (
 };
 
 type PrintableAtom =
-  | Record<string, unknown>
-  | (number | string)[]
-  | number
-  | string
-  | boolean
-  | null;
+  Record<string, unknown> | (number | string)[] | number | string | boolean | null;
 
 function escapeYamlString(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;

@@ -188,6 +188,7 @@ export class FrontmatterCardDecorator implements LivePreviewDecorator {
     });
 
     let targetPos = 0;
+    let hasFrontmatter = false;
     try {
       const doc = state.doc;
       if (doc.length > 0 && doc.line(1).text.trim() === '---') {
@@ -199,12 +200,17 @@ export class FrontmatterCardDecorator implements LivePreviewDecorator {
             } else {
               targetPos = doc.line(i).to;
             }
+            hasFrontmatter = true;
             break;
           }
         }
       }
     } catch {
       // Quietly default to 0
+    }
+
+    if (!hasFrontmatter) {
+      return builder.finish();
     }
 
     try {

@@ -55,19 +55,15 @@ export const livePreviewCoordinatorPlugin = ViewPlugin.fromClass(LivePreviewCoor
 function getFileFromState(state: EditorState): TFile | null {
   try {
     if (editorInfoField && typeof state.field === 'function') {
-      const info = state.field(editorInfoField);
+      const info = state.field(editorInfoField, false);
       if (info && info.file) {
         return info.file;
       }
     }
   } catch {
-    // Fallback
+    // Quietly ignore
   }
-  try {
-    return PluginState.getPlugin().app.workspace.getActiveFile();
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 function buildDecorationsForState(state: EditorState, activeFile: TFile | null): DecorationSet {

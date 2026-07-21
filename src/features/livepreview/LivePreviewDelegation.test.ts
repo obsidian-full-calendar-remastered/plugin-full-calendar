@@ -159,6 +159,19 @@ describe('LivePreviewDelegation Tests', () => {
     expect(decos).toBe(Decoration.none);
   });
 
+  it('should return Decoration.none for sub-editor states missing editorInfoField', () => {
+    const file = new TFile();
+    file.path = 'test.md';
+    getActiveFileMock.mockReturnValue(file);
+
+    // EditorState without editorInfoField simulating table cell editor
+    const subEditorState = EditorState.create({ doc: 'cell text' });
+
+    const decos = livePreviewStateFieldSpec.create(subEditorState);
+    expect(decos).toBe(Decoration.none);
+    expect(getDecorationsMock).not.toHaveBeenCalled();
+  });
+
   it('should return Decoration.none if no provider is active/relevant for the file', () => {
     const file = new TFile();
     file.path = 'test.md';

@@ -402,7 +402,7 @@ export async function exchangeCodeForToken(
       refreshToken: data.refresh_token,
       accessToken: data.access_token,
       expiryDate: Date.now() + data.expires_in * 1000,
-      grantedScopes: oauthState.pkce!.scopes
+      grantedScopes: oauthState.pkce.scopes
     });
     // --- END REPLACEMENT BLOCK ---
 

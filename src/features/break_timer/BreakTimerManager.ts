@@ -163,20 +163,39 @@ export class BreakTimerManager {
   public triggerBreak(): void {
     const settings = PluginState.getSettings().breakTimer;
 
+    // Advance next break time immediately so errors in notification or overlay creation don't cause continuous re-triggering loops
+    this.nextBreakTime = Date.now() + settings.intervalMins * 60 * 1000;
+
     // 1. Send native desktop notification
-    this.triggerNotification();
+    try {
+      this.triggerNotification();
+    } catch (e) {
+      console.error('Error sending break notification:', e);
+    }
 
     // 2. Launch fullscreen overlay
-    this.activeOverlayCleanup = showBreakTimerOverlay(
-      this.plugin,
-      settings.breakDurationSecs,
-      () => {
+    try {
+      this.activeOverlayCleanup = showBreakTimerOverlay(
+        this.plugin,
+        settings.breakDurationSecs,
+        () => {
+          this.activeOverlayCleanup = null;
+          // Schedule next break after overlay finishes
+          this.nextBreakTime = Date.now() + settings.intervalMins * 60 * 1000;
+          this.lastActiveTime = Date.now();
+        }
+      );
+    } catch (e) {
+      console.error('Failed to show break timer overlay:', e);
+      if (this.activeOverlayCleanup) {
+        try {
+          this.activeOverlayCleanup();
+        } catch {
+          // ignore
+        }
         this.activeOverlayCleanup = null;
-        // Schedule next break
-        this.nextBreakTime = Date.now() + settings.intervalMins * 60 * 1000;
-        this.lastActiveTime = Date.now();
       }
-    );
+    }
   }
 
   private triggerNotification(): void {

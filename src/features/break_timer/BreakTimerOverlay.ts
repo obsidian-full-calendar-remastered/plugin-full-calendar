@@ -15,15 +15,14 @@ export function showBreakTimerOverlay(
   const doc = activeDocument;
   const app = plugin.app;
 
-  // Create overlay container
-  const overlay = doc.createDiv({ cls: 'ofc-break-timer-overlay' });
+  // Create overlay container attached to document body
+  const overlay = doc.body.createDiv({ cls: 'ofc-break-timer-overlay' });
 
   // Video element
-  const video = createEl('video', { cls: 'ofc-break-timer-video' });
+  const video = overlay.createEl('video', { cls: 'ofc-break-timer-video' });
   video.autoplay = true;
   video.muted = true;
   video.playsInline = true;
-  overlay.appendChild(video);
 
   const pluginId = 'full-calendar-remastered';
   const path1 = normalizePath(
@@ -68,12 +67,10 @@ export function showBreakTimerOverlay(
   void loadVideos();
 
   // Bottom controls container
-  const controls = doc.createDiv({ cls: 'ofc-break-timer-controls' });
-  overlay.appendChild(controls);
+  const controls = overlay.createDiv({ cls: 'ofc-break-timer-controls' });
 
   // Countdown text
-  const countdown = doc.createDiv({ cls: 'ofc-break-timer-countdown' });
-  controls.appendChild(countdown);
+  const countdown = controls.createDiv({ cls: 'ofc-break-timer-countdown' });
 
   let secondsLeft = durationSecs;
   const updateCountdown = () => {
@@ -103,11 +100,10 @@ export function showBreakTimerOverlay(
   }, 1000);
 
   // Close / Skip Button
-  const button = createEl('button', {
+  const button = controls.createEl('button', {
     cls: 'ofc-break-timer-close-btn',
     text: 'Shoo cat'
   });
-  controls.appendChild(button);
 
   const cleanup = () => {
     window.clearInterval(countdownInterval);
@@ -127,8 +123,6 @@ export function showBreakTimerOverlay(
     cleanup();
     onClose();
   });
-
-  doc.body.appendChild(overlay);
 
   return cleanup;
 }

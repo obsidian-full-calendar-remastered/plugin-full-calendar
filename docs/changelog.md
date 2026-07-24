@@ -9,6 +9,10 @@ Corresponds to
 
 ## v0.13.5
 
+<video controls playsinline preload="metadata" width="100%" src="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/changlogs/v0.13.5.mp4">
+    <a href="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/changlogs/v0.13.5.mp4">Open the v0.13.5 release video</a>
+</video>
+
 ### New Features
 
 -   **[Availability Sharing](user/features/availability.md)** ([#330](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/330), [#337](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/337))
@@ -51,6 +55,10 @@ Corresponds to
 ---
 
 ## v0.13.4
+
+<video controls playsinline preload="metadata" width="100%" src="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/changlogs/v0.13.4.mp4">
+    <a href="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/changlogs/v0.13.4.mp4">Open the v0.13.4 release video</a>
+</video>
 
 -   **[Unified Task Backlog Across Providers](user/features/tasks-backlog.md)** ([#275](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/275), [#290](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/290))  
     _Rebuilt backlog as a provider-agnostic system that aggregates unscheduled tasks and supports direct scheduling workflows._  
@@ -120,8 +128,6 @@ Corresponds to
 
 ## v0.13.2
 
-### New Features
-
 -   **[Weather Forecast Integration](user/features/weather.md)**  
     _Introduced an Open-Meteo weather integration for daily, weekly, and monthly views._  
     - Debounced geocoding and coordinates resolution in Settings  
@@ -184,8 +190,6 @@ Corresponds to
     _Added support for Day Planner format integration in daily notes._
 
 
-### Improvements & Fixes
-
 -   **CalDAV Timezone Handling** ([#265](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/265))  
     _Improved ICS timezone serialization to ensure correctness across local and UTC contexts._  
     - Added `addTimeProperty` helper to enforce TZID consistency  
@@ -231,6 +235,14 @@ Corresponds to
 
 ---
 
+
+## v0.13.1
+
+<video controls playsinline preload="metadata" width="100%" src="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/changlogs/v0.13.1.mp4">
+    <a href="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/changlogs/v0.13.1.mp4">Open the v0.13.1 release video</a>
+</video>
+
+---
 
 ## v0.13.0
 

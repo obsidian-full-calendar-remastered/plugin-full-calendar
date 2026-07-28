@@ -1,4 +1,4 @@
-import { CachedMetadata, moment as obsidianMoment, TFile } from 'obsidian';
+import { CachedMetadata, moment as obsidianMoment, TFile, Vault } from 'obsidian';
 import * as React from 'react';
 import {
   appHasDailyNotesPluginLoaded,
@@ -21,6 +21,8 @@ import FullCalendarPlugin from '../../main';
 import { ObsidianInterface } from '../../ObsidianAdapter';
 import { OFCEvent, EventLocation } from '../../types';
 import { constructTitle } from '../../features/category/categoryParser';
+import { DailyNoteParseCache } from './DailyNoteParseCache';
+import { yieldToMainThread } from '../../utils/async';
 
 import {
   CalendarProvider,
@@ -122,6 +124,7 @@ export class DailyNoteProvider
   private app: ObsidianInterface;
   private plugin: FullCalendarPlugin;
   private source: DailyNoteProviderConfig;
+  private parseCache: DailyNoteParseCache;
 
   readonly type = 'dailynote';
   readonly displayName = 'Daily Note';
@@ -140,6 +143,8 @@ export class DailyNoteProvider
     this.app = app;
     this.plugin = plugin;
     this.source = { ...source, format: getDailyNoteEventFormat(source) };
+    const vault = plugin?.app?.vault || (app as unknown as { app?: { vault?: Vault } })?.app?.vault;
+    this.parseCache = new DailyNoteParseCache(vault);
   }
 
   getCapabilities(): CalendarProviderCapabilities {
@@ -272,6 +277,11 @@ export class DailyNoteProvider
   }
 
   public async getEventsInFile(file: TFile): Promise<EditableEventResponse[]> {
+    const cached = this.parseCache.get(file);
+    if (cached) {
+      return cached;
+    }
+
     const date = getDateFromFile(file, 'day')?.format('YYYY-MM-DD');
     const cache = await waitForMetadataWithTimeout(this.app, file);
     if (!cache) {
@@ -283,9 +293,12 @@ export class DailyNoteProvider
     );
 
     // The raw events are returned as-is. The EventEnhancer handles timezone conversion.
-    return inlineEvents.map(({ event, lineNumber }) => {
+    const result: EditableEventResponse[] = inlineEvents.map(({ event, lineNumber }) => {
       return [event, { file, lineNumber }];
     });
+
+    this.parseCache.set(file, result);
+    return result;
   }
 
   async getEvents(range?: { start: Date; end: Date }): Promise<EditableEventResponse[]> {
@@ -304,7 +317,16 @@ export class DailyNoteProvider
       });
     }
 
-    const allEvents = await Promise.all(files.map(f => this.getEventsInFile(f)));
+    const BATCH_SIZE = 20;
+    const allEvents: EditableEventResponse[][] = [];
+    for (let i = 0; i < files.length; i += BATCH_SIZE) {
+      const batch = files.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(batch.map(f => this.getEventsInFile(f)));
+      allEvents.push(...batchResults);
+      if (i + BATCH_SIZE < files.length) {
+        await yieldToMainThread();
+      }
+    }
     return allEvents.flat();
   }
 

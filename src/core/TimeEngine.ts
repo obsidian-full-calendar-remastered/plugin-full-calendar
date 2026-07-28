@@ -200,7 +200,10 @@ export class TimeEngine {
       const allStoredEvents = this.cache.store.getAllEvents();
       const newOccurrences: EnrichedOFCEvent[] = [];
       const now = DateTime.now();
+      const windowStart = now.minus({ hours: 24 });
       const lookaheadEnd = now.plus(OCCURRENCE_CACHE_LOOKAHEAD);
+      const windowStartStr = windowStart.toISODate();
+      const windowEndStr = lookaheadEnd.toISODate();
 
       for (const storedEvent of allStoredEvents) {
         const { id, event, location: pathLocation } = storedEvent; // RENAMED
@@ -213,6 +216,14 @@ export class TimeEngine {
           : null;
 
         if (event.type === 'single') {
+          const dateStr = event.date;
+          if (dateStr && windowStartStr && windowEndStr) {
+            const endDateStr = event.endDate || dateStr;
+            if (endDateStr < windowStartStr || dateStr > windowEndStr) {
+              continue;
+            }
+          }
+
           if (event.allDay) {
             const start = parseEventDateTime(event.date).startOf('day');
             const end = parseEventDateTime(event.endDate || event.date).endOf('day');

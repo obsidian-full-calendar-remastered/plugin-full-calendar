@@ -5,6 +5,7 @@ import { EventEnhancer } from '../EventEnhancer';
 import { TimeEngine } from '../TimeEngine';
 import { CacheEntry } from './types';
 import { LoadDebugProfiler } from '../../utils/LoadDebugProfiler';
+import { areEventsEqual } from './areEventsEqual';
 
 export interface CacheContext {
   store: EventStore;
@@ -111,7 +112,7 @@ export class CacheSyncHandler {
       for (const [key, oldEvent] of oldByKey) {
         const newEvent = newByKey.get(key);
         if (newEvent) {
-          if (JSON.stringify(oldEvent.event) !== JSON.stringify(newEvent.event)) {
+          if (!areEventsEqual(oldEvent.event, newEvent.event)) {
             // Data changed but identity is the same — update in-place, reuse session ID.
             this.ctx.store.delete(oldEvent.id);
             this.ctx.store.add({

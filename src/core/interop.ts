@@ -477,9 +477,10 @@ export function toEventInput(
 
       if (event.endDate) {
         // OFCEvent has an inclusive endDate. FullCalendar needs an exclusive one.
-        // Add one day to any multi-day all-day event's end date.
+        // Add one day to any multi-day all-day event's end date (using UTC to prevent local TZ shifts).
         adjustedEndDate =
-          DateTime.fromISO(event.endDate).plus({ days: 1 }).toISODate() ?? undefined;
+          DateTime.fromISO(event.endDate, { zone: 'utc' }).plus({ days: 1 }).toISODate() ??
+          undefined;
       }
 
       baseEvent.start = event.date;

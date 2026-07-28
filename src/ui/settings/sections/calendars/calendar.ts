@@ -41,7 +41,7 @@ import { WeatherDetailModal } from '../../../../features/weather/WeatherDetailMo
 import { openDailyNoteForDate } from '../../../../features/daily-notes/openDailyNote';
 import { i18n } from '../../../../features/i18n/i18n';
 
-interface ExtraRenderProps {
+export interface ExtraRenderProps {
   eventClick?: (info: EventClickArg) => void;
   customButtons?: {
     [key: string]: {

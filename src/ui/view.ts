@@ -38,6 +38,7 @@ import { ViewContext } from './calendar/ViewContext';
 import { ViewZoomHandler } from './calendar/ViewZoomHandler';
 import { ViewSearchHandler } from './calendar/ViewSearchHandler';
 import { ViewTimelineHandler } from './calendar/ViewTimelineHandler';
+import { resolveCalendarRenderConfig } from './calendar/CalendarViewConfigResolver';
 import { ViewUIHandler } from './calendar/ViewUIHandler';
 import { ViewEventInteractionHandler } from './calendar/ViewEventInteractionHandler';
 export { getCalendarColors } from './calendar/utils';
@@ -238,31 +239,10 @@ export class CalendarView extends ItemView implements ViewContext {
         currentViewType = newViewType;
       };
 
-      this.fullCalendarView = await renderCalendar(calendarEl, sources, {
-        timeZone:
-          calendarConfig.displayTimezone ||
-          PluginState.getSettings().displayTimezone ||
-          Intl.DateTimeFormat().resolvedOptions().timeZone,
+      const renderConfig = resolveCalendarRenderConfig(calendarConfig, PluginState.getSettings(), {
         forceNarrow: this.inSidebar,
-        enableAdvancedCategorization:
-          calendarConfig.enableAdvancedCategorization !== undefined
-            ? calendarConfig.enableAdvancedCategorization
-            : PluginState.getSettings().enableAdvancedCategorization,
         onViewChange: handleViewChange,
         initialView: calendarConfig.initialView,
-        businessHours: (() => {
-          const businessHours =
-            calendarConfig.businessHours || PluginState.getSettings().businessHours;
-          return businessHours.enabled
-            ? {
-                daysOfWeek: businessHours.daysOfWeek,
-                startTime: businessHours.startTime,
-                endTime: businessHours.endTime
-              }
-            : false;
-        })(),
-        firstDay: calendarConfig.firstDay,
-        timeFormat24h: calendarConfig.timeFormat24h,
         slotMinTime: calendarConfig.slotMinTime,
         slotMaxTime: calendarConfig.slotMaxTime,
         allDaySlot: calendarConfig.allDaySlot,
@@ -270,19 +250,12 @@ export class CalendarView extends ItemView implements ViewContext {
         weekends: calendarConfig.weekends,
         hiddenDays: calendarConfig.hiddenDays,
         dayMaxEvents: calendarConfig.dayMaxEvents,
-        highlightCurrentOrNextEvent:
-          calendarConfig.highlightCurrentOrNextEvent !== undefined
-            ? calendarConfig.highlightCurrentOrNextEvent
-            : PluginState.getSettings().highlightCurrentOrNextEvent,
         slotDuration: calendarConfig.slotDuration,
         slotLabelInterval: calendarConfig.slotLabelInterval,
         headerToolbar: calendarConfig.headerToolbar,
         footerToolbar: calendarConfig.footerToolbar,
         height: calendarConfig.height,
-        weatherHide:
-          calendarConfig.weatherHide !== undefined
-            ? calendarConfig.weatherHide
-            : PluginState.getSettings().weatherHide,
+        weatherHide: calendarConfig.weatherHide,
         initialSearchQuery: this.searchHandler.eventSearchQuery,
         onSearchQueryChange: (query: string) => {
           this.searchHandler.eventSearchQuery = query;
@@ -352,6 +325,8 @@ export class CalendarView extends ItemView implements ViewContext {
         },
         drop: (taskId, date, allDay) => this.interactionHandler.handleDrop(taskId, date, allDay)
       });
+
+      this.fullCalendarView = await renderCalendar(calendarEl, sources, renderConfig);
 
       // Initialize shadow events if starting in timeline view
       currentViewType = this.fullCalendarView?.view?.type || '';

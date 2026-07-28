@@ -293,3 +293,74 @@ describe('sanitizeEmbeddedConfig', () => {
     expect(sanitized.calendars).toBeUndefined();
   });
 });
+
+describe('EmbeddedCalendar multi-day all-day event rendering', () => {
+  it('correctly maps multi-day all-day events without date truncation', () => {
+    const multiDayEvent = {
+      id: 'gcal_multiday_1',
+      title: '4-Day Trip',
+      type: 'single',
+      date: '2026-07-10',
+      endDate: '2026-07-13', // inclusive 4 days: 10, 11, 12, 13
+      allDay: true
+    };
+
+    const mockSources = [
+      {
+        id: 'google_1',
+        events: [{ id: 'gcal_multiday_1', event: multiDayEvent }]
+      }
+    ];
+
+    PluginState.setPlugin({
+      app: { vault: { getAbstractFileByPath: jest.fn() } }
+    } as unknown as FullCalendarPlugin);
+    PluginState.setSettings({
+      calendarSources: [{ id: 'google_1', name: 'Google Calendar', type: 'google' }]
+    } as unknown as FullCalendarSettings);
+    PluginState.setCache({
+      getAllEvents: jest.fn().mockReturnValue(mockSources as OFCEventSource[])
+    } as unknown as EventCache);
+
+    PluginState.setInternalAPI({
+      getEventSources: jest.fn().mockImplementation((config: ViewConfig, sourcePath: string) => {
+        return getEventSources(config, sourcePath, PluginState.getInternalAPI());
+      }),
+      getEvents: jest.fn().mockImplementation((criteria, sorts) => {
+        const queryables = [
+          {
+            id: 'gcal_multiday_1',
+            title: '4-Day Trip',
+            calendarId: 'google_1',
+            rawEvent: { id: 'gcal_multiday_1', event: multiDayEvent }
+          }
+        ];
+        return EventFilterSortEngine.query(queryables, criteria, sorts);
+      })
+    } as unknown as InternalAPI);
+
+    const fakeCtx = {
+      app: { vault: { getAbstractFileByPath: jest.fn() } },
+      widgetCtx: { sourcePath: 'note.md' }
+    };
+
+    const result = (
+      EmbeddedCalendar.prototype as unknown as EmbeddedCalendarWithPrivate
+    ).getSourcesAndConfig.call(fakeCtx as unknown as EmbeddedCalendar, {});
+
+    const sources = result.sources as Array<{
+      id: string;
+      events: Array<{ start: string; end: string; allDay: boolean }>;
+    }>;
+    expect(sources).toHaveLength(1);
+    expect(sources[0].events).toHaveLength(1);
+
+    const eventInput = sources[0].events[0];
+    expect(eventInput.start).toBe('2026-07-10');
+    // FullCalendar exclusive end for 4-day event (July 10..13) must be 2026-07-14
+    expect(eventInput.end).toBe('2026-07-14');
+    expect(eventInput.allDay).toBe(true);
+
+    PluginState.clear();
+  });
+});

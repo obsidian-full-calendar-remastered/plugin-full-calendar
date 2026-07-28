@@ -131,7 +131,11 @@ export class EventFilterSortEngine {
 
       if (event.allDay) {
         startMillis = parseDateTimeToMillis(event.date);
-        endMillis = parseDateTimeToMillis(event.endDate || event.date);
+        const endDtStr = event.endDate || event.date;
+        const parsedEnd = DateTime.fromISO(endDtStr);
+        endMillis = parsedEnd.isValid
+          ? parsedEnd.endOf('day').toMillis()
+          : parseDateTimeToMillis(endDtStr);
       } else {
         startMillis = parseDateTimeToMillis(event.date, event.startTime, event.timezone);
         endMillis = event.endTime

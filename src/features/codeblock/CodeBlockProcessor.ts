@@ -8,6 +8,7 @@ import { ViewEventInteractionHandler } from '../../ui/calendar/ViewEventInteract
 import { renderCalendar } from '../../ui/settings/sections/calendars/calendar';
 import { VIEW_ZOOM_CONFIG } from '../../ui/calendar/ViewZoomHandler';
 import { ViewTimelineHandler } from '../../ui/calendar/ViewTimelineHandler';
+import { resolveCalendarRenderConfig } from '../../ui/calendar/CalendarViewConfigResolver';
 import {
   EmbeddedWidgetStrategy,
   EmbeddedWidgetInstance,
@@ -246,23 +247,17 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       config.view?.includes('resourceTimeline') || config.view?.includes('Timeline') || false;
     const resources = isTimelineView ? this.timelineHandler.buildTimelineResources() : undefined;
 
+    const calendarConfig = this.enhancerInstance.getCalendarConfig();
+
     // Render using renderCalendar factory
-    const cal = await renderCalendar(el, sources, {
-      timeZone:
-        PluginState.getSettings().displayTimezone ||
-        Intl.DateTimeFormat().resolvedOptions().timeZone,
+    const renderProps = resolveCalendarRenderConfig(calendarConfig, PluginState.getSettings(), {
       initialView: {
         desktop: config.view || 'dayGridMonth',
         mobile: config.view || 'timeGrid3Days'
       },
       height: config.height === 'fit' ? 'auto' : undefined,
-      firstDay: PluginState.getSettings().firstDay,
-      timeFormat24h: PluginState.getSettings().timeFormat24h,
-      highlightCurrentOrNextEvent: PluginState.getSettings().highlightCurrentOrNextEvent,
-      dayMaxEvents: true,
       headerToolbar: config.header === false ? false : undefined,
       footerToolbar: config.header === false ? false : undefined,
-      timeGridDayHeaderFormat: PluginState.getSettings().timeGridDayHeaderFormat,
       weatherHide: config.weather === false,
       ...(slotDuration !== undefined && { slotDuration }),
       ...(slotLabelInterval !== undefined && { slotLabelInterval }),
@@ -291,6 +286,8 @@ export class EmbeddedCalendar extends Component implements ViewContext {
         return await this.interactionHandler.getRecurringTaskInstanceState(eventApi);
       }
     });
+
+    const cal = await renderCalendar(el, sources, renderProps);
 
     if (initialDate) {
       cal.gotoDate(initialDate);

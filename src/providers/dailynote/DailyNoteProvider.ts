@@ -22,7 +22,8 @@ import { ObsidianInterface } from '../../ObsidianAdapter';
 import { OFCEvent, EventLocation } from '../../types';
 import { constructTitle } from '../../features/category/categoryParser';
 import { DailyNoteParseCache } from './DailyNoteParseCache';
-import { yieldToMainThread } from '../../utils/async';
+import { yieldIfFrameBudgetExceeded } from '../../utils/async';
+import { LoadDebugProfiler } from '../../utils/LoadDebugProfiler';
 
 import {
   CalendarProvider,
@@ -279,15 +280,36 @@ export class DailyNoteProvider
   public async getEventsInFile(file: TFile): Promise<EditableEventResponse[]> {
     const cached = this.parseCache.get(file);
     if (cached) {
+      LoadDebugProfiler.recordDailyNotesStats({ cacheHits: 1 });
       return cached;
     }
 
-    const date = getDateFromFile(file, 'day')?.format('YYYY-MM-DD');
-    const cache = await waitForMetadataWithTimeout(this.app, file);
+    const cache = this.app.getMetadata(file) || (await waitForMetadataWithTimeout(this.app, file));
     if (!cache) {
       return [];
     }
+
+    // PRE-FILTER: If the user configured a specific heading for Daily Notes (e.g. "Calendar"),
+    // check if this file's metadata contains that heading. If not, skip reading the file!
+    if (this.source.heading && this.source.heading.trim()) {
+      const headingText = this.source.heading.trim();
+      const hasHeading = cache.headings?.some(h => h.heading === headingText);
+      if (!hasHeading) {
+        LoadDebugProfiler.recordDailyNotesStats({ preFiltered: 1 });
+        this.parseCache.set(file, []);
+        return [];
+      }
+    }
+
     const listItems = getListsUnderHeading(this.source.heading, cache);
+    if (listItems.length === 0) {
+      LoadDebugProfiler.recordDailyNotesStats({ preFiltered: 1 });
+      this.parseCache.set(file, []);
+      return [];
+    }
+
+    LoadDebugProfiler.recordDailyNotesStats({ readFromDisk: 1 });
+    const date = getDateFromFile(file, 'day')?.format('YYYY-MM-DD');
     const inlineEvents = await this.app.process(file, text =>
       getAllInlineEventsFromFile(text, listItems, { date })
     );
@@ -317,15 +339,15 @@ export class DailyNoteProvider
       });
     }
 
-    const BATCH_SIZE = 20;
+    LoadDebugProfiler.recordDailyNotesStats({ totalScanned: files.length });
+
     const allEvents: EditableEventResponse[][] = [];
-    for (let i = 0; i < files.length; i += BATCH_SIZE) {
-      const batch = files.slice(i, i + BATCH_SIZE);
-      const batchResults = await Promise.all(batch.map(f => this.getEventsInFile(f)));
-      allEvents.push(...batchResults);
-      if (i + BATCH_SIZE < files.length) {
-        await yieldToMainThread();
-      }
+    let frameStart = performance.now();
+
+    for (let i = 0; i < files.length; i++) {
+      const res = await this.getEventsInFile(files[i]);
+      allEvents.push(res);
+      frameStart = await yieldIfFrameBudgetExceeded(frameStart, 5);
     }
     return allEvents.flat();
   }

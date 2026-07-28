@@ -18,10 +18,15 @@ export interface CacheContext {
   updateQueue: { toRemove: Set<string>; toAdd: Map<string, CacheEntry> };
 }
 
+import { yieldToMainThread, yieldIfFrameBudgetExceeded } from '../../utils/async';
+
 export class CacheSyncHandler {
   constructor(private ctx: CacheContext) {}
 
-  public syncCalendar(calendarId: string, newRawEvents: [OFCEvent, EventLocation | null][]): void {
+  public async syncCalendar(
+    calendarId: string,
+    newRawEvents: [OFCEvent, EventLocation | null][]
+  ): Promise<void> {
     if (this.ctx.isBulkUpdating) {
       return;
     }
@@ -30,12 +35,22 @@ export class CacheSyncHandler {
       // 1. Get OLD state from the store for this calendar.
       const oldEventsInCalendar = this.ctx.store.getEventsInCalendar(calendarId);
 
-      // 2. ENHANCE the new raw events.
-      const newEnhancedEvents = newRawEvents.map(([rawEvent, location]) => ({
-        event: this.ctx.enhancer.enhance(rawEvent),
-        location,
-        calendarId
-      }));
+      // 2. ENHANCE the new raw events with 5ms frame budget yielding.
+      const newEnhancedEvents: {
+        event: OFCEvent;
+        location: EventLocation | null;
+        calendarId: string;
+      }[] = [];
+
+      let frameStart = performance.now();
+      for (const [rawEvent, location] of newRawEvents) {
+        newEnhancedEvents.push({
+          event: this.ctx.enhancer.enhance(rawEvent),
+          location,
+          calendarId
+        });
+        frameStart = await yieldIfFrameBudgetExceeded(frameStart, 5);
+      }
 
       // 3. Build keyed maps for old and new events using cheap sync keys (O(N), no I/O).
       const oldByKey = new Map<string, { event: OFCEvent; id: string; calendarId: string }>();
@@ -53,13 +68,17 @@ export class CacheSyncHandler {
         string,
         { event: OFCEvent; location: EventLocation | null; calendarId: string }
       >();
-      for (const newEvent of newEnhancedEvents) {
+      for (let i = 0; i < newEnhancedEvents.length; i++) {
+        const newEvent = newEnhancedEvents[i];
         const key = PluginState.getProviderRegistry().computeSyncKeyForEvent(
           newEvent.event,
           newEvent.calendarId
         );
         if (key) {
           newByKey.set(key, newEvent);
+        }
+        if (i > 0 && i % 200 === 0) {
+          await yieldToMainThread();
         }
       }
 
@@ -84,6 +103,7 @@ export class CacheSyncHandler {
       }
 
       // 4b. Added events: new keys not present in old set.
+      let addCount = 0;
       for (const [key, newEvent] of newByKey) {
         if (!oldByKey.has(key)) {
           const newSessionId = PluginState.getProviderRegistry().generateId();
@@ -105,6 +125,10 @@ export class CacheSyncHandler {
             id: newSessionId
           });
           hasChanges = true;
+          addCount++;
+          if (addCount % 200 === 0) {
+            await yieldToMainThread();
+          }
         }
       }
 
@@ -138,7 +162,6 @@ export class CacheSyncHandler {
             });
             hasChanges = true;
           }
-          // If data is identical: no-op. Session ID, store entry, and mapping are all reused.
         }
       }
 

@@ -28,17 +28,35 @@ export function yieldToMainThread(): Promise<void> {
       resolve();
     };
 
-    const win = typeof window !== 'undefined' ? (window as unknown as WindowWithIdle) : undefined;
-    if (win?.requestIdleCallback) {
-      win.requestIdleCallback(onDone, { timeout: 10 });
-    } else if (win?.setTimeout) {
-      win.setTimeout(onDone, 0);
-    } else if (typeof requestIdleCallback === 'function') {
-      requestIdleCallback(onDone, { timeout: 10 });
+    if (typeof MessageChannel !== 'undefined') {
+      const channel = new MessageChannel();
+      channel.port1.onmessage = () => {
+        channel.port1.close();
+        onDone();
+      };
+      channel.port2.postMessage(null);
     } else {
       window.setTimeout(onDone, 0);
     }
   });
+}
+
+/**
+ * Checks elapsed time since `frameStartTime`. If it exceeds `budgetMs` (default 5ms),
+ * yields to the main thread via macro-task yielding and returns the new frame start time.
+ */
+export async function yieldIfFrameBudgetExceeded(
+  frameStartTime: number,
+  budgetMs = 5
+): Promise<number> {
+  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    return frameStartTime;
+  }
+  if (performance.now() - frameStartTime >= budgetMs) {
+    await yieldToMainThread();
+    return performance.now();
+  }
+  return frameStartTime;
 }
 
 /**

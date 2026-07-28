@@ -129,24 +129,23 @@ const makeCache = (events: OFCEvent[]) => {
           }))
         ),
 
-      fetchAllByPriority: (
+      fetchAllByPriority: async (
         onProviderComplete?: (
           calendarId: string,
           events: [OFCEvent, EventLocation | null][]
-        ) => void,
-        onAllComplete?: () => void
+        ) => void | Promise<void>,
+        onAllComplete?: () => void | Promise<void>
       ) => {
         // Return local events via callback
         const localEvents = events.map(
           e => [e, null as EventLocation | null] as [OFCEvent, EventLocation | null]
         );
         if (onProviderComplete) {
-          onProviderComplete('test', localEvents);
+          await onProviderComplete('test', localEvents);
         }
         if (onAllComplete) {
-          onAllComplete();
+          await onAllComplete();
         }
-        return Promise.resolve();
       },
       getAllSources: () => [calendarInfo],
       getInstance: () => mockProvider,
@@ -1340,7 +1339,7 @@ describe('editable calendars', () => {
       setPluginStateFromMock(mockPlugin);
       cache = new EventCache(mockPlugin);
       cache.reset();
-      jest.spyOn(cache, 'syncCalendar').mockImplementation(() => {});
+      jest.spyOn(cache, 'syncCalendar').mockImplementation(async () => {});
 
       // Act: Call populate and wait for completion
       await cache.populate();

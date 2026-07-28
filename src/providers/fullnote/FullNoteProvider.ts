@@ -21,6 +21,8 @@ import {
 import { FrontmatterCardDecorator } from './codemirror/FrontmatterCardDecorator';
 import { LivePreviewDecorator } from '../../features/livepreview/LivePreviewDecorator';
 import { TemplateEngine } from '../../features/linked-notes/TemplateEngine';
+import { yieldToMainThread } from '../../utils/async';
+import { LoadDebugProfiler } from '../../utils/LoadDebugProfiler';
 
 export type EditableEventResponse = [OFCEvent, EventLocation | null];
 
@@ -231,10 +233,25 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
     }
 
     const events: EditableEventResponse[] = [];
-    for (const file of eventFolder.children) {
-      if (file instanceof TFile) {
-        const results = await this.getEventsInFile(file);
-        events.push(...results);
+    const files = eventFolder.children.filter((file): file is TFile => file instanceof TFile);
+    const BATCH_SIZE = 15;
+
+    for (let i = 0; i < files.length; i += BATCH_SIZE) {
+      const startTime = performance.now();
+      const batch = files.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(batch.map(file => this.getEventsInFile(file)));
+      for (const res of batchResults) {
+        events.push(...res);
+      }
+      const duration = performance.now() - startTime;
+      if (duration >= 50) {
+        LoadDebugProfiler.recordFreeze(
+          `Full Notes Batch (${i + 1}-${Math.min(i + BATCH_SIZE, files.length)}/${files.length})`,
+          duration
+        );
+      }
+      if (i + BATCH_SIZE < files.length) {
+        await yieldToMainThread();
       }
     }
     return events;

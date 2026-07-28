@@ -494,7 +494,7 @@ export class CacheMutationHandler {
     await provider.scheduleTask(taskId, date, allDay);
 
     const events = await provider.getEvents();
-    PluginState.getCache()?.syncCalendar(provider.getTaskBacklogInfo().id, events);
+    await PluginState.getCache()?.syncCalendar(provider.getTaskBacklogInfo().id, events);
     PluginState.getProviderRegistry().refreshBacklogViews();
     PluginState.getProviderRegistry().refreshCalDAVTaskInboxViews();
   }
@@ -514,7 +514,7 @@ export class CacheMutationHandler {
     await provider.unscheduleTask(details.event.uid);
 
     const events = await provider.getEvents();
-    PluginState.getCache()?.syncCalendar(details.calendarId, events);
+    await PluginState.getCache()?.syncCalendar(details.calendarId, events);
     PluginState.getProviderRegistry().refreshBacklogViews();
     PluginState.getProviderRegistry().refreshCalDAVTaskInboxViews();
   }

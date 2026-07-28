@@ -331,7 +331,10 @@ export class ProviderRegistry {
    * Remote providers (loadPriority >= 100) load asynchronously and call onProviderComplete.
    */
   public async fetchAllByPriority(
-    onProviderComplete?: (calendarId: string, events: [OFCEvent, EventLocation | null][]) => void,
+    onProviderComplete?: (
+      calendarId: string,
+      events: [OFCEvent, EventLocation | null][]
+    ) => void | Promise<void>,
     onAllComplete?: () => void | Promise<void>
   ): Promise<void> {
     if (!this.cache) {
@@ -360,9 +363,12 @@ export class ProviderRegistry {
     };
 
     // Helper to process results from a provider
-    const processResults = (settingsId: string, rawEvents: [OFCEvent, EventLocation | null][]) => {
+    const processResults = async (
+      settingsId: string,
+      rawEvents: [OFCEvent, EventLocation | null][]
+    ) => {
       if (onProviderComplete) {
-        onProviderComplete(settingsId, rawEvents);
+        await onProviderComplete(settingsId, rawEvents);
       }
     };
 
@@ -383,7 +389,7 @@ export class ProviderRegistry {
       LoadDebugProfiler.startProvider(stage1LocalName, settingsId, name);
       try {
         const rawEvents = await instance.getEvents(stage1Range);
-        processResults(settingsId, rawEvents);
+        await processResults(settingsId, rawEvents);
         LoadDebugProfiler.endProvider(stage1LocalName, settingsId, rawEvents.length, true);
       } catch (e) {
         const source = this.getSource(settingsId);
@@ -414,7 +420,7 @@ export class ProviderRegistry {
         LoadDebugProfiler.startProvider(stage2LocalName, settingsId, name);
         try {
           const rawEvents = await instance.getEvents();
-          processResults(settingsId, rawEvents);
+          await processResults(settingsId, rawEvents);
           LoadDebugProfiler.endProvider(stage2LocalName, settingsId, rawEvents.length, true);
         } catch (e) {
           const errorMsg = e instanceof Error ? e.message : String(e);
@@ -442,7 +448,7 @@ export class ProviderRegistry {
         try {
           const rawEventsStage1 = await instance.getEvents(stage1Range);
           stage1RemoteEvents.set(settingsId, rawEventsStage1);
-          processResults(settingsId, rawEventsStage1);
+          await processResults(settingsId, rawEventsStage1);
           LoadDebugProfiler.endProvider(stage1RemoteName, settingsId, rawEventsStage1.length, true);
         } catch (e) {
           const source = this.getSource(settingsId);
@@ -476,7 +482,7 @@ export class ProviderRegistry {
           }
 
           const rawEventsStage2 = await instance.getEvents();
-          processResults(settingsId, rawEventsStage2);
+          await processResults(settingsId, rawEventsStage2);
           await this.refreshProviderAuxiliaryData(settingsId, instance);
           LoadDebugProfiler.endProvider(stage2RemoteName, settingsId, rawEventsStage2.length, true);
         } catch (e) {
@@ -565,7 +571,7 @@ export class ProviderRegistry {
 
     try {
       const rawEvents = await instance.getEvents();
-      this.cache.syncCalendar(settingsId, rawEvents);
+      await this.cache.syncCalendar(settingsId, rawEvents);
       await this.refreshProviderAuxiliaryData(settingsId, instance);
       this.providerRetryAttempts.delete(settingsId);
       this.refreshBacklogViews();
@@ -726,11 +732,11 @@ export class ProviderRegistry {
 
     const promises = remoteInstances.map(([settingsId, instance]) => {
       return Promise.all([
-        instance.getEvents().then(events => {
+        instance.getEvents().then(async events => {
           if (!this.cache) {
             return;
           }
-          this.cache.syncCalendar(settingsId, events);
+          await this.cache.syncCalendar(settingsId, events);
         }),
         this.refreshProviderAuxiliaryData(settingsId, instance)
       ]).catch((err: Error) => {

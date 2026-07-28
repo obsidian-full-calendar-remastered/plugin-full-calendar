@@ -32,6 +32,20 @@ export interface PhaseTimingRecord {
   durationMs: number;
 }
 
+export interface FreezeRecord {
+  context: string;
+  durationMs: number;
+  timestamp: number;
+  details?: string;
+}
+
+export interface DailyNotesStats {
+  totalScanned: number;
+  preFiltered: number;
+  cacheHits: number;
+  readFromDisk: number;
+}
+
 export interface LoadReport {
   onloadDurationMs: number | null;
   timeToLayoutReadyMs: number | null;
@@ -39,6 +53,8 @@ export interface LoadReport {
   totalPopulateDurationMs: number | null;
   stages: StageTimingRecord[];
   phases: PhaseTimingRecord[];
+  freezes: FreezeRecord[];
+  dailyNotesStats: DailyNotesStats;
   totalYieldDurationMs: number;
   unaccountedDurationMs: number;
   timestamp: number;
@@ -73,6 +89,14 @@ class LoadDebugProfilerImpl {
   private currentPhases = new Map<string, number>();
   private completedStages: StageTimingRecord[] = [];
   private completedPhases: PhaseTimingRecord[] = [];
+  private detectedFreezes: FreezeRecord[] = [];
+
+  private dailyNotesStats: DailyNotesStats = {
+    totalScanned: 0,
+    preFiltered: 0,
+    cacheHits: 0,
+    readFromDisk: 0
+  };
 
   private lastReport: LoadReport | null = null;
   private lastFormattedReport: string | null = null;
@@ -96,8 +120,40 @@ class LoadDebugProfilerImpl {
     this.currentPhases.clear();
     this.completedStages = [];
     this.completedPhases = [];
+    this.detectedFreezes = [];
+    this.dailyNotesStats = {
+      totalScanned: 0,
+      preFiltered: 0,
+      cacheHits: 0,
+      readFromDisk: 0
+    };
     this.lastReport = null;
     this.lastFormattedReport = null;
+  }
+
+  public recordFreeze(context: string, durationMs: number, details?: string): void {
+    const record: FreezeRecord = {
+      context,
+      durationMs: Number(durationMs.toFixed(2)),
+      timestamp: Date.now(),
+      details
+    };
+    if (durationMs >= 50) {
+      console.warn(
+        `[Full Calendar UI Freeze Warning] "${context}" blocked main thread for ${durationMs.toFixed(1)}ms.`,
+        details || ''
+      );
+    }
+    if (!this.enabled) return;
+    this.detectedFreezes.push(record);
+  }
+
+  public recordDailyNotesStats(stats: Partial<DailyNotesStats>): void {
+    if (!this.enabled) return;
+    if (stats.totalScanned !== undefined) this.dailyNotesStats.totalScanned += stats.totalScanned;
+    if (stats.preFiltered !== undefined) this.dailyNotesStats.preFiltered += stats.preFiltered;
+    if (stats.cacheHits !== undefined) this.dailyNotesStats.cacheHits += stats.cacheHits;
+    if (stats.readFromDisk !== undefined) this.dailyNotesStats.readFromDisk += stats.readFromDisk;
   }
 
   public recordYield(durationMs: number): void {
@@ -160,6 +216,9 @@ class LoadDebugProfilerImpl {
     if (!provider) return;
 
     const durationMs = Number((performance.now() - provider.startTime).toFixed(2));
+    if (durationMs >= 50) {
+      this.recordFreeze(`Provider load: ${provider.calendarName} (${stageName})`, durationMs);
+    }
     stage.providers.delete(calendarId);
     stage.completedProviders.push({
       calendarId,
@@ -195,6 +254,9 @@ class LoadDebugProfilerImpl {
     const startTime = this.currentPhases.get(phaseName);
     if (startTime === undefined) return;
     const durationMs = Number((performance.now() - startTime).toFixed(2));
+    if (durationMs >= 50) {
+      this.recordFreeze(`Phase execution: ${phaseName}`, durationMs);
+    }
     this.currentPhases.delete(phaseName);
     this.completedPhases.push({ phaseName, durationMs });
   }
@@ -246,6 +308,8 @@ class LoadDebugProfilerImpl {
       totalPopulateDurationMs,
       stages: [...this.completedStages],
       phases: [...this.completedPhases],
+      freezes: [...this.detectedFreezes],
+      dailyNotesStats: { ...this.dailyNotesStats },
       totalYieldDurationMs,
       unaccountedDurationMs,
       timestamp: Date.now()
@@ -269,6 +333,25 @@ class LoadDebugProfilerImpl {
     }
     if (report.totalPopulateDurationMs !== null) {
       lines.push(`Total cache population: ${report.totalPopulateDurationMs} ms`);
+    }
+
+    if (report.dailyNotesStats.totalScanned > 0) {
+      lines.push('');
+      lines.push('Daily Notes Optimization Metrics:');
+      lines.push(`  • Total daily notes scanned: ${report.dailyNotesStats.totalScanned}`);
+      lines.push(`  • Metadata pre-filtered (0ms skip): ${report.dailyNotesStats.preFiltered}`);
+      lines.push(`  • In-memory parse cache hits: ${report.dailyNotesStats.cacheHits}`);
+      lines.push(`  • Disk/Vault file reads: ${report.dailyNotesStats.readFromDisk}`);
+    }
+
+    if (report.freezes.length > 0) {
+      lines.push('');
+      lines.push(`UI Freeze Warnings (Long Tasks > 50ms): ${report.freezes.length}`);
+      for (const freeze of report.freezes) {
+        lines.push(
+          `  ⚠️ [${freeze.context}] - ${freeze.durationMs} ms ${freeze.details ? `(${freeze.details})` : ''}`
+        );
+      }
     }
 
     lines.push('');

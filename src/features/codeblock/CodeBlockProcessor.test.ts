@@ -14,6 +14,7 @@ import type { FullCalendarSettings } from '../../types/settings';
 import type EventCache from '../../core/EventCache';
 import type { InternalAPI } from '../../api/FullCalendarAPI';
 import type FullCalendarPlugin from '../../main';
+import type { OFCEvent } from '../../types';
 
 interface FakeContext {
   app: {
@@ -296,7 +297,7 @@ describe('sanitizeEmbeddedConfig', () => {
 
 describe('EmbeddedCalendar multi-day all-day event rendering', () => {
   it('correctly maps multi-day all-day events without date truncation', () => {
-    const multiDayEvent = {
+    const multiDayEvent: OFCEvent = {
       id: 'gcal_multiday_1',
       title: '4-Day Trip',
       type: 'single',
@@ -305,9 +306,11 @@ describe('EmbeddedCalendar multi-day all-day event rendering', () => {
       allDay: true
     };
 
-    const mockSources = [
+    const mockSources: OFCEventSource[] = [
       {
         id: 'google_1',
+        editable: true,
+        color: '#4285F4',
         events: [{ id: 'gcal_multiday_1', event: multiDayEvent }]
       }
     ];
@@ -319,24 +322,26 @@ describe('EmbeddedCalendar multi-day all-day event rendering', () => {
       calendarSources: [{ id: 'google_1', name: 'Google Calendar', type: 'google' }]
     } as unknown as FullCalendarSettings);
     PluginState.setCache({
-      getAllEvents: jest.fn().mockReturnValue(mockSources as OFCEventSource[])
+      getAllEvents: jest.fn().mockReturnValue(mockSources)
     } as unknown as EventCache);
 
     PluginState.setInternalAPI({
       getEventSources: jest.fn().mockImplementation((config: ViewConfig, sourcePath: string) => {
         return getEventSources(config, sourcePath, PluginState.getInternalAPI());
       }),
-      getEvents: jest.fn().mockImplementation((criteria, sorts) => {
-        const queryables = [
-          {
-            id: 'gcal_multiday_1',
-            title: '4-Day Trip',
-            calendarId: 'google_1',
-            rawEvent: { id: 'gcal_multiday_1', event: multiDayEvent }
-          }
-        ];
-        return EventFilterSortEngine.query(queryables, criteria, sorts);
-      })
+      getEvents: jest
+        .fn()
+        .mockImplementation((criteria: EventFilterCriteria, sorts?: EventSortCriteria[]) => {
+          const queryables: QueryableEvent[] = [
+            {
+              id: 'gcal_multiday_1',
+              title: '4-Day Trip',
+              calendarId: 'google_1',
+              rawEvent: { id: 'gcal_multiday_1', event: multiDayEvent }
+            }
+          ];
+          return EventFilterSortEngine.query(queryables, criteria, sorts);
+        })
     } as unknown as InternalAPI);
 
     const fakeCtx = {

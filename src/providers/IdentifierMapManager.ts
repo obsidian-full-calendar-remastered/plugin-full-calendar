@@ -1,6 +1,7 @@
 import { CalendarProvider, SyncKeyProvider, CanonicalTitleProvider } from './Provider';
 import { OFCEvent } from '../types';
 import EventCache from '../core/EventCache';
+import { yieldIfFrameBudgetExceeded } from '../utils/async';
 
 export class IdentifierMapManager {
   private pkCounter = 0;
@@ -128,10 +129,12 @@ export class IdentifierMapManager {
   }): void {
     const cache = this.getCache();
     if (!cache) return;
-    this.identifierMapPromise = (() => {
+    this.identifierMapPromise = (async () => {
       this.identifierToSessionIdMap.clear();
       this.sessionIdToIdentifierMap.clear();
-      for (const storedEvent of store.getAllEvents()) {
+      const allEvents = store.getAllEvents();
+      let frameStart = performance.now();
+      for (const storedEvent of allEvents) {
         const globalIdentifier = this.getGlobalIdentifier(
           storedEvent.event,
           storedEvent.calendarId
@@ -140,8 +143,8 @@ export class IdentifierMapManager {
           this.identifierToSessionIdMap.set(globalIdentifier, storedEvent.id);
           this.sessionIdToIdentifierMap.set(storedEvent.id, globalIdentifier);
         }
+        frameStart = await yieldIfFrameBudgetExceeded(frameStart, 5);
       }
-      return Promise.resolve();
     })();
   }
 

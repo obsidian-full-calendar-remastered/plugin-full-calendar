@@ -163,8 +163,8 @@ export default class EventCache {
     LoadDebugProfiler.startPopulate();
     try {
       await PluginState.getProviderRegistry().fetchAllByPriority(
-        (calendarId, eventsForSync) => {
-          this.syncCalendar(calendarId, eventsForSync);
+        async (calendarId, eventsForSync) => {
+          await this.syncCalendar(calendarId, eventsForSync);
         },
         async () => {
           // This callback runs when STAGE 1 is complete.
@@ -406,8 +406,11 @@ export default class EventCache {
   //                         FILESYSTEM & REMOTE HOOKS
   // ====================================================================
 
-  public syncCalendar(calendarId: string, newRawEvents: [OFCEvent, EventLocation | null][]): void {
-    this.syncHandler.syncCalendar(calendarId, newRawEvents);
+  public async syncCalendar(
+    calendarId: string,
+    newRawEvents: [OFCEvent, EventLocation | null][]
+  ): Promise<void> {
+    await this.syncHandler.syncCalendar(calendarId, newRawEvents);
   }
 
   /**

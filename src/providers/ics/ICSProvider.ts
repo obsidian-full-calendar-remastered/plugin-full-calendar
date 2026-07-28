@@ -1,7 +1,7 @@
 import { PluginState } from '../../core/PluginState';
 import { request, TFile } from 'obsidian';
 import { OFCEvent, EventLocation } from '../../types';
-import { getEventsFromICS } from './ics';
+import { getEventsFromICSAsync } from './ics';
 import * as React from 'react';
 
 import { CalendarProvider, CalendarProviderCapabilities, SyncKeyProvider } from '../Provider';
@@ -161,7 +161,8 @@ export class ICSProvider implements CalendarProvider<ICSProviderConfig>, SyncKey
       if (file instanceof TFile) {
         try {
           const content = await this.plugin.app.vault.read(file);
-          return getEventsFromICS(content).map(event => {
+          const rawEvents = await getEventsFromICSAsync(content);
+          return rawEvents.map(event => {
             const linkedFile = this.linkedNoteIndex.getFileForEvent(event.uid || '');
             const location = linkedFile
               ? { file: { path: linkedFile.path }, lineNumber: undefined }
@@ -191,7 +192,8 @@ export class ICSProvider implements CalendarProvider<ICSProviderConfig>, SyncKey
       if (!displayTimezone) return [];
 
       // Remove timezone conversion logic; just return raw events
-      return getEventsFromICS(response).map(event => {
+      const rawEvents = await getEventsFromICSAsync(response);
+      return rawEvents.map(event => {
         const linkedFile = this.linkedNoteIndex.getFileForEvent(event.uid || '');
         const location = linkedFile
           ? { file: { path: linkedFile.path }, lineNumber: undefined }

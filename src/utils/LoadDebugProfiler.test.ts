@@ -87,4 +87,29 @@ describe('LoadDebugProfiler', () => {
     await expect(promise).resolves.toBeUndefined();
     expect(LoadDebugProfiler.getLastReport()).toBeNull();
   });
+
+  test('records freezes and daily note optimization metrics', () => {
+    LoadDebugProfiler.setEnabled(true);
+    LoadDebugProfiler.startPopulate();
+    LoadDebugProfiler.recordFreeze('Heavy Operation', 120, '1000 items');
+    LoadDebugProfiler.recordDailyNotesStats({
+      totalScanned: 500,
+      preFiltered: 450,
+      cacheHits: 40,
+      readFromDisk: 10
+    });
+    LoadDebugProfiler.endPopulate();
+
+    const report = LoadDebugProfiler.getLastReport();
+    expect(report?.freezes.length).toBe(1);
+    expect(report?.freezes[0].context).toBe('Heavy Operation');
+    expect(report?.freezes[0].durationMs).toBe(120);
+    expect(report?.dailyNotesStats.totalScanned).toBe(500);
+    expect(report?.dailyNotesStats.preFiltered).toBe(450);
+
+    const formatted = LoadDebugProfiler.getFormattedReport();
+    expect(formatted).toContain('Daily Notes Optimization Metrics:');
+    expect(formatted).toContain('Metadata pre-filtered (0ms skip): 450');
+    expect(formatted).toContain('UI Freeze Warnings (Long Tasks > 50ms): 1');
+  });
 });

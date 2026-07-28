@@ -28,6 +28,7 @@ import { renderOnboarding } from './onboard';
 import { PLUGIN_SLUG, CalendarInfo } from '../types';
 import { UpdateViewCallback } from '../core/EventCache';
 import { t } from '../features/i18n/i18n';
+import { LoadDebugProfiler } from '../utils/LoadDebugProfiler';
 
 import { ViewEnhancer } from '../core/ViewEnhancer';
 import { createDateNavigation, DateNavigation } from '../features/navigation/DateNavigation';
@@ -362,7 +363,7 @@ export class CalendarView extends ItemView implements ViewContext {
         }
 
         if (info.type === 'resync') {
-          void this.onOpen();
+          this.refreshEventSourcesFromCache();
           return;
         }
 
@@ -374,6 +375,7 @@ export class CalendarView extends ItemView implements ViewContext {
           window.requestAnimationFrame(() => {
             if (this.fullCalendarView) {
               const fullCalendarView = this.fullCalendarView;
+              const updateStartTime = performance.now();
               if (
                 info.type === 'events' &&
                 info.affectedCalendars &&
@@ -398,6 +400,15 @@ export class CalendarView extends ItemView implements ViewContext {
 
               this.searchHandler.clearCaches();
               this.searchHandler.scheduleApplyFilter();
+
+              const updateDuration = performance.now() - updateStartTime;
+              if (updateDuration >= 50) {
+                LoadDebugProfiler.recordFreeze(
+                  'FullCalendar DOM Event Source Update',
+                  updateDuration,
+                  `Affected calendars: ${info.type === 'events' ? info.affectedCalendars?.join(', ') : 'All'}`
+                );
+              }
             }
           });
         }

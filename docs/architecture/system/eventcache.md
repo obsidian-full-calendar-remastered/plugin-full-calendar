@@ -11,7 +11,7 @@
 
 | Responsibility | Component / Practical behavior |
 |---|---|
-| Staged population | `CacheSyncHandler`: Calls `ProviderRegistry.fetchAllByPriority()` and progressively syncs provider results. |
+| Staged population | `CacheSyncHandler`: Calls `ProviderRegistry.fetchAllByPriority()` and syncs provider results asynchronously in non-blocking slices using `yieldIfFrameBudgetExceeded(frameStart, 5)` and `MessageChannel` macro-task yielding. |
 | State ownership | `EventCache` & `EventStore`: Persists canonical event state and exposes query APIs for views/features. |
 | Mutation orchestration | `CacheMutationHandler`: Executes optimistic add/update/delete, then commits or rolls back based on provider result (e.g., [Tasks Optimistic Flow](../calendars/tasks-integration.md#optimistic-ui-updates)). |
 | Publish/subscribe hub | `CacheSubscriptionManager`: Emits `update` payloads (`events`, `calendar`, `resync`) and `time-tick` state for reminder/time UI flows. |

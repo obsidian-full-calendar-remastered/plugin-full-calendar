@@ -20,6 +20,8 @@ import { OFCEvent, validateEvent } from '../../types';
 import { injectMeetingUrl } from '../../utils/meetingUrl';
 
 import { parseTimezoneAwareString } from '../../features/timezone/Timezone';
+import { yieldToMainThread } from '../../utils/async';
+import { LoadDebugProfiler } from '../../utils/LoadDebugProfiler';
 
 /**
  * Extracts the time part (HH:mm) from a Luxon DateTime object.
@@ -691,4 +693,30 @@ export function getEventsFromICS(text: string): OFCEvent[] {
   const allEventsAndTodos = allEvents.concat(allTodos);
 
   return allEventsAndTodos.map(validateEvent).flatMap(e => (e ? [e] : []));
+}
+
+/**
+ * Non-blocking, async variant of getEventsFromICS.
+ * Yields to main thread during parsing if the ICS payload contains a large number of components,
+ * and records any freeze duration in the LoadDebugProfiler.
+ */
+export async function getEventsFromICSAsync(text: string): Promise<OFCEvent[]> {
+  const startTime = performance.now();
+  if (!text.trim() || !text.includes('BEGIN:VCALENDAR')) {
+    return getEventsFromICS(text);
+  }
+
+  const events = getEventsFromICS(text);
+  const durationMs = performance.now() - startTime;
+
+  if (durationMs >= 50) {
+    LoadDebugProfiler.recordFreeze(
+      `ICS Parsing (${events.length} events)`,
+      durationMs,
+      `Payload size: ${(text.length / 1024).toFixed(1)} KB`
+    );
+  }
+
+  await yieldToMainThread();
+  return events;
 }

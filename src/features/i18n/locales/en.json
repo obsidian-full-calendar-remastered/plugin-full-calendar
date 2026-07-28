@@ -292,6 +292,10 @@
         "label": "Open daily note on date click",
         "description": "Left-click on date column headers or Month view day numbers to open or create the daily note."
       },
+      "loadDebugTiming": {
+        "label": "Enable load debug timing",
+        "description": "Measure and log detailed execution timing breakdown for initial plugin startup, stage loading, and each calendar provider."
+      },
       "linkedNotesDirectory": {
         "label": "Linked notes directory",
         "description": "Choose the folder path where event linked notes will be created.",

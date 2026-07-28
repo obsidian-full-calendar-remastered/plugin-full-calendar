@@ -211,9 +211,13 @@ These classes are specialized services that encapsulate complex business logic, 
 
 1.  **`main.ts`**: On load, `plugin.cache.populate()` is called.
 2.  **`EventCache`**: Calls `plugin.providerRegistry.fetchAllByPriority()` to initiate the Staged Loading sequence.
-3.  **`ProviderRegistry`**: Executes loading in two stages:
-    *   **Stage 1 (Critical Range)**: Quickly fetches events from all providers within a 3-month window surrounding the current date, ensuring the UI populates instantly.
-    *   **Stage 2 (Full History)**: Quietly loads the rest of the calendar history in the background.
+3.  **`ProviderRegistry`**: Executes loading in a four-phase non-blocking staged pipeline:
+    *   **Stage 1 Local (Critical Range)**: Quickly fetches local vault notes within a 3-month window surrounding the current date, triggering `onAllComplete()` so the calendar UI becomes interactive instantly.
+    *   **Stage 2 Local (Full History)**: Background loads remaining local notes outside the 3-month window.
+    *   **Stage 1 Remote (Critical Window)**: Background fetches remote provider events (CalDAV, Google, Outlook, ICS) for the active window.
+    *   **Stage 2 Remote (Full History)**: Background fetches full remote history. For read-only remote providers (like ICS feeds) where Stage 1 fetched complete data, Stage 2 skips redundant network re-downloads.
+    *   **Non-Blocking Yielding (`yieldToMainThread`)**: Between processing individual providers and stage transitions, execution yields to the browser UI loop (`requestIdleCallback` / `window.setTimeout(0)`), preventing UI freezing.
+    *   **Load Debug Profiler (`LoadDebugProfiler`)**: When enabled in settings (`loadDebugTiming: true`), tracks and reports timing breakdown per stage and per calendar provider with zero overhead when disabled.
 4.  **Providers**: Local providers read from the vault synchronously; remote providers make network requests asynchronously. Each returns raw event data.
 5.  **`ProviderRegistry`**: As results come in during both stages, they are passed through `cache.enhancer.enhance()` for normalization.
 6.  **`EventCache`**: Receives the normalized events and populates its `EventStore`, triggering UI updates as stages complete.

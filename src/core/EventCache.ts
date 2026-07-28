@@ -36,6 +36,7 @@ import { CacheSyncHandler, CacheContext } from './cache/CacheSyncHandler';
 import { CacheMutationHandler, MutationContext } from './cache/CacheMutationHandler';
 import { CacheEntry, UpdateViewCallback, OFCEventSource, CachedEvent } from './cache/types';
 import type { MilestoneRecordOptions } from '../features/milestones/milestones';
+import { LoadDebugProfiler } from '../utils/LoadDebugProfiler';
 
 // Re-export types for backward compatibility with external modules
 export type { CacheEntry, UpdateViewCallback, OFCEventSource, CachedEvent };
@@ -159,22 +160,26 @@ export default class EventCache {
    * Populate the cache with events from all sources.
    */
   async populate(): Promise<void> {
-    await PluginState.getProviderRegistry().fetchAllByPriority(
-      (calendarId, eventsForSync) => {
-        this.syncCalendar(calendarId, eventsForSync);
-      },
-      () => {
-        // This callback runs when STAGE 1 is complete.
-        // We can trigger an initial sync/render here.
-        void (async () => {
-          this.initialized = true;
-          PluginState.getProviderRegistry().buildMap(this._store);
-          this.resync();
-          await this.timeEngine.start();
-        })();
-      }
-    );
-    // No need to add localEvents manually anymore; fetchAllByPriority handles it via the callback/processResults.
+    LoadDebugProfiler.startPopulate();
+    try {
+      await PluginState.getProviderRegistry().fetchAllByPriority(
+        (calendarId, eventsForSync) => {
+          this.syncCalendar(calendarId, eventsForSync);
+        },
+        () => {
+          // This callback runs when STAGE 1 is complete.
+          // We can trigger an initial sync/render here.
+          void (async () => {
+            this.initialized = true;
+            PluginState.getProviderRegistry().buildMap(this._store);
+            this.resync();
+            await this.timeEngine.start();
+          })();
+        }
+      );
+    } finally {
+      LoadDebugProfiler.endPopulate();
+    }
   }
 
   // ====================================================================

@@ -312,6 +312,10 @@
         "addDesc": "Select a template file from your vault to add to the presets list.",
         "addPlaceholder": "Choose a template note to add...",
         "removeButton": "Remove"
+      },
+      "loadDebugTiming": {
+        "label": "Enable load debug timing",
+        "description": "Measure and log detailed execution timing breakdown for initial plugin startup, stage loading, and each calendar provider."
       }
     },
     "reminders": {

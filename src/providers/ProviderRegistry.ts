@@ -14,6 +14,8 @@ import { ObsidianIO, ObsidianInterface } from '../ObsidianAdapter';
 import { TaskBacklogManager } from '../features/task-backlogs/TaskBacklogManager';
 import { t } from '../features/i18n/i18n';
 import { IdentifierMapManager } from './IdentifierMapManager';
+import { yieldToMainThread } from '../utils/async';
+import { LoadDebugProfiler } from '../utils/LoadDebugProfiler';
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -359,66 +361,157 @@ export class ProviderRegistry {
 
     // Helper to process results from a provider
     const processResults = (settingsId: string, rawEvents: [OFCEvent, EventLocation | null][]) => {
-      // Call completion callback for this provider (updates UI progressively via EventCache)
       if (onProviderComplete) {
         onProviderComplete(settingsId, rawEvents);
       }
     };
 
-    // 1.1 Load Local Providers (Sync) - STAGE 1
-    const localPromises1 = localProviders.map(async ([settingsId, instance]) => {
+    const getProviderName = (settingsId: string, instance: CalendarProvider<unknown>): string => {
+      const source = this.getSource(settingsId);
+      if (source && 'name' in source && typeof (source as { name?: string }).name === 'string') {
+        return (source as { name: string }).name;
+      }
+      return instance.displayName || instance.type || settingsId;
+    };
+
+    // --- STAGE 1: Local Range Loading (+/- 3 months) ---
+    const stage1LocalName = 'Stage 1 (Local - Range)';
+    LoadDebugProfiler.startStage(stage1LocalName);
+
+    for (const [settingsId, instance] of localProviders) {
+      const name = getProviderName(settingsId, instance);
+      LoadDebugProfiler.startProvider(stage1LocalName, settingsId, name);
       try {
         const rawEvents = await instance.getEvents(stage1Range);
         processResults(settingsId, rawEvents);
+        LoadDebugProfiler.endProvider(stage1LocalName, settingsId, rawEvents.length, true);
       } catch (e) {
         const source = this.getSource(settingsId);
         console.warn(`Full Calendar: Failed to load local calendar source (Stage 1)`, source, e);
+        const errorMsg = e instanceof Error ? e.message : String(e);
+        LoadDebugProfiler.endProvider(stage1LocalName, settingsId, 0, false, errorMsg);
         this.scheduleProviderReload(settingsId, instance, e);
       }
-    });
+      await yieldToMainThread();
+    }
 
-    // We still block UI rendering explicitly until local stage 1 finishes
-    await Promise.all(localPromises1);
+    LoadDebugProfiler.endStage(stage1LocalName);
 
     // Call completion callback here so the calendar renders immediately with local data.
     if (onAllComplete) {
       onAllComplete();
     }
 
+    await yieldToMainThread();
+
     // Start everything else in the background beautifully pipelined so nothing blocks anything else
     void (async () => {
-      // Background Local Providers (Sync) - STAGE 2
-      const localPromises2 = localProviders.map(async ([settingsId, instance]) => {
-        try {
-          const rawEvents = await instance.getEvents();
-          processResults(settingsId, rawEvents);
-        } catch {
-          // Suppress noisy logs for background re-runs, but still let retryable
-          // providers ask the registry for a delayed reload.
-          this.scheduleProviderReload(settingsId, instance);
+      // --- STAGE 2: Local Full Loading ---
+      if (localProviders.length > 0) {
+        const stage2LocalName = 'Stage 2 (Local - Full)';
+        LoadDebugProfiler.startStage(stage2LocalName);
+
+        for (const [settingsId, instance] of localProviders) {
+          const name = getProviderName(settingsId, instance);
+          LoadDebugProfiler.startProvider(stage2LocalName, settingsId, name);
+          try {
+            const rawEvents = await instance.getEvents();
+            processResults(settingsId, rawEvents);
+            LoadDebugProfiler.endProvider(stage2LocalName, settingsId, rawEvents.length, true);
+          } catch (e) {
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            LoadDebugProfiler.endProvider(stage2LocalName, settingsId, 0, false, errorMsg);
+            this.scheduleProviderReload(settingsId, instance, e);
+          }
+          await yieldToMainThread();
         }
-      });
-      void Promise.all(localPromises2);
 
-      // Background Remote Providers - Pipelined STAGE 1 -> STAGE 2
-      const remotePromises = remoteProviders.map(async ([settingsId, instance]) => {
-        try {
-          // Stage 1 Fetch
-          const rawEventsStage1 = await instance.getEvents(stage1Range);
-          processResults(settingsId, rawEventsStage1);
+        LoadDebugProfiler.endStage(stage2LocalName);
+      }
 
-          // Immediately kick off Stage 2 for THIS provider instead of waiting for all Stage 1.
-          const rawEventsStage2 = await instance.getEvents();
-          processResults(settingsId, rawEventsStage2);
-          await this.refreshProviderAuxiliaryData(settingsId, instance);
-        } catch (e) {
-          const source = this.getSource(settingsId);
-          console.warn(`Full Calendar: Failed to load remote calendar source pipeline`, source, e);
-          this.scheduleProviderReload(settingsId, instance, e);
+      await yieldToMainThread();
+
+      if (remoteProviders.length > 0) {
+        // --- STAGE 1: Remote Range Loading ---
+        const stage1RemoteName = 'Stage 1 (Remote - Range)';
+        LoadDebugProfiler.startStage(stage1RemoteName);
+
+        const stage1RemoteEvents = new Map<string, [OFCEvent, EventLocation | null][]>();
+
+        for (const [settingsId, instance] of remoteProviders) {
+          const name = getProviderName(settingsId, instance);
+          LoadDebugProfiler.startProvider(stage1RemoteName, settingsId, name);
+          try {
+            const rawEventsStage1 = await instance.getEvents(stage1Range);
+            stage1RemoteEvents.set(settingsId, rawEventsStage1);
+            processResults(settingsId, rawEventsStage1);
+            LoadDebugProfiler.endProvider(
+              stage1RemoteName,
+              settingsId,
+              rawEventsStage1.length,
+              true
+            );
+          } catch (e) {
+            const source = this.getSource(settingsId);
+            console.warn(
+              `Full Calendar: Failed to load remote calendar source (Stage 1)`,
+              source,
+              e
+            );
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            LoadDebugProfiler.endProvider(stage1RemoteName, settingsId, 0, false, errorMsg);
+            this.scheduleProviderReload(settingsId, instance, e);
+          }
+          await yieldToMainThread();
         }
-      });
 
-      await Promise.allSettled(remotePromises);
+        LoadDebugProfiler.endStage(stage1RemoteName);
+
+        await yieldToMainThread();
+
+        // --- STAGE 2: Remote Full Loading ---
+        const stage2RemoteName = 'Stage 2 (Remote - Full)';
+        LoadDebugProfiler.startStage(stage2RemoteName);
+
+        for (const [settingsId, instance] of remoteProviders) {
+          const name = getProviderName(settingsId, instance);
+          LoadDebugProfiler.startProvider(stage2RemoteName, settingsId, name);
+          try {
+            // Optimization: For ICS calendars, getEvents(range) already downloaded the file and returned all events.
+            // Skip redundant 2nd network request.
+            if (instance.type === 'ical') {
+              const prevEvents = stage1RemoteEvents.get(settingsId) || [];
+              LoadDebugProfiler.endProvider(stage2RemoteName, settingsId, prevEvents.length, true);
+              await this.refreshProviderAuxiliaryData(settingsId, instance);
+              continue;
+            }
+
+            const rawEventsStage2 = await instance.getEvents();
+            processResults(settingsId, rawEventsStage2);
+            await this.refreshProviderAuxiliaryData(settingsId, instance);
+            LoadDebugProfiler.endProvider(
+              stage2RemoteName,
+              settingsId,
+              rawEventsStage2.length,
+              true
+            );
+          } catch (e) {
+            const source = this.getSource(settingsId);
+            console.warn(
+              `Full Calendar: Failed to load remote calendar source (Stage 2)`,
+              source,
+              e
+            );
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            LoadDebugProfiler.endProvider(stage2RemoteName, settingsId, 0, false, errorMsg);
+            this.scheduleProviderReload(settingsId, instance, e);
+          }
+          await yieldToMainThread();
+        }
+
+        LoadDebugProfiler.endStage(stage2RemoteName);
+      }
+
       this.cache?.resync();
     })();
   }

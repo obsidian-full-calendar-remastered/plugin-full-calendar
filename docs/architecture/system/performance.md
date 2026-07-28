@@ -5,17 +5,43 @@
 
 ## Staged Loading Sequence
 
-When the plugin initializes (or when a full resync is triggered), the `ProviderRegistry` executes a two-stage fetch:
+When the plugin initializes (or when a full resync is triggered), the `ProviderRegistry` executes a four-phase non-blocking staged fetch:
 
-### Stage 1: The Critical Window
-- **Range**: Current Date ± 45 days (approx. 3 months).
-- **Goal**: Immediate UI population.
-- **Behavior**: The plugin prioritizes these requests. Once complete, the calendar is considered "interactive" for the user's immediate needs.
+### Stage 1 (Local): The Critical Window
+- **Range**: Current Date ± 3 months (`stage1Range`).
+- **Goal**: Immediate UI population from local vault notes.
+- **Behavior**: Local providers (priority < 100) load range-filtered events. Once complete, `onAllComplete()` fires so the calendar UI becomes interactive immediately.
 
-### Stage 2: Background History
-- **Range**: All time (Full Vault / Remote History).
-- **Goal**: Completeness and searchability.
-- **Behavior**: This stage runs at a lower priority in the background. As events are parsed, they are progressively streamed into the `EventCache`.
+### Stage 2 (Local): Background Vault Notes
+- **Range**: All time (Full Vault History).
+- **Goal**: Searchability and long-term local event completeness.
+- **Behavior**: Processes full local provider datasets in the background.
+
+### Stage 1 (Remote): Critical Window Remote Sync
+- **Range**: Current Date ± 3 months.
+- **Goal**: Fetch visible remote events without blocking UI interactions.
+- **Behavior**: Fetches active range events for remote providers (CalDAV, Google, Outlook, ICS).
+
+### Stage 2 (Remote): Background Remote Sync & Optimization
+- **Range**: All time (Full Remote History).
+- **Goal**: Complete remote calendar sync.
+- **Behavior**: Fetches remaining remote historical data. For read-only remote providers (like ICS feeds) where Stage 1 already retrieved the full payload, Stage 2 skips redundant network re-downloads and re-parsing.
+
+## Non-Blocking Main-Thread Yielding (`yieldToMainThread`)
+
+To ensure that heavy event parsing (e.g. `ical.js` ICS payload parsing, recurrence expansions, array diffing) never freezes the Obsidian UI:
+- Every provider fetch and stage transition in `ProviderRegistry` yields control to the browser event loop using `await yieldToMainThread()`.
+- Uses `requestIdleCallback` (with a 50ms fallback timeout) or `window.setTimeout(0)`.
+- This ensures mouse clicks, typing, UI animations, and layout recalculations remain smooth during background sync operations.
+
+## Load Debug Profiler (`LoadDebugProfiler`)
+
+A dedicated diagnostic timing engine tracks plugin startup and staging performance:
+- **Zero-Overhead Guard**: When disabled in settings (`loadDebugTiming: false`), all method calls evaluate `if (!this.enabled) return;` for zero performance impact.
+- **Metrics Tracked**:
+  - Initial plugin startup (`onload()`, `onLayoutReady()`, time to `cache.populate()`).
+  - Stage totals (`Stage 1 Local`, `Stage 2 Local`, `Stage 1 Remote`, `Stage 2 Remote`).
+  - Individual provider duration, event count, and status (`OK` / `FAILED`).
 
 ## Efficient In-Memory Indexing (`EventStore`)
 

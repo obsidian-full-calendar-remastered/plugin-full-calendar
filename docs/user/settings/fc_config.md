@@ -44,7 +44,7 @@ These settings allow you to focus on your active hours and clean up the UI:
 *   **Show Event in Status Bar**: Display the current or upcoming event in the Obsidian [status bar](../features/statusbar.md). See: [Status Bar Integration](../features/statusbar.md).
 *   **Highlight Current/Next Event**: Visually emphasize the event happening now or starting soon.
 *   **Header Date Format**: Choose from several presets for how dates appear in column headers (e.g., `Wed 4/9`).
-*   **Enable Load Debug Timing**: Measure and log a detailed execution timing breakdown for initial plugin startup, each stage loading, and individual calendar providers. Designed with a strict zero-overhead policy when disabled.
+*   **Run & View Load Debug Benchmark**: Run an on-demand benchmark measuring startup, stage loading, and individual calendar provider execution timing. Opens a copyable report modal with zero ongoing background overhead.
 
 ## Global Overrides
 

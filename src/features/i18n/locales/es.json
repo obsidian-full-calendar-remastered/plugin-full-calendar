@@ -161,7 +161,8 @@
     "nlpQuickAdd": "Comando FCR",
     "syncFcrReminder": "Sincronizar FCR Reminder Companion",
     "shareAvailability": "Share Availability",
-    "exportIcs": "Export Event Cache as ICS file"
+    "exportIcs": "Export Event Cache as ICS file",
+    "showLoadDebugLog": "Show load debug timing log"
   },
   "notices": {
     "settingsUpdated": "Full Calendar ha actualizado la configuración de tu calendario a un nuevo formato.",
@@ -315,7 +316,8 @@
       },
       "loadDebugTiming": {
         "label": "Enable load debug timing",
-        "description": "Measure and log detailed execution timing breakdown for initial plugin startup, stage loading, and each calendar provider."
+        "description": "Measure and log detailed execution timing breakdown for initial plugin startup, stage loading, and each calendar provider.",
+        "viewLog": "View Load Debug Log"
       }
     },
     "reminders": {

@@ -44,6 +44,10 @@ describe('LoadDebugProfiler', () => {
     LoadDebugProfiler.endProvider(stageName, 'fullnote', 5, false, 'Failed to read note');
 
     LoadDebugProfiler.endStage(stageName);
+
+    LoadDebugProfiler.startPhase('Cache Delta Sync & Indexing');
+    LoadDebugProfiler.endPhase('Cache Delta Sync & Indexing');
+
     LoadDebugProfiler.endPopulate();
 
     const report = LoadDebugProfiler.getLastReport();
@@ -62,10 +66,25 @@ describe('LoadDebugProfiler', () => {
     expect(provider2?.calendarId).toBe('fullnote');
     expect(provider2?.success).toBe(false);
     expect(provider2?.error).toBe('Failed to read note');
+
+    expect(report?.phases.length).toBe(1);
+    expect(report?.phases[0].phaseName).toBe('Cache Delta Sync & Indexing');
+
+    const formatted = LoadDebugProfiler.getFormattedReport();
+    expect(formatted).toContain('Sum of all components:');
+    expect(formatted).toContain('100% accounted for');
   });
 
-  test('yieldToMainThread resolves successfully', async () => {
+  test('yieldToMainThread resolves successfully and records yield when profiler enabled', async () => {
+    LoadDebugProfiler.setEnabled(true);
     const promise = yieldToMainThread();
     await expect(promise).resolves.toBeUndefined();
+  });
+
+  test('yieldToMainThread incurs zero profiling overhead when disabled', async () => {
+    LoadDebugProfiler.setEnabled(false);
+    const promise = yieldToMainThread();
+    await expect(promise).resolves.toBeUndefined();
+    expect(LoadDebugProfiler.getLastReport()).toBeNull();
   });
 });

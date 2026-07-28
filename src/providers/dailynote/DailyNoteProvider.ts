@@ -126,7 +126,7 @@ export class DailyNoteProvider
   readonly type = 'dailynote';
   readonly displayName = 'Daily Note';
   readonly isRemote = false;
-  readonly loadPriority = 120;
+  readonly loadPriority = 20;
 
   constructor(
     source: DailyNoteProviderConfig,

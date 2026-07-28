@@ -166,15 +166,18 @@ export default class EventCache {
         (calendarId, eventsForSync) => {
           this.syncCalendar(calendarId, eventsForSync);
         },
-        () => {
+        async () => {
           // This callback runs when STAGE 1 is complete.
-          // We can trigger an initial sync/render here.
-          void (async () => {
+          // Trigger initial sync/render and map building.
+          LoadDebugProfiler.startPhase('TimeEngine Setup & Map Building');
+          try {
             this.initialized = true;
             PluginState.getProviderRegistry().buildMap(this._store);
             this.resync();
             await this.timeEngine.start();
-          })();
+          } finally {
+            LoadDebugProfiler.endPhase('TimeEngine Setup & Map Building');
+          }
         }
       );
     } finally {

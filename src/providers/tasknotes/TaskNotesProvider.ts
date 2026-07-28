@@ -120,7 +120,7 @@ export class TaskNotesProvider
   readonly type = 'tasknotes';
   readonly displayName = 'TaskNotes';
   readonly isRemote = false;
-  readonly loadPriority = 135;
+  readonly loadPriority = 40;
 
   constructor(
     source: TaskNotesProviderConfig,

@@ -315,7 +315,7 @@ export class TasksPluginProvider
   readonly type = 'tasks';
   readonly displayName = 'Obsidian Tasks';
   readonly isRemote = false;
-  readonly loadPriority = 130;
+  readonly loadPriority = 30;
 
   // Keep constructor broadly typed to align with ProviderRegistry's dynamic loading signature.
 

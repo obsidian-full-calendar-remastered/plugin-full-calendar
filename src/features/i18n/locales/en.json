@@ -166,7 +166,8 @@
     "nlpQuickAdd": "FCR Command",
     "syncFcrReminder": "Sync FCR Reminder Companion",
     "shareAvailability": "Share Availability",
-    "exportIcs": "Export Event Cache as ICS file"
+    "exportIcs": "Export Event Cache as ICS file",
+    "showLoadDebugLog": "Show load debug timing log"
   },
   "notices": {
     "settingsUpdated": "Full Calendar has updated your calendar settings to a new format.",
@@ -294,7 +295,8 @@
       },
       "loadDebugTiming": {
         "label": "Enable load debug timing",
-        "description": "Measure and log detailed execution timing breakdown for initial plugin startup, stage loading, and each calendar provider."
+        "description": "Measure and log detailed execution timing breakdown for initial plugin startup, stage loading, and each calendar provider.",
+        "viewLog": "View Load Debug Log"
       },
       "linkedNotesDirectory": {
         "label": "Linked notes directory",

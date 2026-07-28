@@ -3,14 +3,20 @@
 !!! abstract "Implementation focus"
     This page summarizes important provider implementations and highlights non-standard behavior or patches that contributors must preserve.
 
-## Provider families
+## Provider families & load priorities
 
-| Family      | Providers             | Notes                                                                   |
-| ----------- | --------------------- | ----------------------------------------------------------------------- |
-| Local       | Full Note, Daily Note | Vault-backed, file-centric parsing and persistence.                     |
-| Remote      | Google, Outlook, CalDAV, ICS, Google Tasks   | Network-backed with auth/protocol handling and staged loading behavior. |
-| Integration | Tasks, TaskNotes, Bases | Plugin/API integration with custom semantics beyond simple event files. |
-| Virtual     | Holidays              | Computed on-the-fly from bundled data; no vault file or network backing. |
+| Family      | Providers             | Load Priority | Notes |
+| ----------- | --------------------- | :---: | ----------------------------------------------------------------------- |
+| Local       | Full Note             | `10`  | Stage 0 local sync. Vault-backed, file-centric parsing and persistence. |
+| Local       | Daily Note            | `20`  | Stage 0 local sync. List item parsing under heading,Dataview format support. |
+| Integration | Tasks                 | `30`  | Stage 0 local sync. Plugin cache integration, surgical markdown line updates. |
+| Integration | TaskNotes             | `40`  | Stage 0 local sync. Service/UI integration with provider-owned NLP endpoint. |
+| Virtual     | Holidays              | `5`   | Stage 0 virtual. Computed on-the-fly from bundled data; no vault/network backing. |
+| Remote      | CalDAV                | `110` | Stage 1 & 2 remote async. RFC 4791 protocol support with defensive fallback. |
+| Remote      | Google                | `120` | Stage 1 & 2 remote async. OAuth authenticated sync with recurrence handling. |
+| Remote      | Google Tasks          | `125` | Stage 1 & 2 remote async. Tasks API integration with union OAuth scope preservation. |
+| Remote      | ICS                   | `140` | Stage 1 & 2 remote async. Read-only hybrid provider (HTTP URL & local file). |
+| Remote      | Outlook               | `150` | Stage 1 & 2 remote async. OAuth Code + PKCE Graph API sync. |
 
 ## Key implementation notes
 

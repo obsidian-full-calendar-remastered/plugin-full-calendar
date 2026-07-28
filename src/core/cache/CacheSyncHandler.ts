@@ -4,6 +4,7 @@ import EventStore from '../EventStore';
 import { EventEnhancer } from '../EventEnhancer';
 import { TimeEngine } from '../TimeEngine';
 import { CacheEntry } from './types';
+import { LoadDebugProfiler } from '../../utils/LoadDebugProfiler';
 
 export interface CacheContext {
   store: EventStore;
@@ -23,134 +24,138 @@ export class CacheSyncHandler {
     if (this.ctx.isBulkUpdating) {
       return;
     }
+    LoadDebugProfiler.startPhase('Cache Delta Sync & Indexing');
+    try {
+      // 1. Get OLD state from the store for this calendar.
+      const oldEventsInCalendar = this.ctx.store.getEventsInCalendar(calendarId);
 
-    // 1. Get OLD state from the store for this calendar.
-    const oldEventsInCalendar = this.ctx.store.getEventsInCalendar(calendarId);
-
-    // 2. ENHANCE the new raw events.
-    const newEnhancedEvents = newRawEvents.map(([rawEvent, location]) => ({
-      event: this.ctx.enhancer.enhance(rawEvent),
-      location,
-      calendarId
-    }));
-
-    // 3. Build keyed maps for old and new events using cheap sync keys (O(N), no I/O).
-    const oldByKey = new Map<string, { event: OFCEvent; id: string; calendarId: string }>();
-    for (const oldEvent of oldEventsInCalendar) {
-      const key = PluginState.getProviderRegistry().computeSyncKeyForEvent(
-        oldEvent.event,
+      // 2. ENHANCE the new raw events.
+      const newEnhancedEvents = newRawEvents.map(([rawEvent, location]) => ({
+        event: this.ctx.enhancer.enhance(rawEvent),
+        location,
         calendarId
-      );
-      if (key) {
-        oldByKey.set(key, oldEvent);
-      }
-    }
+      }));
 
-    const newByKey = new Map<
-      string,
-      { event: OFCEvent; location: EventLocation | null; calendarId: string }
-    >();
-    for (const newEvent of newEnhancedEvents) {
-      const key = PluginState.getProviderRegistry().computeSyncKeyForEvent(
-        newEvent.event,
-        newEvent.calendarId
-      );
-      if (key) {
-        newByKey.set(key, newEvent);
-      }
-    }
-
-    // 4. Compute the delta via three-way set comparison.
-    const idsToRemove: string[] = [];
-    const eventsToAdd: {
-      event: OFCEvent;
-      id: string;
-      location: EventLocation | null;
-      calendarId: string;
-    }[] = [];
-    let hasChanges = false;
-
-    // 4a. Removed events: old keys not present in new set.
-    for (const [key, oldEvent] of oldByKey) {
-      if (!newByKey.has(key)) {
-        idsToRemove.push(oldEvent.id);
-        PluginState.getProviderRegistry().removeMapping(oldEvent.id);
-        this.ctx.store.delete(oldEvent.id);
-        hasChanges = true;
-      }
-    }
-
-    // 4b. Added events: new keys not present in old set.
-    for (const [key, newEvent] of newByKey) {
-      if (!oldByKey.has(key)) {
-        const newSessionId = PluginState.getProviderRegistry().generateId();
-        PluginState.getProviderRegistry().addMapping(
-          newEvent.event,
-          newEvent.calendarId,
-          newSessionId
+      // 3. Build keyed maps for old and new events using cheap sync keys (O(N), no I/O).
+      const oldByKey = new Map<string, { event: OFCEvent; id: string; calendarId: string }>();
+      for (const oldEvent of oldEventsInCalendar) {
+        const key = PluginState.getProviderRegistry().computeSyncKeyForEvent(
+          oldEvent.event,
+          calendarId
         );
-        this.ctx.store.add({
-          calendarId: newEvent.calendarId,
-          location: newEvent.location,
-          id: newSessionId,
-          event: newEvent.event
-        });
-        eventsToAdd.push({
-          event: newEvent.event,
-          location: newEvent.location,
-          calendarId: newEvent.calendarId,
-          id: newSessionId
-        });
-        hasChanges = true;
+        if (key) {
+          oldByKey.set(key, oldEvent);
+        }
       }
-    }
 
-    // 4c. Unchanged keys: reuse session IDs. Check for data changes within same identity.
-    for (const [key, oldEvent] of oldByKey) {
-      const newEvent = newByKey.get(key);
-      if (newEvent) {
-        if (JSON.stringify(oldEvent.event) !== JSON.stringify(newEvent.event)) {
-          // Data changed but identity is the same — update in-place, reuse session ID.
-          this.ctx.store.delete(oldEvent.id);
-          this.ctx.store.add({
-            calendarId: newEvent.calendarId,
-            location: newEvent.location,
-            id: oldEvent.id,
-            event: newEvent.event
-          });
-          // Re-map in case the global identifier changed (e.g. title changed).
+      const newByKey = new Map<
+        string,
+        { event: OFCEvent; location: EventLocation | null; calendarId: string }
+      >();
+      for (const newEvent of newEnhancedEvents) {
+        const key = PluginState.getProviderRegistry().computeSyncKeyForEvent(
+          newEvent.event,
+          newEvent.calendarId
+        );
+        if (key) {
+          newByKey.set(key, newEvent);
+        }
+      }
+
+      // 4. Compute the delta via three-way set comparison.
+      const idsToRemove: string[] = [];
+      const eventsToAdd: {
+        event: OFCEvent;
+        id: string;
+        location: EventLocation | null;
+        calendarId: string;
+      }[] = [];
+      let hasChanges = false;
+
+      // 4a. Removed events: old keys not present in new set.
+      for (const [key, oldEvent] of oldByKey) {
+        if (!newByKey.has(key)) {
+          idsToRemove.push(oldEvent.id);
           PluginState.getProviderRegistry().removeMapping(oldEvent.id);
+          this.ctx.store.delete(oldEvent.id);
+          hasChanges = true;
+        }
+      }
+
+      // 4b. Added events: new keys not present in old set.
+      for (const [key, newEvent] of newByKey) {
+        if (!oldByKey.has(key)) {
+          const newSessionId = PluginState.getProviderRegistry().generateId();
           PluginState.getProviderRegistry().addMapping(
             newEvent.event,
             newEvent.calendarId,
-            oldEvent.id
+            newSessionId
           );
-          // Queue UI update for this event (remove old rendering, add new).
-          idsToRemove.push(oldEvent.id);
+          this.ctx.store.add({
+            calendarId: newEvent.calendarId,
+            location: newEvent.location,
+            id: newSessionId,
+            event: newEvent.event
+          });
           eventsToAdd.push({
             event: newEvent.event,
             location: newEvent.location,
             calendarId: newEvent.calendarId,
-            id: oldEvent.id
+            id: newSessionId
           });
           hasChanges = true;
         }
-        // If data is identical: no-op. Session ID, store entry, and mapping are all reused.
       }
-    }
 
-    if (!hasChanges) {
-      return;
-    }
+      // 4c. Unchanged keys: reuse session IDs. Check for data changes within same identity.
+      for (const [key, oldEvent] of oldByKey) {
+        const newEvent = newByKey.get(key);
+        if (newEvent) {
+          if (JSON.stringify(oldEvent.event) !== JSON.stringify(newEvent.event)) {
+            // Data changed but identity is the same — update in-place, reuse session ID.
+            this.ctx.store.delete(oldEvent.id);
+            this.ctx.store.add({
+              calendarId: newEvent.calendarId,
+              location: newEvent.location,
+              id: oldEvent.id,
+              event: newEvent.event
+            });
+            // Re-map in case the global identifier changed (e.g. title changed).
+            PluginState.getProviderRegistry().removeMapping(oldEvent.id);
+            PluginState.getProviderRegistry().addMapping(
+              newEvent.event,
+              newEvent.calendarId,
+              oldEvent.id
+            );
+            // Queue UI update for this event (remove old rendering, add new).
+            idsToRemove.push(oldEvent.id);
+            eventsToAdd.push({
+              event: newEvent.event,
+              location: newEvent.location,
+              calendarId: newEvent.calendarId,
+              id: oldEvent.id
+            });
+            hasChanges = true;
+          }
+          // If data is identical: no-op. Session ID, store entry, and mapping are all reused.
+        }
+      }
 
-    // 5. Notify the UI with only the delta.
-    const cacheEntriesToAdd = eventsToAdd.map(({ event, id, calendarId }) => ({
-      event,
-      id,
-      calendarId
-    }));
-    this.ctx.flushUpdateQueue(idsToRemove, cacheEntriesToAdd, [calendarId]);
-    this.ctx.timeEngine.scheduleCacheRebuild();
+      if (!hasChanges) {
+        return;
+      }
+
+      // 5. Notify the UI with only the delta.
+      const cacheEntriesToAdd = eventsToAdd.map(({ event, id, calendarId }) => ({
+        event,
+        id,
+        calendarId
+      }));
+      this.ctx.flushUpdateQueue(idsToRemove, cacheEntriesToAdd, [calendarId]);
+      this.ctx.timeEngine.scheduleCacheRebuild();
+    } finally {
+      LoadDebugProfiler.endPhase('Cache Delta Sync & Indexing');
+    }
   }
 
   public processProviderUpdates(

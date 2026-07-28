@@ -248,7 +248,6 @@ export interface FullCalendarSettings {
   breakTimer: BreakTimerSettings;
   availabilityDefaultTimeRange: { startTime: string; endTime: string };
   openDailyNoteOnDateClick: boolean;
-  loadDebugTiming?: boolean;
 }
 
 export interface BreakTimerSettings {
@@ -364,7 +363,6 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   enableLinkedNoteTemplatesPreset: false,
   linkedNoteTemplatesPresets: [],
   openDailyNoteOnDateClick: false,
-  loadDebugTiming: false,
   breakTimer: {
     enabled: false,
     intervalMins: 60,

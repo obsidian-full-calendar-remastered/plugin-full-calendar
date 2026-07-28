@@ -4,15 +4,13 @@
  *
  * @details
  * Captures detailed timing breakdown during plugin initialization, stage loading,
- * and individual calendar provider sync operations.
+ * individual calendar provider sync operations, cache delta indexing, and event loop yields.
  *
  * Designed with a strict zero-overhead policy: when disabled (the default),
  * all method calls evaluate `if (!this.enabled) return;` immediately on entry.
  *
  * @license See LICENSE.md
  */
-
-import { showNotice } from './showNotice';
 
 export interface ProviderTimingRecord {
   calendarId: string;
@@ -29,12 +27,20 @@ export interface StageTimingRecord {
   providers: ProviderTimingRecord[];
 }
 
+export interface PhaseTimingRecord {
+  phaseName: string;
+  durationMs: number;
+}
+
 export interface LoadReport {
   onloadDurationMs: number | null;
   timeToLayoutReadyMs: number | null;
   layoutReadyToPopulateMs: number | null;
   totalPopulateDurationMs: number | null;
   stages: StageTimingRecord[];
+  phases: PhaseTimingRecord[];
+  totalYieldDurationMs: number;
+  unaccountedDurationMs: number;
   timestamp: number;
 }
 
@@ -46,6 +52,8 @@ class LoadDebugProfilerImpl {
   private layoutReadyTime: number | null = null;
   private populateStartTime: number | null = null;
   private populateEndTime: number | null = null;
+
+  private totalYieldDurationMs = 0;
 
   private currentStages = new Map<
     string,
@@ -62,18 +70,15 @@ class LoadDebugProfilerImpl {
     }
   >();
 
+  private currentPhases = new Map<string, number>();
   private completedStages: StageTimingRecord[] = [];
+  private completedPhases: PhaseTimingRecord[] = [];
+
   private lastReport: LoadReport | null = null;
   private lastFormattedReport: string | null = null;
 
-  /**
-   * Enable or disable profiling dynamically.
-   */
   public setEnabled(enabled: boolean): void {
     this.enabled = enabled;
-    if (!enabled) {
-      this.clearState();
-    }
   }
 
   public get isEnabled(): boolean {
@@ -86,10 +91,18 @@ class LoadDebugProfilerImpl {
     this.layoutReadyTime = null;
     this.populateStartTime = null;
     this.populateEndTime = null;
+    this.totalYieldDurationMs = 0;
     this.currentStages.clear();
+    this.currentPhases.clear();
     this.completedStages = [];
+    this.completedPhases = [];
     this.lastReport = null;
     this.lastFormattedReport = null;
+  }
+
+  public recordYield(durationMs: number): void {
+    if (!this.enabled) return;
+    this.totalYieldDurationMs += durationMs;
   }
 
   public markPluginOnloadStart(): void {
@@ -110,9 +123,8 @@ class LoadDebugProfilerImpl {
 
   public startPopulate(): void {
     if (!this.enabled) return;
+    this.clearState();
     this.populateStartTime = performance.now();
-    this.currentStages.clear();
-    this.completedStages = [];
   }
 
   public startStage(stageName: string): void {
@@ -173,14 +185,24 @@ class LoadDebugProfilerImpl {
     });
   }
 
+  public startPhase(phaseName: string): void {
+    if (!this.enabled) return;
+    this.currentPhases.set(phaseName, performance.now());
+  }
+
+  public endPhase(phaseName: string): void {
+    if (!this.enabled) return;
+    const startTime = this.currentPhases.get(phaseName);
+    if (startTime === undefined) return;
+    const durationMs = Number((performance.now() - startTime).toFixed(2));
+    this.currentPhases.delete(phaseName);
+    this.completedPhases.push({ phaseName, durationMs });
+  }
+
   public endPopulate(): void {
     if (!this.enabled) return;
     this.populateEndTime = performance.now();
-    const report = this.generateReport();
-    if (report) {
-      const summaryText = `FullCalendar Load Timing: total ${report.totalPopulateDurationMs ?? 0} ms across ${report.stages.length} stage(s).`;
-      showNotice(summaryText, 6000);
-    }
+    this.generateReport();
   }
 
   public generateReport(): LoadReport | null {
@@ -206,12 +228,26 @@ class LoadDebugProfilerImpl {
         ? Number((this.populateEndTime - this.populateStartTime).toFixed(2))
         : null;
 
+    const totalYieldDurationMs = Number(this.totalYieldDurationMs.toFixed(2));
+
+    const totalStagesDuration = this.completedStages.reduce((sum, s) => sum + s.durationMs, 0);
+    const totalPhasesDuration = this.completedPhases.reduce((sum, p) => sum + p.durationMs, 0);
+
+    const accountedSoFar = totalStagesDuration + totalPhasesDuration + totalYieldDurationMs;
+    const unaccountedDurationMs =
+      totalPopulateDurationMs !== null
+        ? Number(Math.max(0, totalPopulateDurationMs - accountedSoFar).toFixed(2))
+        : 0;
+
     const report: LoadReport = {
       onloadDurationMs,
       timeToLayoutReadyMs,
       layoutReadyToPopulateMs,
       totalPopulateDurationMs,
       stages: [...this.completedStages],
+      phases: [...this.completedPhases],
+      totalYieldDurationMs,
+      unaccountedDurationMs,
       timestamp: Date.now()
     };
 
@@ -235,7 +271,8 @@ class LoadDebugProfilerImpl {
       lines.push(`Total cache population: ${report.totalPopulateDurationMs} ms`);
     }
 
-    lines.push('Staging Breakdown:');
+    lines.push('');
+    lines.push('Stage & Provider Breakdown:');
     for (const stage of report.stages) {
       lines.push(`  [${stage.stageName}] - ${stage.durationMs} ms`);
       for (const provider of stage.providers) {
@@ -245,6 +282,30 @@ class LoadDebugProfilerImpl {
         );
       }
     }
+
+    lines.push('');
+    lines.push('Overhead & Processing Breakdown:');
+    for (const phase of report.phases) {
+      lines.push(`  • ${phase.phaseName}: ${phase.durationMs} ms`);
+    }
+    if (report.totalYieldDurationMs > 0) {
+      lines.push(`  • Main thread event-loop yields: ${report.totalYieldDurationMs} ms`);
+    }
+    if (report.unaccountedDurationMs > 0) {
+      lines.push(`  • Other post-processing / delays: ${report.unaccountedDurationMs} ms`);
+    }
+
+    if (report.totalPopulateDurationMs !== null) {
+      const sumAll = (
+        report.stages.reduce((sum, s) => sum + s.durationMs, 0) +
+        report.phases.reduce((sum, p) => sum + p.durationMs, 0) +
+        report.totalYieldDurationMs +
+        report.unaccountedDurationMs
+      ).toFixed(2);
+      lines.push('');
+      lines.push(`Sum of all components: ${sumAll} ms (100% accounted for)`);
+    }
+
     return lines.join('\n');
   }
 

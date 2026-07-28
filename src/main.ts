@@ -152,7 +152,6 @@ export default class FullCalendarPlugin extends Plugin {
     PluginState.getProviderRegistry().registerBuiltInProviders();
 
     await this.#loadSettings(); // This now handles setting and syncing
-    LoadDebugProfiler.setEnabled(PluginState.getSettings().loadDebugTiming ?? false);
     await this.#setupLocalServer();
 
     await PluginState.getProviderRegistry().initializeInstances();
@@ -355,6 +354,14 @@ export default class FullCalendarPlugin extends Plugin {
       name: t('commands.revalidateRemote'),
       callback: () => {
         PluginState.getProviderRegistry().revalidateRemoteCalendars(true);
+      }
+    });
+    this.addCommand({
+      id: 'full-calendar-show-load-debug-log',
+      name: t('commands.showLoadDebugLog') || 'Show load debug timing log',
+      callback: async () => {
+        const { showLoadDebugLogModal } = await import('./ui/modals/showLoadDebugLogModal');
+        void showLoadDebugLogModal(this.app);
       }
     });
     this.addCommand({

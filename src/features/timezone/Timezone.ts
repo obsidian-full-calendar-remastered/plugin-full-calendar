@@ -117,6 +117,7 @@ function mapWindowsTimezoneToIANA(windowsTz: string): string | null {
     'W. Europe Standard Time': 'Europe/Berlin',
     'Central Europe Standard Time': 'Europe/Budapest',
     'E. Europe Standard Time': 'Europe/Bucharest',
+    'GTB Standard Time': 'Europe/Bucharest',
     'Russian Standard Time': 'Europe/Moscow',
     'GMT Standard Time': 'Europe/London',
     'Greenwich Standard Time': 'Europe/London',

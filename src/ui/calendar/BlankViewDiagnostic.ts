@@ -110,6 +110,11 @@ export function runBlankViewDiagnostic(
   activeWorkspace: WorkspaceSettings | null
 ): void {
   try {
+    // ── Guard: calendar instance must be valid and mounted ───────────────────
+    if (!cal || !cal.el || (cal.el.ownerDocument && !cal.el.ownerDocument.contains(cal.el))) {
+      return;
+    }
+
     // ── Guard: only time-grid views ──────────────────────────────────────────
     const viewType = cal.view?.type ?? '';
     if (!viewType.startsWith('timeGrid')) {

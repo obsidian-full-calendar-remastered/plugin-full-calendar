@@ -206,6 +206,7 @@ export async function renderCalendar(
   const parentEl = containerEl.parentElement;
   let agendaEl: HTMLElement | null = null;
   let cal: Calendar | null = null;
+  let blankViewTimer: ReturnType<typeof setTimeout> | null = null;
 
   const getOrCreateAgendaEl = (): HTMLElement | null => {
     if (!isNarrow) return null;
@@ -1214,12 +1215,28 @@ export async function renderCalendar(
     eventsSet: () => {
       updateCurrentOrNextEventHighlight();
       onEventsSet?.();
+
+      if (blankViewTimer !== null) {
+        clearTimeout(blankViewTimer);
+        blankViewTimer = null;
+      }
+
       // Fire blank-view diagnostic if the caller registered a handler and the
-      // rendered event list (excluding shadow events) is empty.
+      // rendered event list (excluding shadow events) remains empty after settling.
       if (onBlankView && cal) {
         const nonShadowCount = cal.getEvents().filter(e => !e.extendedProps?.isShadow).length;
         if (nonShadowCount === 0) {
-          onBlankView(cal);
+          blankViewTimer = setTimeout(() => {
+            blankViewTimer = null;
+            if (cal && cal.el) {
+              const currentNonShadowCount = cal
+                .getEvents()
+                .filter(e => !e.extendedProps?.isShadow).length;
+              if (currentNonShadowCount === 0) {
+                onBlankView(cal);
+              }
+            }
+          }, 300);
         }
       }
     },
@@ -1507,6 +1524,10 @@ export async function renderCalendar(
 
   const originalDestroy = cal.destroy.bind(cal);
   cal.destroy = () => {
+    if (blankViewTimer !== null) {
+      clearTimeout(blankViewTimer);
+      blankViewTimer = null;
+    }
     resizeObserver.disconnect();
     containerEl.removeEventListener('pointerdown', onPointerDownFocus);
     containerEl.removeEventListener('keydown', onKeyDownNavigate);

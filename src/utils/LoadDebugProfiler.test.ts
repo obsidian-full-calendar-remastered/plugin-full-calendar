@@ -110,6 +110,43 @@ describe('LoadDebugProfiler', () => {
     const formatted = LoadDebugProfiler.getFormattedReport();
     expect(formatted).toContain('Daily Notes Optimization Metrics:');
     expect(formatted).toContain('Metadata pre-filtered (0ms skip): 450');
-    expect(formatted).toContain('UI Freeze Warnings (Long Tasks > 50ms): 1');
+    expect(formatted).toContain('UI Freeze Diagnostic Summary');
+  });
+
+  test('tracks hierarchical context stack and sub-phases via withContext', async () => {
+    LoadDebugProfiler.setEnabled(true);
+    LoadDebugProfiler.startPopulate();
+
+    await LoadDebugProfiler.withContext('Parent Stage', async () => {
+      expect(LoadDebugProfiler.getContextPath()).toBe('Parent Stage');
+
+      await LoadDebugProfiler.withContext(
+        'Child SubPhase',
+        async () => {
+          expect(LoadDebugProfiler.getContextPath()).toBe('Parent Stage > Child SubPhase');
+          LoadDebugProfiler.recordFreeze('Inner Freeze Test', 85, '500 items');
+        },
+        'subphase details'
+      );
+    });
+
+    expect(LoadDebugProfiler.getContextPath()).toBe('');
+
+    LoadDebugProfiler.endPopulate();
+    const report = LoadDebugProfiler.getLastReport();
+
+    expect(report).not.toBeNull();
+    expect(report?.subPhases.length).toBeGreaterThanOrEqual(2);
+    expect(report?.freezes.length).toBe(1);
+    expect(report?.freezes[0].context).toContain('[at Parent Stage > Child SubPhase]');
+    expect(report?.freezeStats.totalCount).toBe(1);
+    expect(report?.freezeStats.maxDurationMs).toBe(85);
+    expect(report?.freezeStats.totalFrozenTimeMs).toBe(85);
+    expect(report?.traceLogs.length).toBeGreaterThan(0);
+
+    const formatted = LoadDebugProfiler.getFormattedReport();
+    expect(formatted).toContain('Chronological Timeline Trace Log:');
+    expect(formatted).toContain('Detailed Sub-Phase Timing Breakdown:');
+    expect(formatted).toContain('Parent Stage > Child SubPhase');
   });
 });

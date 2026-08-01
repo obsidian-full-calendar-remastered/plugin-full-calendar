@@ -324,32 +324,39 @@ export class DailyNoteProvider
   }
 
   async getEvents(range?: { start: Date; end: Date }): Promise<EditableEventResponse[]> {
-    const notes = getAllDailyNotes();
-    let files = Object.values(notes);
+    return LoadDebugProfiler.withContext('Daily Note Sync', async () => {
+      const notes = getAllDailyNotes();
+      let files = Object.values(notes);
 
-    // OPTIMIZATION: If a range is provided, only process daily notes within that range.
-    if (range) {
-      const startMoment = moment(range.start);
-      const endMoment = moment(range.end);
-      files = files.filter(file => {
-        const fileDate = getDateFromFile(file, 'day');
-        return (
-          fileDate && fileDate.isSameOrAfter(startMoment) && fileDate.isSameOrBefore(endMoment)
+      // OPTIMIZATION: If a range is provided, only process daily notes within that range.
+      if (range) {
+        const startMoment = moment(range.start);
+        const endMoment = moment(range.end);
+        files = files.filter(file => {
+          const fileDate = getDateFromFile(file, 'day');
+          return (
+            fileDate && fileDate.isSameOrAfter(startMoment) && fileDate.isSameOrBefore(endMoment)
+          );
+        });
+      }
+
+      LoadDebugProfiler.recordDailyNotesStats({ totalScanned: files.length });
+
+      const allEvents: EditableEventResponse[][] = [];
+      let frameStart = performance.now();
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await LoadDebugProfiler.withContext(
+          'Parse Daily Note File',
+          () => this.getEventsInFile(file),
+          file.path
         );
-      });
-    }
-
-    LoadDebugProfiler.recordDailyNotesStats({ totalScanned: files.length });
-
-    const allEvents: EditableEventResponse[][] = [];
-    let frameStart = performance.now();
-
-    for (let i = 0; i < files.length; i++) {
-      const res = await this.getEventsInFile(files[i]);
-      allEvents.push(res);
-      frameStart = await yieldIfFrameBudgetExceeded(frameStart, 5);
-    }
-    return allEvents.flat();
+        allEvents.push(res);
+        frameStart = await yieldIfFrameBudgetExceeded(frameStart, 5);
+      }
+      return allEvents.flat();
+    });
   }
 
   async createEvent(event: OFCEvent): Promise<[OFCEvent, EventLocation]> {

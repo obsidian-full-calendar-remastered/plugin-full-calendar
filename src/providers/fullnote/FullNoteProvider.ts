@@ -227,34 +227,36 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
   }
 
   async getEvents(_range?: { start: Date; end: Date }): Promise<EditableEventResponse[]> {
-    const eventFolder = this.app.getAbstractFileByPath(this.source.directory);
-    if (!eventFolder || !(eventFolder instanceof TFolder)) {
-      throw new Error(`${this.source.directory} is not a valid directory.`);
-    }
+    return LoadDebugProfiler.withContext('Full Note Sync', async () => {
+      const eventFolder = this.app.getAbstractFileByPath(this.source.directory);
+      if (!eventFolder || !(eventFolder instanceof TFolder)) {
+        throw new Error(`${this.source.directory} is not a valid directory.`);
+      }
 
-    const events: EditableEventResponse[] = [];
-    const files = eventFolder.children.filter((file): file is TFile => file instanceof TFile);
-    const BATCH_SIZE = 15;
+      const events: EditableEventResponse[] = [];
+      const files = eventFolder.children.filter((file): file is TFile => file instanceof TFile);
+      const BATCH_SIZE = 15;
 
-    for (let i = 0; i < files.length; i += BATCH_SIZE) {
-      const startTime = performance.now();
-      const batch = files.slice(i, i + BATCH_SIZE);
-      const batchResults = await Promise.all(batch.map(file => this.getEventsInFile(file)));
-      for (const res of batchResults) {
-        events.push(...res);
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        const batchName = `Full Notes Batch (${i + 1}-${Math.min(i + BATCH_SIZE, files.length)}/${files.length})`;
+        await LoadDebugProfiler.withContext(batchName, async () => {
+          const startTime = performance.now();
+          const batch = files.slice(i, i + BATCH_SIZE);
+          const batchResults = await Promise.all(batch.map(file => this.getEventsInFile(file)));
+          for (const res of batchResults) {
+            events.push(...res);
+          }
+          const duration = performance.now() - startTime;
+          if (duration >= 50) {
+            LoadDebugProfiler.recordFreeze(batchName, duration);
+          }
+        });
+        if (i + BATCH_SIZE < files.length) {
+          await yieldToMainThread();
+        }
       }
-      const duration = performance.now() - startTime;
-      if (duration >= 50) {
-        LoadDebugProfiler.recordFreeze(
-          `Full Notes Batch (${i + 1}-${Math.min(i + BATCH_SIZE, files.length)}/${files.length})`,
-          duration
-        );
-      }
-      if (i + BATCH_SIZE < files.length) {
-        await yieldToMainThread();
-      }
-    }
-    return events;
+      return events;
+    });
   }
 
   async createEvent(event: OFCEvent): Promise<[OFCEvent, EventLocation]> {

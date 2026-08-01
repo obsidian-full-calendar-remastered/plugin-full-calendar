@@ -27,6 +27,7 @@ import { HolidayConfigComponent } from './ui/HolidayConfigComponent';
 import { TFile } from 'obsidian';
 import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
 import { createLinkedNoteForProvider } from '../../features/linked-notes/linkedNotes';
+import { yieldIfFrameBudgetExceeded } from '../../utils/async';
 
 // ─── Cache constants ───────────────────────────────────────────────────────────
 
@@ -157,6 +158,7 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
 
     const years = this._getYearsForRange(range);
     const allEvents: [OFCEvent, EventLocation | null][] = [];
+    let frameStart = performance.now();
 
     for (const year of years) {
       const cached = this._readCache(year);
@@ -168,6 +170,7 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
             : null;
           allEvents.push([event, location]);
         }
+        frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
         continue;
       }
 
@@ -180,6 +183,7 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
           : null;
         allEvents.push([event, location]);
       }
+      frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
     }
 
     // If a range was given, filter so only events whose date falls within range are returned.

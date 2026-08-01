@@ -43,6 +43,7 @@ import {
 } from './taskPayloadAdapter';
 import { TasksDateTarget, TasksDisplayFormat } from '../../types/settings';
 import { TasksQueryFilter } from './TasksQueryFilter';
+import { yieldIfFrameBudgetExceeded } from '../../utils/async';
 
 export { extractTimeFromTitle } from './taskPayloadAdapter';
 
@@ -638,9 +639,16 @@ export class TasksPluginProvider
 
   async getEvents(_range?: { start: Date; end: Date }): Promise<EditableEventResponse[]> {
     await this._ensureTasksCacheIsWarm();
-    return this.allTasks
-      .map(task => this._taskToOFCEvent(task))
-      .filter((e): e is [OFCEvent, EventLocation | null] => e !== null);
+    const results: EditableEventResponse[] = [];
+    let frameStart = performance.now();
+    for (let i = 0; i < this.allTasks.length; i++) {
+      const event = this._taskToOFCEvent(this.allTasks[i]);
+      if (event !== null) {
+        results.push(event);
+      }
+      frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
+    }
+    return results;
   }
 
   public async filterTasksByGlobalQuery(tasks: CalendarTask[]): Promise<CalendarTask[]> {

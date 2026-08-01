@@ -35,11 +35,14 @@ export async function showLoadDebugLogModal(app: App): Promise<void> {
   }
 
   const timestampStr = report ? new Date(report.timestamp).toLocaleString() : '';
+  const freezeDesc = report?.freezeStats
+    ? ` | UI Freezes: ${report.freezeStats.totalCount} (Max spike: ${report.freezeStats.maxDurationMs} ms)`
+    : '';
 
   new CopyTextModal(app, {
-    titleText: '⏱️ full calendar load debug timing log',
+    titleText: '⏱️ Full Calendar Load Debug & UI Freeze Diagnostic Log',
     descriptionText: report
-      ? `Last run: ${timestampStr} | Total population: ${report.totalPopulateDurationMs ?? 0} ms | Stages: ${report.stages.length}`
+      ? `Last run: ${timestampStr} | Total population: ${report.totalPopulateDurationMs ?? 0} ms | Stages: ${report.stages.length}${freezeDesc}`
       : 'No timing benchmark recorded yet.',
     valueToCopy: text,
     multiline: true,

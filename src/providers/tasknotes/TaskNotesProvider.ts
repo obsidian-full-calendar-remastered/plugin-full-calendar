@@ -21,6 +21,7 @@ import {
 } from './TaskNotesConfigComponent';
 import { t } from '../../features/i18n/i18n';
 import { modifyFrontmatterString } from '../fullnote/frontmatter';
+import { yieldIfFrameBudgetExceeded } from '../../utils/async';
 
 export type EditableEventResponse = [OFCEvent, EventLocation | null];
 
@@ -994,9 +995,16 @@ export class TaskNotesProvider
         .filter((entry): entry is readonly [string, number] => entry !== null)
     );
 
-    return tasks
-      .map(task => this.taskToEvent(task))
-      .filter((entry): entry is [OFCEvent, EventLocation | null] => !!entry);
+    const results: [OFCEvent, EventLocation | null][] = [];
+    let frameStart = performance.now();
+    for (let i = 0; i < tasks.length; i++) {
+      const entry = this.taskToEvent(tasks[i]);
+      if (entry) {
+        results.push(entry);
+      }
+      frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
+    }
+    return results;
   }
 
   getCapabilities(): CalendarProviderCapabilities {

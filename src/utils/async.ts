@@ -16,28 +16,31 @@ interface WindowWithIdle {
  * Yields execution back to the browser event loop / UI thread.
  * Uses window.setTimeout(resolve, 0) or requestIdleCallback with a tight fallback timeout.
  */
-export function yieldToMainThread(): Promise<void> {
+export async function yieldToMainThread(): Promise<void> {
+  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    return;
+  }
+
   const profilingActive = LoadDebugProfiler.isEnabled;
   const start = profilingActive ? performance.now() : 0;
 
-  return new Promise(resolve => {
-    const onDone = () => {
+  // 1. Native scheduler.yield() in Chromium 115+ / Electron
+  if (typeof scheduler !== 'undefined' && typeof (scheduler as { yield?: () => Promise<void> }).yield === 'function') {
+    await (scheduler as { yield: () => Promise<void> }).yield();
+    if (profilingActive) {
+      LoadDebugProfiler.recordYield(performance.now() - start);
+    }
+    return;
+  }
+
+  // 2. Macrotask yield via setTimeout(0) to ensure DOM paint and native user input event dispatch
+  await new Promise<void>(resolve => {
+    window.setTimeout(() => {
       if (profilingActive) {
         LoadDebugProfiler.recordYield(performance.now() - start);
       }
       resolve();
-    };
-
-    if (typeof MessageChannel !== 'undefined') {
-      const channel = new MessageChannel();
-      channel.port1.onmessage = () => {
-        channel.port1.close();
-        onDone();
-      };
-      channel.port2.postMessage(null);
-    } else {
-      window.setTimeout(onDone, 0);
-    }
+    }, 0);
   });
 }
 

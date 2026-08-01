@@ -49,7 +49,9 @@ export class CacheSyncHandler {
           location,
           calendarId
         });
-        frameStart = await yieldIfFrameBudgetExceeded(frameStart, 5);
+        if (performance.now() - frameStart >= 6) {
+          frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
+        }
       }
 
       // 3. Build keyed maps for old and new events using cheap sync keys (O(N), no I/O).
@@ -61,6 +63,9 @@ export class CacheSyncHandler {
         );
         if (key) {
           oldByKey.set(key, oldEvent);
+        }
+        if (performance.now() - frameStart >= 6) {
+          frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
         }
       }
 
@@ -77,8 +82,8 @@ export class CacheSyncHandler {
         if (key) {
           newByKey.set(key, newEvent);
         }
-        if (i > 0 && i % 200 === 0) {
-          await yieldToMainThread();
+        if (performance.now() - frameStart >= 6) {
+          frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
         }
       }
 
@@ -100,10 +105,12 @@ export class CacheSyncHandler {
           this.ctx.store.delete(oldEvent.id);
           hasChanges = true;
         }
+        if (performance.now() - frameStart >= 6) {
+          frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
+        }
       }
 
       // 4b. Added events: new keys not present in old set.
-      let addCount = 0;
       for (const [key, newEvent] of newByKey) {
         if (!oldByKey.has(key)) {
           const newSessionId = PluginState.getProviderRegistry().generateId();
@@ -125,10 +132,9 @@ export class CacheSyncHandler {
             id: newSessionId
           });
           hasChanges = true;
-          addCount++;
-          if (addCount % 200 === 0) {
-            await yieldToMainThread();
-          }
+        }
+        if (performance.now() - frameStart >= 6) {
+          frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
         }
       }
 
@@ -162,6 +168,9 @@ export class CacheSyncHandler {
             });
             hasChanges = true;
           }
+        }
+        if (performance.now() - frameStart >= 6) {
+          frameStart = await yieldIfFrameBudgetExceeded(frameStart, 6);
         }
       }
 

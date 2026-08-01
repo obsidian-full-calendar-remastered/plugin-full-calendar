@@ -385,30 +385,35 @@ export class CalendarView extends ItemView implements ViewContext {
             if (this.fullCalendarView) {
               const fullCalendarView = this.fullCalendarView;
               const updateStartTime = performance.now();
-              if (
-                info.type === 'events' &&
-                info.affectedCalendars &&
-                info.affectedCalendars.length > 0
-              ) {
-                info.affectedCalendars.forEach(calendarId => {
-                  const oldSource = fullCalendarView.getEventSourceById(calendarId);
-                  if (oldSource) {
-                    oldSource.remove();
-                  }
-                  const newSource = sources.find(
-                    s => typeof s === 'object' && s !== null && 'id' in s && s.id === calendarId
-                  );
-                  if (newSource) {
-                    fullCalendarView.addEventSource(newSource);
-                  }
-                });
-              } else {
-                fullCalendarView.removeAllEventSources();
-                sources.forEach(source => fullCalendarView.addEventSource(source));
-              }
+              LoadDebugProfiler.pushContext('FullCalendar DOM Event Source Update');
+              try {
+                if (
+                  info.type === 'events' &&
+                  info.affectedCalendars &&
+                  info.affectedCalendars.length > 0
+                ) {
+                  info.affectedCalendars.forEach(calendarId => {
+                    const oldSource = fullCalendarView.getEventSourceById(calendarId);
+                    if (oldSource) {
+                      oldSource.remove();
+                    }
+                    const newSource = sources.find(
+                      s => typeof s === 'object' && s !== null && 'id' in s && s.id === calendarId
+                    );
+                    if (newSource) {
+                      fullCalendarView.addEventSource(newSource);
+                    }
+                  });
+                } else {
+                  fullCalendarView.removeAllEventSources();
+                  sources.forEach(source => fullCalendarView.addEventSource(source));
+                }
 
-              this.searchHandler.clearCaches();
-              this.searchHandler.scheduleApplyFilter();
+                this.searchHandler.clearCaches();
+                this.searchHandler.scheduleApplyFilter();
+              } finally {
+                LoadDebugProfiler.popContext();
+              }
 
               const updateDuration = performance.now() - updateStartTime;
               if (updateDuration >= 50) {

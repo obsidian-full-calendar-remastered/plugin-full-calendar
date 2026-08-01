@@ -25,7 +25,10 @@ export async function yieldToMainThread(): Promise<void> {
   const start = profilingActive ? performance.now() : 0;
 
   // 1. Native scheduler.yield() in Chromium 115+ / Electron
-  if (typeof scheduler !== 'undefined' && typeof (scheduler as { yield?: () => Promise<void> }).yield === 'function') {
+  if (
+    typeof scheduler !== 'undefined' &&
+    typeof (scheduler as { yield?: () => Promise<void> }).yield === 'function'
+  ) {
     await (scheduler as { yield: () => Promise<void> }).yield();
     if (profilingActive) {
       LoadDebugProfiler.recordYield(performance.now() - start);

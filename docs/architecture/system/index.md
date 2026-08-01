@@ -14,6 +14,7 @@
 | Question | Start Here | Related Deep Dive |
 |---|---|---|
 | Where does canonical state live and mutate? | [EventCache Contract](eventcache.md) | [Event Storage and Identifiers](event-storage.md) |
+| How does the plugin achieve 0ms UI freezing & off-main-thread processing? | [Performance & Web Workers](performance.md) | [Core Systems](core-systems.md) |
 | How does the plugin handle centralized, optimized searching, filtering, and sorting? | [Event Filtering and Sorting](event-filtering-sorting.md) | [EventCache Contract](eventcache.md) |
 | How are internal events translated to FullCalendar? | [FullCalendar Interop](interop.md) | [Data Flow](data-flow.md) |
 | How do external plugins get safe access? | [API Architecture](api-architecture.md) | [API Integration Blueprint](api-integration-blueprint.md) |
@@ -31,10 +32,11 @@ This section is concept-first and implementation-bound. It documents ownership, 
 ## Implementation Anchors
 
 Event orchestration: `src/core/EventCache.ts`  
+Web Worker manager: `src/workers/WorkerManager.ts`  
 Centralized filtering & sorting: `src/core/EventFilterSortEngine.ts`  
 In-memory indexes: `src/core/EventStore.ts`  
 Normalization pipeline: `src/core/EventEnhancer.ts`  
 Provider contract and routing: `src/providers/Provider.ts`, `src/providers/ProviderRegistry.ts`  
 View integration: `src/ui/view.ts`
 
-Compact index: [Overview](overview.md) · [EventCache](eventcache.md) · [Filtering & Sorting](event-filtering-sorting.md) · [Storage](event-storage.md) · [Interop](interop.md) · [API Architecture](api-architecture.md) · [API Blueprint](api-integration-blueprint.md) · [Data Flow](data-flow.md) · [Core Systems](core-systems.md) · [Features](features/index.md) · [ActivityWatch](../activitywatch/index.md) · [Providers](../calendars/architecture.md) · [Chrono](../chrono_analyser/architecture.md) · [Styling](styling.md)
+Compact index: [Overview](overview.md) · [EventCache](eventcache.md) · [Performance](performance.md) · [Filtering & Sorting](event-filtering-sorting.md) · [Storage](event-storage.md) · [Interop](interop.md) · [API Architecture](api-architecture.md) · [API Blueprint](api-integration-blueprint.md) · [Data Flow](data-flow.md) · [Core Systems](core-systems.md) · [Features](features/index.md) · [ActivityWatch](../activitywatch/index.md) · [Providers](../calendars/architecture.md) · [Chrono](../chrono_analyser/architecture.md) · [Styling](styling.md)

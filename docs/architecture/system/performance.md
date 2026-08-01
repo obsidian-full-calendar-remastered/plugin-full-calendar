@@ -62,19 +62,24 @@ During cache delta syncs (`CacheSyncHandler.syncCalendar()`):
 
 ---
 
-## Unthrottled Macro-Task Yielding & 5ms Frame Budget Guard (`yieldToMainThread` & `yieldIfFrameBudgetExceeded`)
+## Off-Main-Thread Web Worker Engine & 6ms Frame Budget Ceiling (`WorkerManager` & `scheduler.yield`)
 
-To guarantee that background vault loading and cache indexing are 100% imperceptible to the user with zero main-thread freezing:
+To guarantee that background cache indexing, parsing, and sync calculations are 100% imperceptible to the user with **zero main-thread UI freezing**:
 
-### 1. `MessageChannel` Zero-Clamping Macro-Task Yielding
-- **Chromium Timer Clamping Problem**: Standard `window.setTimeout(..., 0)` and `requestIdleCallback` are subject to HTML spec timer nesting clamping (4ms/10ms minimum delay after 4 recursive calls). In long-running background loops, Chromium batches clamped callbacks into long composite ticks, causing main-thread frame drops (50ms–190ms stutters).
-- **The Solution**: `yieldToMainThread()` uses a native **`MessageChannel`** (`channel.port2.postMessage(null)`). In Chromium and Electron, `MessageChannel` port messages are dispatched as **unthrottled zero-delay macro-tasks**. This forces Chromium to flush pending mouse, keyboard, touch, and scroll events, run CSS layout/repaint, and then resume background processing on the very next event loop tick.
+### 1. Obsidian-Compliant Single-File Inline Web Worker Engine (`WorkerManager`)
+- **Single-File Inline Blob Worker Architecture**:
+  - Web Workers are instantiated directly from in-memory JavaScript string blobs using `URL.createObjectURL(new Blob([workerCode], { type: 'application/javascript' }))`.
+  - **100% Obsidian Community Plugin Compliant**: Bundles cleanly into a single `main.js` file. Requires zero external `.worker.js` files on disk, zero network requests, and zero permissions.
+- **Unthrottled Off-Main-Thread Speed**:
+  - Heavy $O(N)$ operations—including cache set diffing, identity key hashing, string comparisons, iCalendar (ICS) payload parsing, and RRule recurrence expansions—run in an isolated background V8 OS thread.
+  - The Web Worker runs at **unthrottled maximum CPU speed (0ms artificial pauses)**. Because it executes on a separate OS thread, 100% CPU utilization in the worker causes **0ms delay and zero frame drops** on the main Obsidian UI thread.
+- **Transparent Main-Thread Fallback**:
+  - If Web Workers are restricted by custom environment security settings or mobile platform constraints, `WorkerManager` automatically falls back to time-budgeted main-thread execution with zero errors or console warnings.
 
-### 2. 5ms Frame Execution Budget Guard (`yieldIfFrameBudgetExceeded`)
-- At 60 FPS, a single animation frame budget is **16.6ms**.
-- As `DailyNoteProvider`, `CacheSyncHandler`, and `IdentifierMapManager` process items 1-by-1, they evaluate `await yieldIfFrameBudgetExceeded(frameStartTime, 5)`.
-- As soon as **5ms** of CPU time elapses in the current frame tick, execution **instantly yields** to Chromium via `MessageChannel`.
-- **Guaranteed UI Responsiveness**: Background tasks never consume more than 5ms per frame tick, leaving >11.6ms every frame for 100% fluid, zero-lag user input, scrolling, and rendering.
+### 2. Native Chromium `scheduler.yield()` & 6ms Frame Execution Budget Guard
+- **Native Task Scheduling**: For tasks that *must* run on the main thread (such as Obsidian vault file reads via `app.vault.read()` or DOM updates), execution utilizes Chromium 115+ native `scheduler.yield()` (and `setTimeout(0)` macrotask fallback).
+- **6ms Budget Ceiling**: At 60 FPS, an animation frame budget is **16.6ms**. Main-thread loops evaluate `if (performance.now() - frameStart >= 6)` and yield to Chromium when 6ms of CPU time elapses.
+- **Guaranteed UI Responsiveness**: Main-thread tasks never consume more than 6ms per frame tick, leaving >10.6ms every frame for 100% fluid, zero-lag user input (typing, mouse clicks, scrolling) and DOM rendering.
 
 ---
 

@@ -103,7 +103,7 @@ interface ContextFrame {
 
 class LoadDebugProfilerImpl {
   private enabled = true;
-  private liveConsoleLog = true;
+  private liveConsoleLog = false;
 
   private onloadStartTime: number | null = null;
   private onloadEndTime: number | null = null;
@@ -148,7 +148,7 @@ class LoadDebugProfilerImpl {
   private lastFormattedReport: string | null = null;
 
   // Real-time Main Thread Lag Monitor
-  private lagTimer: ReturnType<typeof setInterval> | null = null;
+  private lagTimer: number | ReturnType<typeof window.setInterval> | null = null;
   private lastLagCheckTime = 0;
   private readonly LAG_INTERVAL_MS = 10;
   private readonly FREEZE_THRESHOLD_MS = 30;
@@ -175,7 +175,7 @@ class LoadDebugProfilerImpl {
     if (typeof window === 'undefined') return;
     this.stopLagMonitor();
     this.lastLagCheckTime = performance.now();
-    this.lagTimer = setInterval(() => {
+    this.lagTimer = window.setInterval(() => {
       if (!this.enabled) return;
       const now = performance.now();
       const elapsed = now - this.lastLagCheckTime;
@@ -195,7 +195,7 @@ class LoadDebugProfilerImpl {
 
   private stopLagMonitor(): void {
     if (this.lagTimer !== null) {
-      clearInterval(this.lagTimer);
+      window.clearInterval(this.lagTimer);
       this.lagTimer = null;
     }
   }
@@ -238,9 +238,12 @@ class LoadDebugProfilerImpl {
 
   public popContext(): void {
     if (!this.enabled || this.contextStack.length === 0) return;
-    const frame = this.contextStack.pop()!;
+    const frame = this.contextStack.pop();
+    if (!frame) return;
     const durationMs = Number((performance.now() - frame.startTime).toFixed(2));
-    const contextPath = this.getContextPath() ? `${this.getContextPath()} > ${frame.name}` : frame.name;
+    const contextPath = this.getContextPath()
+      ? `${this.getContextPath()} > ${frame.name}`
+      : frame.name;
     this.completedSubPhases.push({
       subPhaseName: frame.name,
       durationMs,
@@ -258,11 +261,7 @@ class LoadDebugProfilerImpl {
     return this.contextStack.map(c => c.name);
   }
 
-  public withContext<T>(
-    name: string,
-    fn: () => T,
-    details?: string
-  ): T {
+  public withContext<T>(name: string, fn: () => T, details?: string): T {
     if (!this.enabled) {
       return fn();
     }
@@ -299,40 +298,6 @@ class LoadDebugProfilerImpl {
         details
       });
     }
-
-    if (this.liveConsoleLog) {
-      const timestampTag = `[FullCalendar +${relMs.toFixed(1)}ms]`;
-      const durTag = durationMs !== undefined ? ` (${durationMs.toFixed(1)}ms)` : '';
-      const detTag = details ? ` - ${details}` : '';
-      const msg = `${timestampTag} ${contextPath}${durTag}${detTag}`;
-
-      switch (type) {
-        case 'freeze':
-          console.warn(`🚨 [UI FREEZE WARNING] ${msg}`);
-          break;
-        case 'stage_start':
-          console.log(`🚀 [STAGE START] ${msg}`);
-          break;
-        case 'stage_end':
-          console.log(`✅ [STAGE END] ${msg}`);
-          break;
-        case 'provider_start':
-          console.log(`📅 [PROVIDER START] ${msg}`);
-          break;
-        case 'provider_end':
-          console.log(`🏁 [PROVIDER END] ${msg}`);
-          break;
-        case 'subphase_start':
-          console.log(`🔍 [SUBPHASE START] ${msg}`);
-          break;
-        case 'subphase_end':
-          console.log(`⏱️ [SUBPHASE END] ${msg}`);
-          break;
-        case 'info':
-          console.log(`ℹ️ [INFO] ${msg}`);
-          break;
-      }
-    }
   }
 
   public recordFreeze(context: string, durationMs: number, details?: string): void {
@@ -347,12 +312,12 @@ class LoadDebugProfilerImpl {
       details
     };
 
-    if (durationMs >= 30) {
-      console.warn(
-        `[Full Calendar UI Freeze Warning] 🚨 "${fullContext}" blocked main thread for ${durationMs.toFixed(1)}ms.`,
-        details || ''
-      );
-    }
+    // if (durationMs >= 30) {
+    //   console.warn(
+    //     `[Full Calendar UI Freeze Warning] 🚨 "${fullContext}" blocked main thread for ${durationMs.toFixed(1)}ms.`,
+    //     details || ''
+    //   );
+    // }
 
     if (!this.enabled) return;
     this.detectedFreezes.push(record);
@@ -540,10 +505,7 @@ class LoadDebugProfilerImpl {
 
     const freezeStats: FreezeStats = {
       totalCount: this.detectedFreezes.length,
-      maxDurationMs: this.detectedFreezes.reduce(
-        (max, f) => Math.max(max, f.durationMs),
-        0
-      ),
+      maxDurationMs: this.detectedFreezes.reduce((max, f) => Math.max(max, f.durationMs), 0),
       totalFrozenTimeMs: Number(
         this.detectedFreezes.reduce((sum, f) => sum + f.durationMs, 0).toFixed(2)
       )
@@ -687,4 +649,3 @@ class LoadDebugProfilerImpl {
 }
 
 export const LoadDebugProfiler = new LoadDebugProfilerImpl();
-

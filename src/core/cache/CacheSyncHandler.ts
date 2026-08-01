@@ -18,7 +18,7 @@ export interface CacheContext {
   updateQueue: { toRemove: Set<string>; toAdd: Map<string, CacheEntry> };
 }
 
-import { yieldToMainThread, yieldIfFrameBudgetExceeded } from '../../utils/async';
+import { yieldIfFrameBudgetExceeded } from '../../utils/async';
 
 export class CacheSyncHandler {
   constructor(private ctx: CacheContext) {}

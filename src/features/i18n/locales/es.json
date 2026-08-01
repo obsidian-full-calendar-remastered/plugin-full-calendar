@@ -1410,7 +1410,8 @@
         },
         "slotMaxTime": {
           "label": "Hora más tardía a mostrar",
-          "description": "Anular la hora más tardía visible en las vistas de cuadrícula de tiempo (formato: HH:mm)"
+          "description": "Anular la hora más tardía visible en las vistas de cuadrícula de tiempo (formato: HH:mm)",
+          "placeholder": "Usar valor global predeterminado"
         },
         "weekendDisplay": {
           "label": "Mostrar fines de semana",

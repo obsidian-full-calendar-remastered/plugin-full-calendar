@@ -40,6 +40,7 @@ import { ViewZoomHandler } from './calendar/ViewZoomHandler';
 import { ViewSearchHandler } from './calendar/ViewSearchHandler';
 import { ViewTimelineHandler } from './calendar/ViewTimelineHandler';
 import { resolveCalendarRenderConfig } from './calendar/CalendarViewConfigResolver';
+import { runBlankViewDiagnostic } from './calendar/BlankViewDiagnostic';
 import { ViewUIHandler } from './calendar/ViewUIHandler';
 import { ViewEventInteractionHandler } from './calendar/ViewEventInteractionHandler';
 export { getCalendarColors } from './calendar/utils';
@@ -265,6 +266,14 @@ export class CalendarView extends ItemView implements ViewContext {
         onEventsSet: () => {
           this.searchHandler.clearCaches();
           this.searchHandler.scheduleApplyFilter();
+        },
+        onBlankView: liveCal => {
+          // Capture counts and workspace at the moment the callback fires,
+          // not when the renderConfig object was constructed, so the snapshot
+          // is always current (e.g. after a cache update or view switch).
+          const storeCount = PluginState.getCache().store.getAllEvents().length;
+          const workspace = this.viewEnhancer?.getActiveWorkspace() ?? null;
+          runBlankViewDiagnostic(liveCal, renderConfig, storeCount, workspace);
         },
         customButtons: {
           workspace: {

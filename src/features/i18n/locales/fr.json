@@ -1410,7 +1410,8 @@
         },
         "slotMaxTime": {
           "label": "Heure la plus tardive à afficher",
-          "description": "Remplacer l'heure la plus tardive visible dans les vues en grille (format : HH:mm)"
+          "description": "Remplacer l'heure la plus tardive visible dans les vues en grille (format : HH:mm)",
+          "placeholder": "Utiliser la valeur par défaut globale"
         },
         "weekendDisplay": {
           "label": "Affichage du week-end",

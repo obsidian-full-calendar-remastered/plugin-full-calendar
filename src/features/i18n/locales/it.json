@@ -1410,7 +1410,8 @@
         },
         "slotMaxTime": {
           "label": "Orario massimo da visualizzare",
-          "description": "Sovrascrivi l'orario massimo visibile nelle viste a griglia (formato: HH:mm)"
+          "description": "Sovrascrivi l'orario massimo visibile nelle viste a griglia (formato: HH:mm)",
+          "placeholder": "Usa il valore globale predefinito"
         },
         "weekendDisplay": {
           "label": "Visualizzazione weekend",

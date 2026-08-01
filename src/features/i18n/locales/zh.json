@@ -1410,7 +1410,8 @@
         },
         "slotMaxTime": {
           "label": "最晚显示时间",
-          "description": "覆盖时间网格视图中的最晚可见时间（格式：HH:mm）"
+          "description": "覆盖时间网格视图中的最晚可见时间（格式：HH:mm）",
+          "placeholder": "使用全局默认值"
         },
         "weekendDisplay": {
           "label": "周末显示",

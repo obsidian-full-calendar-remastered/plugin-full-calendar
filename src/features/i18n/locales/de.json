@@ -1410,7 +1410,8 @@
         },
         "slotMaxTime": {
           "label": "Späteste angezeigte Zeit",
-          "description": "Überschreibt die späteste Zeit in Zeitrasteransichten (Format: HH:mm)"
+          "description": "Überschreibt die späteste Zeit in Zeitrasteransichten (Format: HH:mm)",
+          "placeholder": "Globalen Standard verwenden"
         },
         "weekendDisplay": {
           "label": "Wochenendanzeige",

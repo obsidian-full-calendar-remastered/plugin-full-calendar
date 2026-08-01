@@ -1440,7 +1440,8 @@
         },
         "slotMaxTime": {
           "label": "Latest time to display",
-          "description": "Override the latest time visible in time grid views (format: HH:mm)"
+          "description": "Override the latest time visible in time grid views (format: HH:mm)",
+          "placeholder": "Use global default"
         },
         "weekendDisplay": {
           "label": "Weekend display",

@@ -423,20 +423,58 @@ export class WorkspaceModal extends Modal {
           .setPlaceholder(t('modals.workspace.fields.slotMinTime.placeholder'))
           .setValue(this.workspace.slotMinTime || '')
           .onChange(value => {
-            this.workspace.slotMinTime = value.trim() || undefined;
+            const trimmed = value.trim();
+            if (!trimmed) {
+              // Cleared — remove override so global setting takes effect
+              this.workspace.slotMinTime = undefined;
+              return;
+            }
+            // Validate HH:mm format (hours 00–23)
+            if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(trimmed)) {
+              return;
+            }
+            // Cross-field invariant: must be strictly before slotMaxTime when
+            // both are set (workspace overrides only — global fallback not checked here)
+            const currentMax = this.workspace.slotMaxTime;
+            if (currentMax && trimmed >= currentMax) {
+              console.warn(
+                `[FCR] Workspace slotMinTime (${trimmed}) must be earlier than slotMaxTime (${currentMax}). Value not saved.`
+              );
+              return;
+            }
+            this.workspace.slotMinTime = trimmed;
           });
       });
 
     // Visible time range - End time
+    // Note: placeholder key is slotMaxTime (was previously slotMinTime — copy-paste bug fixed)
     new Setting(section)
       .setName(t('modals.workspace.fields.slotMaxTime.label'))
       .setDesc(t('modals.workspace.fields.slotMaxTime.description'))
       .addText(text => {
         text
-          .setPlaceholder(t('modals.workspace.fields.slotMinTime.placeholder'))
+          .setPlaceholder(t('modals.workspace.fields.slotMaxTime.placeholder'))
           .setValue(this.workspace.slotMaxTime || '')
           .onChange(value => {
-            this.workspace.slotMaxTime = value.trim() || undefined;
+            const trimmed = value.trim();
+            if (!trimmed) {
+              // Cleared — remove override so global setting takes effect
+              this.workspace.slotMaxTime = undefined;
+              return;
+            }
+            // Validate HH:mm or 24:00 format
+            if (!/^([01]?[0-9]|2[0-4]):[0-5][0-9]$/.test(trimmed)) {
+              return;
+            }
+            // Cross-field invariant: must be strictly after slotMinTime when both set
+            const currentMin = this.workspace.slotMinTime;
+            if (currentMin && trimmed <= currentMin) {
+              console.warn(
+                `[FCR] Workspace slotMaxTime (${trimmed}) must be later than slotMinTime (${currentMin}). Value not saved.`
+              );
+              return;
+            }
+            this.workspace.slotMaxTime = trimmed;
           });
       });
 

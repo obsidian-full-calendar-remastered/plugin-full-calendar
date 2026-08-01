@@ -1,7 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-floating-promises */
 import { PublicAPI, InternalAPI } from './FullCalendarAPI';
 import { PluginState } from '../core/PluginState';
 import { FullCalendarSettings } from '../types/settings';
+import type FullCalendarPlugin from '../main';
+import type EventCache from '../core/EventCache';
+import type { ProviderRegistry } from '../providers/ProviderRegistry';
+import type { CalendarView } from '../ui/view';
 
 // Mock Obsidian modules
 jest.mock(
@@ -45,10 +48,20 @@ jest.mock('../features/i18n/i18n', () => ({
 }));
 
 describe('FullCalendarAPI Unit Tests', () => {
-  let mockSettings: any;
-  let mockPlugin: any;
-  let mockCache: any;
-  let mockRegistry: any;
+  let mockSettings: {
+    apiTokens: Record<string, unknown>;
+    authorizedTokens: Record<string, unknown>;
+  };
+  let mockPlugin: { app: { workspace: { getLeavesOfType: jest.Mock } } };
+  let mockCache: {
+    getAllEvents: jest.Mock;
+    getEventById: jest.Mock;
+    addEvent: jest.Mock;
+    updateEventWithId: jest.Mock;
+    deleteEvent: jest.Mock;
+    store: { getEventDetails: jest.Mock };
+  };
+  let mockRegistry: { getAllSources: jest.Mock; getCapabilities: jest.Mock };
   let internalApi: InternalAPI;
 
   beforeEach(() => {
@@ -83,10 +96,10 @@ describe('FullCalendarAPI Unit Tests', () => {
       getCapabilities: jest.fn().mockReturnValue({})
     };
 
-    PluginState.getPlugin = () => mockPlugin;
+    PluginState.getPlugin = () => mockPlugin as unknown as FullCalendarPlugin;
     PluginState.getSettings = () => mockSettings as FullCalendarSettings;
-    PluginState.getCache = () => mockCache;
-    PluginState.getProviderRegistry = () => mockRegistry;
+    PluginState.getCache = () => mockCache as unknown as EventCache;
+    PluginState.getProviderRegistry = () => mockRegistry as unknown as ProviderRegistry;
     PluginState.saveSettings = jest.fn().mockResolvedValue(undefined);
 
     internalApi = new InternalAPI();
@@ -95,10 +108,10 @@ describe('FullCalendarAPI Unit Tests', () => {
 
   describe('InternalAPI', () => {
     it('should register and unregister views', () => {
-      const mockView: any = { fullCalendarView: {} };
-      internalApi.registerView(mockView);
+      const mockView: { fullCalendarView: Record<string, unknown> } = { fullCalendarView: {} };
+      internalApi.registerView(mockView as unknown as CalendarView);
       // Accessing active views is private, but we can verify it doesn't throw
-      internalApi.unregisterView(mockView);
+      internalApi.unregisterView(mockView as unknown as CalendarView);
     });
 
     it('should query all events', () => {
@@ -124,7 +137,7 @@ describe('FullCalendarAPI Unit Tests', () => {
     let publicApi: PublicAPI;
 
     beforeEach(() => {
-      publicApi = new PublicAPI(mockPlugin);
+      publicApi = new PublicAPI(mockPlugin as unknown as FullCalendarPlugin);
     });
 
     it('should return null with an invalid token', () => {
@@ -150,7 +163,7 @@ describe('FullCalendarAPI Unit Tests', () => {
       expect(mockCache.getAllEvents).toHaveBeenCalled();
 
       // Call event write API
-      api?.createEvent('calendar-1', {
+      void api?.createEvent('calendar-1', {
         type: 'single',
         title: 'New',
         date: '2026-06-26',

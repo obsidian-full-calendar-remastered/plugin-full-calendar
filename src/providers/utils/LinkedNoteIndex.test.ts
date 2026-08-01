@@ -46,15 +46,14 @@ describe('LinkedNoteIndex', () => {
   const calendarId = 'cal-123';
 
   // Keep track of registered callbacks
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let registeredEvents: Record<string, ((...args: any[]) => void)[]> = {};
+  let registeredEvents: Record<string, ((...args: unknown[]) => void)[]> = {};
 
   const triggerEvent = (name: string, ...args: unknown[]): void => {
     const callbacks = registeredEvents[name] || [];
     for (const callback of callbacks) {
       switch (name) {
         case 'resolved':
-          (callback as () => void)();
+          callback();
           break;
         default:
           callback(...args);
@@ -69,8 +68,7 @@ describe('LinkedNoteIndex', () => {
 
     mockMetadataCache = {
       getFileCache: jest.fn(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      on: jest.fn().mockImplementation((name: string, callback: (...args: any[]) => void) => {
+      on: jest.fn().mockImplementation((name: string, callback: (...args: unknown[]) => void) => {
         if (!registeredEvents[name]) registeredEvents[name] = [];
         registeredEvents[name].push(callback);
         return { name } as EventRef;
@@ -80,8 +78,7 @@ describe('LinkedNoteIndex', () => {
 
     mockVault = {
       getMarkdownFiles: jest.fn().mockReturnValue([]),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      on: jest.fn().mockImplementation((name: string, callback: (...args: any[]) => void) => {
+      on: jest.fn().mockImplementation((name: string, callback: (...args: unknown[]) => void) => {
         if (!registeredEvents[name]) registeredEvents[name] = [];
         registeredEvents[name].push(callback);
         return { name } as EventRef;

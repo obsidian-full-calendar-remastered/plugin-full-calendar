@@ -145,48 +145,6 @@ function formatTimeToken(time: string, timeFormat24h: boolean): string {
   return parsed.isValid ? parsed.toFormat('h:mm a').toUpperCase() : time;
 }
 
-function summarizeDebugValue(value: unknown): unknown {
-  if (value === null || value === undefined) {
-    return value;
-  }
-
-  if (typeof value !== 'object') {
-    return value;
-  }
-
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
-  const valueWithMethods = value as {
-    constructor?: { name?: string };
-    toDate?: () => Date;
-    toString?: () => string;
-  };
-  const summary: Record<string, unknown> = {
-    type: valueWithMethods.constructor?.name,
-    keys: Object.keys(value)
-  };
-
-  if (typeof valueWithMethods.toDate === 'function') {
-    try {
-      summary.toDate = valueWithMethods.toDate().toISOString();
-    } catch (e) {
-      summary.toDateError = e instanceof Error ? e.message : String(e);
-    }
-  }
-
-  if (typeof valueWithMethods.toString === 'function') {
-    try {
-      summary.stringValue = valueWithMethods.toString();
-    } catch (e) {
-      summary.toStringError = e instanceof Error ? e.message : String(e);
-    }
-  }
-
-  return summary;
-}
-
 export type EditableEventResponse = [OFCEvent, EventLocation | null];
 
 export class TasksPluginProvider
@@ -328,35 +286,6 @@ export class TasksPluginProvider
     this.plugin = plugin;
     this.source = source;
     // No parser instantiation needed anymore.
-  }
-
-  private debugTasksCachePayload(origin: string, cacheData: TasksCacheData): void {
-    const tasks = Array.isArray(cacheData.tasks) ? cacheData.tasks : [];
-    const taskKeyUnion = Array.from(
-      tasks.reduce((keys, task) => {
-        Object.keys(task as unknown as Record<string, unknown>).forEach(key => keys.add(key));
-        return keys;
-      }, new Set<string>())
-    ).sort();
-
-    console.debug('[Full Calendar][Tasks] cache payload received', {
-      origin,
-      sourceId: this.source.id,
-      state: cacheData.state,
-      taskCount: tasks.length,
-      taskKeyUnion,
-      sampleTasks: tasks.slice(0, 5).map((task, index) => {
-        const rawTask = task as unknown as Record<string, unknown>;
-        return {
-          index,
-          keys: Object.keys(rawTask).sort(),
-          values: Object.fromEntries(
-            Object.entries(rawTask).map(([key, value]) => [key, summarizeDebugValue(value)])
-          )
-        };
-      }),
-      rawPayload: cacheData
-    });
   }
 
   /**

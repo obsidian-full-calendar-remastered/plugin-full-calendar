@@ -30,13 +30,27 @@ jest.mock('../../../../features/i18n/i18n', () => ({
 }));
 
 import { renderCalendar } from './calendar';
-import type { Calendar } from '@fullcalendar/core';
+
+interface MockCalendarOptions {
+  eventsSet: () => void;
+  _mockCalendarInstance?: unknown;
+  [key: string]: unknown;
+}
+
+interface MockCalendarInstance {
+  el: HTMLElement;
+  options: MockCalendarOptions;
+  render: jest.Mock;
+  destroy: jest.Mock;
+  getEvents: jest.Mock;
+  view: { type: string };
+}
 
 // Mock FullCalendar core and plugins
 jest.mock('@fullcalendar/core', () => {
   return {
-    Calendar: jest.fn().mockImplementation((el, options) => {
-      const mockInstance = {
+    Calendar: jest.fn().mockImplementation((el: HTMLElement, options: MockCalendarOptions) => {
+      const mockInstance: MockCalendarInstance = {
         el,
         options,
         render: jest.fn(),
@@ -69,7 +83,7 @@ describe('BlankViewDebounce in renderCalendar', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
-    global.ResizeObserver = jest.fn().mockImplementation(() => ({
+    window.ResizeObserver = jest.fn().mockImplementation(() => ({
       observe: jest.fn(),
       unobserve: jest.fn(),
       disconnect: jest.fn()
@@ -89,18 +103,18 @@ describe('BlankViewDebounce in renderCalendar', () => {
     const renderPromise = renderCalendar(container, [], {
       onBlankView: onBlankViewMock
     });
-    const cal = await renderPromise;
-    const options = (cal as any).options;
+    const cal = (await renderPromise) as unknown as MockCalendarInstance;
+    const options = cal.options;
 
     // Simulate removeAllEventSources triggering eventsSet with 0 events
-    (cal.getEvents as jest.Mock).mockReturnValue([]);
+    cal.getEvents.mockReturnValue([]);
     options.eventsSet();
 
     // Immediately or shortly after, events are populated and eventsSet fires again with events
     jest.advanceTimersByTime(100);
     expect(onBlankViewMock).not.toHaveBeenCalled();
 
-    (cal.getEvents as jest.Mock).mockReturnValue([{ id: '1', extendedProps: { isShadow: false } }]);
+    cal.getEvents.mockReturnValue([{ id: '1', extendedProps: { isShadow: false } }]);
     options.eventsSet();
 
     // Advance past 300ms total
@@ -113,11 +127,11 @@ describe('BlankViewDebounce in renderCalendar', () => {
     const renderPromise = renderCalendar(container, [], {
       onBlankView: onBlankViewMock
     });
-    const cal = await renderPromise;
-    const options = (cal as any).options;
+    const cal = (await renderPromise) as unknown as MockCalendarInstance;
+    const options = cal.options;
 
     // Simulate eventsSet firing with 0 events
-    (cal.getEvents as jest.Mock).mockReturnValue([]);
+    cal.getEvents.mockReturnValue([]);
     options.eventsSet();
 
     expect(onBlankViewMock).not.toHaveBeenCalled();
@@ -133,10 +147,10 @@ describe('BlankViewDebounce in renderCalendar', () => {
     const renderPromise = renderCalendar(container, [], {
       onBlankView: onBlankViewMock
     });
-    const cal = await renderPromise;
-    const options = (cal as any).options;
+    const cal = (await renderPromise) as unknown as MockCalendarInstance;
+    const options = cal.options;
 
-    (cal.getEvents as jest.Mock).mockReturnValue([]);
+    cal.getEvents.mockReturnValue([]);
     options.eventsSet();
 
     // Destroy calendar

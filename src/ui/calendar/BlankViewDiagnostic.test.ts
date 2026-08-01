@@ -2,6 +2,7 @@ import { Calendar } from '@fullcalendar/core';
 import { runBlankViewDiagnostic, buildReport } from './BlankViewDiagnostic';
 import { showNotice } from '../../utils/showNotice';
 import type { ExtraRenderProps } from '../settings/sections/calendars/calendar';
+import type { WorkspaceSettings } from '../../types/settings';
 
 jest.mock('../../utils/showNotice', () => ({
   showNotice: jest.fn()
@@ -20,7 +21,7 @@ describe('BlankViewDiagnostic', () => {
 
     mockCal = {
       el: mockEl,
-      view: { type: 'timeGridWeek' } as any,
+      view: { type: 'timeGridWeek' } as unknown as Calendar['view'],
       getEvents: jest.fn().mockReturnValue([])
     };
   });
@@ -56,12 +57,12 @@ describe('BlankViewDiagnostic', () => {
         initialSearchQuery: 'Meeting',
         timeZone: 'Europe/Budapest'
       };
-      const activeWorkspace = {
+      const activeWorkspace: WorkspaceSettings = {
         id: 'ws-1',
         name: 'Work',
         visibleCalendars: ['cal-1'],
-        categoryFilter: { mode: 'show-only' as const, categories: ['Work'] }
-      } as any;
+        categoryFilter: { mode: 'show-only', categories: ['Work'] }
+      };
 
       const report = buildReport(mockCal as Calendar, renderProps, 50, activeWorkspace);
 

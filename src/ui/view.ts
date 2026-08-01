@@ -161,7 +161,7 @@ export class CalendarView extends ItemView implements ViewContext {
       const loadingBarEl = calendarShellEl.createDiv({ cls: 'ofc-calendar-loading-bar' });
       const syncBadgeEl = calendarShellEl.createDiv({ cls: 'ofc-calendar-sync-badge' });
       syncBadgeEl.createDiv({ cls: 'ofc-sync-spinner' });
-      syncBadgeEl.createEl('span', { text: 'Syncing calendar events...' });
+      syncBadgeEl.createSpan({ text: 'Syncing calendar events...' });
 
       const hideLoadingIndicators = () => {
         loadingBarEl.addClass('is-hidden');

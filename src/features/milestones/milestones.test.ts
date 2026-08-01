@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/unbound-method */
 import { recordMilestoneAction, getMilestoneCards, getLifetimeMilestoneStats } from './milestones';
 import { PluginState } from '../../core/PluginState';
 import { FullCalendarSettings } from '../../types/settings';
+import type { ProviderRegistry } from '../../providers/ProviderRegistry';
+import type EventCache from '../../core/EventCache';
 
 // Mock Obsidian modules
 jest.mock(
@@ -22,7 +23,16 @@ jest.mock('../i18n/i18n', () => ({
 }));
 
 describe('Milestones Feature Unit Tests', () => {
-  let mockSettings: any;
+  let mockSettings: {
+    milestones: {
+      counters: Record<string, number>;
+      unlockedAt: Record<string, number>;
+      shown: Record<string, number>;
+    };
+    dev: number;
+    calendarSources: Array<{ id: string; type: string }>;
+  };
+  let mockPersistData: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -37,18 +47,19 @@ describe('Milestones Feature Unit Tests', () => {
       calendarSources: [{ id: 'local-1', type: 'local' }]
     };
 
-    PluginState.getSettings = () => mockSettings as FullCalendarSettings;
-    PluginState.persistData = jest.fn().mockResolvedValue(undefined);
+    PluginState.getSettings = () => mockSettings as unknown as FullCalendarSettings;
+    mockPersistData = jest.fn().mockResolvedValue(undefined);
+    PluginState.persistData = mockPersistData;
 
     const mockRegistry = {
       getSource: jest.fn().mockReturnValue({ type: 'local' })
     };
-    PluginState.getProviderRegistry = () => mockRegistry as any;
+    PluginState.getProviderRegistry = () => mockRegistry as unknown as ProviderRegistry;
 
     const mockCache = {
       getAllEvents: jest.fn().mockReturnValue([])
     };
-    PluginState.getCache = () => mockCache as any;
+    PluginState.getCache = () => mockCache as unknown as EventCache;
   });
 
   describe('recordMilestoneAction', () => {
@@ -69,7 +80,8 @@ describe('Milestones Feature Unit Tests', () => {
       expect(state.counters['created.total']).toBe(100);
       expect(state.unlockedAt['created.total.100']).toBeDefined();
       expect(state.shown['created.total.100']).toBe(1);
-      expect(PluginState.persistData).toHaveBeenCalled();
+      const persistDataMock = mockPersistData;
+      expect(persistDataMock).toHaveBeenCalled();
     });
   });
 

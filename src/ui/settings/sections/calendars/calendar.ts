@@ -206,7 +206,7 @@ export async function renderCalendar(
   const parentEl = containerEl.parentElement;
   let agendaEl: HTMLElement | null = null;
   let cal: Calendar | null = null;
-  let blankViewTimer: ReturnType<typeof setTimeout> | null = null;
+  let blankViewTimer: number | null = null;
 
   const getOrCreateAgendaEl = (): HTMLElement | null => {
     if (!isNarrow) return null;
@@ -1217,7 +1217,7 @@ export async function renderCalendar(
       onEventsSet?.();
 
       if (blankViewTimer !== null) {
-        clearTimeout(blankViewTimer);
+        window.clearTimeout(blankViewTimer);
         blankViewTimer = null;
       }
 
@@ -1226,7 +1226,7 @@ export async function renderCalendar(
       if (onBlankView && cal) {
         const nonShadowCount = cal.getEvents().filter(e => !e.extendedProps?.isShadow).length;
         if (nonShadowCount === 0) {
-          blankViewTimer = setTimeout(() => {
+          blankViewTimer = window.setTimeout(() => {
             blankViewTimer = null;
             if (cal && cal.el) {
               const currentNonShadowCount = cal
@@ -1525,7 +1525,7 @@ export async function renderCalendar(
   const originalDestroy = cal.destroy.bind(cal);
   cal.destroy = () => {
     if (blankViewTimer !== null) {
-      clearTimeout(blankViewTimer);
+      window.clearTimeout(blankViewTimer);
       blankViewTimer = null;
     }
     resizeObserver.disconnect();

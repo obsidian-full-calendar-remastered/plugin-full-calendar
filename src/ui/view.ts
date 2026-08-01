@@ -145,21 +145,34 @@ export class CalendarView extends ItemView implements ViewContext {
    */
   onOpen(): Promise<void> {
     return (async () => {
-      if (!PluginState.getCache()) {
+      const cache = PluginState.getCache();
+      if (!cache) {
         showNotice(t('ui.view.errors.cacheNotLoaded'));
         return;
       }
-      if (!PluginState.getCache().initialized) {
-        await PluginState.getCache().populate();
-      }
 
       this.viewEnhancer = new ViewEnhancer(PluginState.getSettings());
-      await this.viewEnhancer.loadBasesFilter();
 
       const container = this.contentEl;
       container.empty();
       const calendarShellEl = container.createDiv({ cls: 'ofc-calendar-shell' });
-      const calendarEl = calendarShellEl.createDiv();
+
+      // Add loading progress bar and floating status badge for background syncing when cache is populating
+      const loadingBarEl = calendarShellEl.createDiv({ cls: 'ofc-calendar-loading-bar' });
+      const syncBadgeEl = calendarShellEl.createDiv({ cls: 'ofc-calendar-sync-badge' });
+      syncBadgeEl.createDiv({ cls: 'ofc-sync-spinner' });
+      syncBadgeEl.createEl('span', { text: 'Syncing calendar events...' });
+
+      const hideLoadingIndicators = () => {
+        loadingBarEl.addClass('is-hidden');
+        syncBadgeEl.addClass('is-hidden');
+      };
+
+      if (cache.initialized) {
+        hideLoadingIndicators();
+      }
+
+      const calendarEl = calendarShellEl.createDiv({ cls: 'ofc-calendar-container' });
 
       this.registerDomEvent(
         calendarEl,
@@ -202,159 +215,176 @@ export class CalendarView extends ItemView implements ViewContext {
           (s: CalendarInfo) => s.type !== 'FOR_TEST_ONLY'
         ).length === 0
       ) {
+        hideLoadingIndicators();
         renderOnboarding(this.plugin, calendarEl);
         return;
       }
 
-      const allSources = PluginState.getCache().getAllEvents();
-      const { sources, config: calendarConfig } = this.viewEnhancer.getEnhancedData(allSources);
+      try {
+        const allSources = cache.getAllEvents();
+        const { sources, config: calendarConfig } = this.viewEnhancer.getEnhancedData(allSources);
 
-      if (this.fullCalendarView) {
-        this.fullCalendarView.destroy();
-        this.fullCalendarView = null;
-      }
-      this.searchHandler.clearCaches();
+        if (this.fullCalendarView) {
+          this.fullCalendarView.destroy();
+          this.fullCalendarView = null;
+        }
+        this.searchHandler.clearCaches();
 
-      // LAZY LOAD THE CALENDAR RENDERER
-      const { renderCalendar } = await import('./settings/sections/calendars/calendar');
-      let currentViewType = '';
+        // LAZY LOAD THE CALENDAR RENDERER
+        const { renderCalendar } = await import('./settings/sections/calendars/calendar');
+        let currentViewType = '';
 
-      const handleViewChange = () => {
-        const newViewType = this.fullCalendarView?.view?.type || '';
-        const wasTimeline = currentViewType.includes('resourceTimeline');
-        const isTimeline = newViewType.includes('resourceTimeline');
+        const handleViewChange = () => {
+          const newViewType = this.fullCalendarView?.view?.type || '';
+          const wasTimeline = currentViewType.includes('resourceTimeline');
+          const isTimeline = newViewType.includes('resourceTimeline');
 
-        if (wasTimeline !== isTimeline) {
-          if (isTimeline) {
-            if (!this.timelineHandler.timelineResources) {
-              const resources = this.timelineHandler.buildTimelineResources();
-              this.fullCalendarView?.setOption('resources', resources);
-              this.fullCalendarView?.setOption('resourcesInitiallyExpanded', false);
+          if (wasTimeline !== isTimeline) {
+            if (isTimeline) {
+              if (!this.timelineHandler.timelineResources) {
+                const resources = this.timelineHandler.buildTimelineResources();
+                this.fullCalendarView?.setOption('resources', resources);
+                this.fullCalendarView?.setOption('resourcesInitiallyExpanded', false);
+              }
+              this.timelineHandler.addShadowEventsToView();
+            } else {
+              this.timelineHandler.removeShadowEventsFromView();
             }
-            this.timelineHandler.addShadowEventsToView();
-          } else {
-            this.timelineHandler.removeShadowEventsFromView();
           }
+
+          this.zoomHandler.applyZoomForView(newViewType);
+          currentViewType = newViewType;
+        };
+
+        const renderConfig = resolveCalendarRenderConfig(
+          calendarConfig,
+          PluginState.getSettings(),
+          {
+            forceNarrow: this.inSidebar,
+            onViewChange: handleViewChange,
+            initialView: calendarConfig.initialView,
+            slotMinTime: calendarConfig.slotMinTime,
+            slotMaxTime: calendarConfig.slotMaxTime,
+            allDaySlot: calendarConfig.allDaySlot,
+            timeGridDayHeaderFormat: calendarConfig.timeGridDayHeaderFormat,
+            weekends: calendarConfig.weekends,
+            hiddenDays: calendarConfig.hiddenDays,
+            dayMaxEvents: calendarConfig.dayMaxEvents,
+            slotDuration: calendarConfig.slotDuration,
+            slotLabelInterval: calendarConfig.slotLabelInterval,
+            headerToolbar: calendarConfig.headerToolbar,
+            footerToolbar: calendarConfig.footerToolbar,
+            height: calendarConfig.height,
+            weatherHide: calendarConfig.weatherHide,
+            initialSearchQuery: this.searchHandler.eventSearchQuery,
+            onSearchQueryChange: (query: string) => {
+              this.searchHandler.eventSearchQuery = query;
+              this.searchHandler.scheduleApplyFilter();
+            },
+            onEventsSet: () => {
+              this.searchHandler.clearCaches();
+              this.searchHandler.scheduleApplyFilter();
+            },
+            onBlankView: liveCal => {
+              const storeCount = PluginState.getCache().store.getAllEvents().length;
+              const workspace = this.viewEnhancer?.getActiveWorkspace() ?? null;
+              runBlankViewDiagnostic(liveCal, renderConfig, storeCount, workspace);
+            },
+            customButtons: {
+              workspace: {
+                text: this.uiHandler.getWorkspaceSwitcherText(),
+                click: (ev?: MouseEvent) => {
+                  if (ev) this.uiHandler.showWorkspaceSwitcher(ev);
+                }
+              },
+              analysis: {
+                text: t('ui.view.buttons.analysis'),
+                click: () => this.uiHandler.activateChronoAnalyser()
+              }
+            },
+            eventClick: info => {
+              void this.interactionHandler.handleEventClick(info);
+            },
+            select: (start, end, allDay, viewType) =>
+              this.interactionHandler.handleSelect(start, end, allDay, viewType),
+            modifyEvent: (newEvent, oldEvent, newResource) =>
+              this.interactionHandler.handleModifyEvent(newEvent, oldEvent, newResource),
+            eventMouseEnter: info => {
+              try {
+                const location = PluginState.getCache().store.getEventDetails(
+                  info.event.id
+                )?.location;
+                if (location) {
+                  this.app.workspace.trigger('hover-link', {
+                    event: info.jsEvent,
+                    source: PLUGIN_SLUG,
+                    hoverParent: calendarEl,
+                    targetEl: info.jsEvent.target,
+                    linktext: location.path,
+                    sourcePath: location.path
+                  });
+                }
+              } catch {
+                // Swallow hover-link errors
+              }
+            },
+            openContextMenuForEvent: async (e, mouseEvent) => {
+              await openEventContextMenu(this.plugin, e, mouseEvent);
+            },
+            toggleTask: (eventApi, isDone) =>
+              this.interactionHandler.handleToggleTask(eventApi, isDone),
+            getRecurringInstanceState: eventApi =>
+              this.interactionHandler.getRecurringTaskInstanceState(eventApi),
+            dateRightClick: (date: Date, mouseEvent: MouseEvent) => {
+              if (!this.dateNavigation && this.fullCalendarView) {
+                this.dateNavigation = createDateNavigation(this.fullCalendarView, calendarEl);
+              }
+              this.dateNavigation?.showDateContextMenu(mouseEvent, date);
+            },
+            viewRightClick: (mouseEvent: MouseEvent, calendar: Calendar) => {
+              if (!this.dateNavigation && this.fullCalendarView) {
+                this.dateNavigation = createDateNavigation(this.fullCalendarView, calendarEl);
+              }
+              this.dateNavigation?.showViewContextMenu(mouseEvent, calendar);
+            },
+            eventDragStop: (eventApi, mouseEvent) => {
+              void this.interactionHandler.handleEventDragStop(eventApi, mouseEvent);
+            },
+            drop: (taskId, date, allDay) => this.interactionHandler.handleDrop(taskId, date, allDay)
+          }
+        );
+
+        this.fullCalendarView = await renderCalendar(calendarEl, sources, renderConfig);
+
+        // Initialize shadow events if starting in timeline view
+        currentViewType = this.fullCalendarView?.view?.type || '';
+        if (currentViewType.includes('resourceTimeline')) {
+          if (!this.timelineHandler.timelineResources) {
+            const resources = this.timelineHandler.buildTimelineResources();
+            this.fullCalendarView?.setOption('resources', resources);
+            this.fullCalendarView?.setOption('resourcesInitiallyExpanded', false);
+          }
+          this.timelineHandler.addShadowEventsToView();
         }
 
-        this.zoomHandler.applyZoomForView(newViewType);
-        currentViewType = newViewType;
-      };
+        this.searchHandler.scheduleApplyFilter();
 
-      const renderConfig = resolveCalendarRenderConfig(calendarConfig, PluginState.getSettings(), {
-        forceNarrow: this.inSidebar,
-        onViewChange: handleViewChange,
-        initialView: calendarConfig.initialView,
-        slotMinTime: calendarConfig.slotMinTime,
-        slotMaxTime: calendarConfig.slotMaxTime,
-        allDaySlot: calendarConfig.allDaySlot,
-        timeGridDayHeaderFormat: calendarConfig.timeGridDayHeaderFormat,
-        weekends: calendarConfig.weekends,
-        hiddenDays: calendarConfig.hiddenDays,
-        dayMaxEvents: calendarConfig.dayMaxEvents,
-        slotDuration: calendarConfig.slotDuration,
-        slotLabelInterval: calendarConfig.slotLabelInterval,
-        headerToolbar: calendarConfig.headerToolbar,
-        footerToolbar: calendarConfig.footerToolbar,
-        height: calendarConfig.height,
-        weatherHide: calendarConfig.weatherHide,
-        initialSearchQuery: this.searchHandler.eventSearchQuery,
-        onSearchQueryChange: (query: string) => {
-          this.searchHandler.eventSearchQuery = query;
-          this.searchHandler.scheduleApplyFilter();
-        },
-        onEventsSet: () => {
-          this.searchHandler.clearCaches();
-          this.searchHandler.scheduleApplyFilter();
-        },
-        onBlankView: liveCal => {
-          // Capture counts and workspace at the moment the callback fires,
-          // not when the renderConfig object was constructed, so the snapshot
-          // is always current (e.g. after a cache update or view switch).
-          const storeCount = PluginState.getCache().store.getAllEvents().length;
-          const workspace = this.viewEnhancer?.getActiveWorkspace() ?? null;
-          runBlankViewDiagnostic(liveCal, renderConfig, storeCount, workspace);
-        },
-        customButtons: {
-          workspace: {
-            text: this.uiHandler.getWorkspaceSwitcherText(),
-            click: (ev?: MouseEvent) => {
-              if (ev) this.uiHandler.showWorkspaceSwitcher(ev);
-            }
-          },
-          analysis: {
-            text: t('ui.view.buttons.analysis'),
-            click: () => this.uiHandler.activateChronoAnalyser()
-          }
-        },
-        eventClick: info => {
-          void this.interactionHandler.handleEventClick(info);
-        },
-        select: (start, end, allDay, viewType) =>
-          this.interactionHandler.handleSelect(start, end, allDay, viewType),
-        modifyEvent: (newEvent, oldEvent, newResource) =>
-          this.interactionHandler.handleModifyEvent(newEvent, oldEvent, newResource),
-        eventMouseEnter: info => {
-          try {
-            const location = PluginState.getCache().store.getEventDetails(info.event.id)?.location;
-            if (location) {
-              this.app.workspace.trigger('hover-link', {
-                event: info.jsEvent,
-                source: PLUGIN_SLUG,
-                hoverParent: calendarEl,
-                targetEl: info.jsEvent.target,
-                linktext: location.path,
-                sourcePath: location.path
-              });
-            }
-          } catch {
-            // Swallow hover-link errors
-          }
-        },
-        openContextMenuForEvent: async (e, mouseEvent) => {
-          await openEventContextMenu(this.plugin, e, mouseEvent);
-        },
-        toggleTask: (eventApi, isDone) =>
-          this.interactionHandler.handleToggleTask(eventApi, isDone),
-        getRecurringInstanceState: eventApi =>
-          this.interactionHandler.getRecurringTaskInstanceState(eventApi),
-        dateRightClick: (date: Date, mouseEvent: MouseEvent) => {
-          if (!this.dateNavigation && this.fullCalendarView) {
-            this.dateNavigation = createDateNavigation(this.fullCalendarView, calendarEl);
-          }
-          this.dateNavigation?.showDateContextMenu(mouseEvent, date);
-        },
-        viewRightClick: (mouseEvent: MouseEvent, calendar: Calendar) => {
-          if (!this.dateNavigation && this.fullCalendarView) {
-            this.dateNavigation = createDateNavigation(this.fullCalendarView, calendarEl);
-          }
-          this.dateNavigation?.showViewContextMenu(mouseEvent, calendar);
-        },
-        eventDragStop: (eventApi, mouseEvent) => {
-          void this.interactionHandler.handleEventDragStop(eventApi, mouseEvent);
-        },
-        drop: (taskId, date, allDay) => this.interactionHandler.handleDrop(taskId, date, allDay)
-      });
+        PluginState.getInternalAPI().registerView(this);
 
-      this.fullCalendarView = await renderCalendar(calendarEl, sources, renderConfig);
-
-      // Initialize shadow events if starting in timeline view
-      currentViewType = this.fullCalendarView?.view?.type || '';
-      if (currentViewType.includes('resourceTimeline')) {
-        if (!this.timelineHandler.timelineResources) {
-          const resources = this.timelineHandler.buildTimelineResources();
-          this.fullCalendarView?.setOption('resources', resources);
-          this.fullCalendarView?.setOption('resourcesInitiallyExpanded', false);
+        if (this.fullCalendarView && !this.dateNavigation) {
+          this.dateNavigation = createDateNavigation(this.fullCalendarView, calendarEl);
         }
-        this.timelineHandler.addShadowEventsToView();
-      }
-
-      this.searchHandler.scheduleApplyFilter();
-
-      PluginState.getInternalAPI().registerView(this);
-
-      if (this.fullCalendarView && !this.dateNavigation) {
-        this.dateNavigation = createDateNavigation(this.fullCalendarView, calendarEl);
+      } catch (err) {
+        console.error('Full Calendar: Failed to render calendar UI', err);
+        hideLoadingIndicators();
+        const errorContainer = calendarShellEl.createDiv({ cls: 'ofc-calendar-error-container' });
+        errorContainer.createEl('h3', { text: 'Unable to render calendar view' });
+        errorContainer.createEl('p', { text: String(err) });
+        const retryBtn = errorContainer.createEl('button', { text: 'Retry', cls: 'mod-cta' });
+        retryBtn.addEventListener('click', () => {
+          void this.onOpen();
+        });
+        return;
       }
 
       this.registerDomEvent(this.containerEl, 'mouseenter', () => {
@@ -367,6 +397,7 @@ export class CalendarView extends ItemView implements ViewContext {
       }
 
       this.callback = PluginState.getCache().on('update', info => {
+        hideLoadingIndicators();
         if (!this.viewEnhancer || !this.fullCalendarView) {
           return;
         }
@@ -434,6 +465,24 @@ export class CalendarView extends ItemView implements ViewContext {
       });
 
       this.refreshEventSourcesFromCache();
+
+      // Non-blocking background initialization for Bases filter and event cache population
+      void (async () => {
+        try {
+          if (this.viewEnhancer) {
+            await this.viewEnhancer.loadBasesFilter();
+            this.refreshEventSourcesFromCache();
+          }
+          if (!cache.initialized) {
+            await cache.populate();
+            this.refreshEventSourcesFromCache();
+          }
+        } catch (e) {
+          console.warn('Full Calendar: Non-blocking cache populate exception', e);
+        } finally {
+          hideLoadingIndicators();
+        }
+      })();
     })();
   }
 

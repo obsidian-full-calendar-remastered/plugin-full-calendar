@@ -49,6 +49,9 @@ Corresponds to
 -   **Linked Notes Stability Improvements** ([#333](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/333), [#337](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/337))
     _Kept preset frontmatter intact while still merging managed identity fields, and preserved the open-or-create tab reuse flow across popup, click, and context-menu entry points._
 
+-   **Instant Calendar UI & Non-Blocking Startup Sync**
+    _Refactored CalendarView initialization to mount the calendar UI frame and FullCalendar immediately (<50ms) without waiting for background event caching. Added a top loading shimmer bar and a floating spinning status indicator ("Syncing calendar events...") that fades out automatically when events finish loading, along with in-flight promise deduplication in EventCache.populate()._
+
 -   **Availability / Export UI Refinements** ([#337](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/337))
     _Refined availability share modal guidance and improved the export UI around the new range and filter controls._
 

@@ -156,33 +156,42 @@ export default class EventCache {
     });
   }
 
+  private populatePromise: Promise<void> | null = null;
+
   /**
    * Populate the cache with events from all sources.
    */
   async populate(): Promise<void> {
-    LoadDebugProfiler.startPopulate();
-    try {
-      await PluginState.getProviderRegistry().fetchAllByPriority(
-        async (calendarId, eventsForSync) => {
-          await this.syncCalendar(calendarId, eventsForSync);
-        },
-        async () => {
-          // This callback runs when STAGE 1 is complete.
-          // Trigger initial sync/render and map building.
-          LoadDebugProfiler.startPhase('TimeEngine Setup & Map Building');
-          try {
-            this.initialized = true;
-            PluginState.getProviderRegistry().buildMap(this._store);
-            this.resync();
-            await this.timeEngine.start();
-          } finally {
-            LoadDebugProfiler.endPhase('TimeEngine Setup & Map Building');
-          }
-        }
-      );
-    } finally {
-      LoadDebugProfiler.endPopulate();
+    if (this.populatePromise) {
+      return this.populatePromise;
     }
+    this.populatePromise = (async () => {
+      LoadDebugProfiler.startPopulate();
+      try {
+        await PluginState.getProviderRegistry().fetchAllByPriority(
+          async (calendarId, eventsForSync) => {
+            await this.syncCalendar(calendarId, eventsForSync);
+          },
+          async () => {
+            // This callback runs when STAGE 1 is complete.
+            // Trigger initial sync/render and map building.
+            LoadDebugProfiler.startPhase('TimeEngine Setup & Map Building');
+            try {
+              this.initialized = true;
+              PluginState.getProviderRegistry().buildMap(this._store);
+              this.resync();
+              await this.timeEngine.start();
+            } finally {
+              LoadDebugProfiler.endPhase('TimeEngine Setup & Map Building');
+            }
+          }
+        );
+      } finally {
+        LoadDebugProfiler.endPopulate();
+        this.populatePromise = null;
+      }
+    })();
+    return this.populatePromise;
   }
 
   // ====================================================================

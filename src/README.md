@@ -198,8 +198,9 @@ These classes are specialized services that encapsulate complex business logic, 
 
 *   **`CalendarView` (`ui/view.ts`)**: The main Obsidian `ItemView`.
     *   **Responsibilities**:
-        *   Initializes and manages the FullCalendar.io instance.
-        *   Subscribes to the `EventCache` for updates.
+        *   Initializes and mounts the FullCalendar.io instance synchronously (<50ms) with a skeleton UI frame upon opening.
+        *   Displays an active floating sync indicator badge ("Syncing calendar events...") with a rotating spinner while background event population is running.
+        *   Subscribes to the `EventCache` for updates and refreshes rendered event sources reactively.
         *   Uses the `ViewEnhancer` to get the final, filtered data and configuration for rendering.
         *   Translates user interactions (clicks, drags) into calls to the `EventCache`'s CRUD API.
         *   Uses `core/interop.ts` to convert between the internal `OFCEvent` and FullCalendar.io's `EventInput` formats.
@@ -209,20 +210,20 @@ These classes are specialized services that encapsulate complex business logic, 
 
 ### Flow 1: Initial Load & Remote Sync
 
-1.  **`main.ts`**: On load, `plugin.cache.populate()` is called.
-2.  **`EventCache`**: Calls `plugin.providerRegistry.fetchAllByPriority()` to initiate the Staged Loading sequence.
-3.  **`ProviderRegistry`**: Executes loading in a four-phase non-blocking staged pipeline:
-    *   **Stage 1 Local (Critical Range)**: Quickly fetches local vault notes within a 3-month window surrounding the current date, triggering `onAllComplete()` so the calendar UI becomes interactive instantly.
+1.  **`CalendarView`**: On open, synchronously builds `.ofc-calendar-shell` and mounts FullCalendar with initial cached data (or `[]` if cache is populating), displaying a top progress bar and a floating rotating sync indicator.
+2.  **`main.ts` & `CalendarView` Background Sync**: Non-blocking background `plugin.cache.populate()` is called (deduplicated via in-flight promise locking in `EventCache`).
+3.  **`EventCache`**: Calls `plugin.providerRegistry.fetchAllByPriority()` to initiate the Staged Loading sequence.
+4.  **`ProviderRegistry`**: Executes loading in a four-phase non-blocking staged pipeline:
+    *   **Stage 1 Local (Critical Range)**: Quickly fetches local vault notes within a 3-month window surrounding the current date, triggering `onAllComplete()` so the calendar UI reflects local events quickly.
     *   **Stage 2 Local (Full History)**: Background loads remaining local notes outside the 3-month window.
     *   **Stage 1 Remote (Critical Window)**: Background fetches remote provider events (CalDAV, Google, Outlook, ICS) for the active window.
     *   **Stage 2 Remote (Full History)**: Background fetches full remote history. For read-only remote providers (like ICS feeds) where Stage 1 fetched complete data, Stage 2 skips redundant network re-downloads.
     *   **Non-Blocking Yielding (`yieldToMainThread`)**: Between processing individual providers and stage transitions, execution yields to the browser UI loop (`requestIdleCallback` / `window.setTimeout(0)`), preventing UI freezing.
     *   **Load Debug Profiler (`LoadDebugProfiler`)**: When enabled in settings (`loadDebugTiming: true`), tracks and reports timing breakdown per stage and per calendar provider with zero overhead when disabled.
-4.  **Providers**: Local providers read from the vault synchronously; remote providers make network requests asynchronously. Each returns raw event data.
-5.  **`ProviderRegistry`**: As results come in during both stages, they are passed through `cache.enhancer.enhance()` for normalization.
-6.  **`EventCache`**: Receives the normalized events and populates its `EventStore`, triggering UI updates as stages complete.
-7.  **`CalendarView`**: On open, it gets the initial data from the cache via the `ViewEnhancer` and renders.
-8.  **Remote Sync**: A re-validation is triggered (e.g., on mouse-enter). The flow from step 2 is repeated for remote providers only. `EventCache` then receives the new data, diffs it with the old state in its `EventStore`, and publishes an update notification to the `CalendarView`.
+5.  **Providers**: Local providers read from the vault synchronously; remote providers make network requests asynchronously. Each returns raw event data.
+6.  **`ProviderRegistry`**: As results come in during both stages, they are passed through `cache.enhancer.enhance()` for normalization.
+7.  **`EventCache`**: Receives the normalized events, populates its `EventStore`, and publishes `update` notifications.
+8.  **`CalendarView` Reactive Update**: Receives `update` events from `EventCache`, updates FullCalendar event sources dynamically, and automatically hides the floating sync status indicator.
 
 ### Flow 2: User-Initiated Change (e.g., Drag-and-Drop)
 

@@ -14,8 +14,10 @@ This page describes how calendar views are rendered, controlled, and filtered.
 ## Design Boundaries
 
 - View code is a "dumb" renderer focused on FullCalendar lifecycle and callbacks.
+- On initialization (`onOpen`), `CalendarView` mounts its DOM frame and FullCalendar UI synchronously (<50ms) without blocking on event cache population or Bases filter loading.
+- A top loading shimmer bar and a floating spinning status badge ("Syncing calendar events...") inform the user of background event population, automatically fading out upon completion.
 - [`ViewEnhancer`](file:///d:/Codes/plugin-full-calendar/src/core/ViewEnhancer.ts) and [`WorkspaceManager`](file:///d:/Codes/plugin-full-calendar/src/features/workspaces/WorkspaceManager.ts) decouple data shaping and view configuration overrides from the presentation layer.
-- Core event state is owned by the [`EventCache`](file:///d:/Codes/plugin-full-calendar/src/core/EventCache.ts), never by the views.
+- Core event state is owned by the [`EventCache`](file:///d:/Codes/plugin-full-calendar/src/core/EventCache.ts), never by the views. `EventCache.populate()` uses in-flight promise locking to deduplicate concurrent sync requests.
 
 ---
 

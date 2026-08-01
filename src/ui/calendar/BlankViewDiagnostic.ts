@@ -22,7 +22,7 @@
  */
 
 import type { Calendar } from '@fullcalendar/core';
-import { Notice } from 'obsidian';
+import { showNotice } from '../../utils/showNotice';
 import type { ExtraRenderProps } from '../settings/sections/calendars/calendar';
 import type { WorkspaceSettings } from '../../types/settings';
 
@@ -346,5 +346,5 @@ function showDiagnosticNotice(report: DiagnosticReport): void {
   }
 
   // 10-second notice so there's time to read it, but it doesn't linger forever.
-  new Notice(message, 10000);
+  showNotice(message, 10000);
 }

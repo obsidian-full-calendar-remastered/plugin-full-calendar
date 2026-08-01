@@ -5,7 +5,8 @@
  */
 
 import { PluginState } from '../../../core/PluginState';
-import { Setting, Notice } from 'obsidian';
+import { Setting } from 'obsidian';
+import { showNotice } from '../../../utils/showNotice';
 import FullCalendarPlugin from '../../../main';
 import { t } from '../../../features/i18n/i18n';
 import { createDescWithDocs, createDocsLinksFragment } from '../docsLinks';
@@ -191,7 +192,7 @@ export function renderAppearanceSettings(
           console.warn(
             `[FCR] slotMinTime (${value}) must be earlier than slotMaxTime (${currentMax}). Value not saved.`
           );
-          new Notice(
+          showNotice(
             `Earliest time (${value}) must be before Latest time (${currentMax}). Value not saved.`,
             5000
           );
@@ -218,7 +219,7 @@ export function renderAppearanceSettings(
           console.warn(
             `[FCR] slotMaxTime (${value}) must be later than slotMinTime (${currentMin}). Value not saved.`
           );
-          new Notice(
+          showNotice(
             `Latest time (${value}) must be after Earliest time (${currentMin}). Value not saved.`,
             5000
           );

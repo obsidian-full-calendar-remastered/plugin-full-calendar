@@ -345,7 +345,7 @@ export function renderApiAccessSettings(
         .addButton(btn => {
           btn
             .setButtonText(t('api.settings.revoke'))
-            .setWarning()
+            .setClass('mod-warning')
             .onClick(() => {
               void (async () => {
                 delete tokenStore[token];
@@ -398,7 +398,7 @@ export function renderApiAccessSettings(
       .addButton(btn => {
         btn
           .setButtonText(t('api.settings.revoke'))
-          .setWarning()
+          .setClass('mod-warning')
           .onClick(() => {
             void (async () => {
               entries.forEach(([token]) => {

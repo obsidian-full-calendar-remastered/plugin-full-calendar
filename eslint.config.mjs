@@ -90,7 +90,7 @@ export default tseslint.config(
             '@typescript-eslint/no-non-null-assertion': 'warn',
             'react-hooks/rules-of-hooks': 'error',
             'react-hooks/exhaustive-deps': 'warn',
-            'no-console': 'off',
+            'no-console': 'warn',
             'no-debugger': 'error',
             'prefer-const': 'error',
             'no-var': 'error',
@@ -109,7 +109,7 @@ export default tseslint.config(
             '@typescript-eslint/prefer-as-const': 'warn',
             
             // Remove in newer version.
-            '@typescript-eslint/no-deprecated': 'off',
+            // '@typescript-eslint/no-deprecated': 'off',
             
             // Code style
             eqeqeq: ['error', 'always'], // Require === and !== instead of == and !=

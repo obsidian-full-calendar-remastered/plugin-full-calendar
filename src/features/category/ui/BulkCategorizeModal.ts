@@ -69,7 +69,7 @@ export class BulkCategorizeModal extends Modal {
       .addButton(button =>
         button
           .setButtonText(t('modals.bulkCategorize.forcedFolder.button'))
-          .setWarning()
+          .setClass('mod-warning')
           .onClick(() => {
             this.onSubmit('force_folder');
             this.close();
@@ -88,7 +88,7 @@ export class BulkCategorizeModal extends Modal {
       .addButton(button =>
         button
           .setButtonText(t('modals.bulkCategorize.forcedDefault.button'))
-          .setWarning()
+          .setClass('mod-warning')
           .onClick(() => {
             const categoryValue = textInput.getValue().trim();
             if (categoryValue === '') {

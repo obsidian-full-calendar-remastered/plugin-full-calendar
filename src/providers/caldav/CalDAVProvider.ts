@@ -439,6 +439,114 @@ async function fetchCalendarObjectsByRefs(
   refs: CalendarObjectRef[],
   authHeader?: string
 ): Promise<CalendarObjectData[]> {
+  // 飞书等服务器不允许 GET 单个 .ics(返回403),
+  // 用 calendar-multiget(REPORT) 批量取, 兼容性更好。
+  if (refs.length === 0) {
+    return [];
+  }
+
+  const multigetHeaders: Record<string, string> = {
+    Depth: '1',
+    'Content-Type': 'application/xml; charset=utf-8',
+    Accept: '*/*'
+  };
+  if (authHeader) {
+    multigetHeaders['Authorization'] = authHeader;
+  }
+
+  const hrefsXml = refs.map(ref => `<D:href>${ref.href}</D:href>`).join('');
+  const multigetBody = `<?xml version="1.0" encoding="utf-8"?>
+<C:calendar-multiget xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:prop>
+    <D:getetag/>
+    <C:calendar-data/>
+  </D:prop>
+  ${hrefsXml}
+</C:calendar-multiget>`;
+
+  let multigetRes: Response;
+  try {
+    multigetRes = await obsidianFetch(canonCollection(collectionUrl), {
+      method: 'REPORT',
+      headers: multigetHeaders,
+      body: multigetBody
+    });
+  } catch (err: unknown) {
+    // multiget 失败时, 回退到原来的逐个 GET 方式(兼容不支持 multiget 的服务器)
+    console.warn('[CalDAVProvider] multiget failed, falling back to individual GET');
+    return fetchCalendarObjectsByRefsViaGet(collectionUrl, refs, authHeader);
+  }
+
+  const multigetText = await multigetRes.text();
+
+  if (multigetRes.status < 200 || multigetRes.status >= 300) {
+    console.warn(`[CalDAVProvider] multiget returned ${multigetRes.status}, falling back to GET`);
+    return fetchCalendarObjectsByRefsViaGet(collectionUrl, refs, authHeader);
+  }
+
+  // 解析 multiget 响应, 提取每个 href 对应的 calendar-data
+  const successfulObjects: CalendarObjectData[] = [];
+  const failedHrefs: string[] = [];
+
+  // 先按 response 块切分, 再在每个块内单独找 href 和 calendar-data
+  // (飞书的命名空间前缀是 D: 和 C:, 但做大小写不敏感以防其他服务器)
+  const responseBlocks = multigetText.match(/<(?:D|d):response>[\s\S]*?<\/(?:D|d):response>/g) || [];
+  const refByHref = new Map(refs.map(r => [r.href, r]));
+
+  for (const block of responseBlocks) {
+    const hrefMatch = block.match(/<(?:D|d):href>([^<]*)<\/(?:D|d):href>/);
+    const dataMatch = block.match(/<(?:C|c):calendar-data>([\s\S]*?)<\/(?:C|c):calendar-data>/);
+    const href = hrefMatch ? hrefMatch[1] : '';
+    const calendarData = dataMatch ? dataMatch[1] : '';
+    const ref = refByHref.get(href);
+    if (calendarData && ref) {
+      const decoded = calendarData
+        .replace(/&#xD;&#xA;/g, '\n')
+        .replace(/&#xA;/g, '\n')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
+      try {
+        const payload: CalendarObjectData = {
+          href: ref.href,
+          ics: assertIcsPayload(decoded, `CalDAV multiget for ${ref.href}`)
+        };
+        if (ref.etag) {
+          payload.etag = ref.etag;
+        }
+        successfulObjects.push(payload);
+      } catch {
+        failedHrefs.push(href);
+      }
+    } else if (ref) {
+      failedHrefs.push(href);
+    }
+  }
+
+  if (failedHrefs.length > 0) {
+    console.warn(
+      `[CalDAVProvider] Compatibility multiget skipped ${failedHrefs.length} event object(s).`
+    );
+  }
+
+  if (successfulObjects.length === 0) {
+    throw new Error(
+      `CalDAV multiget did not return any valid calendar objects (requested ${refs.length}, got 0).`
+    );
+  }
+
+  return successfulObjects;
+}
+
+// 原始 GET 方式(作为 multiget 失败时的回退)
+async function fetchCalendarObjectsByRefsViaGet(
+  collectionUrl: string,
+  refs: CalendarObjectRef[],
+  authHeader?: string
+): Promise<CalendarObjectData[]> {
   const getResults = await Promise.allSettled(
     refs.map(async ref => {
       const getHeaders: Record<string, string> = { Accept: 'text/calendar' };

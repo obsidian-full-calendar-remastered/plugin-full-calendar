@@ -98,6 +98,10 @@ export class GoogleTasksProvider
   private authManager: GoogleAuthManager;
   public readonly linkedNoteIndex: LinkedNoteIndex;
 
+  private backlogCache: TaskBacklogItem[] = [];
+  private hasLoadedBacklog = false;
+  private backlogLoadPromise: Promise<TaskBacklogItem[]> | null = null;
+
   // Instance properties
   readonly type = 'googletasks';
   readonly displayName = 'Google Tasks';
@@ -372,28 +376,57 @@ export class GoogleTasksProvider
     };
   }
 
-  async getTaskBacklogItems(): Promise<TaskBacklogItem[]> {
-    const token = await this.getToken();
-    if (!token) return [];
-
-    try {
-      const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks?showCompleted=false&showHidden=false&maxResults=100`;
-      const data = await makeAuthenticatedRequest<{ items?: GoogleTaskApiItem[] }>(token, url);
-      if (!data || !Array.isArray(data.items)) return [];
-
-      // Undated and needsAction tasks
-      const undated = data.items.filter(task => !task.due && task.status !== 'completed');
-      return undated.map(task => ({
-        id: `${this.source.id}::${task.id}`,
-        title: task.title || '(No Title)',
-        completed: task.status === 'completed',
-        subtitle: this.source.name,
-        sourceId: this.source.id
-      }));
-    } catch (e) {
-      console.error(`Error fetching Google Tasks backlog items for "${this.source.name}":`, e);
-      return [];
+  async refreshTaskBacklogItems(): Promise<TaskBacklogItem[]> {
+    if (this.backlogLoadPromise) {
+      return this.backlogLoadPromise;
     }
+
+    this.backlogLoadPromise = (async () => {
+      const token = await this.getToken();
+      if (!token) {
+        this.backlogCache = [];
+        this.hasLoadedBacklog = true;
+        return [];
+      }
+
+      try {
+        const url = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks?showCompleted=false&showHidden=false&maxResults=100`;
+        const data = await makeAuthenticatedRequest<{ items?: GoogleTaskApiItem[] }>(token, url);
+        if (!data || !Array.isArray(data.items)) {
+          this.backlogCache = [];
+          this.hasLoadedBacklog = true;
+          return [];
+        }
+
+        // Undated and needsAction tasks
+        const undated = data.items.filter(task => !task.due && task.status !== 'completed');
+        this.backlogCache = undated.map(task => ({
+          id: `${this.source.id}::${task.id}`,
+          title: task.title || '(No Title)',
+          completed: task.status === 'completed',
+          subtitle: this.source.name,
+          sourceId: this.source.id
+        }));
+        this.hasLoadedBacklog = true;
+        return [...this.backlogCache];
+      } catch (e) {
+        console.error(`Error fetching Google Tasks backlog items for "${this.source.name}":`, e);
+        this.backlogCache = [];
+        this.hasLoadedBacklog = true;
+        return [];
+      }
+    })().finally(() => {
+      this.backlogLoadPromise = null;
+    });
+
+    return this.backlogLoadPromise;
+  }
+
+  async getTaskBacklogItems(): Promise<TaskBacklogItem[]> {
+    if (!this.hasLoadedBacklog) {
+      return this.refreshTaskBacklogItems();
+    }
+    return [...this.backlogCache];
   }
 
   async createTaskBacklogItem(title: string): Promise<TaskBacklogItem> {
@@ -407,19 +440,26 @@ export class GoogleTasksProvider
     };
 
     const created = await makeAuthenticatedRequest<GoogleTaskApiItem>(token, url, 'POST', body);
-    return {
+    const item: TaskBacklogItem = {
       id: `${this.source.id}::${created.id}`,
       title: created.title || title,
       completed: false,
       subtitle: this.source.name,
       sourceId: this.source.id
     };
+    if (this.hasLoadedBacklog) {
+      this.backlogCache.push(item);
+    }
+    return item;
   }
 
   async deleteTaskBacklogItem(taskId: string): Promise<void> {
     const parts = taskId.split('::');
     const taskUid = parts.length === 2 ? parts[1] : taskId;
     await this.deleteEvent({ persistentId: taskUid });
+    if (this.hasLoadedBacklog) {
+      this.backlogCache = this.backlogCache.filter(item => item.id !== taskId);
+    }
   }
 
   async setTaskBacklogItemComplete(taskId: string, isDone: boolean): Promise<boolean> {
@@ -437,6 +477,13 @@ export class GoogleTasksProvider
 
       const putUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
       await makeAuthenticatedRequest(token, putUrl, 'PUT', task);
+      if (this.hasLoadedBacklog) {
+        if (isDone) {
+          this.backlogCache = this.backlogCache.filter(item => item.id !== taskId);
+        } else {
+          this.hasLoadedBacklog = false;
+        }
+      }
       PluginState.getProviderRegistry().refreshBacklogViews();
       return true;
     } catch (e) {
@@ -466,6 +513,9 @@ export class GoogleTasksProvider
 
     const putUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
     await makeAuthenticatedRequest(token, putUrl, 'PUT', task);
+    if (this.hasLoadedBacklog) {
+      this.backlogCache = this.backlogCache.filter(item => item.id !== taskId);
+    }
   }
 
   async unscheduleTask(taskId: string): Promise<void> {
@@ -480,6 +530,7 @@ export class GoogleTasksProvider
 
     const putUrl = `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(this.source.listId)}/tasks/${encodeURIComponent(taskUid)}`;
     await makeAuthenticatedRequest(token, putUrl, 'PUT', task);
+    this.hasLoadedBacklog = false;
   }
 
   async validateTaskSchedule(

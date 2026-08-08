@@ -122,6 +122,20 @@ function recurrenceIdToDate(recurrenceId: string | undefined): string | undefine
   return DateTime.fromISO(recurrenceId, { setZone: true }).toISODate() || undefined;
 }
 
+function isCancelled(component: ical.Component): boolean {
+  return String(component.getFirstPropertyValue('status') || '').toUpperCase() === 'CANCELLED';
+}
+
+function getCancelledRecurrence(component: ical.Component): { uid: string; date: string } | null {
+  if (!isCancelled(component)) return null;
+  const recurrenceIdProp = component.getFirstProperty('recurrence-id');
+  if (!recurrenceIdProp) return null;
+  const recurrenceId = recurrenceIdToString(recurrenceIdProp.getFirstValue());
+  const date = recurrenceIdToDate(recurrenceId);
+  const uid = String(component.getFirstPropertyValue('uid') || '');
+  return uid && date ? { uid, date } : null;
+}
+
 // MODIFICATION: Remove settings parameter from icsToOFC
 function icsToOFC(input: ical.Event): OFCEvent | null {
   const summary = input.summary || '';
@@ -591,6 +605,9 @@ export function getEventsFromICS(text: string): OFCEvent[] {
   }
   const component = new ical.Component(jCalData);
   const vevents = component.getAllSubcomponents('vevent');
+  const cancelledRecurrences = vevents
+    .map(getCancelledRecurrence)
+    .filter((entry): entry is { uid: string; date: string } => entry !== null);
 
   const events: ical.Event[] = vevents
     .map(vevent => new ical.Event(vevent))
@@ -613,13 +630,13 @@ export function getEventsFromICS(text: string): OFCEvent[] {
 
   const baseEvents = Object.fromEntries(
     events
-      .filter(e => e.recurrenceId === null)
+      .filter(e => e.recurrenceId === null && !isCancelled(e.component))
       .map(e => [e.uid, icsToOFC(e)])
       .filter(([_uid, event]) => event !== null) as [string, OFCEvent][]
   );
 
   const recurrenceExceptions = events
-    .filter(e => e.recurrenceId !== null)
+    .filter(e => e.recurrenceId !== null && !isCancelled(e.component))
     .map((e): [string, OFCEvent | null] => [e.uid, icsToOFC(e)])
     .filter(([_uid, event]) => event !== null) as [string, OFCEvent][];
 
@@ -639,6 +656,13 @@ export function getEventsFromICS(text: string): OFCEvent[] {
     const originalDate = recurrenceIdToDate(event.recurrenceId) || event.date;
     if (originalDate) {
       baseEvent.skipDates.push(originalDate);
+    }
+  }
+
+  for (const { uid, date } of cancelledRecurrences) {
+    const baseEvent = baseEvents[uid];
+    if (baseEvent?.type === 'rrule' && !baseEvent.skipDates.includes(date)) {
+      baseEvent.skipDates.push(date);
     }
   }
 

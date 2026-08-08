@@ -162,6 +162,7 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
       url.searchParams.set('timeMin', timeMin.toISOString());
       url.searchParams.set('timeMax', timeMax.toISOString());
       url.searchParams.set('singleEvents', 'false');
+      url.searchParams.set('showDeleted', 'true');
       url.searchParams.set('maxResults', '2500');
       url.searchParams.set('conferenceDataVersion', '1');
 

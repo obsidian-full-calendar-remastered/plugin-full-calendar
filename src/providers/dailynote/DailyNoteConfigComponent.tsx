@@ -53,8 +53,10 @@ export const DailyNoteConfigComponent: React.FC<DailyNoteConfigComponentProps> =
     if (!heading || (provider === 'journals' && !journalId)) return;
 
     setIsSubmitting(true);
+    const configWithoutLegacyProvider = { ...config };
+    delete configWithoutLegacyProvider.provider;
     onSave({
-      ...config,
+      ...configWithoutLegacyProvider,
       id: config.id || '',
       heading,
       format,

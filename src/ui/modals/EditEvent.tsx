@@ -229,7 +229,8 @@ export const EditEvent = ({
   }, [titleRef]);
 
   const selectedCalendar = calendars[calendarIndex];
-  const isDailyNoteCalendar = selectedCalendar.type === 'dailynote';
+  const isDailyNoteCalendar =
+    selectedCalendar.type === 'dailynote' || selectedCalendar.type === 'journals';
   const provider = PluginState.getProviderRegistry().getInstance(selectedCalendar.id);
   const useBooleanTaskCompletion = Boolean(
     provider &&

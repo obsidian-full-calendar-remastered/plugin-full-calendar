@@ -11,6 +11,7 @@ export type DailyNoteSourceProvider = (typeof DAILY_NOTE_PROVIDERS)[number];
 export const DEFAULT_DAILY_NOTE_PROVIDER: DailyNoteSourceProvider = 'daily-notes';
 
 export type DailyNoteProviderConfig = {
+  type?: 'dailynote' | 'journals';
   id: string; // The settings-level ID, e.g., "dailynote_1"
   heading: string;
   format?: DailyNoteEventFormat;

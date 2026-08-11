@@ -87,7 +87,8 @@ const DailyNoteHeadingSetting: React.FC<ProviderSettingsRowProps> = ({
     return typeof flat === 'string' ? flat : typeof nested === 'string' ? nested : '';
   };
 
-  const provider = (source as { provider?: unknown }).provider;
+  const provider =
+    source.type === 'journals' ? 'journals' : (source as { provider?: unknown }).provider;
   const journalId = (source as { journalId?: unknown }).journalId;
   const sourceLabel =
     provider === 'journals'
@@ -139,8 +140,8 @@ export class DailyNoteProvider
   implements CalendarProvider<DailyNoteProviderConfig>, SyncKeyProvider, CanonicalTitleProvider
 {
   // Static metadata for registry
-  static readonly type = 'dailynote';
-  static readonly displayName = 'Daily Note';
+  static readonly type: string = 'dailynote';
+  static readonly displayName: string = 'Daily Note';
 
   static getConfigurationComponent(): FCReactComponent<DailyNoteConfigProps> {
     return DailyNoteConfigWrapper;
@@ -151,8 +152,8 @@ export class DailyNoteProvider
   private source: DailyNoteProviderConfig;
   private noteSource: DailyNoteSourceAdapter;
 
-  readonly type = 'dailynote';
-  readonly displayName = 'Daily Note';
+  readonly type: string = 'dailynote';
+  readonly displayName: string = 'Daily Note';
   readonly isRemote = false;
   readonly loadPriority = 120;
 
@@ -168,7 +169,7 @@ export class DailyNoteProvider
     this.plugin = plugin;
     this.source = { ...source, format: getDailyNoteEventFormat(source) };
     this.noteSource =
-      getDailyNoteSourceProvider(source) === 'journals'
+      source.type === 'journals' || getDailyNoteSourceProvider(source) === 'journals'
         ? new JournalsDailyNoteSourceAdapter(plugin.app, source)
         : new ObsidianDailyNoteSourceAdapter();
   }

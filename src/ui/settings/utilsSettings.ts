@@ -156,6 +156,17 @@ export function migrateAndSanitizeSettings(settings: unknown): {
     googleAuth?: LegacyGoogleAuth;
   };
 
+  // Migrate the initial Journals integration, which used a Daily Note source
+  // discriminator plus a provider flag, to the first-class Journals source type.
+  newSettings.calendarSources = newSettings.calendarSources.map(source => {
+    if (source.type !== 'dailynote' || source.provider !== 'journals' || !source.journalId) {
+      return source;
+    }
+    needsSave = true;
+    const { provider: _legacyProvider, ...rest } = source;
+    return { ...rest, type: 'journals' } as CalendarInfo;
+  });
+
   // MIGRATION 0: Ensure all sources have a `name`.
   newSettings.calendarSources.forEach(source => {
     if (!('name' in source) || !source.name) {
@@ -166,6 +177,9 @@ export function migrateAndSanitizeSettings(settings: unknown): {
           break;
         case 'dailynote':
           source.name = 'Daily Note';
+          break;
+        case 'journals':
+          source.name = 'Journals';
           break;
         case 'ical':
           source.name = source.url;

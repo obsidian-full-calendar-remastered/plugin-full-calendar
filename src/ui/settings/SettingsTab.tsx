@@ -42,6 +42,7 @@ import { generateCalendarId } from '../../types/calendar_settings';
 import { t } from '../../features/i18n/i18n';
 import { createDescWithDocs, createDocsLinksFragment } from './docsLinks';
 import { getMilestoneCards } from '../../features/milestones/milestones';
+import { canAddCalendarOfType } from './calendarSourceValidation';
 
 // Import the new React components
 import './changelogs/changelog.css';
@@ -157,8 +158,7 @@ export function addCalendarButton(
           }
         }
 
-        const providerType =
-          sourceType === 'icloud' ? 'caldav' : sourceType === 'journals' ? 'dailynote' : sourceType;
+        const providerType = sourceType === 'icloud' ? 'caldav' : sourceType;
 
         const providerClass =
           await PluginState.getProviderRegistry().getProviderForType(providerType);
@@ -244,15 +244,15 @@ export function addCalendarButton(
                 const configs = Array.isArray(finalConfigs) ? finalConfigs : [finalConfigs];
 
                 // Validate: only one dailynote source allowed
-                if (providerType === 'dailynote') {
-                  const existingDailyNotes = PluginState.getSettings().calendarSources.filter(
-                    s => s.type === 'dailynote'
-                  );
-                  if (existingDailyNotes.length >= 1) {
-                    showNotice(t('settings.warnings.oneDailyNote'));
-                    modal.close();
-                    return;
-                  }
+                if (
+                  !canAddCalendarOfType(
+                    providerType as CalendarInfo['type'],
+                    PluginState.getSettings().calendarSources
+                  )
+                ) {
+                  showNotice(t('settings.warnings.oneDailyNote'));
+                  modal.close();
+                  return;
                 }
                 // Collect IDs from both settings and ProviderRegistry to prevent race conditions
                 const settingsIds = PluginState.getSettings().calendarSources.map(s => s.id);

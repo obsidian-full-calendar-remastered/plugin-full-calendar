@@ -25,6 +25,8 @@ Add either a **Daily Note** calendar for core Daily Notes/Periodic Notes or a se
 
 Journals is optional. When selected, Full Calendar asks the chosen Day journal to resolve and create entries, preserving its normal folder, filename, template, and journal frontmatter behavior. Obsidian's core Daily Notes plugin can be disabled in this setup.
 
+One core Daily Note calendar and multiple Journals calendars can coexist. Add a separate Journals calendar for each Day journal you want to expose in Full Calendar.
+
 If your template does not have any headings, then you can enter free-form text to specify the heading that events will be placed under.
 
 If a heading does not exist in a daily note, it will be appended to the end of the file before adding any events to it.

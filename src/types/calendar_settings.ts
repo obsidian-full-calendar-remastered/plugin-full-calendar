@@ -41,6 +41,14 @@ const calendarOptionsSchema = z.discriminatedUnion('type', [
     provider: z.enum(DAILY_NOTE_PROVIDERS).default(DEFAULT_DAILY_NOTE_PROVIDER),
     journalId: z.string().optional()
   }),
+  z.object({
+    type: z.literal('journals'),
+    id: z.string(),
+    name: z.string(),
+    heading: z.string(),
+    format: z.enum(DAILY_NOTE_EVENT_FORMATS).default(DEFAULT_DAILY_NOTE_EVENT_FORMAT),
+    journalId: z.string()
+  }),
   z.object({ type: z.literal('ical'), id: z.string(), name: z.string(), url: z.string().url() }),
   z.object({
     type: z.literal('caldav'),

@@ -33,6 +33,8 @@ Note lookup and creation are delegated through a source adapter:
 
 Both adapters feed the same heading parser, serializer, UID allocator, and CRUD implementation. The Journals adapter is intentionally narrow because Journals does not currently publish a documented third-party API; runtime shape checks contain that compatibility boundary.
 
+Daily Notes and Journals have independent persisted source discriminators (`dailynote` and `journals`). `JournalsProvider` reuses `DailyNoteProvider` as its date-note CRUD base, while remaining separately registered so multiple selected Day journals can coexist without participating in the single Daily Note source limit. Legacy Journals sources saved as `type: dailynote` plus `provider: journals` are migrated to `type: journals`.
+
 **Location & Description Mapping**: Serializes `location` and `description` into Dataview inline attribute format (`[location:: My Location]  [description:: My Description]`) within the daily note bullet list items.
 
 Timed-event serialization is source-configured and provider-owned:

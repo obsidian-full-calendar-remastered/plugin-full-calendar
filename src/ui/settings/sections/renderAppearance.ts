@@ -238,7 +238,6 @@ export function renderAppearanceSettings(
       toggle.onChange(async val => {
         PluginState.getSettings().allDaySlot = val;
         await PluginState.saveSettings();
-        rerender();
       });
     });
 
@@ -275,7 +274,6 @@ export function renderAppearanceSettings(
       dropdown.onChange(async value => {
         PluginState.getSettings().timeGridDayHeaderFormat = value;
         await PluginState.saveSettings();
-        rerender();
       });
     });
 
@@ -421,7 +419,6 @@ export function renderAppearanceSettings(
       toggle.onChange(async val => {
         PluginState.getSettings().highlightCurrentOrNextEvent = val;
         await PluginState.saveSettings();
-        rerender();
       });
     });
 }

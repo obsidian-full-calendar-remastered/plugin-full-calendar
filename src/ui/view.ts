@@ -39,10 +39,14 @@ import { ViewContext } from './calendar/ViewContext';
 import { ViewZoomHandler } from './calendar/ViewZoomHandler';
 import { ViewSearchHandler } from './calendar/ViewSearchHandler';
 import { ViewTimelineHandler } from './calendar/ViewTimelineHandler';
-import { resolveCalendarRenderConfig } from './calendar/CalendarViewConfigResolver';
+import {
+  resolveCalendarRenderConfig,
+  ResolvedCalendarProps
+} from './calendar/CalendarViewConfigResolver';
 import { runBlankViewDiagnostic } from './calendar/BlankViewDiagnostic';
 import { ViewUIHandler } from './calendar/ViewUIHandler';
 import { ViewEventInteractionHandler } from './calendar/ViewEventInteractionHandler';
+import { ViewSettingsHandler } from './calendar/ViewSettingsHandler';
 export { getCalendarColors } from './calendar/utils';
 
 export const FULL_CALENDAR_VIEW_TYPE = 'full-calendar-view';
@@ -82,6 +86,9 @@ export class CalendarView extends ItemView implements ViewContext {
   private timelineHandler: ViewTimelineHandler;
   private uiHandler: ViewUIHandler;
   private interactionHandler: ViewEventInteractionHandler;
+  private settingsHandler: ViewSettingsHandler;
+
+  private renderConfig: ResolvedCalendarProps | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FullCalendarPlugin, inSidebar = false) {
     super(leaf);
@@ -94,11 +101,14 @@ export class CalendarView extends ItemView implements ViewContext {
     this.timelineHandler = new ViewTimelineHandler(this);
     this.uiHandler = new ViewUIHandler(this);
     this.interactionHandler = new ViewEventInteractionHandler(this);
+    this.settingsHandler = new ViewSettingsHandler(this, () => this.renderConfig);
 
     this.throttledZoom = throttle(
       (event: WheelEvent) => this.zoomHandler.handleWheelZoom(event),
       100
     );
+
+    this.settingsHandler.register();
   }
 
   // Implementation of ViewContext
@@ -353,6 +363,7 @@ export class CalendarView extends ItemView implements ViewContext {
             drop: (taskId, date, allDay) => this.interactionHandler.handleDrop(taskId, date, allDay)
           }
         );
+        this.renderConfig = renderConfig;
 
         this.fullCalendarView = await renderCalendar(calendarEl, sources, renderConfig);
 

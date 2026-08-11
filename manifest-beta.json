@@ -1,7 +1,7 @@
 {
 	"id": "full-calendar-remastered",
 	"name": "Full Calendar Remastered",
-	"version": "0.13.5.4",
+	"version": "0.13.5.5",
 	"minAppVersion": "1.12.7",
 	"description": "Powerful calendar solution for schedules, events, plans, tasks, and notes together inside your vault. Supports local note-based calendars plus remote sync options like Google Calendar, CalDAV, ICS files, Tasks, TaskNotes, and more.",
 	"author": "Jovi Koikkara",

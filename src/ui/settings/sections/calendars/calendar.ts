@@ -1563,5 +1563,9 @@ export async function renderCalendar(
     });
   }
 
+  (
+    cal as unknown as { updateCurrentOrNextEventHighlight?: () => void }
+  ).updateCurrentOrNextEventHighlight = updateCurrentOrNextEventHighlight;
+
   return cal;
 }

@@ -1,13 +1,18 @@
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { EditorState, StateEffect, StateField, Transaction } from '@codemirror/state';
-import { TFile, editorInfoField } from 'obsidian';
+import { TFile, editorInfoField, EventRef, Workspace } from 'obsidian';
 import { PluginState } from '../../core/PluginState';
 
 export const forceUpdateLivePreviewEffect = StateEffect.define<void>();
 
+export type WorkspaceWithSettingsEvent = Workspace & {
+  on(name: 'full-calendar:settings-updated', callback: () => void, ctx?: unknown): EventRef;
+};
+
 export class LivePreviewCoordinatorPlugin {
   private isDestroyed = false;
   private updateListener: (() => void) | null = null;
+  private settingsListenerRef: EventRef | null = null;
 
   constructor(view: EditorView) {
     // Set up update listener to dynamically update decorations when cache updates
@@ -30,6 +35,25 @@ export class LivePreviewCoordinatorPlugin {
     } catch {
       // Quietly ignore if cache is not initialized
     }
+
+    try {
+      const plugin = PluginState.getPlugin();
+      if (plugin && plugin.app && plugin.app.workspace) {
+        const customWorkspace = plugin.app.workspace as unknown as WorkspaceWithSettingsEvent;
+        this.settingsListenerRef = customWorkspace.on('full-calendar:settings-updated', () => {
+          if (this.isDestroyed) {
+            return;
+          }
+          if (typeof view.dispatch === 'function') {
+            view.dispatch({
+              effects: forceUpdateLivePreviewEffect.of()
+            });
+          }
+        });
+      }
+    } catch {
+      // Quietly ignore if workspace is not initialized
+    }
   }
 
   update(update: ViewUpdate) {
@@ -46,6 +70,16 @@ export class LivePreviewCoordinatorPlugin {
       }
     } catch {
       // Ignore cleanup error if cache is already destroyed or uninitialized
+    }
+
+    try {
+      const plugin = PluginState.getPlugin();
+      if (plugin && plugin.app && plugin.app.workspace && this.settingsListenerRef) {
+        const customWorkspace = plugin.app.workspace as unknown as WorkspaceWithSettingsEvent;
+        customWorkspace.offref(this.settingsListenerRef);
+      }
+    } catch {
+      // Ignore cleanup error
     }
   }
 }

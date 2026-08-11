@@ -54,6 +54,58 @@ describe('Journals source identity and uniqueness', () => {
     expect(dailyNote().type).toBe('dailynote');
   });
 
+  it('migrates generic Journals names to distinct configured calendar names', () => {
+    const migrated = migrateAndSanitizeSettings({
+      calendarSources: [
+        {
+          type: 'journals',
+          id: 'journals_1',
+          name: 'Journals',
+          journalId: 'Music',
+          heading: 'Schedule',
+          color: '#222222'
+        },
+        {
+          type: 'journals',
+          id: 'journals_2',
+          name: 'Journals',
+          journalId: 'PHD',
+          heading: 'Schedule',
+          color: '#333333'
+        }
+      ]
+    });
+
+    expect(migrated.needsSave).toBe(true);
+    expect(migrated.settings.calendarSources).toEqual([
+      expect.objectContaining({ id: 'journals_1', name: 'Journals: Music' }),
+      expect.objectContaining({ id: 'journals_2', name: 'Journals: PHD' })
+    ]);
+    expect(migrated.settings.calendarSources.map(source => source.id)).toEqual([
+      'journals_1',
+      'journals_2'
+    ]);
+  });
+
+  it('preserves user-defined Journals calendar names', () => {
+    const migrated = migrateAndSanitizeSettings({
+      calendarSources: [
+        {
+          type: 'journals',
+          id: 'journals_1',
+          name: 'My music calendar',
+          journalId: 'Music',
+          heading: 'Schedule',
+          color: '#222222'
+        }
+      ]
+    });
+
+    expect(migrated.settings.calendarSources[0]).toEqual(
+      expect.objectContaining({ id: 'journals_1', name: 'My music calendar' })
+    );
+  });
+
   it('migrates legacy Journals sources stored with the Daily Note discriminator', () => {
     const migrated = migrateAndSanitizeSettings({
       calendarSources: [

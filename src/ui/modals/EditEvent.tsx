@@ -103,6 +103,20 @@ interface EditEventProps {
   mode: 'create' | 'edit';
 }
 
+type EventCalendarOption = {
+  value: string;
+  label: string;
+};
+
+export function getEventCalendarOptions(
+  calendars: EditEventProps['calendars']
+): EventCalendarOption[] {
+  return calendars.map(calendar => ({
+    value: calendar.id,
+    label: calendar.name
+  }));
+}
+
 function getInitialRecurrenceType(event?: Partial<OFCEvent>): RecurrenceType {
   if (event?.type !== 'recurring') {
     return 'none';
@@ -171,6 +185,7 @@ export const EditEvent = ({
   const isRecurring = recurrenceType !== 'none';
   const [allDay, setAllDay] = useState(initialEvent?.allDay || false);
   const [calendarIndex, setCalendarIndex] = useState(defaultCalendarIndex);
+  const calendarOptions = getEventCalendarOptions(calendars);
   const [isTask, setIsTask] = useState(
     (initialEvent?.type === 'single' &&
       initialEvent.completed !== undefined &&
@@ -429,12 +444,15 @@ export const EditEvent = ({
           </div>
           <div className="setting-item-control">
             <select
-              value={calendarIndex}
-              onChange={e => setCalendarIndex(parseInt(e.target.value))}
+              value={calendars[calendarIndex]?.id || ''}
+              onChange={e => {
+                const nextIndex = calendars.findIndex(calendar => calendar.id === e.target.value);
+                if (nextIndex !== -1) setCalendarIndex(nextIndex);
+              }}
             >
-              {calendars.map((cal, idx) => (
-                <option key={idx} value={idx}>
-                  {cal.name}
+              {calendarOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>

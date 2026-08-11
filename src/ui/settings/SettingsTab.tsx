@@ -274,7 +274,11 @@ export function addCalendarButton(
                   );
 
                   if (sourceType === 'journals') {
-                    partialSource.name = t('settings.calendars.defaults.journals');
+                    const journalId = finalConfig.journalId;
+                    partialSource.name =
+                      typeof journalId === 'string' && journalId.length > 0
+                        ? `${t('settings.calendars.defaults.journals')}: ${journalId}`
+                        : t('settings.calendars.defaults.journals');
                   }
 
                   // Create the full, valid CalendarInfo object first.

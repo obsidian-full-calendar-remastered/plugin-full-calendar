@@ -189,6 +189,18 @@ export function migrateAndSanitizeSettings(settings: unknown): {
           break;
       }
     }
+
+    // Early Journals sources used the generic provider label as their instance name.
+    // Preserve user-defined names, but make those legacy defaults distinguishable.
+    if (
+      source.type === 'journals' &&
+      source.name === 'Journals' &&
+      typeof source.journalId === 'string' &&
+      source.journalId.length > 0
+    ) {
+      source.name = `Journals: ${source.journalId}`;
+      needsSave = true;
+    }
   });
 
   // Ensure googleAccounts array exists for the migration

@@ -284,28 +284,36 @@ export class PublicAPI {
    * Use an authorized token to get the actual API.
    */
   public withToken(token: string): AuthorizedAPI | null {
+    if (typeof token !== 'string' || !token) {
+      return null;
+    }
     const settings = PluginState.getSettings();
     const tokenStore = getApiTokenStore(settings);
-    const tokenRecord = tokenStore[token];
 
-    if (tokenRecord) {
-      tokenRecord.lastUsedAt = Date.now();
-      void PluginState.saveSettings();
-      return createAuthorizedApi(tokenRecord);
+    if (Object.prototype.hasOwnProperty.call(tokenStore, token)) {
+      const tokenRecord = tokenStore[token];
+      if (tokenRecord && typeof tokenRecord === 'object') {
+        tokenRecord.lastUsedAt = Date.now();
+        void PluginState.saveSettings();
+        return createAuthorizedApi(tokenRecord);
+      }
     }
 
-    const legacyToken = settings.authorizedTokens?.[token];
-    if (legacyToken) {
-      const migratedRecord: ApiTokenRecord = {
-        pluginId: legacyToken.pluginId,
-        reason: legacyToken.reason,
-        requestedScopes: [FULL_ACCESS_SCOPE],
-        grantedScopes: [FULL_ACCESS_SCOPE],
-        grantedAt: legacyToken.grantedAt
-      };
-      tokenStore[token] = migratedRecord;
-      void PluginState.saveSettings();
-      return createAuthorizedApi(migratedRecord);
+    const legacyTokens = settings.authorizedTokens;
+    if (legacyTokens && Object.prototype.hasOwnProperty.call(legacyTokens, token)) {
+      const legacyToken = legacyTokens[token];
+      if (legacyToken && typeof legacyToken === 'object') {
+        const migratedRecord: ApiTokenRecord = {
+          pluginId: legacyToken.pluginId,
+          reason: legacyToken.reason,
+          requestedScopes: [FULL_ACCESS_SCOPE],
+          grantedScopes: [FULL_ACCESS_SCOPE],
+          grantedAt: legacyToken.grantedAt
+        };
+        tokenStore[token] = migratedRecord;
+        void PluginState.saveSettings();
+        return createAuthorizedApi(migratedRecord);
+      }
     }
 
     console.error('Full Calendar API: Invalid or unauthorized token.');

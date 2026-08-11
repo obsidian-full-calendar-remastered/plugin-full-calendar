@@ -145,6 +145,17 @@ describe('FullCalendarAPI Unit Tests', () => {
       expect(api).toBeNull();
     });
 
+    it('should reject prototype properties as tokens and return null', () => {
+      const api = publicApi.withToken('toString');
+      expect(api).toBeNull();
+
+      const api2 = publicApi.withToken('constructor');
+      expect(api2).toBeNull();
+
+      const api3 = publicApi.withToken('__proto__');
+      expect(api3).toBeNull();
+    });
+
     it('should return AuthorizedAPI wrapper with a valid token and execute scoped actions', () => {
       // Setup a mock token record
       mockSettings.apiTokens['test-token'] = {

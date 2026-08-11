@@ -6,23 +6,19 @@ import { showNotice } from '../../utils/showNotice';
 import { t } from '../i18n/i18n';
 
 export class FcrReminderManager {
-  private plugin: FullCalendarPlugin;
-  private updateCallback: (() => void) | null = null;
-  private debounceTimer: number | null = null;
+  #plugin: FullCalendarPlugin;
+  #updateCallback: (() => void) | null = null;
+  #debounceTimer: number | null = null;
   public companionOnline = false;
-  private isCheckingStatus = false;
-  private statusTimeoutId: number | null = null;
+  #isCheckingStatus = false;
+  #statusTimeoutId: number | null = null;
 
   constructor(plugin: FullCalendarPlugin) {
-    this.plugin = plugin;
-  }
-
-  public getSettings() {
-    return PluginState.getSettings();
+    this.#plugin = plugin;
   }
 
   public getCompanionSettings() {
-    const settings = this.getSettings();
+    const settings = PluginState.getSettings();
     if (!settings.fcrReminderCompanion) {
       settings.fcrReminderCompanion = {
         enabled: false,
@@ -33,8 +29,8 @@ export class FcrReminderManager {
   }
 
   public async checkDaemonStatus(): Promise<boolean> {
-    if (this.isCheckingStatus) return this.companionOnline;
-    this.isCheckingStatus = true;
+    if (this.#isCheckingStatus) return this.companionOnline;
+    this.#isCheckingStatus = true;
 
     const companionSettings = this.getCompanionSettings();
     const apiUrl = companionSettings.apiUrl || 'http://127.0.0.1:45677';
@@ -48,16 +44,16 @@ export class FcrReminderManager {
 
       const timeoutPromise = new Promise<{ status: number; text: string; json: unknown }>(
         (_, reject) => {
-          this.statusTimeoutId = window.setTimeout(() => {
+          this.#statusTimeoutId = window.setTimeout(() => {
             reject(new Error('Timeout'));
           }, 2000);
         }
       );
 
       const response = await Promise.race([responsePromise, timeoutPromise]);
-      if (this.statusTimeoutId !== null) {
-        window.clearTimeout(this.statusTimeoutId);
-        this.statusTimeoutId = null;
+      if (this.#statusTimeoutId !== null) {
+        window.clearTimeout(this.#statusTimeoutId);
+        this.#statusTimeoutId = null;
       }
 
       if (response.status === 200) {
@@ -72,25 +68,25 @@ export class FcrReminderManager {
         this.companionOnline = false;
       }
     } catch {
-      if (this.statusTimeoutId !== null) {
-        window.clearTimeout(this.statusTimeoutId);
-        this.statusTimeoutId = null;
+      if (this.#statusTimeoutId !== null) {
+        window.clearTimeout(this.#statusTimeoutId);
+        this.#statusTimeoutId = null;
       }
       this.companionOnline = false;
     } finally {
-      this.isCheckingStatus = false;
+      this.#isCheckingStatus = false;
     }
     return this.companionOnline;
   }
 
   public unload(): void {
-    if (this.updateCallback) {
-      PluginState.getCache().off('update', this.updateCallback);
-      this.updateCallback = null;
+    if (this.#updateCallback) {
+      PluginState.getCache().off('update', this.#updateCallback);
+      this.#updateCallback = null;
     }
-    if (this.debounceTimer) {
-      window.clearTimeout(this.debounceTimer);
-      this.debounceTimer = null;
+    if (this.#debounceTimer) {
+      window.clearTimeout(this.#debounceTimer);
+      this.#debounceTimer = null;
     }
   }
 
@@ -98,11 +94,11 @@ export class FcrReminderManager {
     const companionSettings = this.getCompanionSettings();
     // Rigorously gate by both global reminders toggle and companion toggle
     const shouldBeRunning = settings.enableReminders && companionSettings.enabled;
-    const isRunning = this.updateCallback !== null;
+    const isRunning = this.#updateCallback !== null;
 
     if (shouldBeRunning && !isRunning) {
-      this.updateCallback = () => this.handleCacheUpdate();
-      PluginState.getCache().on('update', this.updateCallback);
+      this.#updateCallback = () => this.#handleCacheUpdate();
+      PluginState.getCache().on('update', this.#updateCallback);
 
       // Perform initial check and sync on startup/enable with lavish retries
       void (async () => {
@@ -112,7 +108,7 @@ export class FcrReminderManager {
 
         for (let i = 0; i < attempts; i++) {
           // Double-check active state before each check to abort early if disabled
-          if (!this.updateCallback) return;
+          if (!this.#updateCallback) return;
           online = await this.checkDaemonStatus();
           if (online) {
             break;
@@ -123,9 +119,9 @@ export class FcrReminderManager {
         }
 
         // Final active state assertion before syncing
-        if (online && this.updateCallback) {
+        if (online && this.#updateCallback) {
           await this.syncToCompanion();
-        } else if (!online && this.updateCallback) {
+        } else if (!online && this.#updateCallback) {
           const message =
             t('notices.fcrReminderCompanionOfflineBold') ||
             'WARNING: FCR Reminder Companion daemon is offline. You will NOT receive native desktop notifications.';
@@ -143,18 +139,18 @@ export class FcrReminderManager {
     }
   }
 
-  private handleCacheUpdate() {
-    if (this.debounceTimer) {
-      window.clearTimeout(this.debounceTimer);
+  #handleCacheUpdate() {
+    if (this.#debounceTimer) {
+      window.clearTimeout(this.#debounceTimer);
     }
     // Debounce sync triggers by 800ms to prevent system lag
-    this.debounceTimer = window.setTimeout(() => {
+    this.#debounceTimer = window.setTimeout(() => {
       void this.syncToCompanion();
     }, 800);
   }
 
   public async syncToCompanion(): Promise<void> {
-    const settings = this.getSettings();
+    const settings = PluginState.getSettings();
     const companionSettings = this.getCompanionSettings();
 
     // Rigorously gate sync by both general reminders and companion toggles
@@ -168,7 +164,7 @@ export class FcrReminderManager {
     }
 
     try {
-      const payload = this.plugin.notificationManager.getUpcomingRemindersPayload();
+      const payload = this.#plugin.notificationManager.getUpcomingRemindersPayload();
 
       // Execute Sync POST
       const apiUrl = companionSettings.apiUrl || 'http://127.0.0.1:45677';

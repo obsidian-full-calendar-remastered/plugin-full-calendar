@@ -2,7 +2,7 @@ import { NotificationManager } from './NotificationManager';
 import { PluginState } from '../../core/PluginState';
 import { DEFAULT_SETTINGS } from '../../types/settings';
 import { EnrichedOFCEvent } from '../../core/TimeEngine';
-import { DateTime } from 'luxon';
+import { DateTime, Settings } from 'luxon';
 import type FullCalendarPlugin from '../../main';
 import type EventCache from '../../core/EventCache';
 
@@ -206,6 +206,64 @@ describe('NotificationManager', () => {
       ).tryTrigger(occurrence, 'default', DateTime.fromISO('2026-05-22T11:50:00'));
 
       expect(triggerNotificationSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('tryTrigger with Notification and timezone conversion', () => {
+    let originalNotification: typeof Notification;
+    let mockNotificationConstructor: jest.Mock;
+
+    beforeEach(() => {
+      originalNotification = window.Notification;
+      mockNotificationConstructor = jest.fn();
+      window.Notification = mockNotificationConstructor as unknown as typeof Notification;
+    });
+
+    afterEach(() => {
+      window.Notification = originalNotification;
+      Settings.defaultZone = 'local';
+    });
+
+    it('formats the notification time using the local timezone', () => {
+      // Set mock system/local timezone to America/New_York (UTC-4 in May 2026)
+      Settings.defaultZone = 'America/New_York';
+
+      // Create an occurrence starting in Europe/Berlin (UTC+2 in May 2026, which is 6 hours ahead of NY)
+      const occurrence = {
+        id: 'evt-tz-test',
+        event: {
+          title: 'Timezone Meeting',
+          type: 'single',
+          startTime: '16:00', // 4:00 PM in Berlin
+          timezone: 'Europe/Berlin'
+        },
+        // 16:00 Europe/Berlin is 10:00 AM America/New_York
+        start: DateTime.fromISO('2026-05-22T16:00:00', { zone: 'Europe/Berlin' }),
+        end: DateTime.fromISO('2026-05-22T17:00:00', { zone: 'Europe/Berlin' }),
+        location: null
+      } as unknown as EnrichedOFCEvent;
+
+      // Invoke tryTrigger with companion disabled
+      const triggerTime = DateTime.fromISO('2026-05-22T09:50:00', { zone: 'America/New_York' });
+
+      (
+        manager as unknown as {
+          tryTrigger: (
+            occurrence: EnrichedOFCEvent,
+            type: 'default' | 'custom',
+            triggerTime: DateTime
+          ) => void;
+        }
+      ).tryTrigger(occurrence, 'default', triggerTime);
+
+      // Verify that Notification constructor was called
+      expect(mockNotificationConstructor).toHaveBeenCalled();
+      const firstCall = mockNotificationConstructor.mock.calls[0] as
+        [string, NotificationOptions] | undefined;
+      const bodyArg = firstCall?.[1]?.body;
+      // In local time (New York), 16:00 Berlin is 10:00 AM New York.
+      // So the notification body should say "at 10:00 AM" instead of the raw event's "at 4:00 PM"
+      expect(bodyArg).toContain('at 10:00 AM');
     });
   });
 });

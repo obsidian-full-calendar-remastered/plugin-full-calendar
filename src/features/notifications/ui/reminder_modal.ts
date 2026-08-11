@@ -9,19 +9,19 @@ import { DateTime } from 'luxon';
 import ReactModal from '../../../ui/ReactModal';
 import { ReminderModal } from './ReminderModal';
 import FullCalendarPlugin from '../../../main';
-import { OFCEvent } from '../../../types';
 import { openFileForEvent } from '../../../utils/eventActions';
+import { EnrichedOFCEvent } from '../../../core/TimeEngine';
 
 export function launchReminderModal(
   plugin: FullCalendarPlugin,
-  event: OFCEvent,
+  occurrence: EnrichedOFCEvent,
   eventId: string,
   type: 'default' | 'custom'
 ) {
   new ReactModal(plugin.app, closeModal => {
     return Promise.resolve(
       React.createElement(ReminderModal, {
-        event,
+        occurrence,
         type,
         defaultReminderMinutes: PluginState.getSettings().defaultReminderMinutes,
         onDismiss: () => {

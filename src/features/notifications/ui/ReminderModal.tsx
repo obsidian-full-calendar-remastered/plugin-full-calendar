@@ -5,11 +5,11 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { DateTime } from 'luxon';
-import { OFCEvent } from '../../../types';
 import { t } from '../../i18n/i18n';
+import { EnrichedOFCEvent } from '../../../core/TimeEngine';
 
 interface ReminderModalProps {
-  event: OFCEvent;
+  occurrence: EnrichedOFCEvent;
   type: 'default' | 'custom';
   defaultReminderMinutes: number;
   onSnooze: (minutes: number) => void;
@@ -18,7 +18,7 @@ interface ReminderModalProps {
 }
 
 export const ReminderModal = ({
-  event,
+  occurrence,
   type,
   defaultReminderMinutes: _defaultReminderMinutes,
   onSnooze,
@@ -27,7 +27,9 @@ export const ReminderModal = ({
 }: ReminderModalProps) => {
   const [snoozeDuration, setSnoozeDuration] = useState(10); // Default 10m
 
-  const formatTime = (iso: string) => DateTime.fromFormat(iso, 'HH:mm').toFormat('h:mm a');
+  const event = occurrence.event;
+
+  const formatDateTime = (dt: DateTime) => dt.toLocal().toFormat('h:mm a');
 
   const snoozeOptions = [
     { label: t('modals.reminder.presets.5m'), value: 5 },
@@ -54,8 +56,8 @@ export const ReminderModal = ({
           <p>{t('notifications.allDaySuffix')}</p>
         ) : (
           <p>
-            {event.startTime && formatTime(event.startTime)}
-            {event.endTime && ` - ${formatTime(event.endTime)}`}
+            {occurrence.start && formatDateTime(occurrence.start)}
+            {occurrence.end && ` - ${formatDateTime(occurrence.end)}`}
           </p>
         )}
 

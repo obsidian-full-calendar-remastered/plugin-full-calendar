@@ -2,7 +2,6 @@ import { showNotice } from '../../utils/showNotice';
 import { PluginState } from '../../core/PluginState';
 import { DateTime } from 'luxon';
 
-import { OFCEvent } from '../../types';
 import { FullCalendarSettings } from '../../types/settings';
 import FullCalendarPlugin from '../../main';
 import { TimeState, EnrichedOFCEvent } from '../../core/TimeEngine';
@@ -149,7 +148,7 @@ export class NotificationManager {
     type: 'default' | 'custom',
     triggerTime: DateTime
   ) {
-    const { id: sessionId, event } = occurrence;
+    const { id: sessionId } = occurrence;
     // Deduplication key: Unique per session, type, and specific trigger instance
     const key = `${sessionId}::${type}::${triggerTime.toISO()}`;
 
@@ -162,19 +161,20 @@ export class NotificationManager {
       return;
     }
 
-    this.triggerNotification(event, sessionId, type);
+    this.triggerNotification(occurrence, sessionId, type);
     this.notifiedEvents.add(key);
   }
 
-  private triggerNotification(event: OFCEvent, eventId: string, type: 'default' | 'custom') {
+  private triggerNotification(
+    occurrence: EnrichedOFCEvent,
+    eventId: string,
+    type: 'default' | 'custom'
+  ) {
+    const { event, start } = occurrence;
     const title = t('notifications.eventStarting.title'); // "Event Starting"
 
     // Customize body based on type
-    // Customize body based on type
-    const timeStr =
-      !event.allDay && event.startTime
-        ? DateTime.fromFormat(event.startTime, 'HH:mm').toFormat('h:mm a')
-        : '';
+    const timeStr = !event.allDay && start ? start.toLocal().toFormat('h:mm a') : '';
 
     let body = `${event.title}`;
     if (timeStr) body += ` at ${timeStr}`;
@@ -192,7 +192,7 @@ export class NotificationManager {
 
       notification.onclick = () => {
         // Launch the interactive modal instead of just opening the file
-        launchReminderModal(this.plugin, event, eventId, type);
+        launchReminderModal(this.plugin, occurrence, eventId, type);
       };
     } catch (e) {
       console.error(t('notifications.failed'), e);

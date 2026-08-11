@@ -1,13 +1,5 @@
 import { CachedMetadata, moment as obsidianMoment, TFile } from 'obsidian';
 import * as React from 'react';
-import {
-  appHasDailyNotesPluginLoaded,
-  createDailyNote,
-  getAllDailyNotes,
-  getDailyNote,
-  getDailyNoteSettings,
-  getDateFromFile
-} from 'obsidian-daily-notes-interface';
 
 import {
   getAllInlineEventsFromFile,
@@ -21,6 +13,7 @@ import FullCalendarPlugin from '../../main';
 import { ObsidianInterface } from '../../ObsidianAdapter';
 import { OFCEvent, EventLocation } from '../../types';
 import { constructTitle } from '../../features/category/categoryParser';
+import { t } from '../../features/i18n/i18n';
 
 import {
   CalendarProvider,
@@ -29,7 +22,16 @@ import {
   CanonicalTitleProvider
 } from '../Provider';
 import { EventHandle, FCReactComponent, ProviderConfigContext } from '../typesProvider';
-import { DailyNoteProviderConfig, getDailyNoteEventFormat } from './typesDaily';
+import {
+  DailyNoteProviderConfig,
+  getDailyNoteEventFormat,
+  getDailyNoteSourceProvider
+} from './typesDaily';
+import {
+  DailyNoteSourceAdapter,
+  JournalsDailyNoteSourceAdapter,
+  ObsidianDailyNoteSourceAdapter
+} from './DailyNoteSourceAdapter';
 import { DailyNoteConfigComponent } from './DailyNoteConfigComponent';
 import { DailyNoteDecorator } from './codemirror/DailyNoteDecorator';
 import { LivePreviewDecorator } from '../../features/livepreview/LivePreviewDecorator';
@@ -75,17 +77,28 @@ const DailyNoteHeadingSetting: React.FC<{
     return typeof flat === 'string' ? flat : typeof nested === 'string' ? nested : '';
   };
 
+  const provider = (source as { provider?: unknown }).provider;
+  const journalId = (source as { journalId?: unknown }).journalId;
+  const sourceLabel =
+    provider === 'journals'
+      ? `${t('settings.calendars.dailyNote.provider.options.journals')}: ${typeof journalId === 'string' ? journalId : ''}`
+      : t('settings.calendars.dailyNote.provider.options.dailyNotes');
+
   return React.createElement(
     'div',
     { className: 'setting-item-control ofc-heading-setting-control' },
-    React.createElement('span', {}, 'Under heading'),
+    React.createElement('span', {}, sourceLabel),
     React.createElement('input', {
       disabled: true,
       type: 'text',
       value: getHeading(),
       className: 'ofc-setting-input is-inline'
     }),
-    React.createElement('span', { className: 'ofc-heading-setting-suffix' }, 'in daily notes')
+    React.createElement(
+      'span',
+      { className: 'ofc-heading-setting-suffix' },
+      t('settings.calendars.dailyNote.heading.summary')
+    )
   );
 };
 
@@ -122,6 +135,7 @@ export class DailyNoteProvider
   private app: ObsidianInterface;
   private plugin: FullCalendarPlugin;
   private source: DailyNoteProviderConfig;
+  private noteSource: DailyNoteSourceAdapter;
 
   readonly type = 'dailynote';
   readonly displayName = 'Daily Note';
@@ -136,10 +150,13 @@ export class DailyNoteProvider
     if (!app) {
       throw new Error('DailyNoteProvider requires an Obsidian app interface.');
     }
-    appHasDailyNotesPluginLoaded();
     this.app = app;
     this.plugin = plugin;
     this.source = { ...source, format: getDailyNoteEventFormat(source) };
+    this.noteSource =
+      getDailyNoteSourceProvider(source) === 'journals'
+        ? new JournalsDailyNoteSourceAdapter(plugin.app, source)
+        : new ObsidianDailyNoteSourceAdapter();
   }
 
   getCapabilities(): CalendarProviderCapabilities {
@@ -171,7 +188,7 @@ export class DailyNoteProvider
       const persistentId = this._persistentIdForEvent(event);
       if (!persistentId) return null;
       const m = moment(event.date);
-      const file = getDailyNote(m, getAllDailyNotes());
+      const file = this.noteSource.getExistingFileForDate(event.date, m);
       if (!file || !(file instanceof TFile)) return null;
       return { persistentId, location: { path: file.path } };
     }
@@ -192,9 +209,7 @@ export class DailyNoteProvider
   }
 
   public isFileRelevant(file: TFile): boolean {
-    // Encapsulates the logic of checking the daily note folder.
-    const { folder } = getDailyNoteSettings();
-    return folder ? file.path.startsWith(`${folder}/`) : true;
+    return this.noteSource.isFileRelevant(file);
   }
 
   getCanonicalTitle(event: OFCEvent): string {
@@ -206,7 +221,7 @@ export class DailyNoteProvider
 
     const content = await this.app.read(file);
     const lines = content.split('\n');
-    const date = getDateFromFile(file, 'day')?.format('YYYY-MM-DD');
+    const date = this.noteSource.getDateForFile(file);
 
     const usedUids = new Set<number>();
 
@@ -233,7 +248,7 @@ export class DailyNoteProvider
   ): Promise<number> {
     const content = await this.app.read(file);
     const lines = content.split('\n');
-    const date = getDateFromFile(file, 'day')?.format('YYYY-MM-DD');
+    const date = this.noteSource.getDateForFile(file);
 
     // It's possible for a daily note file to not have a date in its title.
     // In that case, we cannot reliably parse events from it.
@@ -272,7 +287,7 @@ export class DailyNoteProvider
   }
 
   public async getEventsInFile(file: TFile): Promise<EditableEventResponse[]> {
-    const date = getDateFromFile(file, 'day')?.format('YYYY-MM-DD');
+    const date = this.noteSource.getDateForFile(file) ?? undefined;
     const cache = await waitForMetadataWithTimeout(this.app, file);
     if (!cache) {
       return [];
@@ -289,18 +304,18 @@ export class DailyNoteProvider
   }
 
   async getEvents(range?: { start: Date; end: Date }): Promise<EditableEventResponse[]> {
-    const notes = getAllDailyNotes();
-    let files = Object.values(notes);
+    let files = this.noteSource.getAllFiles();
 
     // OPTIMIZATION: If a range is provided, only process daily notes within that range.
     if (range) {
       const startMoment = moment(range.start);
       const endMoment = moment(range.end);
       files = files.filter(file => {
-        const fileDate = getDateFromFile(file, 'day');
-        return (
-          fileDate && fileDate.isSameOrAfter(startMoment) && fileDate.isSameOrBefore(endMoment)
-        );
+        const fileDate = this.noteSource.getDateForFile(file);
+        return fileDate
+          ? fileDate >= startMoment.format('YYYY-MM-DD') &&
+              fileDate <= endMoment.format('YYYY-MM-DD')
+          : false;
       });
     }
 
@@ -314,9 +329,9 @@ export class DailyNoteProvider
     }
 
     const m = moment(event.date);
-    let file = getDailyNote(m, getAllDailyNotes());
+    let file = this.noteSource.getExistingFileForDate(event.date, m);
     if (!file) {
-      const createdFile = await createDailyNote(m);
+      const createdFile = await this.noteSource.getFileForDate(event.date, m, true);
       if (!createdFile) {
         throw new Error(`Failed to create daily note for date ${event.date}.`);
       }
@@ -362,14 +377,14 @@ export class DailyNoteProvider
       handle.location.lineNumber
     );
 
-    const oldDate = getDateFromFile(file, 'day')?.format('YYYY-MM-DD');
+    const oldDate = this.noteSource.getDateForFile(file);
     if (!oldDate) throw new Error(`Could not get date from file at path ${file.path}`);
 
     if (newEventData.date !== oldDate) {
       const m = moment(newEventData.date);
-      let newFile = getDailyNote(m, getAllDailyNotes());
+      let newFile = this.noteSource.getExistingFileForDate(newEventData.date, m);
       if (!newFile) {
-        const createdFile = await createDailyNote(m);
+        const createdFile = await this.noteSource.getFileForDate(newEventData.date, m, true);
         if (!createdFile) {
           throw new Error(`Failed to create daily note for date ${newEventData.date}.`);
         }

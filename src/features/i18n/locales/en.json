@@ -819,9 +819,25 @@
         }
       },
       "dailyNote": {
+        "provider": {
+          "label": "Daily note provider",
+          "description": "Choose which plugin resolves and creates notes for this calendar.",
+          "options": {
+            "dailyNotes": "Daily Notes / Periodic Notes",
+            "journals": "Journals"
+          }
+        },
+        "journal": {
+          "label": "Day journal",
+          "description": "Select the Journals Day journal to use.",
+          "select": "Select a Day journal",
+          "unavailable": "Install and enable the Journals plugin to use this provider.",
+          "none": "Configure a Day journal in Journals before adding this calendar."
+        },
         "heading": {
           "label": "Heading",
-          "description": "Heading to store events under in the daily note."
+          "description": "Heading to store events under in the daily note.",
+          "summary": "in daily notes"
         },
         "format": {
           "label": "Format",

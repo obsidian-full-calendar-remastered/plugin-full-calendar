@@ -17,7 +17,9 @@ import { OFCEvent } from './schema';
 import { getNextColor } from '../ui/components/colors';
 import { t } from '../features/i18n/i18n';
 import {
+  DAILY_NOTE_PROVIDERS,
   DAILY_NOTE_EVENT_FORMATS,
+  DEFAULT_DAILY_NOTE_PROVIDER,
   DEFAULT_DAILY_NOTE_EVENT_FORMAT
 } from '../providers/dailynote/typesDaily';
 
@@ -35,7 +37,9 @@ const calendarOptionsSchema = z.discriminatedUnion('type', [
     id: z.string(),
     name: z.string(),
     heading: z.string(),
-    format: z.enum(DAILY_NOTE_EVENT_FORMATS).default(DEFAULT_DAILY_NOTE_EVENT_FORMAT)
+    format: z.enum(DAILY_NOTE_EVENT_FORMATS).default(DEFAULT_DAILY_NOTE_EVENT_FORMAT),
+    provider: z.enum(DAILY_NOTE_PROVIDERS).default(DEFAULT_DAILY_NOTE_PROVIDER),
+    journalId: z.string().optional()
   }),
   z.object({ type: z.literal('ical'), id: z.string(), name: z.string(), url: z.string().url() }),
   z.object({

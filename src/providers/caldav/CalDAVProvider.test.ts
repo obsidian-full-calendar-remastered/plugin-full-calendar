@@ -1128,9 +1128,9 @@ END:VCALENDAR
 
       const file = (await caldavProvider.createLinkedNote(task)) as MockCalDAVCreatedFile | null;
 
-      expect(file!.content).toContain('scheduled: 2026-04-23');
+      expect(file!.content).toContain('scheduled: "2026-04-23"');
       expect(file!.content).toContain('scheduled-link: "[[2026-04-23]]"');
-      expect(file!.content).toContain('due: 2026-04-24');
+      expect(file!.content).toContain('due: "2026-04-24"');
       expect(file!.content).toContain('due-link: "[[2026-04-24]]"');
       expect(file!.content).not.toContain('[["2026-04-23"]]');
       expect(file!.content.endsWith('Task body that must remain unchanged')).toBe(true);
@@ -1167,9 +1167,9 @@ END:VCALENDAR
       );
 
       expect(linkedFile.content).toContain('custom: keep-me');
-      expect(linkedFile.content).toContain('scheduled: 2026-04-23');
+      expect(linkedFile.content).toContain('scheduled: "2026-04-23"');
       expect(linkedFile.content).toContain('scheduled-link: "[[2026-04-23]]"');
-      expect(linkedFile.content).toContain('due: 2026-04-24');
+      expect(linkedFile.content).toContain('due: "2026-04-24"');
       expect(linkedFile.content).toContain('due-link: "[[2026-04-24]]"');
       expect(linkedFile.content).not.toContain('[["2026-04-23"]]');
       expect(linkedFile.content.endsWith('Body must remain unchanged.')).toBe(true);

@@ -33,7 +33,7 @@ When you create or edit an event note, the plugin manages its YAML frontmatter. 
 
 | Key | Type | Description |
 | --- | --- | --- |
-| `title` | String | The clean title of the event (excluding any category prefixes). |
+| `title` | String | The clean title of the event (enclosed in double quotes if it contains colons or special YAML characters, e.g., `title: "Super: Event"`). |
 | `category` | String | The optional category tag. |
 | `location` | String | The optional location or address string (e.g., `Office Room 4B`). |
 | `description` | String | A multiline description/notes block. |
@@ -42,6 +42,9 @@ When you create or edit an event note, the plugin manages its YAML frontmatter. 
 | `startTime` | Time | Start time for timed events (`HH:mm`). |
 | `endTime` | Time | End time for timed events (`HH:mm`). |
 | `timezone` | String | The source timezone anchor (e.g., `America/New_York`). |
+
+!!! note "Quote Enclosing & Special Characters"
+    Full Calendar automatically encloses string values in double quotes when creating or updating notes (e.g., `title: "Super: Event"`). This ensures titles containing colons (`:`) or other YAML-reserved characters are stored safely without causing YAML parse errors in Obsidian. Existing notes with unquoted colons are handled seamlessly via a backward-compatible fallback parser.
 
 !!! tip "Interactive Locations & Descriptions"
     URLs in the `location` and `description` fields are automatically linkified and rendered as clickable hyperlinks in the [Event Details modal](../events/manage.md#video-conference--linkification-support). For details, see [Video Conference & Linkification Support](../events/manage.md#video-conference--linkification-support).

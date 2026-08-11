@@ -26,6 +26,8 @@ Creates one-note-per-event records, supports full CRUD, and uses robust filename
 
 **Location & Description Mapping**: Parses and writes `location` (geographic/logical address) and `description` (multiline text) dynamically inside the note's YAML frontmatter block.
 
+**Frontmatter Serialization & Colon Safety**: All string properties in frontmatter are escaped and double-quoted by default when serialized (`escapeYamlString` in `frontmatter.ts` and `noteUtils.ts`). This prevents unquoted colons (`title: Super: Event`) from breaking Obsidian's YAML metadata parser. When reading note files, `getEventsInFile` utilizes `parseFrontmatterWithFallback` if Obsidian's `metadataCache` fails or returns unparsed metadata due to unquoted colons in historical or manually-edited notes.
+
 **Recurrence rules**: Supports weekly, monthly (including specific weekday `repeatOn`), yearly, and daily (`fcrDaily` with optional `repeatInterval`) recurring events. Files for daily recurring events are named with `(Every day)` or `(Every X days)` to provide clean visual identification.
 
 ### Daily Note Provider

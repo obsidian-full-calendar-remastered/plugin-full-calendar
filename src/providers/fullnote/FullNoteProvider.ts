@@ -5,7 +5,12 @@ import { DateTime } from 'luxon';
 
 import { OFCEvent, EventLocation, validateEvent } from '../../types';
 import FullCalendarPlugin from '../../main';
-import { newFrontmatter, modifyFrontmatterString, replaceFrontmatter } from './frontmatter';
+import {
+  newFrontmatter,
+  modifyFrontmatterString,
+  replaceFrontmatter,
+  parseFrontmatterWithFallback
+} from './frontmatter';
 import { CalendarProvider, CalendarProviderCapabilities, SyncKeyProvider } from '../Provider';
 import { EventHandle, FCReactComponent, ProviderConfigContext } from '../typesProvider';
 import { FullNoteProviderConfig } from './typesLocal';
@@ -199,11 +204,23 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
 
   public async getEventsInFile(file: TFile): Promise<EditableEventResponse[]> {
     const metadata = await waitForMetadataWithTimeout(this.app, file);
-    if (!metadata?.frontmatter) {
-      return [];
+    let frontmatter: Record<string, unknown> | null =
+      (metadata?.frontmatter as Record<string, unknown>) || null;
+
+    if (!frontmatter || !frontmatter.title) {
+      const page = await this.app.read(file);
+      const fallbackFm = parseFrontmatterWithFallback(page);
+      if (fallbackFm) {
+        frontmatter = {
+          ...(frontmatter || {}),
+          ...fallbackFm
+        };
+      }
     }
 
-    const frontmatter = metadata.frontmatter as Record<string, unknown>;
+    if (!frontmatter) {
+      return [];
+    }
     const frontmatterType = frontmatter.type;
     const eventType =
       frontmatterType === 'recurring' || frontmatterType === 'rrule' ? frontmatterType : 'single';

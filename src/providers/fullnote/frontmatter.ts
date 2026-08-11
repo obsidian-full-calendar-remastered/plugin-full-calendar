@@ -14,6 +14,7 @@
  * @license See LICENSE.md
  */
 
+import { parseYaml } from 'obsidian';
 import { OFCEvent } from '../../types';
 
 const FRONTMATTER_SEPARATOR = '---';
@@ -33,7 +34,7 @@ function hasFrontmatter(page: string): boolean {
  * @param page Contents of a markdown file.
  * @returns Frontmatter section of a page.
  */
-function extractFrontmatter(page: string): string | null {
+export function extractFrontmatter(page: string): string | null {
   if (hasFrontmatter(page)) {
     return page.split(FRONTMATTER_SEPARATOR)[1];
   }
@@ -64,11 +65,79 @@ export function replaceFrontmatter(page: string, newFrontmatter: string): string
 type PrintableAtom =
   Record<string, unknown> | (number | string)[] | number | string | boolean | null;
 
+function escapeYamlString(value: string): string {
+  if (
+    (value.startsWith('"') && value.endsWith('"') && value.length >= 2) ||
+    (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
+  ) {
+    return value;
+  }
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
 function stringifyYamlLine(k: string, v: PrintableAtom): string {
   if (v === null) return `${k}:`;
   if (Array.isArray(v)) return `${k}: [${v.join(',')}]`;
   if (typeof v === 'object') return `${k}: ${JSON.stringify(v)}`;
+  if (typeof v === 'string') return `${k}: ${escapeYamlString(v)}`;
   return `${k}: ${v}`;
+}
+
+export function parseFrontmatterWithFallback(page: string): Record<string, unknown> | null {
+  const raw = extractFrontmatter(page);
+  if (!raw) return null;
+
+  try {
+    const parsed: unknown = parseYaml(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const record = parsed as Record<string, unknown>;
+      const hasMultilineScalar = Object.values(record).some(
+        v => typeof v === 'string' && v.includes('\n')
+      );
+      if (!hasMultilineScalar) {
+        return record;
+      }
+    }
+  } catch {
+    // YAML parse error, fall back to tolerant line-by-line scalar parsing
+  }
+
+  const result: Record<string, unknown> = {};
+  const lines = raw.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const colonIndex = trimmed.indexOf(':');
+    if (colonIndex <= 0) continue;
+
+    const key = trimmed.slice(0, colonIndex).trim();
+    let rawVal = trimmed.slice(colonIndex + 1).trim();
+
+    if (!key) continue;
+
+    if (
+      (rawVal.startsWith('"') && rawVal.endsWith('"') && rawVal.length >= 2) ||
+      (rawVal.startsWith("'") && rawVal.endsWith("'") && rawVal.length >= 2)
+    ) {
+      rawVal = rawVal.slice(1, -1);
+    }
+
+    if (rawVal === 'true') {
+      result[key] = true;
+    } else if (rawVal === 'false') {
+      result[key] = false;
+    } else if (rawVal === 'null' || rawVal === '') {
+      result[key] = null;
+    } else if (!isNaN(Number(rawVal)) && rawVal !== '') {
+      result[key] = Number(rawVal);
+    } else {
+      result[key] = rawVal;
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : null;
 }
 
 export function newFrontmatter(fields: Partial<OFCEvent>): string {

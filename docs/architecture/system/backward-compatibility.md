@@ -13,6 +13,7 @@
 | **Bulk Categorization Tool** | `c6017712` | `feat(workspace): add customizable calendar workspaces with filtering, UI, and performance improvements (#90)` |
 | **Stable Source IDs** | `c6017712` | `feat(workspace): add customizable calendar workspaces with filtering, UI, and performance improvements (#90)` |
 | **Category - Title Parsing** | `v0.10.0` | (Legacy feature supporting the `Category - Title` naming convention) |
+| **Frontmatter Colon Title Fallback Parser** | `v0.13.5` | `src/providers/fullnote/frontmatter.ts` | Allows notes with unquoted colons in titles (`title: Super: Event`) to load even if Obsidian's YAML metadata cache fails. |
 
 ## Retired Support (Breaking Changes)
 

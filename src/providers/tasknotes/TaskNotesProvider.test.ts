@@ -94,11 +94,11 @@ describe('TaskNotesProvider', () => {
       '2026-04-23'
     );
     expect(fileContents).toContain('custom: keep-me');
-    expect(fileContents).toContain('scheduled: 2026-04-23');
+    expect(fileContents).toContain('scheduled: "2026-04-23"');
     expect(fileContents).toContain('scheduled-link: "[[2026-04-23]]"');
-    expect(fileContents).toContain('due: 2026-04-23');
+    expect(fileContents).toContain('due: "2026-04-23"');
     expect(fileContents).toContain('due-link: "[[2026-04-23]]"');
-    expect(fileContents).toContain('deadline: 2026-04-23');
+    expect(fileContents).toContain('deadline: "2026-04-23"');
     expect(fileContents).toContain('deadline-link: "[[2026-04-23]]"');
     expect(fileContents).not.toContain('[["2026-04-23"]]');
     expect(fileContents.endsWith('Body must remain unchanged.')).toBe(true);
@@ -171,7 +171,7 @@ describe('TaskNotesProvider', () => {
 
     await provider.updateEvent({ persistentId: 'Tasks/Task.md' }, oldEvent, newEvent);
 
-    expect(fileContents).toContain('scheduled: 2026-04-23');
+    expect(fileContents).toContain('scheduled: "2026-04-23"');
     expect(fileContents).toContain('scheduled-link: "[[2026-04-23]]"');
     expect(taskNotes.taskService.updateProperty).not.toHaveBeenCalledWith(
       expect.anything(),

@@ -40,6 +40,11 @@ These are file modifications that happen as a direct, predictable result of an a
 
 This is the most important category to be aware of. These are modifications that may happen automatically to ensure feature compatibility.
 
+#### Frontmatter Quote Formatting & Colon Safety
+
+-   **What it does:** When writing or updating frontmatter fields in Full Note calendar files, string fields (such as `title`, `category`, and `description`) are serialized with double quotes by default (e.g. `title: "Super: Event"`).
+-   **Why it's done:** Unquoted colons (e.g. `title: Super: Event`) violate YAML mapping syntax and cause parser failures in Obsidian. Double-quoting prevents frontmatter corruption while leaving body content untouched.
+
 #### Timezone Auto-Upgrade for Full Note Calendars
 
 -   **What it does:** To support robust timezone conversions, timed events in "Full Note" calendars need a `timezone` field in their frontmatter. If the plugin detects a note from a previous version that is missing this field, it will add it. 

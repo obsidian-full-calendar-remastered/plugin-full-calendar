@@ -120,6 +120,12 @@ type PrintableAtom =
   Record<string, unknown> | (number | string)[] | number | string | boolean | null;
 
 function escapeYamlString(value: string): string {
+  if (
+    (value.startsWith('"') && value.endsWith('"') && value.length >= 2) ||
+    (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
+  ) {
+    return value;
+  }
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 

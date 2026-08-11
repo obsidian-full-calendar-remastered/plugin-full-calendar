@@ -18,6 +18,13 @@ Use this page as a first response checklist for common issues.
     2. Reopen the calendar view.
     3. Verify calendar source is enabled and visible in [Settings](../settings/index.md).
 
+??? question "Why does an event disappear when I put a colon (:) in its title?"
+    <a id="why-does-an-event-disappear-when-i-put-a-colon-in-title"></a>
+    In standard YAML, writing `title: Super: Event` without quotes causes a YAML syntax error because the colon `: ` indicates a key-value mapping.
+    
+    - Full Calendar automatically encloses strings in double quotes when saving events (e.g. `title: "Super: Event"`), keeping frontmatter valid.
+    - If you manually edited a note file and added an unquoted colon (e.g. `title: Super: Event`), Full Calendar uses a built-in fallback parser to display the event. Wrapping the title in quotes (`title: "Super: Event"` or `title: 'Super: Event'`) is recommended to ensure Obsidian's native indexer also parses it cleanly.
+
 ## Events & Calendars
 
 ??? question "Why are my remote calendars not updating?"

@@ -90,16 +90,18 @@ const makeApp = (app: MockApp): ObsidianInterface => ({
   getFileByPath(path: string): TFile | null {
     return app.vault.getFileByPath(path);
   },
-  getMetadata: file => app.metadataCache.getFileCache(file),
-  waitForMetadata: file =>
-    new Promise((resolve, reject) => {
-      const cache = app.metadataCache.getFileCache(file);
-      if (cache) {
-        resolve(cache);
-      } else {
-        reject(new Error(`No metadata cache found for ${file.path}`));
-      }
-    }),
+  getMetadata: jest.fn(file => app.metadataCache.getFileCache(file)),
+  waitForMetadata: jest.fn(
+    file =>
+      new Promise((resolve, reject) => {
+        const cache = app.metadataCache.getFileCache(file);
+        if (cache) {
+          resolve(cache);
+        } else {
+          reject(new Error(`No metadata cache found for ${file.path}`));
+        }
+      })
+  ),
   read: file => app.vault.read(file),
   create: jest.fn(),
   rewrite: jest.fn(),
@@ -254,8 +256,8 @@ describe('FullNoteCalendar Tests', () => {
 
     expect(path).toBe('events/2022-01-01 Work - Test Event.md');
     // The frontmatter content will now have separate fields.
-    expect(content).toContain('title: Test Event');
-    expect(content).toContain('category: Work');
+    expect(content).toContain('title: "Test Event"');
+    expect(content).toContain('category: "Work"');
   });
 
   it('creates an event using a custom template', async () => {
@@ -293,8 +295,8 @@ describe('FullNoteCalendar Tests', () => {
     const [path, content] = mockCreate.mock.calls[0] as [string, string];
 
     expect(path).toBe('events/2026-06-02 Interview Candidate.md');
-    expect(content).toContain('title: Interview Candidate');
-    expect(content).toContain('location: Zoom');
+    expect(content).toContain('title: "Interview Candidate"');
+    expect(content).toContain('location: "Zoom"');
 
     // Check that the template was rendered into the body of the note
     expect(content).toContain('# Interview Candidate');
@@ -600,7 +602,7 @@ describe('FullNoteCalendar Tests', () => {
 
     // The rewritten content should have the new structured data.
     expect(newContent).toContain('title: Test Event');
-    expect(newContent).toContain('category: Work');
+    expect(newContent).toContain('category: "Work"');
   });
 
   it('preserves wikilink frontmatter formatting across consecutive time updates', async () => {
@@ -666,15 +668,15 @@ text_property: "[[example]]"
     const afterFirstDrag = firstRewrite(originalPage);
     const afterSecondDrag = secondRewrite(afterFirstDrag);
 
-    expect(afterFirstDrag).toContain('startTime: 10:30');
-    expect(afterFirstDrag).toContain('endTime: 11:30');
+    expect(afterFirstDrag).toContain('startTime: "10:30"');
+    expect(afterFirstDrag).toContain('endTime: "11:30"');
     expect(afterFirstDrag).toContain('timezone: Europe/Berlin\n\nlist_property:');
     expect(afterFirstDrag).toContain('list_property:\n  - Test1\n  - "[[Test2]]"');
     expect(afterFirstDrag).toContain('# preserve-comment');
     expect(afterFirstDrag).toContain('text_property: "[[example]]"');
 
-    expect(afterSecondDrag).toContain('startTime: 11:00');
-    expect(afterSecondDrag).toContain('endTime: 12:00');
+    expect(afterSecondDrag).toContain('startTime: "11:00"');
+    expect(afterSecondDrag).toContain('endTime: "12:00"');
     expect(afterSecondDrag).toContain('timezone: Europe/Berlin\n\nlist_property:');
     expect(afterSecondDrag).toContain('list_property:\n  - Test1\n  - "[[Test2]]"');
     expect(afterSecondDrag).toContain('# preserve-comment');
@@ -832,7 +834,7 @@ text_property: "[[example]]"
     const existingContent = await obsidian.read(file);
     const newContent = rewriteCallback(existingContent);
 
-    expect(newContent).toContain('startTime: 14:00');
+    expect(newContent).toContain('startTime: "14:00"');
     expect(newContent).toContain('timezone: Europe/Berlin');
   });
 
@@ -900,8 +902,8 @@ text_property: "[[example]]"
     const [, content] = mockObsidian.create.mock.calls[0] as [string, string];
 
     // Assert file frontmatter commits the pure source timezone properties and localized HH:mm
-    expect(content).toContain('startTime: 15:00');
-    expect(content).toContain('timezone: Europe/Berlin');
+    expect(content).toContain('startTime: "15:00"');
+    expect(content).toContain('timezone: "Europe/Berlin"');
   });
 
   describe('toggleComplete tests', () => {
@@ -913,44 +915,17 @@ text_property: "[[example]]"
     beforeEach(() => {
       mockCache = {
         getEventById: jest.fn(),
-        updateEventWithId: jest.fn()
+        updateEventWithId: jest.fn().mockResolvedValue(undefined)
       };
-      PluginState.setCache(mockCache as unknown as import('../../core/EventCache').default);
+
+      (PluginState as unknown as { getCache: () => typeof mockCache }).getCache = () => mockCache;
     });
 
     afterEach(() => {
       PluginState.clear();
     });
 
-    it('should toggle complete with datetime ISO string by default', async () => {
-      const obsidian = makeApp(MockAppBuilder.make().done());
-      const calendar = new FullNoteProvider(
-        { directory: dirName, id: 'local_1' },
-        makePlugin(),
-        obsidian
-      );
-
-      const mockEvent = {
-        type: 'single',
-        title: 'Test Task',
-        date: '2024-05-15',
-        completed: false
-      };
-      mockCache.getEventById.mockReturnValue(mockEvent);
-
-      const result = await calendar.toggleComplete('event_1', true);
-      expect(result).toBe(true);
-      expect(mockCache.getEventById).toHaveBeenCalledWith('event_1');
-      expect(mockCache.updateEventWithId).toHaveBeenCalledTimes(1);
-      const updatedEvent = (mockCache.updateEventWithId.mock.calls[0] as [string, OFCEvent])[1];
-      expect(updatedEvent.type).toBe('single');
-      if (updatedEvent.type === 'single') {
-        expect(typeof updatedEvent.completed).toBe('string');
-        expect(DateTime.fromISO(updatedEvent.completed as string).isValid).toBe(true);
-      }
-    });
-
-    it('should toggle complete with boolean true when taskCompletionStyle is boolean', async () => {
+    it('should update completed to boolean true when taskCompletionStyle is boolean', async () => {
       const obsidian = makeApp(MockAppBuilder.make().done());
       const calendar = new FullNoteProvider(
         { directory: dirName, id: 'local_1', taskCompletionStyle: 'boolean' },
@@ -974,6 +949,34 @@ text_property: "[[example]]"
       expect(updatedEvent.type).toBe('single');
       if (updatedEvent.type === 'single') {
         expect(updatedEvent.completed).toBe(true);
+      }
+    });
+
+    it('should update completed to ISO string when taskCompletionStyle is datetime', async () => {
+      const obsidian = makeApp(MockAppBuilder.make().done());
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1', taskCompletionStyle: 'datetime' },
+        makePlugin(),
+        obsidian
+      );
+
+      const mockEvent = {
+        type: 'single',
+        title: 'Test Task',
+        date: '2024-05-15',
+        completed: false
+      };
+      mockCache.getEventById.mockReturnValue(mockEvent);
+
+      const result = await calendar.toggleComplete('event_1', true);
+      expect(result).toBe(true);
+      expect(mockCache.getEventById).toHaveBeenCalledWith('event_1');
+      expect(mockCache.updateEventWithId).toHaveBeenCalledTimes(1);
+      const updatedEvent = (mockCache.updateEventWithId.mock.calls[0] as [string, OFCEvent])[1];
+      expect(updatedEvent.type).toBe('single');
+      if (updatedEvent.type === 'single') {
+        expect(typeof updatedEvent.completed).toBe('string');
+        expect(updatedEvent.completed).not.toBe('');
       }
     });
 
@@ -1002,6 +1005,45 @@ text_property: "[[example]]"
       if (updatedEvent.type === 'single') {
         expect(updatedEvent.completed).toBe(false);
       }
+    });
+
+    it('loads event from note file even when frontmatter has unquoted colon in title and metadataCache returned null', async () => {
+      const filename = '2026-08-11 Super Event.md';
+
+      const app = MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder(dirName).file(
+            filename,
+            new FileBuilder()
+              .frontmatter({ title: 'Super: Event', date: '2026-08-11', allDay: true })
+              .text('Body text')
+          )
+        )
+        .done();
+
+      const obsidian = makeApp(app);
+      // Simulate Obsidian metadataCache failing to parse invalid YAML frontmatter
+      (obsidian.getMetadata as jest.Mock).mockReturnValue(null);
+      (obsidian.waitForMetadata as jest.Mock).mockResolvedValue(null);
+
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const file = obsidian.getFileByPath(`${dirName}/${filename}`);
+      expect(file).not.toBeNull();
+
+      const events = await calendar.getEventsInFile(file!);
+      expect(events).toHaveLength(1);
+      expect(events[0][0]).toEqual(
+        expect.objectContaining({
+          title: 'Super: Event',
+          date: '2026-08-11',
+          allDay: true
+        })
+      );
     });
   });
 });

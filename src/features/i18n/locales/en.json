@@ -785,11 +785,13 @@
       },
       "defaults": {
         "iCloud": "iCloud Calendar",
-        "new": "New {{type}} Calendar"
+        "new": "New {{type}} Calendar",
+        "journals": "Journals"
       },
       "types": {
         "local": "Full note",
         "dailynote": "Daily Note",
+        "journals": "Journals",
         "icloud": "iCloud",
         "caldav": "CalDAV",
         "ical": "ICS",
@@ -820,8 +822,6 @@
       },
       "dailyNote": {
         "provider": {
-          "label": "Daily note provider",
-          "description": "Choose which plugin resolves and creates notes for this calendar.",
           "options": {
             "dailyNotes": "Daily Notes / Periodic Notes",
             "journals": "Journals"

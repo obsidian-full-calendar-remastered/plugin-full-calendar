@@ -9,6 +9,7 @@ import {
 
 import {
   getJournalsDayJournals,
+  getJournalsTemplateHeadings,
   JournalsDailyNoteSourceAdapter,
   ObsidianDailyNoteSourceAdapter,
   type JournalsDayJournal,
@@ -40,6 +41,7 @@ const makeFile = (path: string): TFile => {
 
 type TestApp = App & {
   vault: { getFileByPath(path: string): TFile | null };
+  metadataCache: { getFileCache(file: TFile): { headings?: { heading: string }[] } | null };
   plugins: { getPlugin(id: string): unknown };
 };
 
@@ -71,9 +73,18 @@ const makeJournal = (
   })
 });
 
-const makeApp = (plugin: JournalsPluginApi | null, files = new Map<string, TFile>()): TestApp =>
+const makeApp = (
+  plugin: JournalsPluginApi | null,
+  files = new Map<string, TFile>(),
+  headingsByPath = new Map<string, string[]>()
+): TestApp =>
   ({
     vault: { getFileByPath: (path: string) => files.get(path) ?? null },
+    metadataCache: {
+      getFileCache: (file: TFile) => ({
+        headings: (headingsByPath.get(file.path) ?? []).map(heading => ({ heading }))
+      })
+    },
     plugins: { getPlugin: (id: string) => (id === 'journals' ? plugin : null) }
   }) as TestApp;
 
@@ -129,6 +140,30 @@ describe('Journals daily note source adapter', () => {
     adapter.getExistingFileForDate('2026-08-11', {} as never);
     expect(personal.get).toHaveBeenCalledWith('2026-08-11');
     expect(work.get).not.toHaveBeenCalled();
+  });
+
+  it('lists unique headings from every template configured for the selected journal', () => {
+    const first = makeFile('Templates/Work.md');
+    const second = makeFile('Templates/Tasks.md');
+    const files = new Map([
+      [first.path, first],
+      [second.path, second]
+    ]);
+    const plugin = {
+      ...makePluginApi([]),
+      getJournalConfig: (name: string) =>
+        name === 'Daily' ? { templates: ['Templates/Work', 'Templates/Tasks.md'] } : undefined
+    };
+    const headings = new Map([
+      [first.path, ['Schedule', 'Notes']],
+      [second.path, ['Tasks', 'Notes']]
+    ]);
+
+    expect(getJournalsTemplateHeadings(makeApp(plugin, files, headings), 'Daily')).toEqual([
+      'Schedule',
+      'Notes',
+      'Tasks'
+    ]);
   });
 
   it('resolves an existing entry without recreating it', async () => {

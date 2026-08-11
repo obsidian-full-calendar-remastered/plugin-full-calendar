@@ -125,6 +125,7 @@ export function addCalendarButton(
         (dropdown = d.addOptions({
           local: t('settings.calendars.types.local'),
           dailynote: t('settings.calendars.types.dailynote'),
+          journals: t('settings.calendars.types.journals'),
           icloud: t('settings.calendars.types.icloud'),
           caldav: t('settings.calendars.types.caldav'),
           ical: t('settings.calendars.types.ical'),
@@ -156,7 +157,8 @@ export function addCalendarButton(
           }
         }
 
-        const providerType = sourceType === 'icloud' ? 'caldav' : sourceType;
+        const providerType =
+          sourceType === 'icloud' ? 'caldav' : sourceType === 'journals' ? 'dailynote' : sourceType;
 
         const providerClass =
           await PluginState.getProviderRegistry().getProviderForType(providerType);
@@ -196,7 +198,14 @@ export function addCalendarButton(
             s => s.color
           );
 
-          const initialConfig = sourceType === 'icloud' ? { url: 'https://caldav.icloud.com' } : {};
+          const initialConfig =
+            sourceType === 'icloud'
+              ? { url: 'https://caldav.icloud.com' }
+              : sourceType === 'journals'
+                ? { provider: 'journals' }
+                : sourceType === 'dailynote'
+                  ? { provider: 'daily-notes' }
+                  : {};
 
           // Base props for all provider components
           // Minimal shared config component props; provider-specific components can accept additional fields.
@@ -263,6 +272,10 @@ export function addCalendarButton(
                     providerType as CalendarInfo['type'],
                     existingCalendarColors
                   );
+
+                  if (sourceType === 'journals') {
+                    partialSource.name = t('settings.calendars.defaults.journals');
+                  }
 
                   // Create the full, valid CalendarInfo object first.
                   const finalSource = {

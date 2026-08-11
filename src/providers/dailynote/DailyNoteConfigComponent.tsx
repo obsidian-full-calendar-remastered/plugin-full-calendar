@@ -10,7 +10,11 @@ import {
 import { ProviderConfigContext } from '../typesProvider';
 import { t } from '../../features/i18n/i18n';
 import type FullCalendarPlugin from '../../main';
-import { getJournalsDayJournals, getJournalsPlugin } from './DailyNoteSourceAdapter';
+import {
+  getJournalsDayJournals,
+  getJournalsPlugin,
+  getJournalsTemplateHeadings
+} from './DailyNoteSourceAdapter';
 
 interface DailyNoteConfigComponentProps {
   plugin: FullCalendarPlugin;
@@ -31,15 +35,17 @@ export const DailyNoteConfigComponent: React.FC<DailyNoteConfigComponentProps> =
 }) => {
   const [heading, setHeading] = React.useState(config.heading || '');
   const [format, setFormat] = React.useState<DailyNoteEventFormat>(getDailyNoteEventFormat(config));
-  const [provider, setProvider] = React.useState<DailyNoteSourceProvider>(
-    getDailyNoteSourceProvider(config)
-  );
+  const provider: DailyNoteSourceProvider = getDailyNoteSourceProvider(config);
   const journalsPlugin = getJournalsPlugin(plugin.app);
   const dayJournals = getJournalsDayJournals(plugin.app);
   const initialJournalId =
     config.journalId ||
     (provider === 'journals' && dayJournals.length === 1 ? dayJournals[0].name : '');
   const [journalId, setJournalId] = React.useState(initialJournalId);
+  const availableHeadings =
+    provider === 'journals' && journalId
+      ? getJournalsTemplateHeadings(plugin.app, journalId)
+      : context.headings;
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -59,45 +65,6 @@ export const DailyNoteConfigComponent: React.FC<DailyNoteConfigComponentProps> =
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="setting-item">
-        <div className="setting-item-info">
-          <div className="setting-item-name">
-            {t('settings.calendars.dailyNote.provider.label')}
-          </div>
-          <div className="setting-item-description">
-            {t('settings.calendars.dailyNote.provider.description')}
-          </div>
-        </div>
-        <div className="setting-item-control">
-          <select
-            className="dropdown"
-            value={provider}
-            onChange={e => {
-              const nextProvider = e.target.value as DailyNoteSourceProvider;
-              const nextJournalId =
-                nextProvider === 'journals' && dayJournals.length === 1
-                  ? dayJournals[0].name
-                  : journalId;
-              setProvider(nextProvider);
-              setJournalId(nextJournalId);
-              onConfigChange({
-                ...config,
-                heading,
-                format,
-                provider: nextProvider,
-                journalId: nextJournalId || undefined
-              });
-            }}
-          >
-            <option value="daily-notes">
-              {t('settings.calendars.dailyNote.provider.options.dailyNotes')}
-            </option>
-            <option value="journals">
-              {t('settings.calendars.dailyNote.provider.options.journals')}
-            </option>
-          </select>
-        </div>
-      </div>
       {provider === 'journals' && (
         <div className="setting-item">
           <div className="setting-item-info">
@@ -146,7 +113,7 @@ export const DailyNoteConfigComponent: React.FC<DailyNoteConfigComponentProps> =
               setHeading(newValue);
               onConfigChange({ ...config, heading: newValue });
             }}
-            headings={context.headings}
+            headings={availableHeadings}
           />
         </div>
       </div>

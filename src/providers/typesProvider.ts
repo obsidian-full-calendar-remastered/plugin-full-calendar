@@ -1,4 +1,6 @@
 import { ComponentType } from 'react';
+import type FullCalendarPlugin from '../main';
+import type { CalendarInfo } from '../types';
 
 /**
  * The persistent, source-of-truth locator for an event within its source.
@@ -23,3 +25,9 @@ export type ProviderConfigContext = {
  * A generic type for a React component used in the provider interface.
  */
 export type FCReactComponent<T> = ComponentType<T>;
+
+export type ProviderSettingsRowProps = {
+  source: Partial<CalendarInfo>;
+  plugin?: FullCalendarPlugin;
+  onSourceChange?: (changes: Partial<CalendarInfo>) => void;
+};

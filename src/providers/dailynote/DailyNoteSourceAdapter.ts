@@ -35,6 +35,7 @@ type JournalsIndex = {
 export type JournalsPluginApi = {
   journals: JournalsDayJournal[];
   getJournal(name: string): JournalsDayJournal | undefined;
+  getJournalConfig?(name: string): { templates?: string[] } | undefined;
   index: JournalsIndex;
 };
 
@@ -89,6 +90,27 @@ export function getJournalsPlugin(app: App): JournalsPluginApi | null {
 
 export function getJournalsDayJournals(app: App): JournalsDayJournal[] {
   return getJournalsPlugin(app)?.journals.filter(isDayJournal) ?? [];
+}
+
+const getHeadingsFromTemplates = (app: App, templates: string[]): string[] => {
+  const headings = templates.flatMap(template => {
+    const path = template.endsWith('.md') ? template : `${template}.md`;
+    const file = app.vault.getFileByPath(path);
+    return file
+      ? (app.metadataCache.getFileCache(file)?.headings?.map(item => item.heading) ?? [])
+      : [];
+  });
+  return [...new Set(headings)];
+};
+
+export function getJournalsTemplateHeadings(app: App, journalId: string): string[] {
+  const templates = getJournalsPlugin(app)?.getJournalConfig?.(journalId)?.templates;
+  return Array.isArray(templates) ? getHeadingsFromTemplates(app, templates) : [];
+}
+
+export function getObsidianDailyNoteTemplateHeadings(app: App): string[] {
+  const { template } = getDailyNoteSettings();
+  return template ? getHeadingsFromTemplates(app, [template]) : [];
 }
 
 export class ObsidianDailyNoteSourceAdapter implements DailyNoteSourceAdapter {

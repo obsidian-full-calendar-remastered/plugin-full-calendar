@@ -21,7 +21,12 @@ import {
   SyncKeyProvider,
   CanonicalTitleProvider
 } from '../Provider';
-import { EventHandle, FCReactComponent, ProviderConfigContext } from '../typesProvider';
+import {
+  EventHandle,
+  FCReactComponent,
+  ProviderConfigContext,
+  ProviderSettingsRowProps
+} from '../typesProvider';
 import {
   DailyNoteProviderConfig,
   getDailyNoteEventFormat,
@@ -29,12 +34,15 @@ import {
 } from './typesDaily';
 import {
   DailyNoteSourceAdapter,
+  getJournalsTemplateHeadings,
+  getObsidianDailyNoteTemplateHeadings,
   JournalsDailyNoteSourceAdapter,
   ObsidianDailyNoteSourceAdapter
 } from './DailyNoteSourceAdapter';
 import { DailyNoteConfigComponent } from './DailyNoteConfigComponent';
 import { DailyNoteDecorator } from './codemirror/DailyNoteDecorator';
 import { LivePreviewDecorator } from '../../features/livepreview/LivePreviewDecorator';
+import { HeadingInput } from '../../ui/components/forms/HeadingInput';
 
 type MomentFactory = typeof import('moment');
 const moment = obsidianMoment as unknown as MomentFactory;
@@ -67,9 +75,11 @@ const waitForMetadataWithTimeout = async (
 };
 
 // Settings row component for Daily Note Provider
-const DailyNoteHeadingSetting: React.FC<{
-  source: Partial<import('../../types').CalendarInfo>;
-}> = ({ source }) => {
+const DailyNoteHeadingSetting: React.FC<ProviderSettingsRowProps> = ({
+  source,
+  plugin,
+  onSourceChange
+}) => {
   // Handle both flat and nested config structures for heading
   const getHeading = (): string => {
     const flat = (source as { heading?: unknown }).heading;
@@ -83,16 +93,20 @@ const DailyNoteHeadingSetting: React.FC<{
     provider === 'journals'
       ? `${t('settings.calendars.dailyNote.provider.options.journals')}: ${typeof journalId === 'string' ? journalId : ''}`
       : t('settings.calendars.dailyNote.provider.options.dailyNotes');
+  const headings = plugin
+    ? provider === 'journals' && typeof journalId === 'string'
+      ? getJournalsTemplateHeadings(plugin.app, journalId)
+      : getObsidianDailyNoteTemplateHeadings(plugin.app)
+    : [];
 
   return React.createElement(
     'div',
     { className: 'setting-item-control ofc-heading-setting-control' },
     React.createElement('span', {}, sourceLabel),
-    React.createElement('input', {
-      disabled: true,
-      type: 'text',
+    React.createElement(HeadingInput, {
       value: getHeading(),
-      className: 'ofc-setting-input is-inline'
+      headings,
+      onChange: heading => onSourceChange?.({ heading })
     }),
     React.createElement(
       'span',
@@ -461,9 +475,7 @@ export class DailyNoteProvider
     return DailyNoteConfigWrapper;
   }
 
-  getSettingsRowComponent(): FCReactComponent<{
-    source: Partial<import('../../types').CalendarInfo>;
-  }> {
+  getSettingsRowComponent(): FCReactComponent<ProviderSettingsRowProps> {
     return DailyNoteHeadingSetting;
   }
 

@@ -18,7 +18,7 @@ export function renderActivityWatchSettings(
     .setName(t('settings.activityWatch.enable.label'))
     .setDesc(
       createDescWithDocs(t('settings.activityWatch.enable.description'), [
-        { text: 'ActivityWatch integration', path: 'user/features/activitywatch' },
+        { text: 'ActivityWatch integration', path: 'user/calendars/activitywatch/' },
         { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
       ])
     )

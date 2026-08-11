@@ -26,6 +26,13 @@ Creates one-note-per-event records, supports full CRUD, and uses robust filename
 
 Parses list items under configured heading and performs line-targeted updates. Implements a persistent locally-allocated `uid` mechanism (`[uid:: N]`) instead of legacy deduplication matching, enabling deterministic title edits and O(1) hinted line lookups during sync updates.
 
+Note lookup and creation are delegated through a source adapter:
+
+- `ObsidianDailyNoteSourceAdapter` preserves the existing `obsidian-daily-notes-interface` integration for core Daily Notes and Periodic Notes.
+- `JournalsDailyNoteSourceAdapter` validates the optional Journals runtime API, selects a configured Day journal, and delegates resolution/creation to that journal. Journals remains optional and owns its folder, naming, template, and frontmatter initialization.
+
+Both adapters feed the same heading parser, serializer, UID allocator, and CRUD implementation. The Journals adapter is intentionally narrow because Journals does not currently publish a documented third-party API; runtime shape checks contain that compatibility boundary.
+
 **Location & Description Mapping**: Serializes `location` and `description` into Dataview inline attribute format (`[location:: My Location]  [description:: My Description]`) within the daily note bullet list items.
 
 Timed-event serialization is source-configured and provider-owned:

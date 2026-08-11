@@ -13,13 +13,18 @@ You must be using one of the supported daily notes plugins in order to create a 
 
 -   [Daily Notes core plugin](https://help.obsidian.md/Plugins/Daily+notes)
 -   [Periodic Notes community plugin](https://github.com/liamcain/obsidian-periodic-notes)
+-   [Journals community plugin](https://github.com/srg-kostyrko/obsidian-journal) with a **Day** journal configured
 
 ## Configuring the Daily Notes calendar
 
 Add a new calendar with the "Daily note" type, then choose:
 
+- the note provider: Daily Notes / Periodic Notes, or Journals
+- the Day journal to use when Journals is selected
 - which heading from your daily note template events should be placed under
 - which write format timed events should use
+
+Journals is optional. When selected, Full Calendar asks the chosen Day journal to resolve and create entries, preserving its normal folder, filename, template, and journal frontmatter behavior. Obsidian's core Daily Notes plugin can be disabled in this setup.
 
 If your template does not have any headings, then you can enter free-form text to specify the heading that events will be placed under.
 

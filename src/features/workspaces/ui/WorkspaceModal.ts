@@ -210,7 +210,7 @@ export class WorkspaceModal extends Modal {
           displayName = `${t('modals.workspace.calendarTypes.dailyNotes')} ${calendar.name}`;
           break;
         case 'journals':
-          displayName = `${t('modals.workspace.calendarTypes.journals')} ${calendar.name}`;
+          displayName = calendar.name;
           break;
         case 'ical':
           displayName = `${t('modals.workspace.calendarTypes.ics')} ${calendar.name}`;

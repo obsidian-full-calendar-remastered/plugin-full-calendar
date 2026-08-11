@@ -192,7 +192,7 @@ export class AvailabilityShareModal extends Modal {
             displayName = `${t('modals.workspace.calendarTypes.dailyNotes') || 'Daily Notes:'} ${source.name}`;
             break;
           case 'journals':
-            displayName = `${t('modals.workspace.calendarTypes.journals')} ${source.name}`;
+            displayName = source.name;
             break;
           case 'ical':
             displayName = `${t('modals.workspace.calendarTypes.ics') || 'ICS:'} ${source.name}`;

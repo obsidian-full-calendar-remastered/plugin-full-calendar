@@ -12,7 +12,7 @@ export const DEFAULT_DAILY_NOTE_PROVIDER: DailyNoteSourceProvider = 'daily-notes
 
 export type DailyNoteProviderConfig = {
   type?: 'dailynote' | 'journals';
-  id: string; // The settings-level ID, e.g., "dailynote_1"
+  id: string; // The settings-level calendar source ID.
   heading: string;
   format?: DailyNoteEventFormat;
   provider?: DailyNoteSourceProvider;

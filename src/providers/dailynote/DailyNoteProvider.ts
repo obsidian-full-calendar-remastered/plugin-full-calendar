@@ -94,6 +94,10 @@ const DailyNoteHeadingSetting: React.FC<ProviderSettingsRowProps> = ({
     provider === 'journals'
       ? `${t('settings.calendars.dailyNote.provider.options.journals')}: ${typeof journalId === 'string' ? journalId : ''}`
       : t('settings.calendars.dailyNote.provider.options.dailyNotes');
+  const headingSummary =
+    provider === 'journals'
+      ? t('settings.calendars.dailyNote.heading.journalSummary')
+      : t('settings.calendars.dailyNote.heading.summary');
   const headings = plugin
     ? provider === 'journals' && typeof journalId === 'string'
       ? getJournalsTemplateHeadings(plugin.app, journalId)
@@ -109,11 +113,7 @@ const DailyNoteHeadingSetting: React.FC<ProviderSettingsRowProps> = ({
       headings,
       onChange: heading => onSourceChange?.({ heading })
     }),
-    React.createElement(
-      'span',
-      { className: 'ofc-heading-setting-suffix' },
-      t('settings.calendars.dailyNote.heading.summary')
-    )
+    React.createElement('span', { className: 'ofc-heading-setting-suffix' }, headingSummary)
   );
 };
 

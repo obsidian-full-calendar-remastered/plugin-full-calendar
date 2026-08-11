@@ -85,6 +85,7 @@ describe('Journals source identity and uniqueness', () => {
       'journals_1',
       'journals_2'
     ]);
+    expect(migrateAndSanitizeSettings(migrated.settings).needsSave).toBe(false);
   });
 
   it('preserves user-defined Journals calendar names', () => {

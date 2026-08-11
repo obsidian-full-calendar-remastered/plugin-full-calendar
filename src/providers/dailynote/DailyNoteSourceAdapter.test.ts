@@ -48,7 +48,7 @@ type TestApp = App & {
 type TestJournalEntry = { date: string; journal: string; path?: string };
 
 type MockJournal = Omit<JournalsDayJournal, 'get' | 'getNotePath' | 'open'> & {
-  get: jest.Mock<TestJournalEntry, [string]>;
+  get: jest.Mock<TestJournalEntry | null, [string]>;
   getNotePath: jest.Mock<string, [TestJournalEntry]>;
   open: jest.Mock<Promise<void>, [TestJournalEntry]>;
 };
@@ -60,7 +60,7 @@ const makeJournal = (
 ): MockJournal => ({
   name,
   type: 'day',
-  get: jest.fn<TestJournalEntry, [string]>(
+  get: jest.fn<TestJournalEntry | null, [string]>(
     (date: string): TestJournalEntry => entries.get(date) ?? { date, journal: name }
   ),
   getNotePath: jest.fn<string, [TestJournalEntry]>(
@@ -114,6 +114,16 @@ describe('Journals daily note source adapter', () => {
       journalId: 'Daily'
     });
     expect(() => adapter.getAllFiles()).toThrow(/not installed\/enabled/);
+  });
+
+  it('rejects an incompatible Journals runtime API', () => {
+    const incompatible = {
+      ...makePluginApi([]),
+      getJournalConfig: 'unexpected'
+    };
+    const app = makeApp(incompatible as unknown as JournalsPluginApi);
+
+    expect(getJournalsDayJournals(app)).toEqual([]);
   });
 
   it('enumerates one compatible Day journal and excludes other intervals', () => {
@@ -198,6 +208,38 @@ describe('Journals daily note source adapter', () => {
     expect(daily.get).toHaveBeenCalledWith('2026-08-11');
     expect(daily.open).toHaveBeenCalledWith({ date: '2026-08-11', journal: 'Daily' });
     expect(file?.path).toBe('Journal/Daily/2026-08-11.md');
+  });
+
+  it('reports when Journals cannot resolve an entry for the requested date', async () => {
+    const files = new Map<string, TFile>();
+    const daily = makeJournal('Daily', files, new Map());
+    daily.get.mockReturnValue(null);
+    const adapter = new JournalsDailyNoteSourceAdapter(makeApp(makePluginApi([daily]), files), {
+      id: 'journals_1',
+      heading: 'Schedule',
+      provider: 'journals',
+      journalId: 'Daily'
+    });
+
+    await expect(adapter.getFileForDate('2026-08-11', {} as never, true)).rejects.toThrow(
+      'Journals could not resolve an entry for 2026-08-11.'
+    );
+  });
+
+  it('reports when Journals does not create the expected note', async () => {
+    const files = new Map<string, TFile>();
+    const daily = makeJournal('Daily', files, new Map());
+    daily.open.mockResolvedValue(undefined);
+    const adapter = new JournalsDailyNoteSourceAdapter(makeApp(makePluginApi([daily]), files), {
+      id: 'journals_1',
+      heading: 'Schedule',
+      provider: 'journals',
+      journalId: 'Daily'
+    });
+
+    await expect(adapter.getFileForDate('2026-08-11', {} as never, true)).rejects.toThrow(
+      'Journals did not create the expected entry for 2026-08-11'
+    );
   });
 
   it('rejects a selected journal that was renamed or deleted', () => {

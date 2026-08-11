@@ -76,6 +76,9 @@ function isJournalsPluginApi(value: unknown): value is JournalsPluginApi {
   if (!value || typeof value !== 'object') return false;
   const plugin = value as Record<string, unknown>;
   if (!Array.isArray(plugin.journals) || typeof plugin.getJournal !== 'function') return false;
+  if (plugin.getJournalConfig !== undefined && typeof plugin.getJournalConfig !== 'function') {
+    return false;
+  }
   if (!plugin.index || typeof plugin.index !== 'object') return false;
   const index = plugin.index as Record<string, unknown>;
   return typeof index.getAllPaths === 'function' && typeof index.getForPath === 'function';

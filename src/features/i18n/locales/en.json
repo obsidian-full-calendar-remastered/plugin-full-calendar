@@ -836,8 +836,9 @@
         },
         "heading": {
           "label": "Heading",
-          "description": "Heading to store events under in the daily note.",
-          "summary": "in daily notes"
+          "description": "Heading to store events under in each date note.",
+          "summary": "in daily notes",
+          "journalSummary": "in journal entries"
         },
         "format": {
           "label": "Format",
@@ -1490,7 +1491,6 @@
       "calendarTypes": {
         "local": "Local:",
         "dailyNotes": "Daily Notes:",
-        "journals": "Journals:",
         "ics": "ICS:",
         "caldav": "CalDAV:",
         "google": "Google:",

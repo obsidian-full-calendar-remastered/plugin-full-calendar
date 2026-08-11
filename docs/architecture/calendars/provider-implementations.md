@@ -5,12 +5,12 @@
 
 ## Provider families
 
-| Family      | Providers             | Notes                                                                   |
-| ----------- | --------------------- | ----------------------------------------------------------------------- |
-| Local       | Full Note, Daily Note | Vault-backed, file-centric parsing and persistence.                     |
-| Remote      | Google, Outlook, CalDAV, ICS, Google Tasks   | Network-backed with auth/protocol handling and staged loading behavior. |
-| Integration | Tasks, TaskNotes, Bases | Plugin/API integration with custom semantics beyond simple event files. |
-| Virtual     | Holidays              | Computed on-the-fly from bundled data; no vault file or network backing. |
+| Family      | Providers                                  | Notes                                                                   |
+| ----------- | ------------------------------------------ | ----------------------------------------------------------------------- |
+| Local       | Full Note, Daily Note, Journals            | Vault-backed, file-centric parsing and persistence.                     |
+| Remote      | Google, Outlook, CalDAV, ICS, Google Tasks | Network-backed with auth/protocol handling and staged loading behavior. |
+| Integration | Tasks, TaskNotes, Bases                    | Plugin/API integration with custom semantics beyond simple event files. |
+| Virtual     | Holidays                                   | Computed on-the-fly from bundled data; no vault file or network backing. |
 
 ## Key implementation notes
 

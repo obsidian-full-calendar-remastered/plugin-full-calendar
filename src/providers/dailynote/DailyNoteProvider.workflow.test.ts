@@ -623,7 +623,6 @@ describe('DailyNoteProvider workflow', () => {
     );
 
     const events = await provider.getEventsInFile(file);
-
     expect(events).toHaveLength(1);
     expect(events[0][0]).toEqual(
       expect.objectContaining({
@@ -636,6 +635,73 @@ describe('DailyNoteProvider workflow', () => {
         allDay: false
       })
     );
+  });
+
+  describe('isFileRelevant', () => {
+    it('returns true if the file is in the daily note folder and has a valid date in its path', () => {
+      const app = createMockApp();
+      const provider = new DailyNoteProvider(
+        { id: 'dailynote_1', heading: 'Calendar' },
+        makePlugin(),
+        app
+      );
+
+      getDailyNoteSettingsMock.mockReturnValue({ folder: 'Daily', format: 'YYYY-MM-DD' });
+      const file = makeFile('Daily/2026-08-11.md');
+      expect(provider.isFileRelevant(file)).toBe(true);
+    });
+
+    it('returns false if the file starts with the folder name but does not have a valid daily note date', () => {
+      const app = createMockApp();
+      const provider = new DailyNoteProvider(
+        { id: 'dailynote_1', heading: 'Calendar' },
+        makePlugin(),
+        app
+      );
+
+      getDailyNoteSettingsMock.mockReturnValue({ folder: 'Daily', format: 'YYYY-MM-DD' });
+      const file = makeFile('Daily/NotADate.md');
+      expect(provider.isFileRelevant(file)).toBe(false);
+    });
+
+    it('returns false if the file is outside the configured daily note folder', () => {
+      const app = createMockApp();
+      const provider = new DailyNoteProvider(
+        { id: 'dailynote_1', heading: 'Calendar' },
+        makePlugin(),
+        app
+      );
+
+      getDailyNoteSettingsMock.mockReturnValue({ folder: 'Daily', format: 'YYYY-MM-DD' });
+      const file = makeFile('OtherFolder/2026-08-11.md');
+      expect(provider.isFileRelevant(file)).toBe(false);
+    });
+
+    it('returns true if folder is empty/not configured but the filename has a valid daily note date', () => {
+      const app = createMockApp();
+      const provider = new DailyNoteProvider(
+        { id: 'dailynote_1', heading: 'Calendar' },
+        makePlugin(),
+        app
+      );
+
+      getDailyNoteSettingsMock.mockReturnValue({ folder: '', format: 'YYYY-MM-DD' });
+      const file = makeFile('2026-08-11.md');
+      expect(provider.isFileRelevant(file)).toBe(true);
+    });
+
+    it('returns false if folder is empty/not configured and the filename does not have a valid daily note date', () => {
+      const app = createMockApp();
+      const provider = new DailyNoteProvider(
+        { id: 'dailynote_1', heading: 'Calendar' },
+        makePlugin(),
+        app
+      );
+
+      getDailyNoteSettingsMock.mockReturnValue({ folder: '', format: 'YYYY-MM-DD' });
+      const file = makeFile('Readme.md');
+      expect(provider.isFileRelevant(file)).toBe(false);
+    });
   });
 });
 type MomentFactory = typeof import('moment');

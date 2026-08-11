@@ -70,6 +70,18 @@ export function renderAppearanceSettings(
     });
 
   new Setting(containerEl)
+    .setName(t('settings.appearance.enableLivePreview.label'))
+    .setDesc(t('settings.appearance.enableLivePreview.description'))
+    .addToggle(toggle => {
+      toggle.setValue(PluginState.getSettings().enableLivePreview ?? true);
+      toggle.onChange(async val => {
+        PluginState.getSettings().enableLivePreview = val;
+        await PluginState.saveSettings();
+        _plugin.app.workspace.updateOptions();
+      });
+    });
+
+  new Setting(containerEl)
     .setName(t('settings.appearance.milestones.label'))
     .setDesc(
       createDescWithDocs(t('settings.appearance.milestones.description'), [

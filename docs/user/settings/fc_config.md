@@ -43,6 +43,7 @@ These settings allow you to focus on your active hours and clean up the UI:
 *   **Initial View (Desktop/Mobile)**: Define which [view mode](../views/index.md) (e.g., `timeGridWeek`, `listMonth`) the plugin opens by default on different devices.
 *   **Show Event in Status Bar**: Display the current or upcoming event in the Obsidian [status bar](../features/statusbar.md). See: [Status Bar Integration](../features/statusbar.md).
 *   **Highlight Current/Next Event**: Visually emphasize the event happening now or starting soon.
+*   **Enable Live Preview Event Decoration**: Toggle Live Preview editor decorations on or off. Disabling this option completely turns off CodeMirror event pills and header cards, allowing you to edit raw markdown task items (`- [ ]`) and daily notes without visual replacement.
 *   **Header Date Format**: Choose from several presets for how dates appear in column headers (e.g., `Wed 4/9`).
 *   **Run & View Load Debug Benchmark**: Run an on-demand benchmark measuring startup, stage loading, and individual calendar provider execution timing. Opens a copyable report modal with zero ongoing background overhead.
 

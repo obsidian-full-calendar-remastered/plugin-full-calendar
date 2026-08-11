@@ -333,6 +333,10 @@
     },
     "appearance": {
       "title": "Apariencia",
+      "enableLivePreview": {
+        "label": "Activar decoración de eventos en Live Preview",
+        "description": "Muestra eventos y encabezados con estilo directamente en sus Notas Diarias y editores de notas de eventos."
+      },
       "firstDay": {
         "label": "Día de inicio de la semana",
         "description": "Elige qué día de la semana comienza."

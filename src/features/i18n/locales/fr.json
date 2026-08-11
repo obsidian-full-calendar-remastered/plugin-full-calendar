@@ -333,6 +333,10 @@
     },
     "appearance": {
       "title": "Apparence",
+      "enableLivePreview": {
+        "label": "Activer la décoration d'événements en Live Preview",
+        "description": "Affiche les événements et les en-têtes stylisés directement dans vos notes quotidiennes et vos éditeurs de notes d'événements."
+      },
       "firstDay": {
         "label": "Premier jour de la semaine",
         "description": "Choisissez le jour de début de la semaine."

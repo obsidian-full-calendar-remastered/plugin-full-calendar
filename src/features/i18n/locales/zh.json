@@ -333,6 +333,10 @@
     },
     "appearance": {
       "title": "外观",
+      "enableLivePreview": {
+        "label": "启用实时预览事件装饰",
+        "description": "直接在您的日记和事件笔记编辑器中显示样式化的事件和标题。"
+      },
       "firstDay": {
         "label": "每周起始日",
         "description": "选择每周从哪一天开始。"

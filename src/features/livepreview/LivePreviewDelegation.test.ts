@@ -341,4 +341,17 @@ describe('LivePreviewDelegation Tests', () => {
     coordinator.destroy();
     expect(mockCache.off).toHaveBeenCalledWith('update', expect.any(Function));
   });
+
+  it('should return Decoration.none if enableLivePreview is set to false in settings', () => {
+    const file = new TFile();
+    file.path = 'test.md';
+    getActiveFileMock.mockReturnValue(file);
+    PluginState.getSettings().enableLivePreview = false;
+    const state = createTestState(file);
+    const decos = livePreviewStateFieldSpec.create(state);
+    expect(decos).toBe(Decoration.none);
+    expect(getDecorationsMock).not.toHaveBeenCalled();
+    // restore for subsequent tests
+    PluginState.getSettings().enableLivePreview = true;
+  });
 });

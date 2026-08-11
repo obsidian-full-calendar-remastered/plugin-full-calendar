@@ -197,6 +197,7 @@ export interface FullCalendarSettings {
   activeWorkspace: string | null; // Workspace ID, null means default view
   showEventInStatusBar: boolean;
   highlightCurrentOrNextEvent: boolean;
+  enableLivePreview: boolean;
 
   // New granular view configuration options
   slotMinTime?: string; // Format: 'HH:mm' - earliest time to display
@@ -298,6 +299,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   activeWorkspace: null,
   showEventInStatusBar: false,
   highlightCurrentOrNextEvent: true,
+  enableLivePreview: true,
 
   // New granular view configuration defaults
   slotMinTime: '00:00', // Show all hours by default

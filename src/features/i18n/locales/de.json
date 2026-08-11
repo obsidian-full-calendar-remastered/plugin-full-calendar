@@ -333,6 +333,10 @@
     },
     "appearance": {
       "title": "Aussehen",
+      "enableLivePreview": {
+        "label": "Live-Vorschau Event-Dekoration aktivieren",
+        "description": "Zeigt formatierte Events und Header direkt in Ihren täglichen Notizen und Event-Notiz-Editoren an."
+      },
       "firstDay": {
         "label": "Erster Tag der Woche",
         "description": "Wählen Sie den Starttag der Woche."

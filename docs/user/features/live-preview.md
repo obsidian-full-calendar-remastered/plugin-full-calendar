@@ -33,9 +33,20 @@ When editing a dedicated Event Note (FullNote) in Live Preview, the complex and 
 
 ---
 
+## 3. Disabling Live Preview Decorations
+
+If you prefer to edit raw markdown task items (`- [ ]`) directly without CodeMirror inline event pills or header card widgets replacing your text, you can disable this feature in settings:
+
+1. Open **Plugin Settings** -> **Appearance**.
+2. Turn off the **Enable Live Preview event decoration** toggle.
+3. The editor will instantly update across all open notes, removing all live preview decorations while leaving your calendar UI views and tasks integrations fully operational.
+
+---
+
 ## Technical Performance
 
 The Live Preview system is built to be extremely fast and lightweight:
 * **Cache-Driven Pulls**: Decorators do not parse markdown documents on the fly; they pull pre-parsed, highly optimized event payloads from the plugin's central **Event Cache**.
 * **Zero Input Latency**: Active-line exclusion and DOM rendering are debounced and highly optimized to avoid causing layout thrashing or typing lag.
 * **State Bridge Rendering**: Powered by a decoupled `StateField` bridge, ensuring block widgets render smoothly without triggering CodeMirror runtime warnings.
+

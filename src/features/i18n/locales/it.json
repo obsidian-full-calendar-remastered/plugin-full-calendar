@@ -333,6 +333,10 @@
     },
     "appearance": {
       "title": "Aspetto",
+      "enableLivePreview": {
+        "label": "Abilita decorazione eventi in Live Preview",
+        "description": "Mostra eventi e intestazioni formattate direttamente nelle Note Giornaliere e negli editor di note degli eventi."
+      },
       "firstDay": {
         "label": "Giorno iniziale della settimana",
         "description": "Scegli il giorno di inizio settimana."

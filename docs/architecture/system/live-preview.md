@@ -69,11 +69,16 @@ export interface LivePreviewDecorator {
 ### `LivePreviewCoordinatorPlugin`
 Registered as an Obsidian Editor Extension, it acts as the primary event loop observer:
 * **Lifecycle**: Listens for editor state transitions inside its `update(update: ViewUpdate)` loop.
+* **Global Toggle Circuit Breaker**: Before constructing decorations, `buildDecorationsForState` checks `PluginState.getSettings().enableLivePreview`. If set to `false`, it returns `Decoration.none` immediately, completely bypassing provider matching and decoration generation.
 * **Smart Invalidation**: Rebuilds decorations only if:
   1. The active editor file changes.
   2. The document contents are modified (`update.docChanged`).
   3. The cursor selection or line position changes (`update.selectionSet`).
   4. The viewport scroll state changes (`update.viewportChanged`).
+
+### Provider File Relevance Verification
+To ensure high precision and prevent visual decorations from bleeding into non-calendar notes:
+* **DailyNoteProvider Relevance**: In addition to validating configured daily note folder prefixes, `DailyNoteProvider.isFileRelevant(file)` executes `getDateFromFile(file, 'day') !== null`. This guarantees that non-daily notes (or unrelated files inside daily note folders) do not trigger daily note event decoration pipelines.
 
 ### Cache Update Reactor
 To handle background modifications (such as calendar sync or external edits), the coordinator registers a cache listener:

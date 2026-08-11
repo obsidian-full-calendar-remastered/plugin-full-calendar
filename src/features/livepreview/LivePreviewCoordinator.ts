@@ -72,6 +72,10 @@ function buildDecorationsForState(state: EditorState, activeFile: TFile | null):
   }
 
   try {
+    if (PluginState.getSettings().enableLivePreview === false) {
+      return Decoration.none;
+    }
+
     const activeProviders = PluginState.getProviderRegistry().getActiveProviders();
     const provider = activeProviders.find(p => {
       return (

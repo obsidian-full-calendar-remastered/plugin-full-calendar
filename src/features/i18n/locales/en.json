@@ -447,6 +447,10 @@
       "title": "Appearance",
       "highlightCurrentOrNextEvent": "Highlight current or next event",
       "highlightCurrentOrNextEventDesc": "Highlights the current timed event, or the immediate next timed event if none is active.",
+      "enableLivePreview": {
+        "label": "Enable Live Preview event decoration",
+        "description": "Show styled events and headers directly in your Daily Notes and event note editors."
+      },
       "firstDay": {
         "label": "Starting day of the week",
         "description": "Choose what day of the week to start."

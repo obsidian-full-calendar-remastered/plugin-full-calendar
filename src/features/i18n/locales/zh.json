@@ -806,7 +806,8 @@
         "tasks": "Tasks 集成",
         "bases": "Bases 日历",
         "taskNotes": "TaskNotes 集成",
-        "outlook": "Outlook 日历"
+        "outlook": "Outlook 日历",
+        "journals": "Journals calendar"
       },
       "linkedNotes": {
         "title": "链接笔记设置",

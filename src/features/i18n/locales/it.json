@@ -806,7 +806,8 @@
         "tasks": "Integrazione Tasks",
         "bases": "Calendario Bases",
         "taskNotes": "Integrazione TaskNote",
-        "outlook": "Outlook calendar"
+        "outlook": "Outlook calendar",
+        "journals": "Journals calendar"
       },
       "linkedNotes": {
         "title": "Impostazioni note collegate",

@@ -958,6 +958,7 @@
         "providerGuides": "Provider guides: ",
         "fullNote": "Full Note calendar",
         "dailyNote": "Daily Note calendar",
+        "journals": "Journals calendar",
         "ics": "ICS calendars",
         "caldav": "CalDAV calendars",
         "google": "Google calendar",

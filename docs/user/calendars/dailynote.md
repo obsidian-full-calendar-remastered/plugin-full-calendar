@@ -9,23 +9,19 @@ Store events in-line in Daily Notes. Each event is a list item. Timed events can
 
 ## Prerequisites
 
-You must be using one of the supported daily notes plugins in order to create a daily note calendar:
+You must be using one of the supported daily notes plugins in order to create a Daily Note calendar:
 
 -   [Daily Notes core plugin](https://help.obsidian.md/Plugins/Daily+notes)
 -   [Periodic Notes community plugin](https://github.com/liamcain/obsidian-periodic-notes)
--   [Journals community plugin](https://github.com/srg-kostyrko/obsidian-journal) with a **Day** journal configured
+
+To use the Obsidian Journals community plugin instead, add a separate [Journals calendar](journals.md).
 
 ## Configuring the Daily Notes calendar
 
-Add either a **Daily Note** calendar for core Daily Notes/Periodic Notes or a separate **Journals** calendar for an Obsidian Journals Day journal. Then choose:
+Add a **Daily Note** calendar for core Daily Notes or Periodic Notes. Then choose:
 
-- the Day journal to use when Journals is selected
 - which heading from the configured template or templates events should be placed under
 - which write format timed events should use
-
-Journals is optional. When selected, Full Calendar asks the chosen Day journal to resolve and create entries, preserving its normal folder, filename, template, and journal frontmatter behavior. Obsidian's core Daily Notes plugin can be disabled in this setup.
-
-One core Daily Note calendar and multiple Journals calendars can coexist. Add a separate Journals calendar for each Day journal you want to expose in Full Calendar.
 
 If your template does not have any headings, then you can enter free-form text to specify the heading that events will be placed under.
 

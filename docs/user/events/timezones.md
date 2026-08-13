@@ -16,7 +16,8 @@ Changing this is useful for:
 
 -   **Remote Collaboration:** Set it to a colleague's timezone to easily schedule meetings.
 
-<!-- Screenshot placeholder: Set Display Timezone -->
+!!! info "Display Timezone Selector"
+    The **Display Timezone** dropdown includes a search field and supports standard IANA timezone identifiers (e.g. `America/New_York`, `Europe/Berlin`, `Asia/Tokyo`), as well as a `System Default` option.
 
 ## How Timezones are Handled
 

@@ -13,9 +13,10 @@ The recurring event system in Full Calendar is designed to be both powerful and 
 3.  Optionally, set a **Start Repeat** and **End Repeat** date to define the range of the recurrence.
 4.  Save the event. A single source item will be created that represents the entire series.
 
-For note-backed calendars this is stored as one recurring note event. For CalDAV calendars, Full Calendar writes a real calendar recurrence rule (`RRULE`) to the remote calendar, so the event is a proper provider-side sequence rather than several local-looking copies.
+16: For note-backed calendars this is stored as one recurring note event. For CalDAV calendars, Full Calendar writes a real calendar recurrence rule (`RRULE`) to the remote calendar, so the event is a proper provider-side sequence rather than several local-looking copies.
 
-<!-- TODO: Add GIF of new recurring modal with "Repeats" dropdown -->
+!!! tip "Recurrence Rule Customization"
+    The **Repeats** dropdown updates dynamically based on the selected pattern, showing custom interval controls (e.g. interval input for "Every X days") and weekday selectors for weekly rules.
 
 !!! note "Daily Notes Limitation"
     Recurring events are not supported in "[Daily Note](../calendars/dailynote.md)" calendars. Please use a "[Full Note](../calendars/local.md)" calendar for recurring events.
@@ -52,7 +53,8 @@ Tasks in recurring events are now much more useful. You can mark a single instan
 -   **Future instances remain:** The task for the next week (or month) will appear as normal, ready to be completed.
 -   **Un-check the box:** If you made a mistake, simply un-check the box. This will delete the "completed" override and the original recurring instance will reappear.
 
-<!-- TODO: Add GIF of checking off a single recurring task -->
+!!! info "Provider-Agnostic Task Completion"
+    Recurring instance completion is backed by provider adapters. For TaskNotes and local calendars, toggling a single occurrence persists a targeted instance completion record while preserving the future recurrence rule.
 
 ---
 
@@ -82,4 +84,5 @@ Remote calendars respect cancellations and exceptions from the source and propag
 
 For CalDAV, the master recurring event and its exceptions usually live together in one `.ics` resource on the server. Full Calendar updates that shared resource in place when you edit or delete a single override, so the rest of the recurring series remains intact.
 
-<!-- TODO: Add Screenshot of DeleteRecurringModal -->
+!!! warning "Sequence Deletion Safety"
+    Choosing **Delete sequence** triggers a protective modal prompt summarizing affected occurrences and instances before executing removal.

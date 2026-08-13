@@ -158,6 +158,9 @@ nav:
                 - Interactions and Gestures: user/features/interactions.md
                 - Milestones and Progress: user/features/milestones.md
                 - Reminders and Notifications: user/features/reminders.md
+                - FCR Reminder Companion: user/features/fcr-reminder.md
+                - Wellness Break Timer: user/features/break-timer.md
+                - Export Event Cache (ICS): user/features/ics-export.md
                 - Weather Forecasts: user/features/weather.md
                 - Status Bar Integration: user/features/statusbar.md
                 - Internationalization: user/features/i18n.md
@@ -187,6 +190,14 @@ nav:
                 - API and Security: user/settings/api.md
     - Architecture Docs:
           - architecture/system/index.md
+          - API:
+                - architecture/api/index.md
+                - Overview: architecture/api/overview.md
+                - Public JS API: architecture/api/public-api.md
+                - REST Server: architecture/api/rest-server.md
+                - Scopes & Authorization: architecture/api/scopes-permissions.md
+                - Internal API Engine: architecture/api/internal-api.md
+                - Recipes & Integration Blueprints: architecture/api/recipes-blueprints.md
           - System:
                 - architecture/system/overview.md
                 - Event Cache: architecture/system/eventcache.md
@@ -202,6 +213,7 @@ nav:
                 - Testing and Validation: architecture/system/testing.md
                 - Backward Compatibility: architecture/system/backward-compatibility.md
                 - Live Preview System: architecture/system/live-preview.md
+                - Styling & CSS Architecture: architecture/system/styling.md
           - Provider Architecture:
                 - architecture/calendars/architecture.md
                 - Outlook Provider: architecture/calendars/outlook.md
@@ -224,6 +236,8 @@ nav:
                 - Linked Notes to Remote Events: architecture/system/features/event-linked-notes.md
                 - Note Templating Architecture: architecture/system/features/templates.md
                 - FCR Reminder Companion App: architecture/system/features/fcr-reminder-architecture.md
+                - Break Timer Architecture: architecture/system/features/break-timer-architecture.md
+                - ICS Export Architecture: architecture/system/features/ics-export-architecture.md
                 - Availability Sharing Architecture: architecture/system/features/availability-architecture.md
           - Views Architecture:
                 - architecture/views/architecture.md

@@ -2,6 +2,16 @@
 
 Full Calendar Remastered provides a permission-gated developer API and local REST server, allowing you to control and query your calendar data programmatically from other Obsidian plugins, in-vault user scripts (DataviewJS, Templater), or external command-line tools (CLI, shell scripts, Python, cron tasks).
 
+!!! abstract "Architectural Documentation Section"
+    For complete architectural specs, component boundaries, class contracts, TypeScript interfaces, and REST schemas, see the expanded **[Architectural API Documentation Section](../../architecture/api/index.md)**:
+    
+    * 🏛️ **[API Architecture Overview](../../architecture/api/overview.md)**: System flow, dual-layer design, and security sandbox model.
+    * ⚡ **[Public JavaScript API](../../architecture/api/public-api.md)**: In-vault plugin registry lookup, `requestAccess()`, and `AuthorizedAPI` method contracts.
+    * 🌐 **[Local REST Server](../../architecture/api/rest-server.md)**: HTTP daemon (`127.0.0.1:8540`), CORS headers, Bearer token middleware, and REST schemas.
+    * 🛡️ **[Scopes & Permissions](../../architecture/api/scopes-permissions.md)**: Capability matrix, token storage, and revocation mechanics.
+    * 🧩 **[Internal API Engine](../../architecture/api/internal-api.md)**: Active view tracking, workspace leaves, and `EventCache` integration.
+    * 📘 **[Recipes & Blueprints](../../architecture/api/recipes-blueprints.md)**: Production code blueprints for plugins, DataviewJS, Templater, and Python.
+
 !!! tip "Security Philosophy"
     You own your data. The API is **disabled by default**, runs strictly on your local machine (`127.0.0.1`), and requires explicit authorization via scoped tokens.
 
@@ -19,18 +29,17 @@ To set up programmatic access:
 6. Copy the generated `ofc_pat_...` secret token. **It will only be shown once!**
 
 !!! warning "Keep Your Tokens Secret"
-    Treat Personal Access Tokens like passwords. Anyone with access to your token can read or edit your calendar data.
-    Note that this may not be security scoped and sandboxe at the moment, but this is aa beta attempt to sandbox the plugin cache from other Obsidian plugins (OBSIDIAN does not natively provide such sandboxing options for plugins).
+    Treat Personal Access Tokens like passwords. Anyone with access to your token can read or edit your calendar data. Tokens can be instantly revoked under **Settings → API & Security**.
 
 ---
 
 ## 2. Integration Code Recipes
 
-Use the tabs below to copy code recipes for your scripting environment:
+Use the tabs below to copy code recipes for your scripting environment (for complete blueprints, see [Architectural Recipes](../../architecture/api/recipes-blueprints.md)):
 
 === "Bash / CLI (curl)"
 
-    Ensure your requests include the `Authorization: Bearer <token>` header.
+    Ensure your requests include the `Authorization: Bearer <token>` header. For endpoint specs, see [REST Server Specification](../../architecture/api/rest-server.md).
     
     ```bash
     # 1. Fetch all events scheduled for June 15th, 2026
@@ -60,6 +69,8 @@ Use the tabs below to copy code recipes for your scripting environment:
 
 === "Python"
 
+    For advanced Python automation, see [Python Blueprint](../../architecture/api/recipes-blueprints.md#4-python-cli--background-automation).
+
     ```python
     import requests
 
@@ -80,7 +91,7 @@ Use the tabs below to copy code recipes for your scripting environment:
 
 === "DataviewJS (Obsidian)"
 
-    You can run JS snippets directly inside your notes to query calendar events dynamically.
+    You can run JS snippets directly inside your notes to query calendar events dynamically. See [Public JS API Contract](../../architecture/api/public-api.md).
 
     ```javascript
     const pat = "ofc_pat_your_token";
@@ -127,7 +138,9 @@ Use the tabs below to copy code recipes for your scripting environment:
 
 ---
 
-## 3. API Endpoint Reference
+## 3. API Endpoint Reference Summary
+
+For full request/response payload schemas and HTTP status codes, see [REST Server Specification](../../architecture/api/rest-server.md).
 
 | Route | Method | Required Scope | Description |
 |---|---|---|---|
@@ -146,17 +159,17 @@ Use the tabs below to copy code recipes for your scripting environment:
 
 ---
 
-## 4. Permission Scopes
+## 4. Permission Scopes Summary
 
-Granular permission scopes govern token access to internal features:
+For scope definitions, capability matrices, and risk flags, see [Scopes & Permissions Spec](../../architecture/api/scopes-permissions.md).
 
-*   **`events:read`**: Allows searching/viewing events, viewing source notes, and reading metadata.
-*   **`events:write`**: Allows creating, updating, moving, completing, or deleting events.
-*   **`ui:open-calendar` / `ui:open-sidebar` / `ui:change-view`**: Access to focus and change the Obsidian workspace calendar views.
-*   **`providers:read` / `providers:write`**: Access to list calendar sources, check capabilities, and trigger manual remote synchronization.
-*   **`settings:read` / `settings:write`**: Access to read and modify all plugin configuration settings.
-*   **`system:full-access`**: Raw developer access bypasses. Recommended only for secure local scripting.
+* **`events:read`**: Read cached events, details, and source note locations.
+* **`events:write`**: Create, update, move, complete, schedule, or delete events.
+* **`ui:open-calendar` / `ui:open-sidebar` / `ui:change-view`**: Focus and control active Obsidian calendar workspace views.
+* **`providers:read` / `providers:write`**: Query calendar sources, check provider capabilities, and trigger remote revalidation.
+* **`settings:read` / `settings:write`**: Read or update plugin configuration settings.
+* **`system:full-access`**: Unrestricted access to raw internal plugin state (`getInternalState()`).
 
 ---
 
-[Security Settings](api.md) · [NLP Orchestrator](nlp.md) · [Back to Index](../index.md)
+[Architectural API Index](../../architecture/api/index.md) · [API Settings](../settings/api.md) · [NLP Orchestrator](nlp.md) · [Back to Index](../index.md)

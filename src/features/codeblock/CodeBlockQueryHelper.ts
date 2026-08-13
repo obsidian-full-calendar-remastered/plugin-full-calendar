@@ -71,7 +71,7 @@ export function getEventSources(
 
   // Parse Date Range Offsets & initialDate
   let initialDate: string | undefined = undefined;
-  let baseDate = DateTime.now().startOf('day');
+  let baseDate: DateTime = DateTime.now().startOf('day');
   if (config.defaultDate === 'today') {
     initialDate = DateTime.now().toISODate() || '';
     baseDate = DateTime.now().startOf('day');

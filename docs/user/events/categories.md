@@ -47,7 +47,8 @@ This feature can perform a one-time, permanent modification of your event notes.
     -   **Forced Default Update:** You provide a default category, and it will be prepended to *all* event titles.
 4.  If you cancel this modal, no bulk changes are applied.
 
-<!-- TODO: Add GIF of new enable categories flow with both modals -->
+!!! info "Bulk Migration Modal"
+    The migration modal inspects your vault and lists every modified event note prior to executing changes, so you can review updated titles before saving.
 
 ## Managing Category Colors
 
@@ -58,7 +59,8 @@ Once enabled, a new management section will appear in the settings.
 -   **Delete a Setting:** Click **Delete** to remove a category's color setting. This *does not* remove the category from your event titles.
 -   **Save:** After making changes, click **Save Category Settings**.
 
-<!-- TODO: Add GIF of new manage categories UI with autocomplete -->
+!!! tip "Autocomplete Suggestions"
+    The input field dynamically scans all event titles across your active calendars to suggest unconfigured categories as you type.
 
 ---
 

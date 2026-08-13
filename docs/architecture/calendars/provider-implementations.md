@@ -8,7 +8,8 @@
 | Family      | Providers             | Load Priority | Notes |
 | ----------- | --------------------- | :---: | ----------------------------------------------------------------------- |
 | Local       | Full Note             | `10`  | Stage 0 local sync. Vault-backed, file-centric parsing and persistence. |
-| Local       | Daily Note            | `20`  | Stage 0 local sync. List item parsing under heading,Dataview format support. |
+| Local       | Daily Note            | `20`  | Stage 0 local sync. List item parsing under heading, Dataview format support. |
+| Local       | Journals              | `20`  | Stage 0 local sync. Reuses Daily Note date-note CRUD base for Day journals. |
 | Local       | Obsidian Bases        | `10`  | Stage 0 local sync. Evaluates `.base` filters and frontmatter date fields. Read-only. |
 | Integration | Tasks                 | `30`  | Stage 0 local sync. Plugin cache integration, surgical markdown line updates. |
 | Integration | TaskNotes             | `40`  | Stage 0 local sync. Service/UI integration with provider-owned NLP endpoint. |
@@ -34,6 +35,15 @@ Creates one-note-per-event records, supports full CRUD, and uses robust filename
 ### Daily Note Provider
 
 Parses list items under configured heading and performs line-targeted updates. Implements a persistent locally-allocated `uid` mechanism (`[uid:: N]`) instead of legacy deduplication matching, enabling deterministic title edits and O(1) hinted line lookups during sync updates.
+
+Note lookup and creation are delegated through a source adapter:
+
+- `ObsidianDailyNoteSourceAdapter` preserves the existing `obsidian-daily-notes-interface` integration for core Daily Notes and Periodic Notes.
+- `JournalsDailyNoteSourceAdapter` validates the optional Journals runtime API, selects a configured Day journal, and delegates resolution/creation to that journal. Journals remains optional and owns its folder, naming, template, and frontmatter initialization.
+
+Both adapters feed the same heading parser, serializer, UID allocator, and CRUD implementation. The Journals adapter is intentionally narrow because Journals does not currently publish a documented third-party API; runtime shape checks contain that compatibility boundary.
+
+Daily Notes and Journals have independent persisted source discriminators (`dailynote` and `journals`). `JournalsProvider` reuses `DailyNoteProvider` as its date-note CRUD base, while remaining separately registered so multiple selected Day journals can coexist without participating in the single Daily Note source limit. Legacy Journals sources saved as `type: dailynote` plus `provider: journals` are migrated to `type: journals`.
 
 **Location & Description Mapping**: Serializes `location` and `description` into Dataview inline attribute format (`[location:: My Location]  [description:: My Description]`) within the daily note bullet list items.
 

@@ -678,7 +678,8 @@
       "addCalendarTooltip": "添加日历",
       "defaults": {
         "iCloud": "iCloud 日历",
-        "new": "新建 {{type}} 日历"
+        "new": "新建 {{type}} 日历",
+        "journals": "Journals"
       },
       "types": {
         "local": "完整笔记",
@@ -691,7 +692,8 @@
         "bases": "Obsidian Bases",
         "tasknotes": "TaskNotes",
         "outlook": "Outlook Calendar",
-        "holidays": "Holidays"
+        "holidays": "Holidays",
+        "journals": "Journals"
       },
       "fullNote": {
         "directory": {
@@ -714,7 +716,9 @@
       "dailyNote": {
         "heading": {
           "label": "标题",
-          "description": "日记中存储事件的标题。"
+          "description": "日记中存储事件的标题。",
+          "summary": "in daily notes",
+          "journalSummary": "in journal entries"
         },
         "format": {
           "label": "格式",
@@ -723,6 +727,19 @@
             "default": "默认",
             "dayPlanner": "日程计划格式"
           }
+        },
+        "provider": {
+          "options": {
+            "dailyNotes": "Daily Notes / Periodic Notes",
+            "journals": "Journals"
+          }
+        },
+        "journal": {
+          "label": "Day journal",
+          "description": "Select the Journals Day journal to use.",
+          "select": "Select a Day journal",
+          "unavailable": "Install and enable the Journals plugin to use this provider.",
+          "none": "Configure a Day journal in Journals before adding this calendar."
         }
       },
       "ics": {
@@ -799,7 +816,8 @@
         "tasks": "Tasks 集成",
         "bases": "Bases 日历",
         "taskNotes": "TaskNotes 集成",
-        "outlook": "Outlook 日历"
+        "outlook": "Outlook 日历",
+        "journals": "Journals calendar"
       },
       "linkedNotes": {
         "title": "链接笔记设置",

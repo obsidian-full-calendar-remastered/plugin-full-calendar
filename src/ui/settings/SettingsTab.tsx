@@ -42,6 +42,7 @@ import { generateCalendarId } from '../../types/calendar_settings';
 import { t } from '../../features/i18n/i18n';
 import { createDescWithDocs, createDocsLinksFragment } from './docsLinks';
 import { getMilestoneCards } from '../../features/milestones/milestones';
+import { canAddCalendarOfType } from './calendarSourceValidation';
 
 // Import the new React components
 import './changelogs/changelog.css';
@@ -125,6 +126,7 @@ export function addCalendarButton(
         (dropdown = d.addOptions({
           local: t('settings.calendars.types.local'),
           dailynote: t('settings.calendars.types.dailynote'),
+          journals: t('settings.calendars.types.journals'),
           icloud: t('settings.calendars.types.icloud'),
           caldav: t('settings.calendars.types.caldav'),
           ical: t('settings.calendars.types.ical'),
@@ -196,7 +198,14 @@ export function addCalendarButton(
             s => s.color
           );
 
-          const initialConfig = sourceType === 'icloud' ? { url: 'https://caldav.icloud.com' } : {};
+          const initialConfig =
+            sourceType === 'icloud'
+              ? { url: 'https://caldav.icloud.com' }
+              : sourceType === 'journals'
+                ? { provider: 'journals' }
+                : sourceType === 'dailynote'
+                  ? { provider: 'daily-notes' }
+                  : {};
 
           // Base props for all provider components
           // Minimal shared config component props; provider-specific components can accept additional fields.
@@ -235,15 +244,15 @@ export function addCalendarButton(
                 const configs = Array.isArray(finalConfigs) ? finalConfigs : [finalConfigs];
 
                 // Validate: only one dailynote source allowed
-                if (providerType === 'dailynote') {
-                  const existingDailyNotes = PluginState.getSettings().calendarSources.filter(
-                    s => s.type === 'dailynote'
-                  );
-                  if (existingDailyNotes.length >= 1) {
-                    showNotice(t('settings.warnings.oneDailyNote'));
-                    modal.close();
-                    return;
-                  }
+                if (
+                  !canAddCalendarOfType(
+                    providerType as CalendarInfo['type'],
+                    PluginState.getSettings().calendarSources
+                  )
+                ) {
+                  showNotice(t('settings.warnings.oneDailyNote'));
+                  modal.close();
+                  return;
                 }
                 // Collect IDs from both settings and ProviderRegistry to prevent race conditions
                 const settingsIds = PluginState.getSettings().calendarSources.map(s => s.id);
@@ -263,6 +272,14 @@ export function addCalendarButton(
                     providerType as CalendarInfo['type'],
                     existingCalendarColors
                   );
+
+                  if (sourceType === 'journals') {
+                    const journalId = finalConfig.journalId;
+                    partialSource.name =
+                      typeof journalId === 'string' && journalId.length > 0
+                        ? `${t('settings.calendars.defaults.journals')}: ${journalId}`
+                        : t('settings.calendars.defaults.journals');
+                  }
 
                   // Create the full, valid CalendarInfo object first.
                   const finalSource = {

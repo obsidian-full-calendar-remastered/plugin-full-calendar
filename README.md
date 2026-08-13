@@ -19,6 +19,7 @@ Full Calendar supports multiple calendar sources:
 
 - [**Full Note**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/local/): Events from frontmatter on individual notes
 - [**Daily Note**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/dailynote/): Events from event lists in daily notes
+- [**Journals**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/journals/): Events from selected Obsidian Journals Day journals
 - [**ICS**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/ics/): Read-only remote or local ICS files
 - [**CalDAV**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/caldav/): Two-way sync with CalDAV servers
 - [**Google Calendar**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/gcal/): Two-way sync with Google Calendar

@@ -129,6 +129,7 @@ nav:
                 - user/calendars/index.md
                 - Full Note Calendar: user/calendars/local.md
                 - Daily Note Calendar: user/calendars/dailynote.md
+                - Journals Calendar: user/calendars/journals.md
                 - ICS (Remote and Local): user/calendars/ics.md
                 - CalDAV: user/calendars/caldav.md
                 - Google Calendar: user/calendars/gcal.md

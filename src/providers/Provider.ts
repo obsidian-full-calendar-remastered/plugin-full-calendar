@@ -1,5 +1,10 @@
 import { OFCEvent, EventLocation } from '../types';
-import { EventHandle, ProviderConfigContext, FCReactComponent } from './typesProvider';
+import {
+  EventHandle,
+  ProviderConfigContext,
+  FCReactComponent,
+  ProviderSettingsRowProps
+} from './typesProvider';
 import type FullCalendarPlugin from '../main';
 import { LivePreviewDecorator } from '../features/livepreview/LivePreviewDecorator';
 
@@ -170,9 +175,7 @@ export interface CalendarProvider<TConfig> {
     onClose: () => void;
   }>;
 
-  getSettingsRowComponent(): FCReactComponent<{
-    source: Partial<import('../types').CalendarInfo>;
-  }>;
+  getSettingsRowComponent(): FCReactComponent<ProviderSettingsRowProps>;
 
   getEditorDecorator?(): LivePreviewDecorator;
 }

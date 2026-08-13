@@ -678,7 +678,8 @@
       "addCalendarTooltip": "Ajouter un calendrier",
       "defaults": {
         "iCloud": "Calendrier iCloud",
-        "new": "Nouveau calendrier {{type}}"
+        "new": "Nouveau calendrier {{type}}",
+        "journals": "Journals"
       },
       "types": {
         "local": "Note complète",
@@ -691,7 +692,8 @@
         "bases": "Obsidian Bases",
         "tasknotes": "TaskNotes",
         "outlook": "Outlook Calendar",
-        "holidays": "Holidays"
+        "holidays": "Holidays",
+        "journals": "Journals"
       },
       "fullNote": {
         "directory": {
@@ -714,7 +716,9 @@
       "dailyNote": {
         "heading": {
           "label": "En-tête",
-          "description": "En-tête sous lequel stocker les événements dans la note quotidienne."
+          "description": "En-tête sous lequel stocker les événements dans la note quotidienne.",
+          "summary": "in daily notes",
+          "journalSummary": "in journal entries"
         },
         "format": {
           "label": "Format",
@@ -723,6 +727,19 @@
             "default": "Default",
             "dayPlanner": "DayPlanner Format"
           }
+        },
+        "provider": {
+          "options": {
+            "dailyNotes": "Daily Notes / Periodic Notes",
+            "journals": "Journals"
+          }
+        },
+        "journal": {
+          "label": "Day journal",
+          "description": "Select the Journals Day journal to use.",
+          "select": "Select a Day journal",
+          "unavailable": "Install and enable the Journals plugin to use this provider.",
+          "none": "Configure a Day journal in Journals before adding this calendar."
         }
       },
       "ics": {
@@ -799,7 +816,8 @@
         "tasks": "Intégration Tasks",
         "bases": "Calendrier Bases",
         "taskNotes": "Intégration TaskNote",
-        "outlook": "Outlook calendar"
+        "outlook": "Outlook calendar",
+        "journals": "Journals calendar"
       },
       "linkedNotes": {
         "title": "Paramètres des notes liées",

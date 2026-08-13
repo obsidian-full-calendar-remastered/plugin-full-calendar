@@ -193,6 +193,7 @@ export function renderCalendarManagement(
       [
         { text: t('settings.calendars.docs.fullNote'), path: 'user/calendars/local' },
         { text: t('settings.calendars.docs.dailyNote'), path: 'user/calendars/dailynote' },
+        { text: t('settings.calendars.docs.journals'), path: 'user/calendars/journals' },
         { text: t('settings.calendars.docs.ics'), path: 'user/calendars/ics' },
         { text: t('settings.calendars.docs.caldav'), path: 'user/calendars/caldav' },
         { text: t('settings.calendars.docs.google'), path: 'user/calendars/gcal' },

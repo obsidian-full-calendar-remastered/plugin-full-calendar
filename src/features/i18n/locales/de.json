@@ -678,7 +678,8 @@
       "addCalendarTooltip": "Kalender hinzufügen",
       "defaults": {
         "iCloud": "iCloud-Kalender",
-        "new": "Neuer {{type}} Kalender"
+        "new": "Neuer {{type}} Kalender",
+        "journals": "Journals"
       },
       "types": {
         "local": "Vollständige Notiz",
@@ -691,7 +692,8 @@
         "bases": "Obsidian Bases",
         "tasknotes": "TaskNotes",
         "outlook": "Outlook Calendar",
-        "holidays": "Holidays"
+        "holidays": "Holidays",
+        "journals": "Journals"
       },
       "fullNote": {
         "directory": {
@@ -714,7 +716,9 @@
       "dailyNote": {
         "heading": {
           "label": "Überschrift",
-          "description": "Überschrift zum Speichern von Ereignissen in der Tagesnotiz."
+          "description": "Überschrift zum Speichern von Ereignissen in der Tagesnotiz.",
+          "summary": "in daily notes",
+          "journalSummary": "in journal entries"
         },
         "format": {
           "label": "Format",
@@ -723,6 +727,19 @@
             "default": "Standard",
             "dayPlanner": "DayPlanner-Format"
           }
+        },
+        "provider": {
+          "options": {
+            "dailyNotes": "Daily Notes / Periodic Notes",
+            "journals": "Journals"
+          }
+        },
+        "journal": {
+          "label": "Day journal",
+          "description": "Select the Journals Day journal to use.",
+          "select": "Select a Day journal",
+          "unavailable": "Install and enable the Journals plugin to use this provider.",
+          "none": "Configure a Day journal in Journals before adding this calendar."
         }
       },
       "ics": {
@@ -799,7 +816,8 @@
         "tasks": "Tasks-Integration",
         "bases": "Bases-Kalender",
         "taskNotes": "TaskNote-Integration",
-        "outlook": "Outlook-Kalender"
+        "outlook": "Outlook-Kalender",
+        "journals": "Journals calendar"
       },
       "linkedNotes": {
         "title": "Einstellungen für verknüpfte Notizen",

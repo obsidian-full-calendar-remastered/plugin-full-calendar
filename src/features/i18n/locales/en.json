@@ -795,11 +795,13 @@
       },
       "defaults": {
         "iCloud": "iCloud Calendar",
-        "new": "New {{type}} Calendar"
+        "new": "New {{type}} Calendar",
+        "journals": "Journals"
       },
       "types": {
         "local": "Full note",
         "dailynote": "Daily Note",
+        "journals": "Journals",
         "icloud": "iCloud",
         "caldav": "CalDAV",
         "ical": "ICS",
@@ -829,9 +831,24 @@
         }
       },
       "dailyNote": {
+        "provider": {
+          "options": {
+            "dailyNotes": "Daily Notes / Periodic Notes",
+            "journals": "Journals"
+          }
+        },
+        "journal": {
+          "label": "Day journal",
+          "description": "Select the Journals Day journal to use.",
+          "select": "Select a Day journal",
+          "unavailable": "Install and enable the Journals plugin to use this provider.",
+          "none": "Configure a Day journal in Journals before adding this calendar."
+        },
         "heading": {
           "label": "Heading",
-          "description": "Heading to store events under in the daily note."
+          "description": "Heading to store events under in each date note.",
+          "summary": "in daily notes",
+          "journalSummary": "in journal entries"
         },
         "format": {
           "label": "Format",
@@ -951,6 +968,7 @@
         "providerGuides": "Provider guides: ",
         "fullNote": "Full Note calendar",
         "dailyNote": "Daily Note calendar",
+        "journals": "Journals calendar",
         "ics": "ICS calendars",
         "caldav": "CalDAV calendars",
         "google": "Google calendar",

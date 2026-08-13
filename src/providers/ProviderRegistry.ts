@@ -113,6 +113,7 @@ export class ProviderRegistry {
   public registerBuiltInProviders(): void {
     this.register('local', () => import('./fullnote/FullNoteProvider'));
     this.register('dailynote', () => import('./dailynote/DailyNoteProvider'));
+    this.register('journals', () => import('./journals/JournalsProvider'));
     this.register('ical', () => import('./ics/ICSProvider'));
     this.register('caldav', () => import('./caldav/CalDAVProvider'));
     this.register('google', () => import('./google/GoogleProvider'));

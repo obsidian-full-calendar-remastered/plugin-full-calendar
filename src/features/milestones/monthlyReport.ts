@@ -98,6 +98,7 @@ function buildCalendarsTable(
   const friendlyNames: Record<string, string> = {
     local: 'Local Vault Files',
     dailynote: 'Daily Notes Calendar',
+    journals: 'Journals Calendar',
     ical: 'iCal External Feeds',
     caldav: 'CalDAV Calendar',
     google: 'Google Calendar',

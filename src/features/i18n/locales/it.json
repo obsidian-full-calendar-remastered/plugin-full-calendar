@@ -678,7 +678,8 @@
       "addCalendarTooltip": "Aggiungi Calendario",
       "defaults": {
         "iCloud": "Calendario iCloud",
-        "new": "Nuovo calendario {{type}}"
+        "new": "Nuovo calendario {{type}}",
+        "journals": "Journals"
       },
       "types": {
         "local": "Nota completa",
@@ -691,7 +692,8 @@
         "bases": "Obsidian Bases",
         "tasknotes": "TaskNotes",
         "outlook": "Outlook Calendar",
-        "holidays": "Holidays"
+        "holidays": "Holidays",
+        "journals": "Journals"
       },
       "fullNote": {
         "directory": {
@@ -714,7 +716,9 @@
       "dailyNote": {
         "heading": {
           "label": "Intestazione",
-          "description": "Intestazione sotto cui salvare gli eventi nella nota giornaliera."
+          "description": "Intestazione sotto cui salvare gli eventi nella nota giornaliera.",
+          "summary": "in daily notes",
+          "journalSummary": "in journal entries"
         },
         "format": {
           "label": "Format",
@@ -723,6 +727,19 @@
             "default": "Default",
             "dayPlanner": "DayPlanner Format"
           }
+        },
+        "provider": {
+          "options": {
+            "dailyNotes": "Daily Notes / Periodic Notes",
+            "journals": "Journals"
+          }
+        },
+        "journal": {
+          "label": "Day journal",
+          "description": "Select the Journals Day journal to use.",
+          "select": "Select a Day journal",
+          "unavailable": "Install and enable the Journals plugin to use this provider.",
+          "none": "Configure a Day journal in Journals before adding this calendar."
         }
       },
       "ics": {
@@ -799,7 +816,8 @@
         "tasks": "Integrazione Tasks",
         "bases": "Calendario Bases",
         "taskNotes": "Integrazione TaskNote",
-        "outlook": "Outlook calendar"
+        "outlook": "Outlook calendar",
+        "journals": "Journals calendar"
       },
       "linkedNotes": {
         "title": "Impostazioni note collegate",

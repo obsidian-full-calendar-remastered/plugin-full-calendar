@@ -19,7 +19,13 @@ export function eqUrl(a: string, b: string) {
 export async function fetchCalendarInfo(
   url: string,
   auth?: { username?: string; password?: string }
-): Promise<{ isCalendar: boolean; displayName?: string; color?: string; error?: string }> {
+): Promise<{
+  isCalendar: boolean;
+  displayName?: string;
+  color?: string;
+  supportedComponents?: string[];
+  error?: string;
+}> {
   const headers: Record<string, string> = {
     Depth: '0',
     'Content-Type': 'application/xml; charset=utf-8',
@@ -32,10 +38,11 @@ export async function fetchCalendarInfo(
   }
 
   const body = `<?xml version="1.0" encoding="utf-8" ?>
-<d:propfind xmlns:d="DAV:" xmlns:ical="http://apple.com/ns/ical/">
+<d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:ical="http://apple.com/ns/ical/">
   <d:prop>
     <d:resourcetype/>
     <d:displayname/>
+    <c:supported-calendar-component-set/>
     <ical:calendar-color/>
   </d:prop>
 </d:propfind>`;
@@ -78,7 +85,19 @@ export async function fetchCalendarInfo(
       ?.replace(/^(?!#)/, '#')
       ?.match(/^.{7}/)?.[0];
 
-    return { isCalendar, displayName, color };
+    const componentSet =
+      /<[^:]*:?supported-calendar-component-set\b[^>]*>([\s\S]*?)<\/[^:]*:?supported-calendar-component-set>/i.exec(
+        xml
+      );
+    const supportedComponents = componentSet
+      ? Array.from(
+          componentSet[1].matchAll(
+            /<(?:[a-zA-Z0-9]+:)?comp\b[^>]*\bname=["']([^"']+)["'][^>]*\/?\s*>/gi
+          )
+        ).map(match => match[1].toUpperCase())
+      : undefined;
+
+    return { isCalendar, displayName, color, supportedComponents };
   } catch (e) {
     console.error(`[CalDAV] Error fetching calendar info for ${url}`, e);
     const message = e instanceof Error ? e.message : String(e);

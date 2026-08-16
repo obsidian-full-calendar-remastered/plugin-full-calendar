@@ -325,7 +325,7 @@ export function migrateAndSanitizeSettings(settings: unknown): {
       // CalDAV Passwords
       if (newSettings.calendarSources) {
         newSettings.calendarSources.forEach(source => {
-          if (source.type === 'caldav') {
+          if (source.type === 'caldav' || source.type === 'caldavtasks') {
             if (source.password) {
               secretStorage.setSecret(getSecretKey.caldavPassword(source.id), source.password);
               source.password = '';
@@ -384,7 +384,7 @@ export function migrateAndSanitizeSettings(settings: unknown): {
       // CalDAV Passwords
       if (newSettings.calendarSources) {
         newSettings.calendarSources.forEach(source => {
-          if (source.type === 'caldav') {
+          if (source.type === 'caldav' || source.type === 'caldavtasks') {
             const storedPwd = secretStorage.getSecret(getSecretKey.caldavPassword(source.id));
             if (storedPwd && storedPwd !== '') {
               source.password = storedPwd;

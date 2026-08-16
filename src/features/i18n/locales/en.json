@@ -804,6 +804,7 @@
         "journals": "Journals",
         "icloud": "iCloud",
         "caldav": "CalDAV",
+        "caldavTasks": "CalDAV Tasks",
         "ical": "ICS",
         "google": "Google Calendar",
         "outlook": "Outlook Calendar",
@@ -880,7 +881,36 @@
         },
         "importButton": "Import Calendars",
         "importing": "Importing...",
-        "importFailed": "Failed to import calendar"
+        "importFailed": "Failed to import calendar",
+        "errors": {
+          "authentication": "CalDAV authentication failed (HTTP 401).",
+          "permissionDenied": "CalDAV permission denied (HTTP 403).",
+          "invalidCollection": "The URL is not a valid CalDAV calendar collection. Enter the direct collection URL.",
+          "conflict": "The remote CalDAV resource changed (HTTP {{status}}). Refresh and try again.",
+          "requestFailed": "CalDAV request failed (HTTP {{status}}): {{statusText}}"
+        }
+      },
+      "caldavTasks": {
+        "title": "CalDAV Tasks",
+        "description": "Connect VTODO-compatible CalDAV task lists, including Apple Reminders.",
+        "backlogTitle": "CalDAV Tasks backlog",
+        "untitledTask": "Untitled task",
+        "importButton": "Add task list",
+        "importFailed": "Failed to add CalDAV task list",
+        "errors": {
+          "importFailedDetails": "Failed to add CalDAV task list: {{message}}",
+          "invalidCollection": "The URL is not a valid CalDAV task collection. Enter the direct task-list collection URL.",
+          "noVtodoCapability": "This CalDAV collection does not advertise VTODO support. Choose a task or reminder collection.",
+          "skippedMalformed": "Skipped {{count}} malformed CalDAV task resource(s).",
+          "recurringCreation": "Creating recurring CalDAV tasks is not yet supported.",
+          "unsupportedType": "This CalDAV VTODO event type is not supported.",
+          "missingUid": "Cannot update a CalDAV task without a UID.",
+          "completionUpdate": "Failed to update CalDAV task completion.",
+          "recurringInstance": "Editing individual recurring CalDAV task instances is not yet supported.",
+          "vtodoNotFound": "CalDAV task {{uid}} was not found in its resource.",
+          "malformedMissingCalendar": "Malformed iCalendar data: missing VCALENDAR.",
+          "malformedData": "Malformed iCalendar data: {{message}}"
+        }
       },
       "tasks": {
         "zeroConfig": {
@@ -971,6 +1001,7 @@
         "journals": "Journals calendar",
         "ics": "ICS calendars",
         "caldav": "CalDAV calendars",
+        "caldavTasks": "CalDAV Tasks",
         "google": "Google calendar",
         "outlook": "Outlook calendar",
         "tasks": "Tasks integration",
@@ -1328,6 +1359,7 @@
       "tooltips": {
         "recurringTaskCompletion": "Completion for recurring tasks can be toggled on individual instances in the calendar view.",
         "dailyNoteRecurring": "Recurring events are not supported in Daily Notes. Please use a 'Full Note' calendar instead.",
+        "caldavTaskRecurrence": "Existing VTODO recurrence is preserved, but creating or changing recurring CalDAV tasks is not yet supported.",
         "inheritedProperty": "This property is inherited. Click to edit the parent recurring event."
       }
     },

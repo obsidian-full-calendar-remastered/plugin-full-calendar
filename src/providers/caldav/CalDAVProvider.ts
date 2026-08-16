@@ -29,11 +29,12 @@ import { PluginState } from '../../core/PluginState';
 import { DateTime } from 'luxon';
 import { isTask } from '../../types/tasks';
 import { modifyFrontmatterString } from '../fullnote/frontmatter';
+import { t } from '../../features/i18n/i18n';
 
 import { fetchCalendarInfo } from './helper_caldav';
 
 // Helper function to ensure URL formatting is consistent.
-function canonCollection(u?: string): string {
+export function canonCollection(u?: string): string {
   return u ? (u.endsWith('/') ? u : `${u}/`) : (u as unknown as string);
 }
 
@@ -106,6 +107,7 @@ export type CalDAVTaskInboxItem = {
   status: string;
   completed: boolean;
   etag?: string;
+  href?: string;
 };
 
 export function encodeCalDAVTaskId(calendarId: string, uid: string): string {
@@ -148,6 +150,62 @@ function getSuccessfulPropNode(response: Element): Element | null {
   }
 
   return null;
+}
+
+function extractCalendarDataFromMultiStatus(doc: Document): CalendarObjectData[] {
+  const icsList: CalendarObjectData[] = [];
+  const responses = Array.from(doc.getElementsByTagNameNS('*', 'response'));
+
+  for (const response of responses) {
+    const hrefNode =
+      response.getElementsByTagNameNS('DAV:', 'href')[0] ||
+      response.getElementsByTagNameNS('*', 'href')[0];
+    const href = hrefNode?.textContent?.trim() || '';
+    const propstats = Array.from(response.getElementsByTagNameNS('*', 'propstat'));
+    const successfulProps: Element[] = [];
+
+    for (const propstat of propstats) {
+      const status = propstat.getElementsByTagNameNS('*', 'status')[0]?.textContent || '';
+      const statusCode = parseStatusCode(status);
+      if (statusCode === null || statusCode < 200 || statusCode >= 300) continue;
+
+      const prop = propstat.getElementsByTagNameNS('*', 'prop')[0];
+      if (prop) successfulProps.push(prop);
+    }
+
+    const calendarData = successfulProps
+      .flatMap(prop => {
+        const namespaced = Array.from(
+          prop.getElementsByTagNameNS('urn:ietf:params:xml:ns:caldav', 'calendar-data')
+        );
+        return namespaced.length > 0
+          ? namespaced
+          : Array.from(prop.getElementsByTagNameNS('*', 'calendar-data'));
+      })
+      .find(node => Boolean(node.textContent?.trim()));
+
+    // Apple includes the collection itself in a 207 response. Its calendar-data
+    // property is empty or belongs to a 404 propstat; neither is a task resource.
+    if (!calendarData?.textContent?.trim()) continue;
+
+    let etag: string | undefined;
+    for (const prop of successfulProps) {
+      etag =
+        prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent?.trim() ||
+        prop.getElementsByTagNameNS('*', 'getetag')[0]?.textContent?.trim() ||
+        etag;
+    }
+
+    icsList.push({
+      href,
+      // Parsing stays resource-scoped in the provider so one malformed object
+      // cannot discard other valid resources from the same 207 response.
+      ics: calendarData.textContent.trim(),
+      etag: etag || undefined
+    });
+  }
+
+  return icsList;
 }
 
 function extractCalendarObjectRefs(doc: Document): CalendarObjectRef[] {
@@ -208,9 +266,11 @@ function isUnscheduledTodo(todo: ical.Component): boolean {
 }
 
 function isCompletedTodo(todo: ical.Component): boolean {
+  const percentComplete = Number(getTextProperty(todo, 'percent-complete'));
   return (
     getTextProperty(todo, 'status').toUpperCase() === 'COMPLETED' ||
-    Boolean(todo.getFirstProperty('completed'))
+    Boolean(todo.getFirstProperty('completed')) ||
+    percentComplete === 100
   );
 }
 
@@ -218,7 +278,7 @@ function parseVCalendar(ics: string): ical.Component {
   return new ical.Component(ical.parse(ics));
 }
 
-function createRandomUid(): string {
+export function createRandomUid(): string {
   if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
     return window.crypto.randomUUID();
   }
@@ -236,6 +296,7 @@ function createUnscheduledTaskIcs(uid: string, title: string): string {
   todo.addPropertyWithValue('summary', title);
   todo.addPropertyWithValue('dtstamp', ical.Time.now());
   todo.addPropertyWithValue('status', 'NEEDS-ACTION');
+  todo.addPropertyWithValue('percent-complete', 0);
   vcalendar.addSubcomponent(todo);
 
   return (vcalendar as unknown as { toString(): string }).toString();
@@ -321,6 +382,9 @@ function parseUnscheduledTasksFromObject(
     if (!isUnscheduledTodo(todo)) {
       continue;
     }
+    if (getTextProperty(todo, 'status').toUpperCase() === 'CANCELLED') {
+      continue;
+    }
 
     const uid = getTaskUid(todo);
     if (!uid) {
@@ -338,7 +402,8 @@ function parseUnscheduledTasksFromObject(
       url: getTextProperty(todo, 'url'),
       status: getTextProperty(todo, 'status'),
       completed: isCompletedTodo(todo),
-      etag: object.etag
+      etag: object.etag,
+      href: object.href
     });
   }
 
@@ -587,7 +652,7 @@ async function fetchCalendarObjectsForComponent(
       const list = await fetchCalendarObjectsViaPropfindFallback(collectionUrl, authHeader);
       return { icsList: list, fellBack: true };
     }
-    console.error(`[CalDAVProvider] REPORT request failed`, reportRes.status, xml.slice(0, 800));
+    console.error(`[CalDAVProvider] REPORT request failed`, reportRes.status);
     throw new Error(`REPORT ${reportRes.status}`);
   }
 
@@ -595,60 +660,8 @@ async function fetchCalendarObjectsForComponent(
 
   // STEP 2: Parse the XML response using DOMParser
   const doc = ensureXmlDocument(xml, 'CalDAV REPORT');
-  const icsList: CalendarObjectData[] = [];
-
-  const responses = doc.getElementsByTagNameNS('*', 'response');
-  const allResponses = Array.from(responses);
-
-  for (const response of allResponses) {
-    const propstats = response.getElementsByTagNameNS('*', 'propstat');
-
-    for (let i = 0; i < propstats.length; i++) {
-      const propstat = propstats[i];
-      const status = propstat.getElementsByTagNameNS('*', 'status')[0]?.textContent || '';
-      const statusCode = parseStatusCode(status);
-      if (statusCode === null || statusCode < 200 || statusCode >= 300) continue;
-
-      const prop = propstat.getElementsByTagNameNS('*', 'prop')[0];
-      if (!prop) continue;
-
-      // Try to find calendar-data
-      let calendarData = prop.getElementsByTagNameNS(
-        'urn:ietf:params:xml:ns:caldav',
-        'calendar-data'
-      )[0];
-
-      if (!calendarData) {
-        const candidates = prop.getElementsByTagNameNS('*', 'calendar-data');
-        if (candidates.length > 0) {
-          calendarData = candidates[0];
-        }
-      }
-
-      if (calendarData) {
-        const calendarText = assertNonEmptyText(
-          calendarData.textContent || '',
-          'CalDAV REPORT returned empty calendar-data payload.'
-        );
-        let etag = prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent;
-        if (!etag) {
-          const candidates = prop.getElementsByTagNameNS('*', 'getetag');
-          if (candidates.length > 0) etag = candidates[0].textContent;
-        }
-
-        const hrefNode =
-          response.getElementsByTagNameNS('DAV:', 'href')[0] ||
-          response.getElementsByTagNameNS('*', 'href')[0];
-        const href = hrefNode?.textContent?.trim() || '';
-
-        icsList.push({
-          href,
-          ics: assertIcsPayload(calendarText, 'CalDAV REPORT'),
-          etag: etag || undefined
-        });
-      }
-    }
-  }
+  const icsList = extractCalendarDataFromMultiStatus(doc);
+  const allResponses = Array.from(doc.getElementsByTagNameNS('*', 'response'));
 
   // STEP 3: Fallback - if no calendar-data was returned, fetch individual .ics files
   if (icsList.length === 0) {
@@ -683,7 +696,7 @@ async function fetchCalendarObjectsForComponent(
   return { icsList, fellBack: false };
 }
 
-async function fetchAllVTodoObjects(
+export async function fetchAllVTodoObjects(
   collectionUrl: string,
   authHeader?: string
 ): Promise<CalendarObjectData[]> {
@@ -723,49 +736,13 @@ async function fetchAllVTodoObjects(
       );
       return fetchCalendarObjectsViaPropfindFallback(collectionUrl, authHeader);
     }
-    console.error(
-      `[CalDAVProvider] VTODO REPORT request failed`,
-      reportRes.status,
-      xml.slice(0, 800)
-    );
+    console.error(`[CalDAVProvider] VTODO REPORT request failed`, reportRes.status);
     throw new Error(`REPORT ${reportRes.status}`);
   }
 
   assertNonEmptyText(xml, 'CalDAV VTODO REPORT returned an empty body.');
   const doc = ensureXmlDocument(xml, 'CalDAV VTODO REPORT');
-  const icsList: CalendarObjectData[] = [];
-  const responses = Array.from(doc.getElementsByTagNameNS('*', 'response'));
-
-  for (const response of responses) {
-    const prop = getSuccessfulPropNode(response);
-    if (!prop) continue;
-
-    const calendarData =
-      prop.getElementsByTagNameNS('urn:ietf:params:xml:ns:caldav', 'calendar-data')[0] ||
-      prop.getElementsByTagNameNS('*', 'calendar-data')[0];
-    if (!calendarData) continue;
-
-    const hrefNode =
-      response.getElementsByTagNameNS('DAV:', 'href')[0] ||
-      response.getElementsByTagNameNS('*', 'href')[0];
-    const href = hrefNode?.textContent?.trim() || '';
-    const etag =
-      prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent ||
-      prop.getElementsByTagNameNS('*', 'getetag')[0]?.textContent ||
-      undefined;
-
-    icsList.push({
-      href,
-      ics: assertIcsPayload(
-        assertNonEmptyText(
-          calendarData.textContent || '',
-          'CalDAV VTODO REPORT returned empty calendar-data payload.'
-        ),
-        'CalDAV VTODO REPORT'
-      ),
-      etag: etag || undefined
-    });
-  }
+  const icsList = extractCalendarDataFromMultiStatus(doc);
 
   return icsList;
 }
@@ -888,24 +865,24 @@ const CalDAVConfigWrapper: React.FC<CalDAVConfigProps> = props => {
 export class CalDAVProvider
   implements CalendarProvider<CalDAVProviderConfig>, SyncKeyProvider, TaskBacklogProvider
 {
-  static readonly type = 'caldav';
-  static readonly displayName = 'CalDAV';
+  static readonly type: string = 'caldav';
+  static readonly displayName: string = 'CalDAV';
 
   static getConfigurationComponent(): FCReactComponent<CalDAVConfigProps> {
     return CalDAVConfigWrapper;
   }
 
   private plugin: FullCalendarPlugin;
-  private source: CalDAVProviderConfig;
+  protected source: CalDAVProviderConfig;
   public readonly linkedNoteIndex: LinkedNoteIndex;
   private undatedTaskCache: CalDAVTaskInboxItem[] = [];
   private undatedTaskLoadPromise: Promise<CalDAVTaskInboxItem[]> | null = null;
   private hasLoadedUndatedTasks = false;
 
-  readonly type = 'caldav';
-  readonly displayName = 'CalDAV';
+  readonly type: string = 'caldav';
+  readonly displayName: string = 'CalDAV';
   readonly isRemote = true;
-  readonly loadPriority = 110;
+  readonly loadPriority: number = 110;
 
   constructor(source: CalDAVProviderConfig, plugin: FullCalendarPlugin) {
     this.plugin = plugin;
@@ -913,7 +890,7 @@ export class CalDAVProvider
     this.linkedNoteIndex = new LinkedNoteIndex(plugin.app, source.id);
   }
 
-  private getPassword(): string | null {
+  protected getPassword(): string | null {
     return CredentialStore.getCalDAVPassword(this.source.id);
   }
 
@@ -1171,7 +1148,8 @@ export class CalDAVProvider
       taskUid = parsed.uid;
     }
 
-    await this.deleteEvent({ persistentId: taskUid });
+    const task = this.undatedTaskCache.find(candidate => candidate.uid === taskUid);
+    await this.deleteEvent({ persistentId: task?.href || taskUid });
     this.undatedTaskCache = this.undatedTaskCache.filter(task => task.uid !== taskUid);
     this.hasLoadedUndatedTasks = true;
   }
@@ -1197,6 +1175,7 @@ export class CalDAVProvider
       }
 
       todo.updatePropertyWithValue('status', isDone ? 'COMPLETED' : 'NEEDS-ACTION');
+      todo.updatePropertyWithValue('percent-complete', isDone ? 100 : 0);
       if (isDone) {
         todo.updatePropertyWithValue('completed', ical.Time.now());
       } else {
@@ -1276,7 +1255,8 @@ export class CalDAVProvider
       location: '',
       url: '',
       status: 'NEEDS-ACTION',
-      completed: false
+      completed: false,
+      href: url
     };
 
     this.undatedTaskCache = [
@@ -1662,7 +1642,7 @@ export class CalDAVProvider
   }
 
   // Helper to attach auth and fetch
-  private async doRequest(url: string, options: RequestInit) {
+  protected async doRequest(url: string, options: RequestInit) {
     const headers = (options.headers as Record<string, string>) || {};
     const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
     if (authHeader) {
@@ -1672,12 +1652,26 @@ export class CalDAVProvider
 
     const res = await obsidianFetch(url, options);
     if (res.status >= 300) {
-      throw new Error(`CalDAV request failed: ${res.status} ${res.statusText}`);
+      if (res.status === 401) {
+        throw new Error(t('settings.calendars.caldav.errors.authentication'));
+      }
+      if (res.status === 403) {
+        throw new Error(t('settings.calendars.caldav.errors.permissionDenied'));
+      }
+      if (res.status === 409 || res.status === 412) {
+        throw new Error(t('settings.calendars.caldav.errors.conflict', { status: res.status }));
+      }
+      throw new Error(
+        t('settings.calendars.caldav.errors.requestFailed', {
+          status: res.status,
+          statusText: res.statusText || ''
+        }).trim()
+      );
     }
     return res;
   }
 
-  private resolveEventObjectUrl(persistentId: string): string {
+  protected resolveEventObjectUrl(persistentId: string): string {
     if (/^https?:\/\//i.test(persistentId)) {
       return persistentId;
     }

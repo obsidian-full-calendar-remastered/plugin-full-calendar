@@ -6,3 +6,5 @@ export type CalDAVProviderConfig = {
   username: string;
   password: string;
 };
+
+export type CalDAVTaskProviderConfig = CalDAVProviderConfig;

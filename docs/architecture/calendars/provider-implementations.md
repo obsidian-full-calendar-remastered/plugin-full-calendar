@@ -15,6 +15,7 @@
 | Integration | TaskNotes             | `40`  | Stage 0 local sync. Service/UI integration with provider-owned NLP endpoint. |
 | Virtual     | Holidays              | `5`   | Stage 0 virtual. Computed on-the-fly from bundled data; no vault/network backing. |
 | Remote      | CalDAV                | `110` | Stage 1 & 2 remote async. RFC 4791 protocol support with defensive fallback. |
+| Remote      | CalDAV Tasks          | `115` | Stage 1 & 2 remote async. CalDAV VTODO task collection synchronization. |
 | Remote      | Google                | `120` | Stage 1 & 2 remote async. OAuth authenticated sync with recurrence handling. |
 | Remote      | Google Tasks          | `125` | Stage 1 & 2 remote async. Tasks API integration with union OAuth scope preservation. |
 | Remote      | ICS                   | `140` | Stage 1 & 2 remote async. Read-only hybrid provider (HTTP URL & local file). |
@@ -70,11 +71,20 @@ Timezone and recurrence edge handling rationale is documented in [RRULE Timezone
 
 Uses direct `REPORT`/`GET` flow with robust XML namespace handling and fallback retrieval paths when calendar-data is not returned inline. This is intentionally defensive due to server variability.
 
-#### VTODO & VEVENT Dual-REPORT Architecture
+#### Legacy mixed VTODO & VEVENT dual-REPORT architecture
 - **Dual-REPORT Strategy:** Under the CalDAV RFC 4791 specification, time-range queries cannot filter for both `VEVENT` and `VTODO` components using a logical `OR` condition within a single `calendar-query` report, because sibling `comp-filter` elements are logically ANDed. To query both component types efficiently and standard-compliantly, the provider executes two sequential `REPORT` queries: one for `VEVENT` and one for `VTODO`.
 - **Fallback Avoidance:** If a server does not support standard `REPORT` queries and triggers a compatibility `PROPFIND` fallback (which fetches all files in the collection), the provider flags `fellBack = true` and skips the second `VTODO` `REPORT` query entirely, as the fallback has already fetched all objects (both events and tasks) in a single request.
 - **Content Deduplication:** All retrieved calendar objects are combined and deduplicated based on their raw ICS payload content to eliminate any overlaps.
-- **VTODO Parser/Formatter Mappings:** The ICS parser handles `VTODO` components by mapping them to `OFCEvent` structures (interpreting completion time or `COMPLETED` status, and mapping `due` as the end date). The ICS formatter serializes tasks into standard-compliant `VTODO` elements using `DUE` and `COMPLETED` properties.
+- **Compatibility:** Existing `caldav` sources keep this mixed read path so saved configurations require no migration.
+
+#### CalDAV Tasks provider
+
+- **Source isolation:** `caldavtasks` registers `CalDAVTaskProvider`, which requests only `VCALENDAR > VTODO`. Compatibility fallbacks are filtered through the VTODO codec so `VEVENT` resources cannot enter the task source.
+- **Shared infrastructure:** The provider subclasses the existing CalDAV provider and reuses Basic authentication, SecretStorage IDs, collection validation, XML parsing, REPORT/PROPFIND fallback retrieval, href resolution, backlog scheduling, and request handling.
+- **Protocol model:** `vtodo.ts` maps DTSTART-first placement while retaining DTSTART and DUE independently in `OFCEvent.icalTask`. It also retains status, percent complete, completion time, priority, RRULE, created, and last-modified metadata.
+- **Safe writes:** Create emits `VCALENDAR + VTODO`. Update performs GET → component patch → conditional PUT, preserving UID, resource href, ETag, RRULE, nested alarms, timezone components, and unmapped/X-properties. Completion writes `STATUS:COMPLETED`, `PERCENT-COMPLETE:100`, and `COMPLETED`; reopening removes `COMPLETED` and resets percent complete.
+- **Undated tasks:** The provider implements `TaskBacklogProvider`; VTODOs without valid DTSTART/DUE remain available in the unified backlog instead of entering FullCalendar rendering.
+- **Recurrence boundary:** Existing RRULEs render and survive unrelated edits. Recurrence creation/change and per-instance VTODO writes remain intentionally unsupported.
 
 
 ### Google Provider

@@ -16,7 +16,7 @@ Calendars are automatically re-fetched from their source at most every five minu
 
 - **Two-Way Sync:** CalDAV calendars now support full two-way synchronization. Changes made in Obsidian are pushed to the server, and remote changes are pulled in periodically.
 - **Video Conferencing & Links:** Automatically parses the RFC 7986 `CONFERENCE` property and Microsoft Teams/Skype meeting URLs, mapping them into the event's location or description. All meeting links and general URLs are rendered as clickable hyperlinks in the [Event Details modal](../events/manage.md#video-conference--linkification-support). For details, see [Video Conference & Linkification Support](../events/manage.md#video-conference--linkification-support).
-- **Task Support (VTODO):** CalDAV calendars support synchronizing tasks (`VTODO` components) in addition to events (`VEVENT`). Completed tasks are synchronized with their completion timestamps, while pending/active tasks are managed with the `NEEDS-ACTION` status. Time-based, all-day, and recurring tasks are fully supported.
+- **Task Support (VTODO):** Existing mixed CalDAV sources retain their legacy VTODO reading and backlog behavior. For task-only collections and VTODO-native create/edit/complete/delete synchronization, use the dedicated [CalDAV Tasks](caldav-tasks.md) source.
 - **Timezones:** Events and tasks are parsed with their source timezone and converted to your Display Timezone for viewing.
 - **Cancellations:** Cancellations/exceptions present on the server are respected.
 

@@ -132,6 +132,7 @@ nav:
                 - Journals Calendar: user/calendars/journals.md
                 - ICS (Remote and Local): user/calendars/ics.md
                 - CalDAV: user/calendars/caldav.md
+                - CalDAV Tasks: user/calendars/caldav-tasks.md
                 - Google Calendar: user/calendars/gcal.md
                 - Google Tasks: user/calendars/gtasks.md
                 - Outlook Calendar: user/calendars/outlook.md

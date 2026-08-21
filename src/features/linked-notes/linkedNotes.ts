@@ -1,4 +1,4 @@
-import { App, TFile, normalizePath } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { OFCEvent } from '../../types';
 import { PluginState } from '../../core/PluginState';
 import { TemplateEngine } from './TemplateEngine';
@@ -11,6 +11,7 @@ import { modifyFrontmatterString } from '../../providers/fullnote/frontmatter';
 import FullCalendarPlugin from '../../main';
 import { chooseTemplatePreset } from './TemplatePresetSelectModal';
 import { openLinkedFileInExistingLeafOrNew } from '../../utils/leafUtils';
+import { getNameBasedLinkedNoteFile, titleBasedLinkedNotePath } from './linkedNoteResolution';
 
 const linkedNoteCreationPromises = new Map<string, Promise<TFile | null>>();
 
@@ -22,11 +23,6 @@ function isNameBasedLinkedNotes(): boolean {
   return PluginState.getSettings().linkedNoteLinkStrategy === 'name';
 }
 
-function titleBasedLinkedNotePath(directory: string, event: OFCEvent): string {
-  const baseFilename = sanitizeTitleForFilename(event.title || t('linkedNotes.untitledNote'));
-  return normalizePath(`${directory}/${baseFilename}.md`);
-}
-
 function quotedFrontmatterString(value: string): string {
   return JSON.stringify(value);
 }
@@ -34,10 +30,9 @@ function quotedFrontmatterString(value: string): string {
 async function linkExistingTitleFile(
   app: App,
   event: OFCEvent,
-  calendarId: string,
-  directory: string
+  calendarId: string
 ): Promise<TFile | null> {
-  const file = app.vault.getFileByPath(titleBasedLinkedNotePath(directory, event));
+  const file = getNameBasedLinkedNoteFile(app, event);
   const eventUid = event.uid || event.id;
   if (!file || !eventUid) {
     return file;
@@ -85,7 +80,7 @@ export async function createLinkedNoteForProvider({
   const identityInstanceDate = linkedNoteIdentityInstanceDate(instanceDate);
   const directory = PluginState.getSettings().linkedNotesDirectory;
   if (isNameBasedLinkedNotes() && directory) {
-    const titleFile = await linkExistingTitleFile(app, event, calendarId, directory);
+    const titleFile = await linkExistingTitleFile(app, event, calendarId);
     if (titleFile) {
       return titleFile;
     }
@@ -206,12 +201,7 @@ export async function openOrCreateLinkedNote(
 
   // 2. Check if note already exists
   if (isNameBasedLinkedNotes()) {
-    const titleFile = await linkExistingTitleFile(
-      plugin.app,
-      event,
-      calendarId,
-      settings.linkedNotesDirectory
-    );
+    const titleFile = await linkExistingTitleFile(plugin.app, event, calendarId);
     if (titleFile) {
       await openLinkedFileInExistingLeafOrNew(plugin.app, titleFile);
       return;

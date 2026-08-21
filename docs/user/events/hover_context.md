@@ -4,7 +4,9 @@ Interact with events quickly without leaving the calendar view using hover previ
 
 ## Hover for Event Details
 
-Using the core **Page Preview** plugin, you can hold `Ctrl`/`Cmd` and hover over any local event (from a Full Note or Daily Note calendar) to see a preview of the note's content.
+Using the core **Page Preview** plugin, hold `Ctrl`/`Cmd` and hover over an event to preview its local source or [linked note](../features/event-linked-notes.md).
+
+With the **Name-based** linked-note strategy, preview lookup uses the sanitized event title in the configured linked-notes folder. Every event with that same title previews the shared note—even when later scheduling creates a different calendar UID. Deadline-based mode continues to preview the note attached to the specific event or occurrence.
 
 This is a great way to quickly see meeting notes, agendas, or other context you've added to an event's note.
 

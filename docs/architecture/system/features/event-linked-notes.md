@@ -10,6 +10,7 @@
 | `LinkedNoteIndex` | Reactive index matching remote event UIDs and recurrence IDs to Obsidian file paths. Supports compound key mapping (`eventUid::recurrenceId`) for instance-level note lookup. | Listens to Obsidian vault events; decoupled from [EventStore](../event-storage.md#eventstore-model). |
 | `TemplateEngine` | Renders a clean markdown body from event fields using a custom layout. | Pure functional renderer; no file system or vault side effects. |
 | `createLinkedNoteForProvider` | Centralized helper that resolves or creates a linked note according to the configured strategy. | Combines exact title-path lookup, `LinkedNoteIndex`, `TemplateEngine`, `noteUtils`, and frontmatter utilities in a single DRY entry point. |
+| `linkedNoteResolution` | Pure, non-mutating title-path resolver shared by creation/open flows and calendar hover preview. | Reads linked-note settings and performs one exact vault-path lookup; never scans or writes files. |
 | `openOrCreateLinkedNote` | Single open/create orchestrator shared by all three UI entry points (popup note button, Ctrl/Cmd+click, context menu). Delegates to `createLinkedNote` on the provider; uses `openLinkedFileInExistingLeafOrNew` to reveal an already-open tab. | Consumes provider and workspace APIs; no direct vault I/O. |
 | `openLinkedFileInExistingLeafOrNew` | Tab-reuse utility. Walks `getLeavesOfType('markdown')` for an already-open leaf; reveals and focuses it. Falls through to a fresh tab only when the file is not yet open. Kept in `utils/leafUtils.ts` to avoid a circular import with `eventActions`. | Pure Obsidian workspace adapter; no event or note business logic. |
 | `EventContextMenuBuilder` | Builds the right-click context menu. For providers with `createLinkedNote`, the `buildNavigationActions` function replaces the local-only "Go to note" item with an "Open linked note" item that calls `openOrCreateLinkedNote` with the correct `instanceDate` for recurring events. | UI-only; reads provider capabilities from `ProviderRegistry`. |
@@ -86,6 +87,8 @@ For deadline-based mapping:
 
 For name-based mapping, the exact title path is the first lookup key and intentionally makes equal titles share a note. The stable calendar ID and master event UID are attached to the file as a secondary identity so later renames or moves remain resolvable.
 
+Hover preview follows the same primary identity rule without mutating frontmatter: `CalendarView.eventMouseEnter` asks `getNameBasedLinkedNoteFile()` for the exact title path before falling back to the event cache's UID-derived location. Consequently, separate event records and later schedulings with the same sanitized title preview one shared file in name mode.
+
 ### 6️⃣ Template Presets & Selection (Power Users)
 To support multiple custom layouts based on user choice:
 * **Decoupled Settings**: When `enableLinkedNoteTemplatesPreset` is enabled in settings, the default template rendering path is bypassed.
@@ -157,6 +160,7 @@ sequenceDiagram
 * **Keep frontmatter changes scoped**: Shared linked-note code manages only identity parameters (`fc-event-uid`, `fc-calendar-id`, and optional recurrence ID). Provider-specific managed properties, such as CalDAV task dates, must update without altering unrelated frontmatter or note body content.
 * **Always sanitize inputs**: Always pipe event titles through `sanitizeTitleForFilename` to strip OS-reserved characters before attempting a file write.
 * **Never suffix name-based files**: Name mode must reuse or create the exact sanitized title path. Collision suffixes are reserved for deadline-based creation.
+* **Keep hover resolution DRY and read-only**: Hover preview must use `getNameBasedLinkedNoteFile`; it must not duplicate title sanitization, scan the vault, attach identity frontmatter, or create a note.
 * **Locale-independent tests**: When asserting date or time strings in the template test suite, always calculate the expected outcome dynamically using Luxon's local formatter to prevent timezone/locale mismatches on test machines.
 * **Never duplicate logic in providers**: All note creation must go through `createLinkedNoteForProvider`. Providers must not construct frontmatter, render templates, or create files independently.
 * **Use `openLinkedFileInExistingLeafOrNew` for all open-note paths**: Any code that opens a linked note for the user must call this helper (from `utils/leafUtils.ts`) instead of calling `workspace.getLeaf(true).openFile()` directly, so tab-reuse behaviour is consistent across all entry points.
@@ -167,6 +171,7 @@ sequenceDiagram
 ## Integration Anchors
 
 *   [`src/features/linked-notes/linkedNotes.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/linkedNotes.ts) — Centralized note creation helper and open/create orchestrator (`openOrCreateLinkedNote`).
+*   [`src/features/linked-notes/linkedNoteResolution.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/linkedNoteResolution.ts) — Shared non-mutating name-based path resolution for open/create and hover preview.
 *   [`src/features/linked-notes/TemplateEngine.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/TemplateEngine.ts) — Note body templating engine.
 *   [`src/providers/utils/noteUtils.ts`](file:///d:/Codes/plugin-full-calendar/src/providers/utils/noteUtils.ts) — Shared note/file path & serialization utilities.
 *   [`src/providers/utils/LinkedNoteIndex.ts`](file:///d:/Codes/plugin-full-calendar/src/providers/utils/LinkedNoteIndex.ts) — Reactive frontmatter-driven indexer.

@@ -47,6 +47,7 @@ import { runBlankViewDiagnostic } from './calendar/BlankViewDiagnostic';
 import { ViewUIHandler } from './calendar/ViewUIHandler';
 import { ViewEventInteractionHandler } from './calendar/ViewEventInteractionHandler';
 import { ViewSettingsHandler } from './calendar/ViewSettingsHandler';
+import { getNameBasedLinkedNoteFile } from '../features/linked-notes/linkedNoteResolution';
 export { getCalendarColors } from './calendar/utils';
 
 export const FULL_CALENDAR_VIEW_TYPE = 'full-calendar-view';
@@ -321,17 +322,19 @@ export class CalendarView extends ItemView implements ViewContext {
               this.interactionHandler.handleModifyEvent(newEvent, oldEvent, newResource),
             eventMouseEnter: info => {
               try {
-                const location = PluginState.getCache().store.getEventDetails(
-                  info.event.id
-                )?.location;
-                if (location) {
+                const details = PluginState.getCache().store.getEventDetails(info.event.id);
+                const previewPath = details
+                  ? getNameBasedLinkedNoteFile(this.app, details.event)?.path ||
+                    details.location?.path
+                  : undefined;
+                if (previewPath) {
                   this.app.workspace.trigger('hover-link', {
                     event: info.jsEvent,
                     source: PLUGIN_SLUG,
                     hoverParent: calendarEl,
                     targetEl: info.jsEvent.target,
-                    linktext: location.path,
-                    sourcePath: location.path
+                    linktext: previewPath,
+                    sourcePath: previewPath
                   });
                 }
               } catch {

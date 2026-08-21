@@ -320,16 +320,16 @@ export class CalendarView extends ItemView implements ViewContext {
               this.interactionHandler.handleSelect(start, end, allDay, viewType),
             modifyEvent: (newEvent, oldEvent, newResource) =>
               this.interactionHandler.handleModifyEvent(newEvent, oldEvent, newResource),
-            eventMouseEnter: info => {
+            eventMouseOver: (event, eventEl, mouseEvent) => {
               try {
-                const details = PluginState.getCache().store.getEventDetails(info.event.id);
+                const details = PluginState.getCache().store.getEventDetails(event.id);
                 if (details) {
                   const payload = buildLinkedNoteHoverPayload({
                     app: this.app,
                     event: details.event,
                     locationPath: details.location?.path,
-                    mouseEvent: info.jsEvent,
-                    eventEl: info.el
+                    mouseEvent,
+                    eventEl
                   });
                   if (payload) this.app.workspace.trigger('hover-link', payload);
                 }

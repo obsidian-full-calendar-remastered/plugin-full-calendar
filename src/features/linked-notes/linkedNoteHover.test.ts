@@ -27,7 +27,7 @@ describe('linked-note hover payload', () => {
     } as never;
     const eventAElement = document.createElement('a');
     const eventBElement = document.createElement('a');
-    const mouseEvent = new MouseEvent('mouseenter');
+    const mouseEvent = new MouseEvent('mouseover');
 
     const unlinkedPayload = buildLinkedNoteHoverPayload({
       app,
@@ -52,5 +52,6 @@ describe('linked-note hover payload', () => {
       sourcePath: linkedFile.path
     });
     expect(linkedPayload?.hoverParent).not.toBe(eventAElement);
+    expect(linkedPayload?.event.type).toBe('mouseover');
   });
 });

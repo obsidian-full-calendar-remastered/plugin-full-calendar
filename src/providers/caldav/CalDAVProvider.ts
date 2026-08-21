@@ -29,6 +29,7 @@ import { PluginState } from '../../core/PluginState';
 import { DateTime } from 'luxon';
 import { isTask } from '../../types/tasks';
 import { modifyFrontmatterString } from '../fullnote/frontmatter';
+import { TasksBacklogDateTarget, TasksDateTarget } from '../../types/settings';
 
 import { fetchCalendarInfo } from './helper_caldav';
 
@@ -203,8 +204,27 @@ function hasValidTaskDate(todo: ical.Component, property: 'dtstart' | 'due'): bo
   }
 }
 
-function isUnscheduledTodo(todo: ical.Component): boolean {
-  return !hasValidTaskDate(todo, 'dtstart') && !hasValidTaskDate(todo, 'due');
+function mapTargetToVTodoProperty(target: TasksDateTarget): 'dtstart' | 'due' {
+  switch (target) {
+    case 'dueDate':
+      return 'due';
+    case 'startDate':
+    case 'scheduledDate':
+    default:
+      return 'dtstart';
+  }
+}
+
+function isUnscheduledTodo(
+  todo: ical.Component,
+  backlogDateTarget?: TasksBacklogDateTarget
+): boolean {
+  const target =
+    backlogDateTarget ??
+    PluginState.getSettings()?.tasksIntegration?.backlogDateTarget ??
+    'scheduledDate';
+  const targetProp = mapTargetToVTodoProperty(target);
+  return !hasValidTaskDate(todo, targetProp);
 }
 
 function isCompletedTodo(todo: ical.Component): boolean {
@@ -306,7 +326,8 @@ function removeSubcomponent(vcalendar: ical.Component, subcomponent: ical.Compon
 function parseUnscheduledTasksFromObject(
   object: CalendarObjectData,
   calendarId: string,
-  calendarName: string
+  calendarName: string,
+  backlogDateTarget?: TasksBacklogDateTarget
 ): CalDAVTaskInboxItem[] {
   let vcalendar: ical.Component;
   try {
@@ -318,7 +339,7 @@ function parseUnscheduledTasksFromObject(
   const tasks: CalDAVTaskInboxItem[] = [];
 
   for (const todo of vcalendar.getAllSubcomponents('vtodo')) {
-    if (!isUnscheduledTodo(todo)) {
+    if (!isUnscheduledTodo(todo, backlogDateTarget)) {
       continue;
     }
 
@@ -1424,20 +1445,91 @@ export class CalDAVProvider
         continue;
       }
 
-      if (allDay) {
-        replaceAllDayTaskDate(todo, 'due', date);
-      } else {
-        const displayTimezone =
-          PluginState.getSettings().displayTimezone ||
-          Intl.DateTimeFormat().resolvedOptions().timeZone;
-        replaceTimedTaskDate(todo, 'dtstart', date, displayTimezone);
-        replaceTimedTaskDate(
-          todo,
-          'due',
-          new Date(date.getTime() + 60 * 60 * 1000),
-          displayTimezone
-        );
+      const currentHasStart = hasValidTaskDate(todo, 'dtstart');
+      const currentHasDue = hasValidTaskDate(todo, 'due');
+      let preservedDurationMs: number | null = null;
+
+      if (currentHasStart && currentHasDue) {
+        const startProp = todo.getFirstProperty('dtstart');
+        const dueProp = todo.getFirstProperty('due');
+        if (startProp && dueProp) {
+          const startVal = startProp.getFirstValue() as ical.Time | undefined;
+          const dueVal = dueProp.getFirstValue() as ical.Time | undefined;
+          if (startVal && dueVal) {
+            const startLuxon = parseTimezoneAwareString(startVal);
+            const dueLuxon = parseTimezoneAwareString(dueVal);
+            if (startLuxon.isValid && dueLuxon.isValid) {
+              preservedDurationMs = dueLuxon.toMillis() - startLuxon.toMillis();
+            }
+          }
+        }
       }
+
+      const settings = PluginState.getSettings()?.tasksIntegration;
+      const backlogDateTarget = settings?.backlogDateTarget ?? 'scheduledDate';
+      const calendarDisplayDateTarget = settings?.calendarDisplayDateTarget ?? 'scheduledDate';
+
+      const planningTargets = Array.from(
+        new Set<TasksDateTarget>([calendarDisplayDateTarget, backlogDateTarget])
+      );
+      const targetProps = Array.from(new Set(planningTargets.map(mapTargetToVTodoProperty)));
+
+      const displayTimezone =
+        PluginState.getSettings()?.displayTimezone ||
+        Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      if (targetProps.includes('dtstart') && targetProps.includes('due')) {
+        if (allDay) {
+          replaceAllDayTaskDate(todo, 'dtstart', date);
+          const targetDueDate =
+            preservedDurationMs !== null && preservedDurationMs > 0
+              ? new Date(date.getTime() + preservedDurationMs)
+              : date;
+          replaceAllDayTaskDate(todo, 'due', targetDueDate);
+        } else {
+          replaceTimedTaskDate(todo, 'dtstart', date, displayTimezone);
+          const targetDueDate =
+            preservedDurationMs !== null && preservedDurationMs > 0
+              ? new Date(date.getTime() + preservedDurationMs)
+              : new Date(date.getTime() + 60 * 60 * 1000);
+          replaceTimedTaskDate(todo, 'due', targetDueDate, displayTimezone);
+        }
+      } else if (targetProps.includes('dtstart')) {
+        if (allDay) {
+          replaceAllDayTaskDate(todo, 'dtstart', date);
+          if (preservedDurationMs !== null && preservedDurationMs > 0) {
+            replaceAllDayTaskDate(todo, 'due', new Date(date.getTime() + preservedDurationMs));
+          }
+        } else {
+          replaceTimedTaskDate(todo, 'dtstart', date, displayTimezone);
+          if (preservedDurationMs !== null && preservedDurationMs > 0) {
+            replaceTimedTaskDate(
+              todo,
+              'due',
+              new Date(date.getTime() + preservedDurationMs),
+              displayTimezone
+            );
+          }
+        }
+      } else if (targetProps.includes('due')) {
+        if (allDay) {
+          replaceAllDayTaskDate(todo, 'due', date);
+          if (preservedDurationMs !== null && preservedDurationMs > 0) {
+            replaceAllDayTaskDate(todo, 'dtstart', new Date(date.getTime() - preservedDurationMs));
+          }
+        } else {
+          replaceTimedTaskDate(todo, 'due', date, displayTimezone);
+          if (preservedDurationMs !== null && preservedDurationMs > 0) {
+            replaceTimedTaskDate(
+              todo,
+              'dtstart',
+              new Date(date.getTime() - preservedDurationMs),
+              displayTimezone
+            );
+          }
+        }
+      }
+
       todo.updatePropertyWithValue('last-modified', ical.Time.now());
 
       const url = resolveCollectionObjectUrl(this.source.homeUrl, object.href);
@@ -1453,19 +1545,39 @@ export class CalDAVProvider
       this.undatedTaskCache = this.undatedTaskCache.filter(task => task.uid !== taskUid);
       this.hasLoadedUndatedTasks = true;
       const scheduledDate = DateTime.fromJSDate(date).toISODate() || '';
+      let scheduledEndDate: string | null = null;
+      if (hasValidTaskDate(todo, 'due') && hasValidTaskDate(todo, 'dtstart')) {
+        const dueProp = todo.getFirstProperty('due');
+        const dueVal = dueProp?.getFirstValue() as ical.Time | undefined;
+        if (dueVal) {
+          const dueLuxon = parseTimezoneAwareString(dueVal);
+          if (dueLuxon.isValid) {
+            const dueISODate = dueLuxon.toISODate();
+            if (dueISODate && dueISODate !== scheduledDate) {
+              scheduledEndDate = dueISODate;
+            }
+          }
+        }
+      }
+
       const scheduledTask: OFCEvent = {
         type: 'single',
         uid: taskUid,
         title: getTextProperty(todo, 'summary') || 'Untitled task',
         date: scheduledDate,
-        endDate: null,
+        endDate: scheduledEndDate,
         completed: isCompletedTodo(todo) ? DateTime.now().toISO() : false,
         ...(allDay
           ? { allDay: true }
           : {
               allDay: false,
               startTime: DateTime.fromJSDate(date).toFormat('HH:mm'),
-              endTime: DateTime.fromJSDate(date).plus({ hours: 1 }).toFormat('HH:mm')
+              endTime:
+                preservedDurationMs !== null && preservedDurationMs > 0
+                  ? DateTime.fromJSDate(new Date(date.getTime() + preservedDurationMs)).toFormat(
+                      'HH:mm'
+                    )
+                  : DateTime.fromJSDate(date).plus({ hours: 1 }).toFormat('HH:mm')
             })
       };
       await this.updateLinkedTaskNoteDates(scheduledTask);

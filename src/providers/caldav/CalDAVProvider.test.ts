@@ -36,6 +36,13 @@ describe('CalDAVProvider', () => {
     mockPlugin = {} as FullCalendarPlugin;
     provider = new CalDAVProvider(mockConfig, mockPlugin);
     mockObsidianFetch.mockReset();
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      displayTimezone: '',
+      tasksIntegration: {
+        backlogDateTarget: 'scheduledDate',
+        calendarDisplayDateTarget: 'scheduledDate'
+      }
+    });
   });
 
   it('should fetch events using a single REPORT request after validating URL', async () => {
@@ -294,6 +301,160 @@ END:VCALENDAR`;
     });
   });
 
+  it('filters CalDAV backlog items using backlogDateTarget startDate', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      tasksIntegration: {
+        backlogDateTarget: 'startDate',
+        calendarDisplayDateTarget: 'startDate'
+      }
+    });
+
+    const mockPropfindResponse = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype>
+                <d:collection/>
+                <c:calendar xmlns:c="urn:ietf:params:xml:ns:caldav"/>
+              </d:resourcetype>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const mockIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:undated-task
+SUMMARY:No Dates
+STATUS:NEEDS-ACTION
+END:VTODO
+BEGIN:VTODO
+UID:due-only-task
+SUMMARY:Due Only Task
+DUE;VALUE=DATE:20260625
+STATUS:NEEDS-ACTION
+END:VTODO
+BEGIN:VTODO
+UID:start-only-task
+SUMMARY:Start Only Task
+DTSTART;VALUE=DATE:20260615
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR`;
+
+    const mockInboxReport = `
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/tasks.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+              <c:calendar-data><![CDATA[${mockIcs}]]></c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockPropfindResponse)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockInboxReport)
+      } as Response);
+
+    const tasks = await provider.refreshUndatedTasks();
+
+    // Under startDate target, undated-task and due-only-task both lack DTSTART
+    expect(tasks.map(t => t.uid)).toEqual(['undated-task', 'due-only-task']);
+  });
+
+  it('filters CalDAV backlog items using backlogDateTarget dueDate', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      tasksIntegration: {
+        backlogDateTarget: 'dueDate',
+        calendarDisplayDateTarget: 'dueDate'
+      }
+    });
+
+    const mockPropfindResponse = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype>
+                <d:collection/>
+                <c:calendar xmlns:c="urn:ietf:params:xml:ns:caldav"/>
+              </d:resourcetype>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const mockIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:undated-task
+SUMMARY:No Dates
+STATUS:NEEDS-ACTION
+END:VTODO
+BEGIN:VTODO
+UID:due-only-task
+SUMMARY:Due Only Task
+DUE;VALUE=DATE:20260625
+STATUS:NEEDS-ACTION
+END:VTODO
+BEGIN:VTODO
+UID:start-only-task
+SUMMARY:Start Only Task
+DTSTART;VALUE=DATE:20260615
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR`;
+
+    const mockInboxReport = `
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/tasks.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+              <c:calendar-data><![CDATA[${mockIcs}]]></c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockPropfindResponse)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockInboxReport)
+      } as Response);
+
+    const tasks = await provider.refreshUndatedTasks();
+
+    // Under dueDate target, undated-task and start-only-task both lack DUE
+    expect(tasks.map(t => t.uid)).toEqual(['undated-task', 'start-only-task']);
+  });
+
   it('loads CalDAV backlog items from remote on a cold provider start', async () => {
     const mockPropfindResponse = `
       <d:multistatus xmlns:d="DAV:">
@@ -450,17 +611,299 @@ END:VCALENDAR`;
           'Content-Type': 'text/calendar; charset=utf-8',
           'If-Match': '"task-etag"'
         }) as Record<string, unknown>,
-        body: expect.stringContaining('DUE;VALUE=DATE:20260615') as string
+        body: expect.stringContaining('DTSTART;VALUE=DATE:20260615') as string
       })
     );
     expect(mockObsidianFetch.mock.calls[2][1]?.body).not.toEqual(
-      expect.stringContaining('DTSTART;VALUE=DATE:20260615')
+      expect.stringContaining('DUE;VALUE=DATE:20260615')
     );
+  });
+
+  it('schedules an unscheduled CalDAV task with dueDate target', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      tasksIntegration: {
+        backlogDateTarget: 'dueDate',
+        calendarDisplayDateTarget: 'dueDate'
+      }
+    });
+
+    const mockInboxPropfind = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/task-1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const mockIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-1
+SUMMARY:Schedule Me
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR`;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockInboxPropfind)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () => Promise.resolve(mockIcs)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 204,
+        statusText: 'No Content'
+      } as Response);
+
+    await provider.scheduleTask('task-1', new Date(2026, 5, 15));
+
+    const body = mockObsidianFetch.mock.calls[2][1]?.body;
+    if (typeof body !== 'string') {
+      throw new Error('Expected CalDAV PUT body to be a string');
+    }
+    expect(body).toContain('DUE;VALUE=DATE:20260615');
+    expect(body).not.toContain('DTSTART;VALUE=DATE:20260615');
+  });
+
+  it('schedules an unscheduled CalDAV task with startDate target', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      tasksIntegration: {
+        backlogDateTarget: 'startDate',
+        calendarDisplayDateTarget: 'startDate'
+      }
+    });
+
+    const mockInboxPropfind = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/task-1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const mockIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-1
+SUMMARY:Schedule Me
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR`;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockInboxPropfind)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () => Promise.resolve(mockIcs)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 204,
+        statusText: 'No Content'
+      } as Response);
+
+    await provider.scheduleTask('task-1', new Date(2026, 5, 15));
+
+    const body = mockObsidianFetch.mock.calls[2][1]?.body;
+    if (typeof body !== 'string') {
+      throw new Error('Expected CalDAV PUT body to be a string');
+    }
+    expect(body).toContain('DTSTART;VALUE=DATE:20260615');
+    expect(body).not.toContain('DUE;VALUE=DATE:20260615');
+  });
+
+  it('schedules a task with existing DUE when startDate target is used, preserving DUE', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      tasksIntegration: {
+        backlogDateTarget: 'startDate',
+        calendarDisplayDateTarget: 'startDate'
+      }
+    });
+
+    const mockInboxPropfind = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/task-1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const mockIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-1
+SUMMARY:Task with Due Date
+STATUS:NEEDS-ACTION
+DUE;VALUE=DATE:20260625
+END:VTODO
+END:VCALENDAR`;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockInboxPropfind)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () => Promise.resolve(mockIcs)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 204,
+        statusText: 'No Content'
+      } as Response);
+
+    await provider.scheduleTask('task-1', new Date(2026, 5, 15));
+
+    const body = mockObsidianFetch.mock.calls[2][1]?.body;
+    if (typeof body !== 'string') {
+      throw new Error('Expected CalDAV PUT body to be a string');
+    }
+    expect(body).toContain('DTSTART;VALUE=DATE:20260615');
+    expect(body).toContain('DUE;VALUE=DATE:20260625');
+  });
+
+  it('schedules a task with existing duration, preserving the duration span', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      tasksIntegration: {
+        backlogDateTarget: 'startDate',
+        calendarDisplayDateTarget: 'startDate'
+      }
+    });
+
+    const mockInboxPropfind = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/task-1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const mockIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-1
+SUMMARY:Multi-day Task
+STATUS:NEEDS-ACTION
+DTSTART;VALUE=DATE:20260610
+DUE;VALUE=DATE:20260615
+END:VTODO
+END:VCALENDAR`;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockInboxPropfind)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () => Promise.resolve(mockIcs)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 204,
+        statusText: 'No Content'
+      } as Response);
+
+    await provider.scheduleTask('task-1', new Date(2026, 5, 20));
+
+    const body = mockObsidianFetch.mock.calls[2][1]?.body;
+    if (typeof body !== 'string') {
+      throw new Error('Expected CalDAV PUT body to be a string');
+    }
+    expect(body).toContain('DTSTART;VALUE=DATE:20260620');
+    expect(body).toContain('DUE;VALUE=DATE:20260625');
+  });
+
+  it('schedules a task writing both DTSTART and DUE when targets differ', async () => {
+    PluginState.getSettings = jest.fn().mockReturnValue({
+      tasksIntegration: {
+        backlogDateTarget: 'dueDate',
+        calendarDisplayDateTarget: 'startDate'
+      }
+    });
+
+    const mockInboxPropfind = `
+      <d:multistatus xmlns:d="DAV:">
+        <d:response>
+          <d:href>/caldav/user/calendar/events/task-1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>"task-etag"</d:getetag>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    `;
+
+    const mockIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:task-1
+SUMMARY:Schedule Both
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR`;
+
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(mockInboxPropfind)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () => Promise.resolve(mockIcs)
+      } as Response)
+      .mockResolvedValueOnce({
+        status: 204,
+        statusText: 'No Content'
+      } as Response);
+
+    await provider.scheduleTask('task-1', new Date(2026, 5, 15));
+
+    const body = mockObsidianFetch.mock.calls[2][1]?.body;
+    if (typeof body !== 'string') {
+      throw new Error('Expected CalDAV PUT body to be a string');
+    }
+    expect(body).toContain('DTSTART;VALUE=DATE:20260615');
+    expect(body).toContain('DUE;VALUE=DATE:20260615');
   });
 
   it('schedules an unscheduled CalDAV task as a timed scheduled task', async () => {
     PluginState.getSettings = jest.fn().mockReturnValue({
-      displayTimezone: 'Europe/Amsterdam'
+      displayTimezone: 'Europe/Amsterdam',
+      tasksIntegration: {
+        backlogDateTarget: 'scheduledDate',
+        calendarDisplayDateTarget: 'scheduledDate'
+      }
     });
 
     const mockInboxPropfind = `
@@ -507,7 +950,7 @@ END:VCALENDAR`;
       throw new Error('Expected CalDAV PUT body to be a string');
     }
     expect(body).toContain('DTSTART;TZID=Europe/Amsterdam:20260615T143000');
-    expect(body).toContain('DUE;TZID=Europe/Amsterdam:20260615T153000');
+    expect(body).not.toContain('DUE');
     expect(body).not.toContain('VALUE=DATE:20260615');
   });
 
@@ -637,7 +1080,7 @@ END:VCALENDAR`;
     if (typeof body !== 'string') {
       throw new Error('Expected CalDAV reschedule PUT body to be a string');
     }
-    expect(body).toContain('DUE;VALUE=DATE:20260616');
+    expect(body).toContain('DTSTART;VALUE=DATE:20260616');
     expect(body).not.toContain('DUE;TZID=Europe/Amsterdam:20260615T153000');
   });
 

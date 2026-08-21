@@ -32,6 +32,7 @@ import { modifyFrontmatterString } from '../fullnote/frontmatter';
 import { t } from '../../features/i18n/i18n';
 
 import { fetchCalendarInfo } from './helper_caldav';
+import { createVTodoCalendar, updateVTodoCalendar } from './vtodo';
 
 // Helper function to ensure URL formatting is consistent.
 export function canonCollection(u?: string): string {
@@ -1276,7 +1277,7 @@ export class CalDAVProvider
     const uid = event.uid;
 
     // 2. Convert to ICS
-    const icsContent = eventToIcs(event);
+    const icsContent = isTask(event) ? createVTodoCalendar(event, uid) : eventToIcs(event);
 
     // 3. PUT to server
     // URL typically: collectionUrl + uid + ".ics"
@@ -1314,8 +1315,26 @@ export class CalDAVProvider
       return null;
     }
 
-    // Convert to ICS
-    const icsContent = eventToIcs(newEvent);
+    // Preserve the component type of imported tasks. The generic event formatter emits
+    // VEVENT even for tasks, which caused an edited VTODO to become an all-day event.
+    let icsContent: string;
+    if (isTask(oldEvent) || isTask(newEvent)) {
+      const taskEvent: OFCEvent =
+        newEvent.type === 'single'
+          ? {
+              ...newEvent,
+              completed:
+                newEvent.completed ??
+                (oldEvent.type === 'single' ? (oldEvent.completed ?? false) : false)
+            }
+          : { ...newEvent, isTask: true };
+      const response = await this.doRequest(url, { method: 'GET' });
+      const originalIcs = await response.text();
+      icsContent = updateVTodoCalendar(originalIcs, newEvent.uid, oldEvent, taskEvent);
+      Object.assign(newEvent, taskEvent);
+    } else {
+      icsContent = eventToIcs(newEvent);
+    }
 
     // PUT to update
     await this.doRequest(url, {

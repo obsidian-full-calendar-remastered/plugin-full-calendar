@@ -16,7 +16,7 @@ Calendars are automatically re-fetched from their source at most every five minu
 
 - **Two-Way Sync:** CalDAV calendars now support full two-way synchronization. Changes made in Obsidian are pushed to the server, and remote changes are pulled in periodically.
 - **Video Conferencing & Links:** Automatically parses the RFC 7986 `CONFERENCE` property and Microsoft Teams/Skype meeting URLs, mapping them into the event's location or description. All meeting links and general URLs are rendered as clickable hyperlinks in the [Event Details modal](../events/manage.md#video-conference--linkification-support). For details, see [Video Conference & Linkification Support](../events/manage.md#video-conference--linkification-support).
-- **Task Support (VTODO):** Existing mixed CalDAV sources retain their legacy VTODO reading and backlog behavior. For task-only collections and VTODO-native create/edit/complete/delete synchronization, use the dedicated [CalDAV Tasks](caldav-tasks.md) source.
+- **Task Support (VTODO):** Mixed CalDAV sources read both events and tasks. Creating an item marked as a task writes a `VTODO`; editing an imported task keeps it a `VTODO` instead of converting it into an all-day event. Existing server-specific task properties are preserved during edits. For isolated task/reminder collections, completion controls, and stricter task-only validation, use the dedicated [CalDAV Tasks](caldav-tasks.md) source.
 - **Timezones:** Events and tasks are parsed with their source timezone and converted to your Display Timezone for viewing.
 - **Cancellations:** Cancellations/exceptions present on the server are respected.
 
@@ -32,6 +32,9 @@ CalDAV tasks (`VTODO` components) that do not have a scheduled or due date are p
 - **Linked Notes**: Clicking the note icon next to a CalDAV task in the backlog will automatically generate and open a local linked markdown note in Obsidian using your configured templates, allowing you to attach rich local notes and details to remote tasks.
 
 The global **Linked Note Link Strategy** also applies to CalDAV tasks. Name-based mode reuses the exact task-title file across reschedules and recurring occurrences; deadline-based mode keeps dated occurrence notes separate.
+
+!!! note "Task identity during write-back"
+    Full Calendar stores calendar appointments as `VEVENT` and tasks as `VTODO`. An all-day task remains a task when it is created, renamed, or rescheduled through Obsidian; `all-day` controls placement only and does not convert the item into an event. Ordinary events continue to use `VEVENT`.
 
 ### Linked Task Date Properties
 

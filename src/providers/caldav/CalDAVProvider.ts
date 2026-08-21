@@ -1,7 +1,8 @@
+import ical from 'ical.js';
+import { TFile } from 'obsidian';
 import { OFCEvent, EventLocation } from '../../types';
 import { getEventsFromICS } from '../ics/ics';
-import { eventToIcs, createOverrideVEvent } from '../ics/formatter';
-import ical from 'ical.js';
+import { eventToIcs } from '../ics/formatter';
 import {
   CalendarProvider,
   CalendarProviderCapabilities,
@@ -10,901 +11,45 @@ import {
   TaskBacklogItem,
   TaskBacklogProvider
 } from '../Provider';
-import { EventHandle, FCReactComponent, ProviderConfigContext } from '../typesProvider';
-import { CalDAVProviderConfig } from './typesCalDAV';
-import FullCalendarPlugin from '../../main';
-import { CalDAVConfigComponent } from './CalDAVConfigComponent';
-import * as React from 'react';
-import { obsidianFetch } from './obsidian-fetch_caldav';
-import { createBasicAuthHeader } from './auth_caldav';
-import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
-import { TFile } from 'obsidian';
-import { CredentialStore } from '../../features/credentials/CredentialStore';
+import { EventHandle, FCReactComponent } from '../typesProvider';
 import {
-  createLinkedNoteForProvider,
-  openOrCreateLinkedNote
-} from '../../features/linked-notes/linkedNotes';
-import { parseTimezoneAwareString } from '../../features/timezone/Timezone';
-import { PluginState } from '../../core/PluginState';
-import { DateTime } from 'luxon';
+  CalDAVProviderConfig,
+  CalDAVTaskCalendarInfo,
+  CalDAVTaskInboxItem
+} from './types/typesCalDAV';
+import FullCalendarPlugin from '../../main';
+import { createBasicAuthHeader } from './auth/auth_caldav';
+import { LinkedNoteIndex } from '../utils/LinkedNoteIndex';
+import { CredentialStore } from '../../features/credentials/CredentialStore';
+import { createLinkedNoteForProvider } from '../../features/linked-notes/linkedNotes';
 import { isTask } from '../../types/tasks';
-import { modifyFrontmatterString } from '../fullnote/frontmatter';
-import { TasksBacklogDateTarget, TasksDateTarget } from '../../types/settings';
-
-import { fetchCalendarInfo } from './helper_caldav';
-
-// Helper function to ensure URL formatting is consistent.
-function canonCollection(u?: string): string {
-  return u ? (u.endsWith('/') ? u : `${u}/`) : (u as unknown as string);
-}
-
-// Helper to format a Date object into the format CalDAV expects (YYYYMMDDTHHMMSSZ).
-function ymdhmsZ(d: Date): string {
-  return d
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\.\d{3}Z$/, 'Z');
-}
-
-function assertNonEmptyText(text: string, message: string): string {
-  if (!text.trim()) {
-    throw new Error(message);
-  }
-  return text;
-}
-
-function assertIcsPayload(ics: string, source: string): string {
-  if (!ics.trim()) {
-    throw new Error(`${source} returned an empty ICS payload.`);
-  }
-  if (!/BEGIN:VCALENDAR/i.test(ics)) {
-    throw new Error(`${source} returned invalid ICS payload (missing BEGIN:VCALENDAR).`);
-  }
-  return ics;
-}
-
-function ensureXmlDocument(xml: string, source: string): Document {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'application/xml');
-  const parserError = doc.querySelector('parsererror');
-  if (parserError) {
-    throw new Error(`${source} returned malformed XML.`);
-  }
-  return doc;
-}
-
-function parseStatusCode(statusLine: string): number | null {
-  const match = statusLine.match(/\s(\d{3})(?:\s|$)/);
-  if (!match) {
-    return null;
-  }
-  return Number(match[1]);
-}
-
-type CalendarObjectRef = {
-  href: string;
-  etag?: string;
-};
-
-type CalendarObjectData = CalendarObjectRef & {
-  ics: string;
-};
-
-export type CalDAVTaskCalendarInfo = {
-  id: string;
-  name: string;
-};
-
-export type CalDAVTaskInboxItem = {
-  id: string;
-  uid: string;
-  title: string;
-  calendarId: string;
-  calendarName: string;
-  description: string;
-  location: string;
-  url: string;
-  status: string;
-  completed: boolean;
-  etag?: string;
-};
-
-export function encodeCalDAVTaskId(calendarId: string, uid: string): string {
-  return `caldav::${encodeURIComponent(calendarId)}::${encodeURIComponent(uid)}`;
-}
-
-export function parseCalDAVTaskId(taskId: string): { calendarId: string; uid: string } | null {
-  const parts = taskId.split('::');
-  if (parts.length !== 3 || parts[0] !== 'caldav') {
-    return null;
-  }
-
-  try {
-    return {
-      calendarId: decodeURIComponent(parts[1]),
-      uid: decodeURIComponent(parts[2])
-    };
-  } catch {
-    return null;
-  }
-}
-
-function shouldUseCompatibilityFetch(status: number): boolean {
-  return status === 400 || status === 422;
-}
-
-function getSuccessfulPropNode(response: Element): Element | null {
-  const propstats = response.getElementsByTagNameNS('*', 'propstat');
-
-  for (let i = 0; i < propstats.length; i++) {
-    const propstat = propstats[i];
-    const status = propstat.getElementsByTagNameNS('*', 'status')[0]?.textContent || '';
-    const statusCode = parseStatusCode(status);
-    if (statusCode === null || statusCode < 200 || statusCode >= 300) continue;
-
-    const prop = propstat.getElementsByTagNameNS('*', 'prop')[0];
-    if (prop) {
-      return prop;
-    }
-  }
-
-  return null;
-}
-
-function extractCalendarObjectRefs(doc: Document): CalendarObjectRef[] {
-  const refs: CalendarObjectRef[] = [];
-  const responses = Array.from(doc.getElementsByTagNameNS('*', 'response'));
-
-  for (const response of responses) {
-    const hrefNode =
-      response.getElementsByTagNameNS('DAV:', 'href')[0] ||
-      response.getElementsByTagNameNS('*', 'href')[0];
-    const href = hrefNode?.textContent?.trim();
-    if (!href || href.endsWith('/')) {
-      continue;
-    }
-
-    const prop = getSuccessfulPropNode(response);
-    let etag =
-      prop?.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent ||
-      prop?.getElementsByTagNameNS('*', 'getetag')[0]?.textContent ||
-      undefined;
-
-    if (etag) {
-      etag = etag.trim();
-    }
-
-    refs.push({ href, etag: etag || undefined });
-  }
-
-  return refs;
-}
-
-function resolveCollectionObjectUrl(collectionUrl: string, href: string): string {
-  return new URL(href, collectionUrl).toString();
-}
-
-function getTextProperty(component: ical.Component, property: string): string {
-  return String(component.getFirstPropertyValue(property) || '');
-}
-
-function getTaskUid(todo: ical.Component): string {
-  return getTextProperty(todo, 'uid').trim();
-}
-
-function hasValidTaskDate(todo: ical.Component, property: 'dtstart' | 'due'): boolean {
-  const prop = todo.getFirstProperty(property);
-  if (!prop) return false;
-
-  try {
-    const value: ical.Time = prop.getFirstValue();
-    return parseTimezoneAwareString(value).isValid;
-  } catch {
-    return false;
-  }
-}
-
-function mapTargetToVTodoProperty(target: TasksDateTarget): 'dtstart' | 'due' {
-  switch (target) {
-    case 'dueDate':
-      return 'due';
-    case 'startDate':
-    case 'scheduledDate':
-    default:
-      return 'dtstart';
-  }
-}
-
-function isUnscheduledTodo(
-  todo: ical.Component,
-  backlogDateTarget?: TasksBacklogDateTarget
-): boolean {
-  const target =
-    backlogDateTarget ??
-    PluginState.getSettings()?.tasksIntegration?.backlogDateTarget ??
-    'scheduledDate';
-  const targetProp = mapTargetToVTodoProperty(target);
-  return !hasValidTaskDate(todo, targetProp);
-}
-
-function isCompletedTodo(todo: ical.Component): boolean {
-  return (
-    getTextProperty(todo, 'status').toUpperCase() === 'COMPLETED' ||
-    Boolean(todo.getFirstProperty('completed'))
-  );
-}
-
-function parseVCalendar(ics: string): ical.Component {
-  return new ical.Component(ical.parse(ics));
-}
-
-function createRandomUid(): string {
-  if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-function createUnscheduledTaskIcs(uid: string, title: string): string {
-  const vcalendar = new ical.Component(['vcalendar', [], []]);
-  vcalendar.addPropertyWithValue('version', '2.0');
-  vcalendar.addPropertyWithValue('prodid', '-//Obsidian Full Calendar Plugin//NONSGML v1.0//EN');
-
-  const todo = new ical.Component('vtodo');
-  todo.addPropertyWithValue('uid', uid);
-  todo.addPropertyWithValue('summary', title);
-  todo.addPropertyWithValue('dtstamp', ical.Time.now());
-  todo.addPropertyWithValue('status', 'NEEDS-ACTION');
-  vcalendar.addSubcomponent(todo);
-
-  return (vcalendar as unknown as { toString(): string }).toString();
-}
-
-function findTodoByUid(vcalendar: ical.Component, uid: string): ical.Component | null {
-  const normalizedUid = uid.trim();
-  return (
-    vcalendar.getAllSubcomponents('vtodo').find(todo => getTaskUid(todo) === normalizedUid) ?? null
-  );
-}
-
-function getComponentUid(component: ical.Component): string {
-  return getTextProperty(component, 'uid').trim();
-}
-
-function normalizeRecurrenceIdString(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-
-  const dt = DateTime.fromISO(trimmed, { setZone: true });
-  if (!dt.isValid) return trimmed;
-  return dt.toISO({ suppressMilliseconds: true });
-}
-
-function getComponentRecurrenceId(component: ical.Component): string | null {
-  const prop = component.getFirstProperty('recurrence-id');
-  if (!prop) return null;
-
-  const value = prop.getFirstValue();
-  if (!(value instanceof ical.Time)) {
-    return normalizeRecurrenceIdString(String(value));
-  }
-
-  const dt = parseTimezoneAwareString(value);
-  if (value.isDate) {
-    return dt.toISODate();
-  }
-  return dt.toISO({ suppressMilliseconds: true });
-}
-
-function findVEventOverride(
-  vcalendar: ical.Component,
-  uid: string,
-  recurrenceId: string
-): ical.Component | null {
-  const normalizedRecurrenceId = normalizeRecurrenceIdString(recurrenceId);
-  if (!normalizedRecurrenceId) return null;
-
-  return (
-    vcalendar
-      .getAllSubcomponents('vevent')
-      .find(
-        vevent =>
-          getComponentUid(vevent) === uid &&
-          getComponentRecurrenceId(vevent) === normalizedRecurrenceId
-      ) ?? null
-  );
-}
-
-function removeSubcomponent(vcalendar: ical.Component, subcomponent: ical.Component): void {
-  (
-    vcalendar as unknown as { removeSubcomponent(component: ical.Component): void }
-  ).removeSubcomponent(subcomponent);
-}
-
-function parseUnscheduledTasksFromObject(
-  object: CalendarObjectData,
-  calendarId: string,
-  calendarName: string,
-  backlogDateTarget?: TasksBacklogDateTarget
-): CalDAVTaskInboxItem[] {
-  let vcalendar: ical.Component;
-  try {
-    vcalendar = parseVCalendar(object.ics);
-  } catch {
-    return [];
-  }
-
-  const tasks: CalDAVTaskInboxItem[] = [];
-
-  for (const todo of vcalendar.getAllSubcomponents('vtodo')) {
-    if (!isUnscheduledTodo(todo, backlogDateTarget)) {
-      continue;
-    }
-
-    const uid = getTaskUid(todo);
-    if (!uid) {
-      continue;
-    }
-
-    tasks.push({
-      id: uid,
-      uid,
-      title: getTextProperty(todo, 'summary') || 'Untitled task',
-      calendarId,
-      calendarName,
-      description: getTextProperty(todo, 'description'),
-      location: getTextProperty(todo, 'location'),
-      url: getTextProperty(todo, 'url'),
-      status: getTextProperty(todo, 'status'),
-      completed: isCompletedTodo(todo),
-      etag: object.etag
-    });
-  }
-
-  return tasks;
-}
-
-function allDayIcalTimeFromDate(date: Date): ical.Time {
-  return new ical.Time({
-    year: date.getFullYear(),
-    month: date.getMonth() + 1,
-    day: date.getDate(),
-    isDate: true
-  });
-}
-
-function timedIcalTimeFromDate(date: Date): ical.Time {
-  return new ical.Time({
-    year: date.getFullYear(),
-    month: date.getMonth() + 1,
-    day: date.getDate(),
-    hour: date.getHours(),
-    minute: date.getMinutes(),
-    second: date.getSeconds(),
-    isDate: false
-  });
-}
-
-function replaceAllDayTaskDate(
-  todo: ical.Component,
-  property: 'dtstart' | 'due',
-  date: Date
-): void {
-  todo.removeAllProperties(property);
-  const prop = new ical.Property(property);
-  prop.setValue(allDayIcalTimeFromDate(date));
-  todo.addProperty(prop);
-}
-
-function replaceTimedTaskDate(
-  todo: ical.Component,
-  property: 'dtstart' | 'due',
-  date: Date,
-  timezone: string
-): void {
-  todo.removeAllProperties(property);
-  const prop = new ical.Property(property);
-  if (timezone && timezone !== 'UTC' && timezone !== 'Z') {
-    prop.setParameter('TZID', timezone);
-  }
-  prop.setValue(timedIcalTimeFromDate(date));
-  todo.addProperty(prop);
-}
-
-function taskToLinkedNoteEvent(task: CalDAVTaskInboxItem): OFCEvent {
-  return {
-    type: 'single',
-    uid: task.uid,
-    title: task.title,
-    date: '',
-    endDate: null,
-    allDay: true,
-    completed: task.completed ? new Date().toISOString() : false,
-    description: task.description,
-    location: task.location,
-    url: task.url
-  };
-}
-
-const LINKED_TASK_DATE_PROPERTIES = ['scheduled', 'scheduled-link', 'due', 'due-link'] as const;
-
-function linkedTaskDailyNoteLink(date: string | null): string | null {
-  // YAML must quote wiki-links or Obsidian parses [[date]] as a nested array.
-  return date ? `"[[${date}]]"` : null;
-}
-
-function linkedTaskDateProperties(event: OFCEvent): Record<string, unknown> {
-  let scheduled: string | null = null;
-  let due: string | null = null;
-
-  if (event.type === 'single') {
-    scheduled = event.date || null;
-    due = event.endDate || scheduled;
-  } else if (event.type === 'rrule') {
-    scheduled = event.startDate || null;
-    due = event.endDate || scheduled;
-  }
-
-  return {
-    scheduled,
-    'scheduled-link': linkedTaskDailyNoteLink(scheduled),
-    due,
-    'due-link': linkedTaskDailyNoteLink(due)
-  };
-}
-
-async function fetchCalendarObjectsByRefs(
-  collectionUrl: string,
-  refs: CalendarObjectRef[],
-  authHeader?: string
-): Promise<CalendarObjectData[]> {
-  const getResults = await Promise.allSettled(
-    refs.map(async ref => {
-      const getHeaders: Record<string, string> = { Accept: 'text/calendar' };
-      if (authHeader) {
-        getHeaders['Authorization'] = authHeader;
-      }
-
-      const getUrl = resolveCollectionObjectUrl(collectionUrl, ref.href);
-      const getRes = await obsidianFetch(getUrl, { method: 'GET', headers: getHeaders });
-      const getText = await getRes.text();
-
-      if (getRes.status < 200 || getRes.status >= 300) {
-        throw new Error(`CalDAV fallback GET failed (${getRes.status}) for ${ref.href}`);
-      }
-
-      const payload: CalendarObjectData = {
-        href: ref.href,
-        ics: assertIcsPayload(getText, `CalDAV fallback GET for ${ref.href}`)
-      };
-
-      if (ref.etag) {
-        payload.etag = ref.etag;
-      }
-
-      return payload;
-    })
-  );
-
-  const successfulObjects: CalendarObjectData[] = [];
-  const failedResults: PromiseRejectedResult[] = [];
-
-  for (const result of getResults) {
-    if (result.status === 'fulfilled') {
-      successfulObjects.push(result.value);
-    } else {
-      failedResults.push(result);
-    }
-  }
-
-  if (failedResults.length > 0) {
-    console.warn(
-      `[CalDAVProvider] Compatibility fallback skipped ${failedResults.length} event object(s).`
-    );
-  }
-
-  if (successfulObjects.length === 0) {
-    const firstMessage =
-      failedResults[0] && failedResults[0].reason instanceof Error
-        ? failedResults[0].reason.message
-        : String(failedResults[0]?.reason ?? '');
-    throw new Error(
-      firstMessage || 'CalDAV fallback GET did not return any valid calendar objects.'
-    );
-  }
-
-  return successfulObjects;
-}
-
-async function fetchCalendarObjectsViaPropfindFallback(
-  collectionUrl: string,
-  authHeader?: string
-): Promise<CalendarObjectData[]> {
-  const propfindHeaders: Record<string, string> = {
-    Depth: '1',
-    'Content-Type': 'application/xml; charset=utf-8',
-    Accept: '*/*'
-  };
-  if (authHeader) {
-    propfindHeaders['Authorization'] = authHeader;
-  }
-
-  const propfindBody = `<?xml version="1.0" encoding="utf-8"?>
-<d:propfind xmlns:d="DAV:">
-  <d:prop>
-    <d:getetag/>
-  </d:prop>
-</d:propfind>`;
-
-  const propfindRes = await obsidianFetch(canonCollection(collectionUrl), {
-    method: 'PROPFIND',
-    headers: propfindHeaders,
-    body: propfindBody
-  });
-  const propfindXml = await propfindRes.text();
-
-  if (propfindRes.status < 200 || propfindRes.status >= 300) {
-    throw new Error(`CalDAV compatibility PROPFIND failed (${propfindRes.status}).`);
-  }
-
-  assertNonEmptyText(propfindXml, 'CalDAV compatibility PROPFIND returned an empty body.');
-  const propfindDoc = ensureXmlDocument(propfindXml, 'CalDAV compatibility PROPFIND');
-
-  const refs = extractCalendarObjectRefs(propfindDoc);
-  if (refs.length === 0) {
-    return [];
-  }
-
-  return fetchCalendarObjectsByRefs(collectionUrl, refs, authHeader);
-}
-
-async function fetchCalendarObjectsForComponent(
-  collectionUrl: string,
-  start: Date,
-  end: Date,
-  componentName: 'VEVENT' | 'VTODO',
-  authHeader?: string,
-  allowFallback = true
-): Promise<{ icsList: CalendarObjectData[]; fellBack: boolean }> {
-  const reportBody = `<?xml version="1.0" encoding="utf-8"?>
-<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-  <d:prop>
-    <d:getetag/>
-    <c:calendar-data/>
-  </d:prop>
-  <c:filter>
-    <c:comp-filter name="VCALENDAR">
-      <c:comp-filter name="${componentName}">
-        <c:time-range start="${ymdhmsZ(start)}" end="${ymdhmsZ(end)}"/>
-      </c:comp-filter>
-    </c:comp-filter>
-  </c:filter>
-</c:calendar-query>`;
-
-  const reportHeaders: Record<string, string> = {
-    Depth: '1',
-    'Content-Type': 'application/xml; charset=utf-8',
-    Accept: '*/*'
-  };
-  if (authHeader) {
-    reportHeaders['Authorization'] = authHeader;
-  }
-
-  const reportRes = await obsidianFetch(canonCollection(collectionUrl), {
-    method: 'REPORT',
-    headers: reportHeaders,
-    body: reportBody
-  });
-
-  const xml = await reportRes.text();
-
-  if (reportRes.status < 200 || reportRes.status >= 300) {
-    if (allowFallback && shouldUseCompatibilityFetch(reportRes.status)) {
-      console.warn(
-        `[CalDAVProvider] REPORT for ${componentName} ${reportRes.status}; attempting compatibility fallback.`
-      );
-      const list = await fetchCalendarObjectsViaPropfindFallback(collectionUrl, authHeader);
-      return { icsList: list, fellBack: true };
-    }
-    console.error(`[CalDAVProvider] REPORT request failed`, reportRes.status, xml.slice(0, 800));
-    throw new Error(`REPORT ${reportRes.status}`);
-  }
-
-  assertNonEmptyText(xml, 'CalDAV REPORT returned an empty body.');
-
-  // STEP 2: Parse the XML response using DOMParser
-  const doc = ensureXmlDocument(xml, 'CalDAV REPORT');
-  const icsList: CalendarObjectData[] = [];
-
-  const responses = doc.getElementsByTagNameNS('*', 'response');
-  const allResponses = Array.from(responses);
-
-  for (const response of allResponses) {
-    const propstats = response.getElementsByTagNameNS('*', 'propstat');
-
-    for (let i = 0; i < propstats.length; i++) {
-      const propstat = propstats[i];
-      const status = propstat.getElementsByTagNameNS('*', 'status')[0]?.textContent || '';
-      const statusCode = parseStatusCode(status);
-      if (statusCode === null || statusCode < 200 || statusCode >= 300) continue;
-
-      const prop = propstat.getElementsByTagNameNS('*', 'prop')[0];
-      if (!prop) continue;
-
-      // Try to find calendar-data
-      let calendarData = prop.getElementsByTagNameNS(
-        'urn:ietf:params:xml:ns:caldav',
-        'calendar-data'
-      )[0];
-
-      if (!calendarData) {
-        const candidates = prop.getElementsByTagNameNS('*', 'calendar-data');
-        if (candidates.length > 0) {
-          calendarData = candidates[0];
-        }
-      }
-
-      if (calendarData) {
-        const calendarText = assertNonEmptyText(
-          calendarData.textContent || '',
-          'CalDAV REPORT returned empty calendar-data payload.'
-        );
-        let etag = prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent;
-        if (!etag) {
-          const candidates = prop.getElementsByTagNameNS('*', 'getetag');
-          if (candidates.length > 0) etag = candidates[0].textContent;
-        }
-
-        const hrefNode =
-          response.getElementsByTagNameNS('DAV:', 'href')[0] ||
-          response.getElementsByTagNameNS('*', 'href')[0];
-        const href = hrefNode?.textContent?.trim() || '';
-
-        icsList.push({
-          href,
-          ics: assertIcsPayload(calendarText, 'CalDAV REPORT'),
-          etag: etag || undefined
-        });
-      }
-    }
-  }
-
-  // STEP 3: Fallback - if no calendar-data was returned, fetch individual .ics files
-  if (icsList.length === 0) {
-    const eventHrefs: string[] = [];
-
-    for (const response of allResponses) {
-      let hrefEl = response.getElementsByTagNameNS('DAV:', 'href')[0];
-      if (!hrefEl) {
-        const candidates = response.getElementsByTagNameNS('*', 'href');
-        if (candidates.length > 0) {
-          hrefEl = candidates[0];
-        }
-      }
-
-      if (hrefEl && hrefEl.textContent && hrefEl.textContent.endsWith('.ics')) {
-        eventHrefs.push(hrefEl.textContent);
-      }
-    }
-
-    if (eventHrefs.length === 0) {
-      return { icsList: [], fellBack: false };
-    }
-
-    const list = await fetchCalendarObjectsByRefs(
-      collectionUrl,
-      eventHrefs.map(href => ({ href })),
-      authHeader
-    );
-    return { icsList: list, fellBack: false };
-  }
-
-  return { icsList, fellBack: false };
-}
-
-async function fetchAllVTodoObjects(
-  collectionUrl: string,
-  authHeader?: string
-): Promise<CalendarObjectData[]> {
-  const reportBody = `<?xml version="1.0" encoding="utf-8"?>
-<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-  <d:prop>
-    <d:getetag/>
-    <c:calendar-data/>
-  </d:prop>
-  <c:filter>
-    <c:comp-filter name="VCALENDAR">
-      <c:comp-filter name="VTODO"/>
-    </c:comp-filter>
-  </c:filter>
-</c:calendar-query>`;
-
-  const reportHeaders: Record<string, string> = {
-    Depth: '1',
-    'Content-Type': 'application/xml; charset=utf-8',
-    Accept: '*/*'
-  };
-  if (authHeader) {
-    reportHeaders['Authorization'] = authHeader;
-  }
-
-  const reportRes = await obsidianFetch(canonCollection(collectionUrl), {
-    method: 'REPORT',
-    headers: reportHeaders,
-    body: reportBody
-  });
-  const xml = await reportRes.text();
-
-  if (reportRes.status < 200 || reportRes.status >= 300) {
-    if (shouldUseCompatibilityFetch(reportRes.status)) {
-      console.warn(
-        `[CalDAVProvider] REPORT for all VTODO ${reportRes.status}; attempting compatibility fallback.`
-      );
-      return fetchCalendarObjectsViaPropfindFallback(collectionUrl, authHeader);
-    }
-    console.error(
-      `[CalDAVProvider] VTODO REPORT request failed`,
-      reportRes.status,
-      xml.slice(0, 800)
-    );
-    throw new Error(`REPORT ${reportRes.status}`);
-  }
-
-  assertNonEmptyText(xml, 'CalDAV VTODO REPORT returned an empty body.');
-  const doc = ensureXmlDocument(xml, 'CalDAV VTODO REPORT');
-  const icsList: CalendarObjectData[] = [];
-  const responses = Array.from(doc.getElementsByTagNameNS('*', 'response'));
-
-  for (const response of responses) {
-    const prop = getSuccessfulPropNode(response);
-    if (!prop) continue;
-
-    const calendarData =
-      prop.getElementsByTagNameNS('urn:ietf:params:xml:ns:caldav', 'calendar-data')[0] ||
-      prop.getElementsByTagNameNS('*', 'calendar-data')[0];
-    if (!calendarData) continue;
-
-    const hrefNode =
-      response.getElementsByTagNameNS('DAV:', 'href')[0] ||
-      response.getElementsByTagNameNS('*', 'href')[0];
-    const href = hrefNode?.textContent?.trim() || '';
-    const etag =
-      prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent ||
-      prop.getElementsByTagNameNS('*', 'getetag')[0]?.textContent ||
-      undefined;
-
-    icsList.push({
-      href,
-      ics: assertIcsPayload(
-        assertNonEmptyText(
-          calendarData.textContent || '',
-          'CalDAV VTODO REPORT returned empty calendar-data payload.'
-        ),
-        'CalDAV VTODO REPORT'
-      ),
-      etag: etag || undefined
-    });
-  }
-
-  return icsList;
-}
-
-// --- Direct REPORT + GET implementation (standards-compliant) ---
-async function fetchCalendarObjects(
-  collectionUrl: string,
-  start: Date,
-  end: Date,
-  username?: string,
-  password?: string
-): Promise<CalendarObjectData[]> {
-  const authHeader = createBasicAuthHeader(username, password);
-
-  // 1. Fetch VEVENT components (allow fallback)
-  const { icsList: veventList, fellBack } = await fetchCalendarObjectsForComponent(
-    collectionUrl,
-    start,
-    end,
-    'VEVENT',
-    authHeader,
-    true
-  );
-
-  // If compatibility fallback was triggered, we already have all resource files (VEVENT & VTODO)
-  // from the collection, so we can return them directly!
-  if (fellBack) {
-    return veventList;
-  }
-
-  // 2. Fetch VTODO components, catching errors gracefully to maintain calendar-only compatibility.
-  // We disable fallback here because if VEVENT didn't need it, VTODO doesn't need it.
-  let vtodoList: CalendarObjectData[] = [];
-  try {
-    const res = await fetchCalendarObjectsForComponent(
-      collectionUrl,
-      start,
-      end,
-      'VTODO',
-      authHeader,
-      false
-    );
-    vtodoList = res.icsList;
-  } catch (err) {
-    console.warn(
-      '[CalDAVProvider] Failed to fetch VTODO components (possibly calendar-only collection). Skipping VTODO.',
-      err
-    );
-  }
-
-  // 3. Combine and deduplicate by 'ics' content payload
-  const combined = [...veventList, ...vtodoList];
-  const seenIcs = new Set<string>();
-  const deduplicated: CalendarObjectData[] = [];
-
-  for (const item of combined) {
-    const trimmed = item.ics.trim();
-    if (!seenIcs.has(trimmed)) {
-      seenIcs.add(trimmed);
-      deduplicated.push(item);
-    }
-  }
-
-  return deduplicated;
-}
-
-// --- Read-only settings row ---
-const CalDAVSettingRow: React.FC<{ source: Partial<import('../../types').CalendarInfo> }> = ({
-  source
-}) => {
-  const url = (source as unknown as { url?: string })?.url || '';
-  const username = (source as unknown as { username?: string })?.username || '';
-
-  return React.createElement(
-    React.Fragment,
-    {},
-    React.createElement(
-      'div',
-      { className: 'setting-item-control' },
-      React.createElement('input', {
-        disabled: true,
-        type: 'text',
-        value: url,
-        className: 'ofc-setting-input'
-      })
-    ),
-    React.createElement(
-      'div',
-      { className: 'setting-item-control' },
-      React.createElement('input', {
-        disabled: true,
-        type: 'text',
-        value: username,
-        className: 'ofc-setting-input'
-      })
-    )
-  );
-};
-
-type CalDAVConfigProps = {
-  plugin: FullCalendarPlugin;
-  config: Partial<CalDAVProviderConfig>;
-  onConfigChange: (newConfig: Partial<CalDAVProviderConfig>) => void;
-  context: ProviderConfigContext;
-  onSave: (finalConfig: CalDAVProviderConfig | CalDAVProviderConfig[]) => void;
-  onClose: () => void;
-};
-
-const CalDAVConfigWrapper: React.FC<CalDAVConfigProps> = props => {
-  const { config, onSave, onClose } = props;
-  const handleSave = (configs: CalDAVProviderConfig[]) => onSave(configs);
-
-  return React.createElement(CalDAVConfigComponent, {
-    config,
-    onSave: handleSave,
-    onClose
-  });
-};
+import { canonCollection, fetchCalendarInfo } from './client/helper_caldav';
+import {
+  doRequest,
+  fetchCalendarObjects,
+  fetchVCalendar,
+  getUidFromHref,
+  putVCalendar,
+  resolveEventObjectUrl
+} from './client/caldavClient';
+import { obsidianFetch } from './obsidian-fetch_caldav';
+import {
+  createRandomUid,
+  encodeCalDAVTaskId,
+  parseCalDAVTaskId,
+  taskToLinkedNoteEvent
+} from './parser/taskParser';
+import {
+  buildOverrideEventData,
+  deleteRecurrenceOverrideInVCalendar,
+  updateRecurrenceOverrideInVCalendar
+} from './parser/recurrenceOverrides';
+import { updateLinkedTaskNoteDates } from './services/caldavLinkedNoteService';
+import { CalDAVTaskService } from './services/CalDAVTaskService';
+import { CalDAVConfigProps, CalDAVConfigWrapper, CalDAVSettingRow } from './ui/CalDAVSettingRow';
+
+export { encodeCalDAVTaskId, parseCalDAVTaskId };
+export type { CalDAVTaskCalendarInfo, CalDAVTaskInboxItem };
 
 export class CalDAVProvider
   implements CalendarProvider<CalDAVProviderConfig>, SyncKeyProvider, TaskBacklogProvider
@@ -919,9 +64,7 @@ export class CalDAVProvider
   private plugin: FullCalendarPlugin;
   private source: CalDAVProviderConfig;
   public readonly linkedNoteIndex: LinkedNoteIndex;
-  private undatedTaskCache: CalDAVTaskInboxItem[] = [];
-  private undatedTaskLoadPromise: Promise<CalDAVTaskInboxItem[]> | null = null;
-  private hasLoadedUndatedTasks = false;
+  private taskService: CalDAVTaskService;
 
   readonly type = 'caldav';
   readonly displayName = 'CalDAV';
@@ -932,6 +75,9 @@ export class CalDAVProvider
     this.plugin = plugin;
     this.source = source;
     this.linkedNoteIndex = new LinkedNoteIndex(plugin.app, source.id);
+    this.taskService = new CalDAVTaskService(source, plugin, this.linkedNoteIndex, () =>
+      this.getPassword()
+    );
   }
 
   private getPassword(): string | null {
@@ -961,7 +107,7 @@ export class CalDAVProvider
       templateContentOverride
     });
     if (file && isTask(event)) {
-      await this.updateLinkedTaskNoteDates(event, file);
+      await updateLinkedTaskNoteDates(this.plugin.app, this.linkedNoteIndex, event, file);
     }
     return file;
   }
@@ -971,19 +117,11 @@ export class CalDAVProvider
   }
 
   getTaskInboxCalendarInfo(): CalDAVTaskCalendarInfo {
-    return {
-      id: this.source.id,
-      name: this.source.name
-    };
+    return this.taskService.getTaskInboxCalendarInfo();
   }
 
   getTaskBacklogInfo(): TaskBacklogInfo {
-    return {
-      id: this.source.id,
-      name: this.source.name,
-      title: 'CalDAV task inbox',
-      supportsCreate: true
-    };
+    return this.taskService.getTaskBacklogInfo();
   }
 
   getCapabilities(): CalendarProviderCapabilities {
@@ -1005,36 +143,6 @@ export class CalDAVProvider
       return { persistentId: event.caldavHref, ...context };
     }
     return event.uid ? { persistentId: event.uid, ...context } : null;
-  }
-
-  private async updateLinkedTaskNoteDates(event: OFCEvent, knownFile?: TFile): Promise<void> {
-    const uid = event.uid || event.id;
-    if (!uid) return;
-
-    const file =
-      knownFile ||
-      (await this.linkedNoteIndex.getFileForEventAfterHydration(uid, event.recurrenceId));
-    if (!file) return;
-
-    const contents = await this.plugin.app.vault.read(file);
-    const updatedContents = modifyFrontmatterString(contents, linkedTaskDateProperties(event));
-    if (updatedContents !== contents) {
-      await this.plugin.app.vault.modify(file, updatedContents);
-    }
-  }
-
-  private async clearLinkedTaskNoteDates(uid: string): Promise<void> {
-    const file = await this.linkedNoteIndex.getFileForEventAfterHydration(uid);
-    if (!file) return;
-
-    const contents = await this.plugin.app.vault.read(file);
-    const removals = Object.fromEntries(
-      LINKED_TASK_DATE_PROPERTIES.map(property => [property, null])
-    );
-    const updatedContents = modifyFrontmatterString(contents, removals);
-    if (updatedContents !== contents) {
-      await this.plugin.app.vault.modify(file, updatedContents);
-    }
   }
 
   computeSyncKey(event: OFCEvent): string {
@@ -1105,7 +213,9 @@ export class CalDAVProvider
       }
 
       await Promise.all(
-        parsedEvents.filter(isTask).map(event => this.updateLinkedTaskNoteDates(event))
+        parsedEvents
+          .filter(isTask)
+          .map(event => updateLinkedTaskNoteDates(this.plugin.app, this.linkedNoteIndex, event))
       );
 
       return parsedEvents.map(ev => {
@@ -1122,191 +232,40 @@ export class CalDAVProvider
     }
   }
 
-  private async loadUndatedTasksFromRemote(): Promise<CalDAVTaskInboxItem[]> {
-    const { isCalendar: isValid } = await fetchCalendarInfo(this.source.homeUrl, {
-      username: this.source.username,
-      password: this.getPassword() ?? undefined
-    });
-
-    if (!isValid) {
-      throw new Error(
-        `[CalDAVProvider] Invalid collection URL or not a calendar: ${this.source.homeUrl}`
-      );
-    }
-
-    const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
-    const objects = await fetchAllVTodoObjects(this.source.homeUrl, authHeader);
-    return objects.flatMap(object =>
-      parseUnscheduledTasksFromObject(object, this.source.id, this.source.name)
-    );
-  }
-
   async refreshUndatedTasks(): Promise<CalDAVTaskInboxItem[]> {
-    if (this.undatedTaskLoadPromise) {
-      return this.undatedTaskLoadPromise;
-    }
-
-    this.undatedTaskLoadPromise = this.loadUndatedTasksFromRemote()
-      .then(tasks => {
-        this.undatedTaskCache = tasks;
-        this.hasLoadedUndatedTasks = true;
-        return [...this.undatedTaskCache];
-      })
-      .finally(() => {
-        this.undatedTaskLoadPromise = null;
-      });
-
-    return this.undatedTaskLoadPromise;
+    return this.taskService.refreshUndatedTasks();
   }
 
   async refreshTaskBacklogItems(): Promise<TaskBacklogItem[]> {
-    const tasks = await this.refreshUndatedTasks();
-    return tasks.map(task => this.toTaskBacklogItem(task));
+    return this.taskService.refreshTaskBacklogItems();
   }
 
   async getUndatedTasks(): Promise<CalDAVTaskInboxItem[]> {
-    if (!this.hasLoadedUndatedTasks) {
-      return this.refreshUndatedTasks();
-    }
-
-    return Promise.resolve([...this.undatedTaskCache]);
+    return this.taskService.getUndatedTasks();
   }
 
   async getTaskBacklogItems(): Promise<TaskBacklogItem[]> {
-    const tasks = await this.getUndatedTasks();
-    return tasks.map(task => this.toTaskBacklogItem(task));
+    return this.taskService.getTaskBacklogItems();
   }
 
   async createTaskBacklogItem(title: string): Promise<TaskBacklogItem> {
-    const task = await this.createTask(title);
-    return this.toTaskBacklogItem(task);
+    return this.taskService.createTaskBacklogItem(title);
   }
 
   async deleteTaskBacklogItem(taskId: string): Promise<void> {
-    const parsed = parseCalDAVTaskId(taskId);
-    let taskUid = taskId;
-    if (parsed) {
-      if (parsed.calendarId !== this.source.id) {
-        throw new Error(`CalDAV task ID ${taskId} does not belong to this provider.`);
-      }
-      taskUid = parsed.uid;
-    }
-
-    await this.deleteEvent({ persistentId: taskUid });
-    this.undatedTaskCache = this.undatedTaskCache.filter(task => task.uid !== taskUid);
-    this.hasLoadedUndatedTasks = true;
+    return this.taskService.deleteTaskBacklogItem(taskId);
   }
 
   async setTaskBacklogItemComplete(taskId: string, isDone: boolean): Promise<boolean> {
-    const parsed = parseCalDAVTaskId(taskId);
-    let taskUid = taskId;
-    if (parsed) {
-      if (parsed.calendarId !== this.source.id) {
-        return false;
-      }
-      taskUid = parsed.uid;
-    }
-
-    const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
-    const objects = await fetchCalendarObjectsViaPropfindFallback(this.source.homeUrl, authHeader);
-
-    for (const object of objects) {
-      const vcalendar = parseVCalendar(object.ics);
-      const todo = findTodoByUid(vcalendar, taskUid);
-      if (!todo || !isUnscheduledTodo(todo)) {
-        continue;
-      }
-
-      todo.updatePropertyWithValue('status', isDone ? 'COMPLETED' : 'NEEDS-ACTION');
-      if (isDone) {
-        todo.updatePropertyWithValue('completed', ical.Time.now());
-      } else {
-        todo.removeAllProperties('completed');
-      }
-      todo.updatePropertyWithValue('last-modified', ical.Time.now());
-
-      const url = resolveCollectionObjectUrl(this.source.homeUrl, object.href);
-      await this.doRequest(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'text/calendar; charset=utf-8',
-          ...(object.etag ? { 'If-Match': object.etag } : {})
-        },
-        body: (vcalendar as unknown as { toString(): string }).toString()
-      });
-
-      this.undatedTaskCache = this.undatedTaskCache.filter(task => task.uid !== taskUid);
-      this.hasLoadedUndatedTasks = true;
-      PluginState.getProviderRegistry().refreshBacklogViews();
-      return true;
-    }
-
-    return false;
+    return this.taskService.setTaskBacklogItemComplete(taskId, isDone);
   }
 
   async openTaskBacklogItem(taskId: string): Promise<void> {
-    const parsed = parseCalDAVTaskId(taskId);
-    if (!parsed || parsed.calendarId !== this.source.id) {
-      return;
-    }
-
-    const task = this.undatedTaskCache.find(candidate => candidate.uid === parsed.uid);
-    if (!task) {
-      return;
-    }
-
-    await openOrCreateLinkedNote(this.plugin, this.source.id, taskToLinkedNoteEvent(task), false);
-  }
-
-  private toTaskBacklogItem(task: CalDAVTaskInboxItem): TaskBacklogItem {
-    return {
-      id: encodeCalDAVTaskId(task.calendarId, task.uid),
-      title: task.title,
-      completed: task.completed,
-      subtitle: task.calendarName,
-      sourceId: task.calendarId
-    };
+    return this.taskService.openTaskBacklogItem(taskId);
   }
 
   async createTask(title: string): Promise<CalDAVTaskInboxItem> {
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
-      throw new Error('CalDAV task title cannot be empty.');
-    }
-
-    const uid = createRandomUid();
-    const icsContent = createUnscheduledTaskIcs(uid, trimmedTitle);
-    const url = `${canonCollection(this.source.homeUrl)}${uid}.ics`;
-
-    await this.doRequest(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'text/calendar; charset=utf-8',
-        'If-None-Match': '*'
-      },
-      body: icsContent
-    });
-
-    const task: CalDAVTaskInboxItem = {
-      id: uid,
-      uid,
-      title: trimmedTitle,
-      calendarId: this.source.id,
-      calendarName: this.source.name,
-      description: '',
-      location: '',
-      url: '',
-      status: 'NEEDS-ACTION',
-      completed: false
-    };
-
-    this.undatedTaskCache = [
-      task,
-      ...this.undatedTaskCache.filter(existingTask => existingTask.uid !== uid)
-    ];
-    this.hasLoadedUndatedTasks = true;
-
-    return task;
+    return this.taskService.createTask(title);
   }
 
   async createEvent(event: OFCEvent): Promise<[OFCEvent, EventLocation | null]> {
@@ -1320,18 +279,21 @@ export class CalDAVProvider
     const icsContent = eventToIcs(event);
 
     // 3. PUT to server
-    // URL typically: collectionUrl + uid + ".ics"
-    // Helper ensure trailing slash on homeUrl
     const url = `${canonCollection(this.source.homeUrl)}${uid}.ics`;
 
-    await this.doRequest(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'text/calendar; charset=utf-8',
-        'If-None-Match': '*' // Prevent overwriting if it somehow exists
+    await doRequest(
+      url,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'text/calendar; charset=utf-8',
+          'If-None-Match': '*' // Prevent overwriting if it somehow exists
+        },
+        body: icsContent
       },
-      body: icsContent
-    });
+      this.source.username,
+      this.getPassword() ?? undefined
+    );
 
     return [event, null];
   }
@@ -1343,14 +305,20 @@ export class CalDAVProvider
   ): Promise<EventLocation | null> {
     const href = handle.persistentId;
     if (!newEvent.uid) {
-      newEvent.uid = oldEvent.uid || this.getUidFromHref(href);
+      newEvent.uid = oldEvent.uid || getUidFromHref(href);
     }
 
-    const url = this.resolveEventObjectUrl(href);
+    const url = resolveEventObjectUrl(this.source.homeUrl, href);
     if (oldEvent.recurrenceId && oldEvent.uid) {
-      await this.updateRecurrenceOverride(url, oldEvent, newEvent);
+      const vcalendar = await fetchVCalendar(
+        url,
+        this.source.username,
+        this.getPassword() ?? undefined
+      );
+      updateRecurrenceOverrideInVCalendar(vcalendar, oldEvent, newEvent);
+      await putVCalendar(url, vcalendar, this.source.username, this.getPassword() ?? undefined);
       if (isTask(newEvent)) {
-        await this.updateLinkedTaskNoteDates(newEvent);
+        await updateLinkedTaskNoteDates(this.plugin.app, this.linkedNoteIndex, newEvent);
       }
       return null;
     }
@@ -1359,283 +327,73 @@ export class CalDAVProvider
     const icsContent = eventToIcs(newEvent);
 
     // PUT to update
-    await this.doRequest(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'text/calendar; charset=utf-8',
-        ...(oldEvent.etag ? { 'If-Match': `"${oldEvent.etag}"` } : {})
-        // We could use If-Match with ETag if we had it, to prevent lost updates.
-        // For now, simpler last-write-wins or just overwrite.
+    await doRequest(
+      url,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'text/calendar; charset=utf-8',
+          ...(oldEvent.etag ? { 'If-Match': `"${oldEvent.etag}"` } : {})
+        },
+        body: icsContent
       },
-      body: icsContent
-    });
+      this.source.username,
+      this.getPassword() ?? undefined
+    );
 
     if (isTask(newEvent)) {
-      await this.updateLinkedTaskNoteDates(newEvent);
+      await updateLinkedTaskNoteDates(this.plugin.app, this.linkedNoteIndex, newEvent);
     }
 
     return null;
   }
 
   async deleteEvent(handle: EventHandle): Promise<void> {
-    const url = this.resolveEventObjectUrl(handle.persistentId);
+    const url = resolveEventObjectUrl(this.source.homeUrl, handle.persistentId);
 
     if (handle.uid && handle.recurrenceId) {
-      await this.deleteRecurrenceOverride(url, handle.uid, handle.recurrenceId);
+      const vcalendar = await fetchVCalendar(
+        url,
+        this.source.username,
+        this.getPassword() ?? undefined
+      );
+      deleteRecurrenceOverrideInVCalendar(vcalendar, handle.uid, handle.recurrenceId);
+      await putVCalendar(url, vcalendar, this.source.username, this.getPassword() ?? undefined);
       return;
     }
 
-    await this.doRequest(url, {
-      method: 'DELETE'
-    });
+    await doRequest(
+      url,
+      {
+        method: 'DELETE'
+      },
+      this.source.username,
+      this.getPassword() ?? undefined
+    );
   }
 
   public ownsTaskId(taskId: string): boolean {
-    const parsed = parseCalDAVTaskId(taskId);
-    return parsed !== null && parsed.calendarId === this.source.id;
+    return this.taskService.ownsTaskId(taskId);
   }
 
   async validateTaskSchedule(
     taskId: string,
     date: Date
   ): Promise<{ isValid: boolean; reason?: string }> {
-    const parsed = parseCalDAVTaskId(taskId);
-    let taskUid = taskId;
-    if (parsed) {
-      if (parsed.calendarId !== this.source.id) {
-        return { isValid: false, reason: 'Task does not belong to this calendar source.' };
-      }
-      taskUid = parsed.uid;
-    }
-
     const provider = this as CalendarProvider<CalDAVProviderConfig>;
-    if (provider.canBeScheduledAt && typeof provider.canBeScheduledAt === 'function') {
-      return provider.canBeScheduledAt(
-        {
-          uid: taskUid,
-          title: '',
-          type: 'single',
-          allDay: true,
-          date: '',
-          endDate: null,
-          completed: false
-        },
-        date
-      );
-    }
-    return { isValid: true };
+    return this.taskService.validateTaskSchedule(
+      taskId,
+      date,
+      provider.canBeScheduledAt?.bind(this)
+    );
   }
 
   async scheduleTask(taskId: string, date: Date, allDay = true): Promise<void> {
-    const parsed = parseCalDAVTaskId(taskId);
-    let taskUid = taskId;
-    if (parsed) {
-      if (parsed.calendarId !== this.source.id) {
-        throw new Error(`CalDAV task ID ${taskId} does not belong to this provider.`);
-      }
-      taskUid = parsed.uid;
-    }
-    const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
-    const objects = await fetchCalendarObjectsViaPropfindFallback(this.source.homeUrl, authHeader);
-
-    for (const object of objects) {
-      const vcalendar = parseVCalendar(object.ics);
-      const todo = findTodoByUid(vcalendar, taskUid);
-      if (!todo) {
-        continue;
-      }
-
-      const currentHasStart = hasValidTaskDate(todo, 'dtstart');
-      const currentHasDue = hasValidTaskDate(todo, 'due');
-      let preservedDurationMs: number | null = null;
-
-      if (currentHasStart && currentHasDue) {
-        const startProp = todo.getFirstProperty('dtstart');
-        const dueProp = todo.getFirstProperty('due');
-        if (startProp && dueProp) {
-          const startVal = startProp.getFirstValue() as ical.Time | undefined;
-          const dueVal = dueProp.getFirstValue() as ical.Time | undefined;
-          if (startVal && dueVal) {
-            const startLuxon = parseTimezoneAwareString(startVal);
-            const dueLuxon = parseTimezoneAwareString(dueVal);
-            if (startLuxon.isValid && dueLuxon.isValid) {
-              preservedDurationMs = dueLuxon.toMillis() - startLuxon.toMillis();
-            }
-          }
-        }
-      }
-
-      const settings = PluginState.getSettings()?.tasksIntegration;
-      const backlogDateTarget = settings?.backlogDateTarget ?? 'scheduledDate';
-      const calendarDisplayDateTarget = settings?.calendarDisplayDateTarget ?? 'scheduledDate';
-
-      const planningTargets = Array.from(
-        new Set<TasksDateTarget>([calendarDisplayDateTarget, backlogDateTarget])
-      );
-      const targetProps = Array.from(new Set(planningTargets.map(mapTargetToVTodoProperty)));
-
-      const displayTimezone =
-        PluginState.getSettings()?.displayTimezone ||
-        Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-      if (targetProps.includes('dtstart') && targetProps.includes('due')) {
-        if (allDay) {
-          replaceAllDayTaskDate(todo, 'dtstart', date);
-          const targetDueDate =
-            preservedDurationMs !== null && preservedDurationMs > 0
-              ? new Date(date.getTime() + preservedDurationMs)
-              : date;
-          replaceAllDayTaskDate(todo, 'due', targetDueDate);
-        } else {
-          replaceTimedTaskDate(todo, 'dtstart', date, displayTimezone);
-          const targetDueDate =
-            preservedDurationMs !== null && preservedDurationMs > 0
-              ? new Date(date.getTime() + preservedDurationMs)
-              : new Date(date.getTime() + 60 * 60 * 1000);
-          replaceTimedTaskDate(todo, 'due', targetDueDate, displayTimezone);
-        }
-      } else if (targetProps.includes('dtstart')) {
-        if (allDay) {
-          replaceAllDayTaskDate(todo, 'dtstart', date);
-          if (preservedDurationMs !== null && preservedDurationMs > 0) {
-            replaceAllDayTaskDate(todo, 'due', new Date(date.getTime() + preservedDurationMs));
-          }
-        } else {
-          replaceTimedTaskDate(todo, 'dtstart', date, displayTimezone);
-          if (preservedDurationMs !== null && preservedDurationMs > 0) {
-            replaceTimedTaskDate(
-              todo,
-              'due',
-              new Date(date.getTime() + preservedDurationMs),
-              displayTimezone
-            );
-          }
-        }
-      } else if (targetProps.includes('due')) {
-        if (allDay) {
-          replaceAllDayTaskDate(todo, 'due', date);
-          if (preservedDurationMs !== null && preservedDurationMs > 0) {
-            replaceAllDayTaskDate(todo, 'dtstart', new Date(date.getTime() - preservedDurationMs));
-          }
-        } else {
-          replaceTimedTaskDate(todo, 'due', date, displayTimezone);
-          if (preservedDurationMs !== null && preservedDurationMs > 0) {
-            replaceTimedTaskDate(
-              todo,
-              'dtstart',
-              new Date(date.getTime() - preservedDurationMs),
-              displayTimezone
-            );
-          }
-        }
-      }
-
-      todo.updatePropertyWithValue('last-modified', ical.Time.now());
-
-      const url = resolveCollectionObjectUrl(this.source.homeUrl, object.href);
-      await this.doRequest(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'text/calendar; charset=utf-8',
-          ...(object.etag ? { 'If-Match': object.etag } : {})
-        },
-        body: (vcalendar as unknown as { toString(): string }).toString()
-      });
-
-      this.undatedTaskCache = this.undatedTaskCache.filter(task => task.uid !== taskUid);
-      this.hasLoadedUndatedTasks = true;
-      const scheduledDate = DateTime.fromJSDate(date).toISODate() || '';
-      let scheduledEndDate: string | null = null;
-      if (hasValidTaskDate(todo, 'due') && hasValidTaskDate(todo, 'dtstart')) {
-        const dueProp = todo.getFirstProperty('due');
-        const dueVal = dueProp?.getFirstValue() as ical.Time | undefined;
-        if (dueVal) {
-          const dueLuxon = parseTimezoneAwareString(dueVal);
-          if (dueLuxon.isValid) {
-            const dueISODate = dueLuxon.toISODate();
-            if (dueISODate && dueISODate !== scheduledDate) {
-              scheduledEndDate = dueISODate;
-            }
-          }
-        }
-      }
-
-      const scheduledTask: OFCEvent = {
-        type: 'single',
-        uid: taskUid,
-        title: getTextProperty(todo, 'summary') || 'Untitled task',
-        date: scheduledDate,
-        endDate: scheduledEndDate,
-        completed: isCompletedTodo(todo) ? DateTime.now().toISO() : false,
-        ...(allDay
-          ? { allDay: true }
-          : {
-              allDay: false,
-              startTime: DateTime.fromJSDate(date).toFormat('HH:mm'),
-              endTime:
-                preservedDurationMs !== null && preservedDurationMs > 0
-                  ? DateTime.fromJSDate(new Date(date.getTime() + preservedDurationMs)).toFormat(
-                      'HH:mm'
-                    )
-                  : DateTime.fromJSDate(date).plus({ hours: 1 }).toFormat('HH:mm')
-            })
-      };
-      await this.updateLinkedTaskNoteDates(scheduledTask);
-      return;
-    }
-
-    throw new Error(`CalDAV task ${taskUid} was not found.`);
+    return this.taskService.scheduleTask(taskId, date, allDay);
   }
 
   async unscheduleTask(taskId: string): Promise<void> {
-    const parsed = parseCalDAVTaskId(taskId);
-    let taskUid = taskId;
-    if (parsed) {
-      if (parsed.calendarId !== this.source.id) {
-        throw new Error(`CalDAV task ID ${taskId} does not belong to this provider.`);
-      }
-      taskUid = parsed.uid;
-    }
-    const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
-    const objects = await fetchCalendarObjectsViaPropfindFallback(this.source.homeUrl, authHeader);
-
-    for (const object of objects) {
-      const vcalendar = parseVCalendar(object.ics);
-      const todo = findTodoByUid(vcalendar, taskUid);
-      if (!todo) {
-        continue;
-      }
-
-      todo.removeAllProperties('dtstart');
-      todo.removeAllProperties('due');
-      todo.updatePropertyWithValue('last-modified', ical.Time.now());
-
-      const url = resolveCollectionObjectUrl(this.source.homeUrl, object.href);
-      await this.doRequest(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'text/calendar; charset=utf-8',
-          ...(object.etag ? { 'If-Match': object.etag } : {})
-        },
-        body: (vcalendar as unknown as { toString(): string }).toString()
-      });
-
-      const updatedIcs = (vcalendar as unknown as { toString(): string }).toString();
-      const unscheduledTasks = parseUnscheduledTasksFromObject(
-        { ...object, ics: updatedIcs },
-        this.source.id,
-        this.source.name
-      );
-      this.undatedTaskCache = [
-        ...this.undatedTaskCache.filter(task => task.uid !== taskUid),
-        ...unscheduledTasks
-      ];
-      this.hasLoadedUndatedTasks = true;
-      await this.clearLinkedTaskNoteDates(taskUid);
-      return;
-    }
-
-    throw new Error(`CalDAV task ${taskUid} was not found.`);
+    return this.taskService.unscheduleTask(taskId);
   }
 
   async createInstanceOverride(
@@ -1643,7 +401,6 @@ export class CalDAVProvider
     instanceDate: string,
     newEventData: OFCEvent
   ): Promise<[OFCEvent, EventLocation | null]> {
-    // 1. Fetch the existing ICS for the master event
     if (!masterEvent.uid) {
       throw new Error('Cannot create override: Master event has no UID.');
     }
@@ -1651,161 +408,47 @@ export class CalDAVProvider
     if (!handle) {
       throw new Error('Cannot create override: Master event has no CalDAV object reference.');
     }
-    const url = this.resolveEventObjectUrl(handle.persistentId);
+    const url = resolveEventObjectUrl(this.source.homeUrl, handle.persistentId);
 
-    // Fetch existing
-    // We need to fetch the raw text of the ICS file.
     const headers: Record<string, string> = {};
     const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
     if (authHeader) {
       headers['Authorization'] = authHeader;
     }
 
-    // Use obsidianFetch directly for GET
     const res = await obsidianFetch(url, { method: 'GET', headers });
     if (res.status >= 300) {
       throw new Error(`Failed to fetch original event for override: ${res.status}`);
     }
     const originalIcs = await res.text();
 
-    // 2. Parse existing ICS
     const jcal = ical.parse(originalIcs);
     const vcalendar = new ical.Component(jcal);
 
-    // 3. Create the Override VEVENT
-    const originalInstanceStart =
-      masterEvent.allDay || !('startTime' in masterEvent)
-        ? instanceDate
-        : `${instanceDate}T${masterEvent.startTime}`;
-    const overrideEventData: OFCEvent = {
-      ...newEventData,
-      uid: masterEvent.uid,
-      timezone: newEventData.timezone || masterEvent.timezone,
-      recurrenceId: originalInstanceStart,
-      notify: newEventData.notify !== undefined ? newEventData.notify : masterEvent.notify,
-      alarms: newEventData.alarms !== undefined ? newEventData.alarms : masterEvent.alarms
-    };
-    const overrideVEvent = createOverrideVEvent(overrideEventData, originalInstanceStart);
+    const { overrideEventData, overrideVEvent } = buildOverrideEventData(
+      masterEvent,
+      instanceDate,
+      newEventData
+    );
 
-    // 4. Merge: Add the new VEVENT to the VCALENDAR
     vcalendar.addSubcomponent(overrideVEvent);
 
-    // 5. Update: PUT the new ICS back
-    // ical.Component properly implements toString(), cast to satisfy lint
     const newIcsContent = (vcalendar as unknown as { toString(): string }).toString();
 
-    await this.doRequest(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'text/calendar; charset=utf-8'
-        // Ideally use ETag (If-Match) to avoid race conditions, but for now strict overwrite is safer
-        // given we just fetched it.
+    await doRequest(
+      url,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'text/calendar; charset=utf-8'
+        },
+        body: newIcsContent
       },
-      body: newIcsContent
-    });
+      this.source.username,
+      this.getPassword() ?? undefined
+    );
 
     return [overrideEventData, null];
-  }
-
-  private async fetchVCalendar(url: string): Promise<ical.Component> {
-    const headers: Record<string, string> = {};
-    const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
-
-    const res = await obsidianFetch(url, { method: 'GET', headers });
-    if (res.status >= 300) {
-      throw new Error(`Failed to fetch original event: ${res.status}`);
-    }
-    return parseVCalendar(await res.text());
-  }
-
-  private async putVCalendar(url: string, vcalendar: ical.Component): Promise<void> {
-    await this.doRequest(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'text/calendar; charset=utf-8'
-      },
-      body: (vcalendar as unknown as { toString(): string }).toString()
-    });
-  }
-
-  private async updateRecurrenceOverride(
-    url: string,
-    oldEvent: OFCEvent,
-    newEvent: OFCEvent
-  ): Promise<void> {
-    if (!oldEvent.uid || !oldEvent.recurrenceId) {
-      throw new Error('Cannot update CalDAV recurrence override without UID and RECURRENCE-ID.');
-    }
-
-    const vcalendar = await this.fetchVCalendar(url);
-    const existingOverride = findVEventOverride(vcalendar, oldEvent.uid, oldEvent.recurrenceId);
-    if (!existingOverride) {
-      throw new Error('Could not find CalDAV recurrence override to update.');
-    }
-
-    removeSubcomponent(vcalendar, existingOverride);
-    const overrideEventData: OFCEvent = {
-      ...newEvent,
-      uid: oldEvent.uid,
-      recurrenceId: oldEvent.recurrenceId,
-      timezone: newEvent.timezone || oldEvent.timezone
-    };
-    vcalendar.addSubcomponent(createOverrideVEvent(overrideEventData, oldEvent.recurrenceId));
-
-    await this.putVCalendar(url, vcalendar);
-  }
-
-  private async deleteRecurrenceOverride(
-    url: string,
-    uid: string,
-    recurrenceId: string
-  ): Promise<void> {
-    const vcalendar = await this.fetchVCalendar(url);
-    const existingOverride = findVEventOverride(vcalendar, uid, recurrenceId);
-    if (!existingOverride) {
-      throw new Error('Could not find CalDAV recurrence override to delete.');
-    }
-
-    removeSubcomponent(vcalendar, existingOverride);
-    await this.putVCalendar(url, vcalendar);
-  }
-
-  // Helper to attach auth and fetch
-  private async doRequest(url: string, options: RequestInit) {
-    const headers = (options.headers as Record<string, string>) || {};
-    const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
-    options.headers = headers;
-
-    const res = await obsidianFetch(url, options);
-    if (res.status >= 300) {
-      throw new Error(`CalDAV request failed: ${res.status} ${res.statusText}`);
-    }
-    return res;
-  }
-
-  private resolveEventObjectUrl(persistentId: string): string {
-    if (/^https?:\/\//i.test(persistentId)) {
-      return persistentId;
-    }
-    if (persistentId.endsWith('.ics') || persistentId.includes('/')) {
-      return resolveCollectionObjectUrl(this.source.homeUrl, persistentId);
-    }
-    return `${canonCollection(this.source.homeUrl)}${persistentId}.ics`;
-  }
-
-  private getUidFromHref(href: string): string {
-    return decodeURIComponent(
-      href
-        .split('/')
-        .pop()
-        ?.replace(/\.ics$/i, '') || href
-    );
   }
 
   // Boilerplate methods for the provider interface.

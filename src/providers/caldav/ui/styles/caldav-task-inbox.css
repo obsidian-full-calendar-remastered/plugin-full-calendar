@@ -1,0 +1,105 @@
+.caldav-task-inbox-view {
+  padding: 12px;
+}
+
+.caldav-task-inbox-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.caldav-task-inbox-header h3 {
+  margin: 0;
+}
+
+.caldav-task-inbox-count,
+.caldav-task-inbox-calendar,
+.caldav-task-inbox-help {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.caldav-task-inbox-create-form {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  margin-bottom: 12px;
+}
+
+.caldav-task-inbox-tasklist {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.caldav-task-inbox-new-title {
+  min-width: 0;
+  width: 100%;
+}
+
+.caldav-task-inbox-add {
+  align-items: center;
+  display: inline-flex;
+  height: var(--input-height);
+  justify-content: center;
+  padding: 0;
+  width: 32px;
+}
+
+.caldav-task-inbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.caldav-task-inbox-item {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  cursor: grab;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.caldav-task-inbox-item:active {
+  cursor: grabbing;
+}
+
+.caldav-task-inbox-title-row {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+}
+
+.caldav-task-inbox-checkbox {
+  margin-top: 2px;
+}
+
+.caldav-task-inbox-title {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.caldav-task-inbox-done {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.caldav-task-inbox-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.caldav-task-inbox-action {
+  align-items: center;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.caldav-task-inbox-empty {
+  color: var(--text-muted);
+  padding: 12px 0;
+}

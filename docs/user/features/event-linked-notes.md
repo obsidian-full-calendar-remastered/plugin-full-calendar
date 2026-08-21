@@ -12,11 +12,12 @@ When you click on a remote calendar event in Obsidian, the event details modal o
 1. **Open Note** (popup button): Click the **Open Note** button in the top-right corner of the event modal. If no linked note exists yet, one will be created automatically in your configured directory.
 2. **Ctrl/Cmd+click** (keyboard shortcut): Hold Ctrl (Windows/Linux) or ⌘ (macOS) and click any remote event. This opens the existing linked note immediately—or creates one and then opens it—without needing to open the popup first.
 3. **Right-click → Open linked note** (context menu): Right-click any remote event to reveal the context menu. The **Open linked note** item appears for all providers that support linked notes (Google Calendar, CalDAV, Outlook, ICS, Holidays). It is a single-action shortcut—create-if-missing, open-always.
-4. **Automated Templating**: The new note is populated with rich event details (date, time, location, description, calendar name) according to your template.
-5. **Instant Access**: On subsequent uses of any path, the same note is opened according to your selected link strategy. Name-based mode checks the exact title path first; deadline-based mode uses event and occurrence identity.
+4. **Ctrl/Cmd+hover** (Page Preview): Hover an event while holding Ctrl/⌘ to preview an existing source or linked note. In name-based mode, events with the same sanitized title preview the same file even when their calendar UIDs differ. Hover preview does not create missing notes.
+5. **Automated Templating**: The new note is populated with rich event details (date, time, location, description, calendar name) according to your template.
+6. **Instant Access**: On subsequent uses of any path, the same note is opened according to your selected link strategy. Name-based mode checks the exact title path first; deadline-based mode uses event and occurrence identity.
 
 !!! tip "Smart Tab Reuse"
-    All three paths above (popup button, Ctrl/Cmd+click, and context menu) share the same tab-reuse logic: if the linked note is **already open in a tab**, that tab is brought to the front rather than opening a duplicate. This is especially useful for recurring meetings where you return to the same note many times a day.
+    All three open/create paths above (popup button, Ctrl/Cmd+click, and context menu) share the same tab-reuse logic: if the linked note is **already open in a tab**, that tab is brought to the front rather than opening a duplicate. Hover uses Obsidian Page Preview instead of opening a tab.
 
 ---
 

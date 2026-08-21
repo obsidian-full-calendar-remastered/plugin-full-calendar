@@ -26,6 +26,7 @@ Passwords follow Full Calendar's existing CalDAV credential handling. When Obsid
 | `PERCENT-COMPLETE:100` | Completed task |
 | `NEEDS-ACTION` / `IN-PROCESS` | Active task |
 | `CANCELLED` | Kept out of the active calendar/backlog |
+| `LOCATION` | Location shown in the event/task editor and preserved on write-back |
 | `RRULE` | Parsed for display and preserved during ordinary edits |
 
 Date-only, floating date/time, UTC, and `TZID` values are supported. When both `DTSTART` and `DUE` exist, moving the task shifts both while retaining their interval. Full Calendar does not invent a duration for a due-only reminder.
@@ -34,7 +35,7 @@ The source supports:
 
 - Read and refresh without title/date-based duplication.
 - Create with a stable UID and conditional `PUT`.
-- Edit title, date/time, description, and completion.
+- Edit title, date/time, description, location, and completion.
 - Complete and reopen using `STATUS` plus `COMPLETED`.
 - Delete the exact CalDAV resource URL.
 - ETag conflict protection on updates.

@@ -13,12 +13,14 @@ interface CalDAVConfigComponentProps {
   config: Partial<CalDAVProviderConfig>;
   onSave: (configs: CalDAVProviderConfig[]) => void;
   onClose: () => void;
+  mode?: 'events' | 'tasks';
 }
 
 export const CalDAVConfigComponent: React.FC<CalDAVConfigComponentProps> = ({
   config,
   onSave,
-  onClose
+  onClose,
+  mode = 'events'
 }) => {
   const [url, setUrl] = useState(config.url || '');
   const [username, setUsername] = useState(config.username || '');
@@ -29,7 +31,11 @@ export const CalDAVConfigComponent: React.FC<CalDAVConfigComponentProps> = ({
     return config.password || '';
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitText, setSubmitText] = useState(t('settings.calendars.caldav.importButton'));
+  const importButtonKey =
+    mode === 'tasks'
+      ? 'settings.calendars.caldavTasks.importButton'
+      : 'settings.calendars.caldav.importButton';
+  const [submitText, setSubmitText] = useState(t(importButtonKey));
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,17 +46,24 @@ export const CalDAVConfigComponent: React.FC<CalDAVConfigComponentProps> = ({
     let shouldResetFormState = true;
 
     try {
-      const sources = await importCalendars({ type: 'basic', username, password }, url, []);
+      const sources =
+        mode === 'tasks'
+          ? await importCalendars({ type: 'basic', username, password }, url, [], 'caldavtasks')
+          : await importCalendars({ type: 'basic', username, password }, url, []);
       onSave(sources);
       shouldResetFormState = false;
       onClose();
     } catch (error) {
-      console.error('Failed to import CalDAV calendars', error);
+      const errorKey =
+        mode === 'tasks'
+          ? 'settings.calendars.caldavTasks.importFailed'
+          : 'settings.calendars.caldav.importFailed';
+      console.error(t(errorKey), error);
       const details = error instanceof Error ? error.message : String(error);
-      showNotice(`${t('settings.calendars.caldav.importFailed')}: ${details}`);
+      showNotice(`${t(errorKey)}: ${details}`);
     } finally {
       if (shouldResetFormState) {
-        setSubmitText(t('settings.calendars.caldav.importButton'));
+        setSubmitText(t(importButtonKey));
         setIsSubmitting(false);
       }
     }
@@ -63,6 +76,16 @@ export const CalDAVConfigComponent: React.FC<CalDAVConfigComponentProps> = ({
         void handleSubmit(e);
       }}
     >
+      {mode === 'tasks' && (
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">{t('settings.calendars.caldavTasks.title')}</div>
+            <div className="setting-item-description">
+              {t('settings.calendars.caldavTasks.description')}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="setting-item">
         <div className="setting-item-info">
           <div className="setting-item-name">{t('settings.calendars.caldav.url.label')}</div>

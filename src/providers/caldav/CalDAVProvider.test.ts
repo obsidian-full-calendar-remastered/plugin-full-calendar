@@ -75,6 +75,7 @@ VERSION:2.0
 BEGIN:VEVENT
 UID:event1
 SUMMARY:Test Event 1
+LOCATION:External Room
 DTSTART:20230101T100000Z
 DTEND:20230101T110000Z
 END:VEVENT
@@ -145,6 +146,7 @@ END:VCALENDAR
 
     expect(events).toHaveLength(1);
     expect(events[0][0].title).toBe('Test Event 1');
+    expect(events[0][0].location).toBe('External Room');
   });
 
   it('should use compatibility fallback when REPORT returns 400', async () => {
@@ -1458,6 +1460,91 @@ END:VCALENDAR
     );
   });
 
+  it('creates all-day tasks as VTODO resources', async () => {
+    mockObsidianFetch.mockResolvedValueOnce({ status: 201, statusText: 'Created' } as Response);
+    const task: OFCEvent = {
+      uid: 'created-task',
+      title: 'Created task',
+      type: 'single',
+      allDay: true,
+      date: '2026-08-21',
+      endDate: null,
+      completed: false
+    };
+
+    await provider.createEvent(task);
+
+    const body = mockObsidianFetch.mock.calls[0][1]?.body;
+    expect(body).toEqual(expect.stringContaining('BEGIN:VTODO'));
+    expect(body).toEqual(expect.stringContaining('DUE;VALUE=DATE:20260821'));
+    expect(body).not.toEqual(expect.stringContaining('BEGIN:VEVENT'));
+  });
+
+  it('keeps an imported all-day VTODO as a task when modified', async () => {
+    const original = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:imported-task
+SUMMARY:Original task
+DUE;VALUE=DATE:20260821
+STATUS:NEEDS-ACTION
+X-APPLE-SOMETHING:preserve-me
+END:VTODO
+END:VCALENDAR`;
+    mockObsidianFetch
+      .mockResolvedValueOnce({ status: 200, text: () => Promise.resolve(original) } as Response)
+      .mockResolvedValueOnce({ status: 204, statusText: 'No Content' } as Response);
+    const oldEvent: OFCEvent = {
+      uid: 'imported-task',
+      title: 'Original task',
+      type: 'single',
+      allDay: true,
+      date: '2026-08-21',
+      endDate: null,
+      completed: false
+    };
+    const editedEvent: OFCEvent = {
+      ...oldEvent,
+      title: 'Edited task'
+    };
+
+    await provider.updateEvent({ persistentId: 'imported-task.ics' }, oldEvent, editedEvent);
+
+    const body = mockObsidianFetch.mock.calls[1][1]?.body;
+    expect(body).toEqual(expect.stringContaining('BEGIN:VTODO'));
+    expect(body).toEqual(expect.stringContaining('SUMMARY:Edited task'));
+    expect(body).toEqual(expect.stringContaining('X-APPLE-SOMETHING:preserve-me'));
+    expect(body).not.toEqual(expect.stringContaining('BEGIN:VEVENT'));
+    expect(editedEvent.type === 'single' && editedEvent.completed).toBe(false);
+  });
+
+  it('converts an existing all-day VEVENT into a VTODO task', async () => {
+    mockObsidianFetch.mockResolvedValueOnce({ status: 204, statusText: 'No Content' } as Response);
+    const oldEvent: OFCEvent = {
+      uid: 'converted-item',
+      title: 'Calendar event',
+      type: 'single',
+      allDay: true,
+      date: '2026-08-21',
+      endDate: null
+    };
+    const task: OFCEvent = {
+      ...oldEvent,
+      title: 'Calendar task',
+      completed: false
+    };
+
+    await provider.updateEvent({ persistentId: 'converted-item.ics' }, oldEvent, task);
+
+    expect(mockObsidianFetch).toHaveBeenCalledTimes(1);
+    const request = mockObsidianFetch.mock.calls[0][1];
+    expect(request?.method).toBe('PUT');
+    expect(request?.body).toEqual(expect.stringContaining('BEGIN:VTODO'));
+    expect(request?.body).toEqual(expect.stringContaining('SUMMARY:Calendar task'));
+    expect(request?.body).toEqual(expect.stringContaining('DUE;VALUE=DATE:20260821'));
+    expect(request?.body).not.toEqual(expect.stringContaining('BEGIN:VEVENT'));
+  });
+
   describe('createLinkedNote', () => {
     interface MockCalDAVVault {
       getAbstractFileByPath: jest.Mock;
@@ -1588,15 +1675,29 @@ END:VCALENDAR
       jest
         .spyOn(caldavProvider.linkedNoteIndex, 'getFileForEventAfterHydration')
         .mockResolvedValue(linkedFile as unknown as import('obsidian').TFile);
-      mockObsidianFetch.mockResolvedValueOnce({
-        status: 204,
-        statusText: 'No Content'
-      } as Response);
       const oldTask: OFCEvent = {
         ...mockEvent,
         completed: false,
         date: '2026-04-20'
       };
+      const original = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:${oldTask.uid}
+SUMMARY:${oldTask.title}
+DUE;VALUE=DATE:20260420
+STATUS:NEEDS-ACTION
+END:VTODO
+END:VCALENDAR`;
+      mockObsidianFetch
+        .mockResolvedValueOnce({
+          status: 200,
+          text: () => Promise.resolve(original)
+        } as Response)
+        .mockResolvedValueOnce({
+          status: 204,
+          statusText: 'No Content'
+        } as Response);
       const rescheduledTask: OFCEvent = {
         ...oldTask,
         date: '2026-04-23',

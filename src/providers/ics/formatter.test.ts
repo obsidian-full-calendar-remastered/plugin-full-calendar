@@ -2,6 +2,19 @@ import { eventToIcs, createOverrideVEvent, eventsToIcs } from './formatter';
 import { OFCEvent } from '../../types';
 
 describe('ICS Formatter timezone serialization', () => {
+  it('serializes an event location', () => {
+    const event = {
+      type: 'single',
+      title: 'Located Event',
+      location: 'Conference Room B',
+      date: '2026-05-20',
+      allDay: true,
+      endDate: null
+    } as OFCEvent;
+
+    expect(eventToIcs(event)).toContain('LOCATION:Conference Room B');
+  });
+
   it('should serialize a timed event with an explicit local timezone and TZID parameter', () => {
     const event = {
       type: 'single',

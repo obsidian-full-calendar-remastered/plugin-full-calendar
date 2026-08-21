@@ -196,6 +196,10 @@ export function renderCalendarManagement(
         { text: t('settings.calendars.docs.journals'), path: 'user/calendars/journals' },
         { text: t('settings.calendars.docs.ics'), path: 'user/calendars/ics' },
         { text: t('settings.calendars.docs.caldav'), path: 'user/calendars/caldav' },
+        {
+          text: t('settings.calendars.docs.caldavTasks'),
+          path: 'user/calendars/caldav-tasks'
+        },
         { text: t('settings.calendars.docs.google'), path: 'user/calendars/gcal' },
         { text: t('settings.calendars.docs.outlook'), path: 'user/calendars/outlook' },
         {

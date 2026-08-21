@@ -254,7 +254,7 @@ export class CredentialStore {
     if (this.useLegacy() || !this.isSecretStorageSupported()) {
       try {
         const source = PluginState.getSettings().calendarSources.find(s => s.id === sourceId);
-        if (source && source.type === 'caldav') {
+        if (source && (source.type === 'caldav' || source.type === 'caldavtasks')) {
           return source.password ?? null;
         }
       } catch {
@@ -270,7 +270,7 @@ export class CredentialStore {
     if (this.useLegacy() || !this.isSecretStorageSupported()) {
       try {
         const source = PluginState.getSettings().calendarSources.find(s => s.id === sourceId);
-        if (source && source.type === 'caldav') {
+        if (source && (source.type === 'caldav' || source.type === 'caldavtasks')) {
           source.password = password ?? '';
         }
       } catch {
@@ -281,7 +281,7 @@ export class CredentialStore {
       // Clear from settings
       try {
         const source = PluginState.getSettings().calendarSources.find(s => s.id === sourceId);
-        if (source && source.type === 'caldav') {
+        if (source && (source.type === 'caldav' || source.type === 'caldavtasks')) {
           source.password = '';
         }
       } catch {

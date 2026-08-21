@@ -60,6 +60,15 @@ const calendarOptionsSchema = z.discriminatedUnion('type', [
     password: z.string()
   }),
   z.object({
+    type: z.literal('caldavtasks'),
+    id: z.string(),
+    name: z.string(),
+    url: z.string().url(),
+    homeUrl: z.string().url(),
+    username: z.string(),
+    password: z.string()
+  }),
+  z.object({
     type: z.literal('google'),
     id: z.string(),
     name: z.string(),

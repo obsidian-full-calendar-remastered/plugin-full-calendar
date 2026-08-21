@@ -3,6 +3,7 @@ import { obsidianFetch } from '../obsidian-fetch_caldav';
 import { createBasicAuthHeader } from '../auth/auth_caldav';
 import { canonCollection } from './helper_caldav';
 import { CalendarObjectData, CalendarObjectRef } from '../types/typesCalDAV';
+import { t } from '../../../features/i18n/i18n';
 
 // Helper to format a Date object into the format CalDAV expects (YYYYMMDDTHHMMSSZ).
 export function ymdhmsZ(d: Date): string {
@@ -67,6 +68,62 @@ export function getSuccessfulPropNode(response: Element): Element | null {
   }
 
   return null;
+}
+
+export function extractCalendarDataFromMultiStatus(doc: Document): CalendarObjectData[] {
+  const icsList: CalendarObjectData[] = [];
+  const responses = Array.from(doc.getElementsByTagNameNS('*', 'response'));
+
+  for (const response of responses) {
+    const hrefNode =
+      response.getElementsByTagNameNS('DAV:', 'href')[0] ||
+      response.getElementsByTagNameNS('*', 'href')[0];
+    const href = hrefNode?.textContent?.trim() || '';
+    const propstats = Array.from(response.getElementsByTagNameNS('*', 'propstat'));
+    const successfulProps: Element[] = [];
+
+    for (const propstat of propstats) {
+      const status = propstat.getElementsByTagNameNS('*', 'status')[0]?.textContent || '';
+      const statusCode = parseStatusCode(status);
+      if (statusCode === null || statusCode < 200 || statusCode >= 300) continue;
+
+      const prop = propstat.getElementsByTagNameNS('*', 'prop')[0];
+      if (prop) successfulProps.push(prop);
+    }
+
+    const calendarData = successfulProps
+      .flatMap(prop => {
+        const namespaced = Array.from(
+          prop.getElementsByTagNameNS('urn:ietf:params:xml:ns:caldav', 'calendar-data')
+        );
+        return namespaced.length > 0
+          ? namespaced
+          : Array.from(prop.getElementsByTagNameNS('*', 'calendar-data'));
+      })
+      .find(node => Boolean(node.textContent?.trim()));
+
+    // Apple includes the collection itself in a 207 response. Its calendar-data
+    // property is empty or belongs to a 404 propstat; neither is a task resource.
+    if (!calendarData?.textContent?.trim()) continue;
+
+    let etag: string | undefined;
+    for (const prop of successfulProps) {
+      etag =
+        prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent?.trim() ||
+        prop.getElementsByTagNameNS('*', 'getetag')[0]?.textContent?.trim() ||
+        etag;
+    }
+
+    icsList.push({
+      href,
+      // Parsing stays resource-scoped in the provider so one malformed object
+      // cannot discard other valid resources from the same 207 response.
+      ics: calendarData.textContent.trim(),
+      etag: etag || undefined
+    });
+  }
+
+  return icsList;
 }
 
 export function extractCalendarObjectRefs(doc: Document): CalendarObjectRef[] {
@@ -274,7 +331,7 @@ export async function fetchCalendarObjectsForComponent(
       const list = await fetchCalendarObjectsViaPropfindFallback(collectionUrl, authHeader);
       return { icsList: list, fellBack: true };
     }
-    console.error(`[CalDAVProvider] REPORT request failed`, reportRes.status, xml.slice(0, 800));
+    console.error(`[CalDAVProvider] REPORT request failed`, reportRes.status);
     throw new Error(`REPORT ${reportRes.status}`);
   }
 
@@ -282,60 +339,8 @@ export async function fetchCalendarObjectsForComponent(
 
   // STEP 2: Parse the XML response using DOMParser
   const doc = ensureXmlDocument(xml, 'CalDAV REPORT');
-  const icsList: CalendarObjectData[] = [];
-
-  const responses = doc.getElementsByTagNameNS('*', 'response');
-  const allResponses = Array.from(responses);
-
-  for (const response of allResponses) {
-    const propstats = response.getElementsByTagNameNS('*', 'propstat');
-
-    for (let i = 0; i < propstats.length; i++) {
-      const propstat = propstats[i];
-      const status = propstat.getElementsByTagNameNS('*', 'status')[0]?.textContent || '';
-      const statusCode = parseStatusCode(status);
-      if (statusCode === null || statusCode < 200 || statusCode >= 300) continue;
-
-      const prop = propstat.getElementsByTagNameNS('*', 'prop')[0];
-      if (!prop) continue;
-
-      // Try to find calendar-data
-      let calendarData = prop.getElementsByTagNameNS(
-        'urn:ietf:params:xml:ns:caldav',
-        'calendar-data'
-      )[0];
-
-      if (!calendarData) {
-        const candidates = prop.getElementsByTagNameNS('*', 'calendar-data');
-        if (candidates.length > 0) {
-          calendarData = candidates[0];
-        }
-      }
-
-      if (calendarData) {
-        const calendarText = assertNonEmptyText(
-          calendarData.textContent || '',
-          'CalDAV REPORT returned empty calendar-data payload.'
-        );
-        let etag = prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent;
-        if (!etag) {
-          const candidates = prop.getElementsByTagNameNS('*', 'getetag');
-          if (candidates.length > 0) etag = candidates[0].textContent;
-        }
-
-        const hrefNode =
-          response.getElementsByTagNameNS('DAV:', 'href')[0] ||
-          response.getElementsByTagNameNS('*', 'href')[0];
-        const href = hrefNode?.textContent?.trim() || '';
-
-        icsList.push({
-          href,
-          ics: assertIcsPayload(calendarText, 'CalDAV REPORT'),
-          etag: etag || undefined
-        });
-      }
-    }
-  }
+  const icsList = extractCalendarDataFromMultiStatus(doc);
+  const allResponses = Array.from(doc.getElementsByTagNameNS('*', 'response'));
 
   // STEP 3: Fallback - if no calendar-data was returned, fetch individual .ics files
   if (icsList.length === 0) {
@@ -410,49 +415,13 @@ export async function fetchAllVTodoObjects(
       );
       return fetchCalendarObjectsViaPropfindFallback(collectionUrl, authHeader);
     }
-    console.error(
-      `[CalDAVProvider] VTODO REPORT request failed`,
-      reportRes.status,
-      xml.slice(0, 800)
-    );
+    console.error(`[CalDAVProvider] VTODO REPORT request failed`, reportRes.status);
     throw new Error(`REPORT ${reportRes.status}`);
   }
 
   assertNonEmptyText(xml, 'CalDAV VTODO REPORT returned an empty body.');
   const doc = ensureXmlDocument(xml, 'CalDAV VTODO REPORT');
-  const icsList: CalendarObjectData[] = [];
-  const responses = Array.from(doc.getElementsByTagNameNS('*', 'response'));
-
-  for (const response of responses) {
-    const prop = getSuccessfulPropNode(response);
-    if (!prop) continue;
-
-    const calendarData =
-      prop.getElementsByTagNameNS('urn:ietf:params:xml:ns:caldav', 'calendar-data')[0] ||
-      prop.getElementsByTagNameNS('*', 'calendar-data')[0];
-    if (!calendarData) continue;
-
-    const hrefNode =
-      response.getElementsByTagNameNS('DAV:', 'href')[0] ||
-      response.getElementsByTagNameNS('*', 'href')[0];
-    const href = hrefNode?.textContent?.trim() || '';
-    const etag =
-      prop.getElementsByTagNameNS('DAV:', 'getetag')[0]?.textContent ||
-      prop.getElementsByTagNameNS('*', 'getetag')[0]?.textContent ||
-      undefined;
-
-    icsList.push({
-      href,
-      ics: assertIcsPayload(
-        assertNonEmptyText(
-          calendarData.textContent || '',
-          'CalDAV VTODO REPORT returned empty calendar-data payload.'
-        ),
-        'CalDAV VTODO REPORT'
-      ),
-      etag: etag || undefined
-    });
-  }
+  const icsList = extractCalendarDataFromMultiStatus(doc);
 
   return icsList;
 }
@@ -534,7 +503,21 @@ export async function doRequest(
 
   const res = await obsidianFetch(url, options);
   if (res.status >= 300) {
-    throw new Error(`CalDAV request failed: ${res.status} ${res.statusText}`);
+    if (res.status === 401) {
+      throw new Error(t('settings.calendars.caldav.errors.authentication'));
+    }
+    if (res.status === 403) {
+      throw new Error(t('settings.calendars.caldav.errors.permissionDenied'));
+    }
+    if (res.status === 409 || res.status === 412) {
+      throw new Error(t('settings.calendars.caldav.errors.conflict', { status: res.status }));
+    }
+    throw new Error(
+      t('settings.calendars.caldav.errors.requestFailed', {
+        status: res.status,
+        statusText: res.statusText || ''
+      }).trim()
+    );
   }
   return res;
 }

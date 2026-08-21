@@ -246,6 +246,7 @@ export const EditEvent = ({
   const selectedCalendar = calendars[calendarIndex];
   const isDailyNoteCalendar =
     selectedCalendar.type === 'dailynote' || selectedCalendar.type === 'journals';
+  const isCalDAVTaskCalendar = selectedCalendar.type === 'caldavtasks';
   const provider = PluginState.getProviderRegistry().getInstance(selectedCalendar.id);
   const useBooleanTaskCompletion = Boolean(
     provider &&
@@ -266,6 +267,13 @@ export const EditEvent = ({
       setRecurrenceType('none');
     }
   }, [isDailyNoteCalendar]);
+
+  useEffect(() => {
+    if (isCalDAVTaskCalendar) {
+      setIsTask(true);
+      if (mode === 'create') setRecurrenceType('none');
+    }
+  }, [isCalDAVTaskCalendar, mode]);
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -510,7 +518,12 @@ export const EditEvent = ({
           </div>
           <div className="setting-item-control options-group">
             <label>
-              <input type="checkbox" checked={isTask} onChange={e => setIsTask(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={isTask}
+                onChange={e => setIsTask(e.target.checked)}
+                disabled={isCalDAVTaskCalendar}
+              />
               <span> {t('modals.editEvent.fields.options.isTask')}</span>
             </label>
             {isTask && (
@@ -650,8 +663,12 @@ export const EditEvent = ({
                 <select
                   value={recurrenceType}
                   onChange={e => setRecurrenceType(e.target.value as RecurrenceType)}
-                  disabled={isDailyNoteCalendar}
-                  title={recurringTooltip}
+                  disabled={isDailyNoteCalendar || isCalDAVTaskCalendar}
+                  title={
+                    isCalDAVTaskCalendar
+                      ? t('modals.editEvent.tooltips.caldavTaskRecurrence')
+                      : recurringTooltip
+                  }
                 >
                   <option value="none">{t('modals.editEvent.fields.repeats.options.none')}</option>
                   <option value="daily">

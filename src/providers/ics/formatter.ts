@@ -245,6 +245,9 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
   if (event.description) {
     vevent.addPropertyWithValue('description', event.description);
   }
+  if (event.location) {
+    vevent.addPropertyWithValue('location', event.location);
+  }
 
   addProviderAlarms(vevent, event);
 

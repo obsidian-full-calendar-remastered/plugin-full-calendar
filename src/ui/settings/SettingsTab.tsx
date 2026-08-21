@@ -129,6 +129,7 @@ export function addCalendarButton(
           journals: t('settings.calendars.types.journals'),
           icloud: t('settings.calendars.types.icloud'),
           caldav: t('settings.calendars.types.caldav'),
+          caldavtasks: t('settings.calendars.types.caldavTasks'),
           ical: t('settings.calendars.types.ical'),
           google: t('settings.calendars.types.google'),
           googletasks: 'Google Tasks',

@@ -18,7 +18,6 @@ import type {
   Calendar,
   EventApi,
   EventClickArg,
-  EventHoveringArg,
   EventSourceInput,
   LocaleSingularArg
 } from '@fullcalendar/core';
@@ -52,7 +51,7 @@ export interface ExtraRenderProps {
 
   select?: (startDate: Date, endDate: Date, allDay: boolean, viewType: string) => Promise<void>;
   modifyEvent?: (event: EventApi, oldEvent: EventApi, newResource?: string) => Promise<boolean>;
-  eventMouseEnter?: (info: EventHoveringArg) => void;
+  eventMouseOver?: (event: EventApi, el: HTMLElement, mouseEvent: MouseEvent) => void;
   firstDay?: number;
   initialView?: { desktop: string; mobile: string };
   timeFormat24h?: boolean;
@@ -174,7 +173,7 @@ export async function renderCalendar(
     eventClick,
     select,
     modifyEvent,
-    eventMouseEnter,
+    eventMouseOver,
     openContextMenuForEvent,
     toggleTask,
     getRecurringInstanceState,
@@ -1125,8 +1124,6 @@ export async function renderCalendar(
     eventDrop: modifyEventCallback,
     eventResize: modifyEventCallback,
 
-    eventMouseEnter,
-
     eventDidMount: ({ event, el, textColor }) => {
       // Don't add context menu or checkboxes to shadow events
       if (event.extendedProps.isShadow) {
@@ -1135,6 +1132,11 @@ export async function renderCalendar(
       }
 
       el.setAttribute('data-event-id', event.id);
+      if (eventMouseOver) {
+        el.addEventListener('mouseover', mouseEvent => {
+          eventMouseOver(event, el, mouseEvent);
+        });
+      }
       el.toggleClass('ofc-event-current-or-next', currentUpcomingEventIds.has(event.id));
       const eventColor = event.backgroundColor || event.borderColor || '';
       if (eventColor) {

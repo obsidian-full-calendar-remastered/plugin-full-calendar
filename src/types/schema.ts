@@ -68,6 +68,30 @@ export const CommonSchema = z.object({
   recurrenceId: z.string().optional(),
   timezone: z.string().optional(),
   etag: z.string().optional(),
+  icalTask: z
+    .object({
+      status: z.string().optional(),
+      start: z
+        .object({
+          value: z.string(),
+          allDay: z.boolean(),
+          timezone: z.string().optional()
+        })
+        .optional(),
+      due: z
+        .object({
+          value: z.string(),
+          allDay: z.boolean(),
+          timezone: z.string().optional()
+        })
+        .optional(),
+      completedAt: z.string().optional(),
+      percentComplete: z.number().int().min(0).max(100).optional(),
+      priority: z.number().int().min(0).max(9).optional(),
+      created: z.string().optional(),
+      lastModified: z.string().optional()
+    })
+    .optional(),
   category: z.string().optional(), // This will store the parsed category.
   subCategory: z.string().optional(),
   recurringEventId: z.string().optional(), // The ID of the parent recurring event.

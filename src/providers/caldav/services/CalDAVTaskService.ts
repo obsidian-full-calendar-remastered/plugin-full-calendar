@@ -19,7 +19,8 @@ import {
   doRequest,
   fetchAllVTodoObjects,
   fetchCalendarObjectsViaPropfindFallback,
-  resolveCollectionObjectUrl
+  resolveCollectionObjectUrl,
+  resolveEventObjectUrl
 } from '../client/caldavClient';
 import {
   createRandomUid,
@@ -138,14 +139,16 @@ export class CalDAVTaskService {
       taskUid = parsed.uid;
     }
 
-    const url = `${canonCollection(this.source.homeUrl)}${taskUid}.ics`;
+    const task = this.undatedTaskCache.find(candidate => candidate.uid === taskUid);
+    const href = task?.href || taskUid;
+    const url = resolveEventObjectUrl(this.source.homeUrl, href);
     await doRequest(
       url,
       { method: 'DELETE' },
       this.source.username,
       this.getPassword() ?? undefined
     );
-    this.undatedTaskCache = this.undatedTaskCache.filter(task => task.uid !== taskUid);
+    this.undatedTaskCache = this.undatedTaskCache.filter(t => t.uid !== taskUid);
     this.hasLoadedUndatedTasks = true;
   }
 
@@ -170,6 +173,7 @@ export class CalDAVTaskService {
       }
 
       todo.updatePropertyWithValue('status', isDone ? 'COMPLETED' : 'NEEDS-ACTION');
+      todo.updatePropertyWithValue('percent-complete', isDone ? 100 : 0);
       if (isDone) {
         todo.updatePropertyWithValue('completed', ical.Time.now());
       } else {
@@ -259,7 +263,8 @@ export class CalDAVTaskService {
       location: '',
       url: '',
       status: 'NEEDS-ACTION',
-      completed: false
+      completed: false,
+      href: url
     };
 
     this.undatedTaskCache = [
@@ -349,18 +354,27 @@ export class CalDAVTaskService {
         }
       }
 
-      const settings = PluginState.getSettings()?.tasksIntegration;
-      const backlogDateTarget = settings?.backlogDateTarget ?? 'scheduledDate';
-      const calendarDisplayDateTarget = settings?.calendarDisplayDateTarget ?? 'scheduledDate';
+      let backlogDateTarget: TasksDateTarget = 'scheduledDate';
+      let calendarDisplayDateTarget: TasksDateTarget = 'scheduledDate';
+      try {
+        const settings = PluginState.getSettings()?.tasksIntegration;
+        backlogDateTarget = settings?.backlogDateTarget ?? 'scheduledDate';
+        calendarDisplayDateTarget = settings?.calendarDisplayDateTarget ?? 'scheduledDate';
+      } catch {
+        // Fallback for isolated test environments
+      }
 
       const planningTargets = Array.from(
         new Set<TasksDateTarget>([calendarDisplayDateTarget, backlogDateTarget])
       );
       const targetProps = Array.from(new Set(planningTargets.map(mapTargetToVTodoProperty)));
 
-      const displayTimezone =
-        PluginState.getSettings()?.displayTimezone ||
-        Intl.DateTimeFormat().resolvedOptions().timeZone;
+      let displayTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      try {
+        displayTimezone = PluginState.getSettings()?.displayTimezone || displayTimezone;
+      } catch {
+        // Fallback for isolated test environments
+      }
 
       if (targetProps.includes('dtstart') && targetProps.includes('due')) {
         if (allDay) {

@@ -26,6 +26,7 @@ import { isTask } from '../../types/tasks';
 import { canonCollection, fetchCalendarInfo } from './client/helper_caldav';
 import {
   doRequest,
+  fetchAllVTodoObjects,
   fetchCalendarObjects,
   fetchVCalendar,
   getUidFromHref,
@@ -47,29 +48,36 @@ import {
 import { updateLinkedTaskNoteDates } from './services/caldavLinkedNoteService';
 import { CalDAVTaskService } from './services/CalDAVTaskService';
 import { CalDAVConfigProps, CalDAVConfigWrapper, CalDAVSettingRow } from './ui/CalDAVSettingRow';
+import { createVTodoCalendar, updateVTodoCalendar } from './vtodo';
 
-export { encodeCalDAVTaskId, parseCalDAVTaskId };
+export {
+  canonCollection,
+  createRandomUid,
+  encodeCalDAVTaskId,
+  fetchAllVTodoObjects,
+  parseCalDAVTaskId
+};
 export type { CalDAVTaskCalendarInfo, CalDAVTaskInboxItem };
 
 export class CalDAVProvider
   implements CalendarProvider<CalDAVProviderConfig>, SyncKeyProvider, TaskBacklogProvider
 {
-  static readonly type = 'caldav';
-  static readonly displayName = 'CalDAV';
+  static readonly type: string = 'caldav';
+  static readonly displayName: string = 'CalDAV';
 
   static getConfigurationComponent(): FCReactComponent<CalDAVConfigProps> {
     return CalDAVConfigWrapper;
   }
 
   private plugin: FullCalendarPlugin;
-  private source: CalDAVProviderConfig;
+  protected source: CalDAVProviderConfig;
   public readonly linkedNoteIndex: LinkedNoteIndex;
   private taskService: CalDAVTaskService;
 
-  readonly type = 'caldav';
-  readonly displayName = 'CalDAV';
+  readonly type: string = 'caldav';
+  readonly displayName: string = 'CalDAV';
   readonly isRemote = true;
-  readonly loadPriority = 110;
+  readonly loadPriority: number = 110;
 
   constructor(source: CalDAVProviderConfig, plugin: FullCalendarPlugin) {
     this.plugin = plugin;
@@ -80,7 +88,7 @@ export class CalDAVProvider
     );
   }
 
-  private getPassword(): string | null {
+  protected getPassword(): string | null {
     return CredentialStore.getCalDAVPassword(this.source.id);
   }
 
@@ -276,24 +284,19 @@ export class CalDAVProvider
     const uid = event.uid;
 
     // 2. Convert to ICS
-    const icsContent = eventToIcs(event);
+    const icsContent = isTask(event) ? createVTodoCalendar(event, uid) : eventToIcs(event);
 
     // 3. PUT to server
     const url = `${canonCollection(this.source.homeUrl)}${uid}.ics`;
 
-    await doRequest(
-      url,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'text/calendar; charset=utf-8',
-          'If-None-Match': '*' // Prevent overwriting if it somehow exists
-        },
-        body: icsContent
+    await this.doRequest(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'text/calendar; charset=utf-8',
+        'If-None-Match': '*' // Prevent overwriting if it somehow exists
       },
-      this.source.username,
-      this.getPassword() ?? undefined
-    );
+      body: icsContent
+    });
 
     return [event, null];
   }
@@ -308,7 +311,7 @@ export class CalDAVProvider
       newEvent.uid = oldEvent.uid || getUidFromHref(href);
     }
 
-    const url = resolveEventObjectUrl(this.source.homeUrl, href);
+    const url = this.resolveEventObjectUrl(href);
     if (oldEvent.recurrenceId && oldEvent.uid) {
       const vcalendar = await fetchVCalendar(
         url,
@@ -323,23 +326,32 @@ export class CalDAVProvider
       return null;
     }
 
-    // Convert to ICS
-    const icsContent = eventToIcs(newEvent);
+    // Preserve the component type of imported tasks. The generic event formatter emits
+    // VEVENT even for tasks, which caused an edited VTODO to become an all-day event.
+    let icsContent: string;
+    if (isTask(newEvent)) {
+      if (isTask(oldEvent)) {
+        const response = await this.doRequest(url, { method: 'GET' });
+        const originalIcs = await response.text();
+        icsContent = updateVTodoCalendar(originalIcs, newEvent.uid, oldEvent, newEvent);
+      } else {
+        // This is an explicit VEVENT → VTODO conversion, so there is no VTODO in
+        // the original resource for updateVTodoCalendar() to patch.
+        icsContent = createVTodoCalendar(newEvent, newEvent.uid);
+      }
+    } else {
+      icsContent = eventToIcs(newEvent);
+    }
 
     // PUT to update
-    await doRequest(
-      url,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'text/calendar; charset=utf-8',
-          ...(oldEvent.etag ? { 'If-Match': `"${oldEvent.etag}"` } : {})
-        },
-        body: icsContent
+    await this.doRequest(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'text/calendar; charset=utf-8',
+        ...(oldEvent.etag ? { 'If-Match': `"${oldEvent.etag}"` } : {})
       },
-      this.source.username,
-      this.getPassword() ?? undefined
-    );
+      body: icsContent
+    });
 
     if (isTask(newEvent)) {
       await updateLinkedTaskNoteDates(this.plugin.app, this.linkedNoteIndex, newEvent);
@@ -349,7 +361,7 @@ export class CalDAVProvider
   }
 
   async deleteEvent(handle: EventHandle): Promise<void> {
-    const url = resolveEventObjectUrl(this.source.homeUrl, handle.persistentId);
+    const url = this.resolveEventObjectUrl(handle.persistentId);
 
     if (handle.uid && handle.recurrenceId) {
       const vcalendar = await fetchVCalendar(
@@ -362,14 +374,9 @@ export class CalDAVProvider
       return;
     }
 
-    await doRequest(
-      url,
-      {
-        method: 'DELETE'
-      },
-      this.source.username,
-      this.getPassword() ?? undefined
-    );
+    await this.doRequest(url, {
+      method: 'DELETE'
+    });
   }
 
   public ownsTaskId(taskId: string): boolean {
@@ -408,7 +415,7 @@ export class CalDAVProvider
     if (!handle) {
       throw new Error('Cannot create override: Master event has no CalDAV object reference.');
     }
-    const url = resolveEventObjectUrl(this.source.homeUrl, handle.persistentId);
+    const url = this.resolveEventObjectUrl(handle.persistentId);
 
     const headers: Record<string, string> = {};
     const authHeader = createBasicAuthHeader(this.source.username, this.getPassword() ?? undefined);
@@ -435,20 +442,23 @@ export class CalDAVProvider
 
     const newIcsContent = (vcalendar as unknown as { toString(): string }).toString();
 
-    await doRequest(
-      url,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'text/calendar; charset=utf-8'
-        },
-        body: newIcsContent
+    await this.doRequest(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'text/calendar; charset=utf-8'
       },
-      this.source.username,
-      this.getPassword() ?? undefined
-    );
+      body: newIcsContent
+    });
 
     return [overrideEventData, null];
+  }
+
+  protected async doRequest(url: string, options: RequestInit): Promise<Response> {
+    return doRequest(url, options, this.source.username, this.getPassword() ?? undefined);
+  }
+
+  protected resolveEventObjectUrl(persistentId: string): string {
+    return resolveEventObjectUrl(this.source.homeUrl, persistentId);
   }
 
   // Boilerplate methods for the provider interface.

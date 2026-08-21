@@ -693,7 +693,8 @@
         "tasknotes": "TaskNotes",
         "outlook": "Outlook Calendar",
         "holidays": "Holidays",
-        "journals": "Journals"
+        "journals": "Journals",
+        "caldavTasks": "CalDAV Tasks"
       },
       "fullNote": {
         "directory": {
@@ -763,7 +764,14 @@
         },
         "importButton": "导入日历",
         "importing": "正在导入...",
-        "importFailed": "导入日历失败"
+        "importFailed": "导入日历失败",
+        "errors": {
+          "authentication": "CalDAV authentication failed (HTTP 401).",
+          "permissionDenied": "CalDAV permission denied (HTTP 403).",
+          "invalidCollection": "The URL is not a valid CalDAV calendar collection. Enter the direct collection URL.",
+          "conflict": "The remote CalDAV resource changed (HTTP {{status}}). Refresh and try again.",
+          "requestFailed": "CalDAV request failed (HTTP {{status}}): {{statusText}}"
+        }
       },
       "tasks": {
         "zeroConfig": {
@@ -817,7 +825,8 @@
         "bases": "Bases 日历",
         "taskNotes": "TaskNotes 集成",
         "outlook": "Outlook 日历",
-        "journals": "Journals calendar"
+        "journals": "Journals calendar",
+        "caldavTasks": "CalDAV Tasks"
       },
       "linkedNotes": {
         "title": "链接笔记设置",
@@ -864,6 +873,28 @@
           }
         },
         "adding": "正在添加..."
+      },
+      "caldavTasks": {
+        "title": "CalDAV Tasks",
+        "description": "Connect VTODO-compatible CalDAV task lists, including Apple Reminders.",
+        "backlogTitle": "CalDAV Tasks backlog",
+        "untitledTask": "Untitled task",
+        "importButton": "Add task list",
+        "importFailed": "Failed to add CalDAV task list",
+        "errors": {
+          "importFailedDetails": "Failed to add CalDAV task list: {{message}}",
+          "invalidCollection": "The URL is not a valid CalDAV task collection. Enter the direct task-list collection URL.",
+          "noVtodoCapability": "This CalDAV collection does not advertise VTODO support. Choose a task or reminder collection.",
+          "skippedMalformed": "Skipped {{count}} malformed CalDAV task resource(s).",
+          "recurringCreation": "Creating recurring CalDAV tasks is not yet supported.",
+          "unsupportedType": "This CalDAV VTODO event type is not supported.",
+          "missingUid": "Cannot update a CalDAV task without a UID.",
+          "completionUpdate": "Failed to update CalDAV task completion.",
+          "recurringInstance": "Editing individual recurring CalDAV task instances is not yet supported.",
+          "vtodoNotFound": "CalDAV task {{uid}} was not found in its resource.",
+          "malformedMissingCalendar": "Malformed iCalendar data: missing VCALENDAR.",
+          "malformedData": "Malformed iCalendar data: {{message}}"
+        }
       }
     },
     "categorization": {
@@ -1318,7 +1349,8 @@
       "tooltips": {
         "recurringTaskCompletion": "重复任务的完成状态可以在日历视图中切换单个实例。",
         "dailyNoteRecurring": "日记不支持重复事件。请改用 \"Full Note\" 日历。",
-        "inheritedProperty": "此属性是继承的。点击编辑父重复事件。"
+        "inheritedProperty": "此属性是继承的。点击编辑父重复事件。",
+        "caldavTaskRecurrence": "Existing VTODO recurrence is preserved, but creating or changing recurring CalDAV tasks is not yet supported."
       }
     },
     "deleteRecurring": {

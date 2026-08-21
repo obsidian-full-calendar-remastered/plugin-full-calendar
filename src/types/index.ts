@@ -38,3 +38,4 @@ export type Authentication = {
 };
 
 export type CalDAVSource = Extract<CalendarInfo, { type: 'caldav' }>;
+export type CalDAVTaskSource = Extract<CalendarInfo, { type: 'caldavtasks' }>;

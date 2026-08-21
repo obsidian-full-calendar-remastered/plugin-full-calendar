@@ -7,6 +7,8 @@ export type CalDAVProviderConfig = {
   password: string;
 };
 
+export type CalDAVTaskProviderConfig = CalDAVProviderConfig;
+
 export type CalendarObjectRef = {
   href: string;
   etag?: string;
@@ -33,4 +35,5 @@ export type CalDAVTaskInboxItem = {
   status: string;
   completed: boolean;
   etag?: string;
+  href?: string;
 };

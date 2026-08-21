@@ -30,9 +30,9 @@ This page acts as a complete, audited registry of all network communications per
 - **Purpose:** Authenticating accounts, fetching remote calendars, and uploading event modifications.
 - **Trigger:** Scheduled sync sweeps, calendar view updates, or manual interactions.
 
-### CalDAV Calendar
+### CalDAV Calendar and CalDAV Tasks
 - **Connection:** Inbound & Outbound (Internet)
-- **Related Guides:** [CalDAV Guide](../calendars/caldav.md)
+- **Related Guides:** [CalDAV Guide](../calendars/caldav.md) | [CalDAV Tasks](../calendars/caldav-tasks.md)
 - **Endpoints:** User-specified custom CalDAV host (e.g. Nextcloud, Fastmail, Apple iCloud, Synology, Radicale).
 - **Purpose:** Synchronizing calendar events and tasks (VTODO) using standard HTTP methods (`PROPFIND`, `REPORT`, `GET`, `PUT`, `DELETE`).
 - **Trigger:** Periodic background sync cycles or manual refresh.
@@ -89,5 +89,3 @@ This page acts as a complete, audited registry of all network communications per
 - **Endpoints:** User-configured local daemon API port (default: `http://127.0.0.1:45677`).
 - **Purpose:** Probing daemon status (`/status`) and pushing notification payloads (`/sync`) to trigger desktop notifications.
 - **Trigger:** Background timer pinging and sync cycles when reminders are enabled.
-
-

@@ -60,18 +60,25 @@ export function isUnscheduledTodo(
   todo: ical.Component,
   backlogDateTarget?: TasksBacklogDateTarget
 ): boolean {
-  const target =
-    backlogDateTarget ??
-    PluginState.getSettings()?.tasksIntegration?.backlogDateTarget ??
-    'scheduledDate';
-  const targetProp = mapTargetToVTodoProperty(target);
+  let target = backlogDateTarget;
+  if (!target) {
+    try {
+      target = PluginState.getSettings()?.tasksIntegration?.backlogDateTarget;
+    } catch {
+      target = undefined;
+    }
+  }
+  const effectiveTarget = target ?? 'scheduledDate';
+  const targetProp = mapTargetToVTodoProperty(effectiveTarget);
   return !hasValidTaskDate(todo, targetProp);
 }
 
 export function isCompletedTodo(todo: ical.Component): boolean {
+  const percentComplete = Number(getTextProperty(todo, 'percent-complete'));
   return (
     getTextProperty(todo, 'status').toUpperCase() === 'COMPLETED' ||
-    Boolean(todo.getFirstProperty('completed'))
+    Boolean(todo.getFirstProperty('completed')) ||
+    percentComplete === 100
   );
 }
 
@@ -97,6 +104,7 @@ export function createUnscheduledTaskIcs(uid: string, title: string): string {
   todo.addPropertyWithValue('summary', title);
   todo.addPropertyWithValue('dtstamp', ical.Time.now());
   todo.addPropertyWithValue('status', 'NEEDS-ACTION');
+  todo.addPropertyWithValue('percent-complete', 0);
   vcalendar.addSubcomponent(todo);
 
   return (vcalendar as unknown as { toString(): string }).toString();
@@ -128,6 +136,9 @@ export function parseUnscheduledTasksFromObject(
     if (!isUnscheduledTodo(todo, backlogDateTarget)) {
       continue;
     }
+    if (getTextProperty(todo, 'status').toUpperCase() === 'CANCELLED') {
+      continue;
+    }
 
     const uid = getTaskUid(todo);
     if (!uid) {
@@ -145,7 +156,8 @@ export function parseUnscheduledTasksFromObject(
       url: getTextProperty(todo, 'url'),
       status: getTextProperty(todo, 'status'),
       completed: isCompletedTodo(todo),
-      etag: object.etag
+      etag: object.etag,
+      href: object.href
     });
   }
 

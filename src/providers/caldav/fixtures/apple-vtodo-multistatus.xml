@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:response>
+    <d:href>/sanitized-principal/calendars/tasks/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop><c:calendar-data/></d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/sanitized-principal/calendars/tasks/completed-reminder.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"completed-etag"</d:getetag>
+        <c:calendar-data><![CDATA[BEGIN:VCALENDAR
+VERSION:2.0
+CALSCALE:GREGORIAN
+PRODID:-//Apple Inc.//macOS 15.6//EN
+BEGIN:VTODO
+COMPLETED:20230109T075245Z
+CREATED:20221018T082557Z
+DTSTAMP:20260815T141655Z
+DTSTART;TZID=Asia/Nicosia:20230109T090000
+DUE;TZID=Asia/Nicosia:20230109T090000
+LAST-MODIFIED:20230109T075245Z
+PERCENT-COMPLETE:100
+PRIORITY:1
+STATUS:COMPLETED
+SUMMARY:Completed reminder
+UID:COMPLETED-REMINDER-UID
+X-APPLE-SORT-ORDER:100
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+TRIGGER;VALUE=DATE-TIME:20230109T070000Z
+UID:REMINDER-ALARM-UID
+X-WR-ALARMUID:REMINDER-ALARM-UID
+END:VALARM
+END:VTODO
+BEGIN:VTIMEZONE
+TZID:Asia/Nicosia
+X-LIC-LOCATION:Asia/Nicosia
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0300
+TZNAME:EEST
+DTSTART:19700329T030000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0300
+TZOFFSETTO:+0200
+TZNAME:EET
+DTSTART:19701025T040000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+END:VCALENDAR]]></c:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/sanitized-principal/calendars/tasks/active-reminder.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"active-etag"</d:getetag>
+        <c:calendar-data><![CDATA[BEGIN:VCALENDAR
+VERSION:2.0
+CALSCALE:GREGORIAN
+PRODID:-//Apple Inc.//macOS 15.6//EN
+BEGIN:VTODO
+CREATED:20260815T120000Z
+DTSTAMP:20260815T141655Z
+DTSTART;TZID=Asia/Nicosia:20260816T090000
+DUE;TZID=Asia/Nicosia:20260816T090000
+LAST-MODIFIED:20260815T141655Z
+PERCENT-COMPLETE:0
+PRIORITY:0
+STATUS:NEEDS-ACTION
+SUMMARY:Active reminder
+UID:ACTIVE-APPLE-REMINDER-UID
+X-APPLE-SORT-ORDER:200
+END:VTODO
+BEGIN:VTIMEZONE
+TZID:Asia/Nicosia
+BEGIN:STANDARD
+TZOFFSETFROM:+0300
+TZOFFSETTO:+0200
+TZNAME:EET
+DTSTART:19701025T040000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+END:VCALENDAR]]></c:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>

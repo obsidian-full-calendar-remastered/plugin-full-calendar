@@ -8,6 +8,8 @@ Using the core **Page Preview** plugin, hold `Ctrl`/`Cmd` and hover over an even
 
 With the **Name-based** linked-note strategy, preview lookup uses the sanitized event title in the configured linked-notes folder. Every event with that same title previews the shared note—even when later scheduling creates a different calendar UID. Deadline-based mode continues to preview the note attached to the specific event or occurrence.
 
+Hover boundaries are event-specific: moving directly from an event without a note to one with a linked note still opens the second event's preview; you do not need to move through empty calendar space first.
+
 This is a great way to quickly see meeting notes, agendas, or other context you've added to an event's note.
 
 !!! note

@@ -25,7 +25,7 @@ import type { Calendar } from '@fullcalendar/core';
 import './settings/sections/calendars/styles/overrides.css';
 import FullCalendarPlugin from '../main';
 import { renderOnboarding } from './onboard';
-import { PLUGIN_SLUG, CalendarInfo } from '../types';
+import { CalendarInfo } from '../types';
 import { UpdateViewCallback } from '../core/EventCache';
 import { t } from '../features/i18n/i18n';
 import { LoadDebugProfiler } from '../utils/LoadDebugProfiler';
@@ -47,7 +47,7 @@ import { runBlankViewDiagnostic } from './calendar/BlankViewDiagnostic';
 import { ViewUIHandler } from './calendar/ViewUIHandler';
 import { ViewEventInteractionHandler } from './calendar/ViewEventInteractionHandler';
 import { ViewSettingsHandler } from './calendar/ViewSettingsHandler';
-import { getNameBasedLinkedNoteFile } from '../features/linked-notes/linkedNoteResolution';
+import { buildLinkedNoteHoverPayload } from '../features/linked-notes/linkedNoteHover';
 export { getCalendarColors } from './calendar/utils';
 
 export const FULL_CALENDAR_VIEW_TYPE = 'full-calendar-view';
@@ -323,19 +323,15 @@ export class CalendarView extends ItemView implements ViewContext {
             eventMouseEnter: info => {
               try {
                 const details = PluginState.getCache().store.getEventDetails(info.event.id);
-                const previewPath = details
-                  ? getNameBasedLinkedNoteFile(this.app, details.event)?.path ||
-                    details.location?.path
-                  : undefined;
-                if (previewPath) {
-                  this.app.workspace.trigger('hover-link', {
-                    event: info.jsEvent,
-                    source: PLUGIN_SLUG,
-                    hoverParent: calendarEl,
-                    targetEl: info.jsEvent.target,
-                    linktext: previewPath,
-                    sourcePath: previewPath
+                if (details) {
+                  const payload = buildLinkedNoteHoverPayload({
+                    app: this.app,
+                    event: details.event,
+                    locationPath: details.location?.path,
+                    mouseEvent: info.jsEvent,
+                    eventEl: info.el
                   });
+                  if (payload) this.app.workspace.trigger('hover-link', payload);
                 }
               } catch {
                 // Swallow hover-link errors

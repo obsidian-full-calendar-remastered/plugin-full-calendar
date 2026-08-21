@@ -87,7 +87,7 @@ For deadline-based mapping:
 
 For name-based mapping, the exact title path is the first lookup key and intentionally makes equal titles share a note. The stable calendar ID and master event UID are attached to the file as a secondary identity so later renames or moves remain resolvable.
 
-Hover preview follows the same primary identity rule without mutating frontmatter: `CalendarView.eventMouseEnter` asks `getNameBasedLinkedNoteFile()` for the exact title path before falling back to the event cache's UID-derived location. Consequently, separate event records and later schedulings with the same sanitized title preview one shared file in name mode.
+Hover preview follows the same primary identity rule without mutating frontmatter: `CalendarView.eventMouseEnter` asks the linked-note hover builder for the exact title path before falling back to the event cache's UID-derived location. Each request uses the individual FullCalendar event element as both `hoverParent` and `targetEl`; the calendar root must not be used because moving directly from an unlinked event to a linked event would remain inside that shared boundary and leave Obsidian Page Preview in stale hover state. Consequently, separate event records and later schedulings with the same sanitized title preview one shared file in name mode.
 
 ### 6️⃣ Template Presets & Selection (Power Users)
 To support multiple custom layouts based on user choice:
@@ -161,6 +161,7 @@ sequenceDiagram
 * **Always sanitize inputs**: Always pipe event titles through `sanitizeTitleForFilename` to strip OS-reserved characters before attempting a file write.
 * **Never suffix name-based files**: Name mode must reuse or create the exact sanitized title path. Collision suffixes are reserved for deadline-based creation.
 * **Keep hover resolution DRY and read-only**: Hover preview must use `getNameBasedLinkedNoteFile`; it must not duplicate title sanitization, scan the vault, attach identity frontmatter, or create a note.
+* **Keep hover boundaries event-scoped**: `hoverParent` and `targetEl` must reference the hovered event element, never the calendar container, so direct event-to-event pointer transitions reset Page Preview correctly.
 * **Locale-independent tests**: When asserting date or time strings in the template test suite, always calculate the expected outcome dynamically using Luxon's local formatter to prevent timezone/locale mismatches on test machines.
 * **Never duplicate logic in providers**: All note creation must go through `createLinkedNoteForProvider`. Providers must not construct frontmatter, render templates, or create files independently.
 * **Use `openLinkedFileInExistingLeafOrNew` for all open-note paths**: Any code that opens a linked note for the user must call this helper (from `utils/leafUtils.ts`) instead of calling `workspace.getLeaf(true).openFile()` directly, so tab-reuse behaviour is consistent across all entry points.
@@ -172,6 +173,7 @@ sequenceDiagram
 
 *   [`src/features/linked-notes/linkedNotes.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/linkedNotes.ts) — Centralized note creation helper and open/create orchestrator (`openOrCreateLinkedNote`).
 *   [`src/features/linked-notes/linkedNoteResolution.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/linkedNoteResolution.ts) — Shared non-mutating name-based path resolution for open/create and hover preview.
+*   [`src/features/linked-notes/linkedNoteHover.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/linkedNoteHover.ts) — Event-scoped Page Preview payload construction and cache-location fallback.
 *   [`src/features/linked-notes/TemplateEngine.ts`](file:///d:/Codes/plugin-full-calendar/src/features/linked-notes/TemplateEngine.ts) — Note body templating engine.
 *   [`src/providers/utils/noteUtils.ts`](file:///d:/Codes/plugin-full-calendar/src/providers/utils/noteUtils.ts) — Shared note/file path & serialization utilities.
 *   [`src/providers/utils/LinkedNoteIndex.ts`](file:///d:/Codes/plugin-full-calendar/src/providers/utils/LinkedNoteIndex.ts) — Reactive frontmatter-driven indexer.

@@ -94,6 +94,33 @@ describe('interop toEventInput tests', () => {
       expect(result!.title).toBe('Sleep Event-_-_-2');
     });
 
+    it('should preserve location through the FullCalendar interaction model', () => {
+      const event = {
+        type: 'single',
+        title: 'Located Event',
+        location: 'Conference Room B',
+        date: '2026-08-21',
+        allDay: true,
+        endDate: null
+      } as OFCEvent;
+
+      const rendered = toEventInput('located-id', event, baseSettings);
+      expect(rendered?.extendedProps?.location).toBe('Conference Room B');
+
+      const eventApi = {
+        id: 'located-id',
+        title: 'Located Event',
+        allDay: true,
+        start: new Date('2026-08-21T00:00:00.000Z'),
+        end: new Date('2026-08-22T00:00:00.000Z'),
+        startStr: '2026-08-21',
+        endStr: '2026-08-22',
+        extendedProps: rendered?.extendedProps
+      } as unknown as EventApi;
+
+      expect(fromEventApi(eventApi, baseSettings).location).toBe('Conference Room B');
+    });
+
     it('should handle all-day single events', () => {
       const event = {
         type: 'single',

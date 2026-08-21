@@ -14,6 +14,7 @@ export type ParsedVTodo = {
   uid: string;
   title: string;
   description: string;
+  location: string;
   status: string;
   completed: boolean;
   cancelled: boolean;
@@ -131,6 +132,7 @@ function buildEvent(task: Omit<ParsedVTodo, 'event'>): OFCEvent | null {
     uid: task.uid,
     title: task.title,
     description: task.description || undefined,
+    location: task.location || undefined,
     timezone: placement.allDay ? undefined : placement.timezone,
     icalTask,
     ...timing
@@ -190,6 +192,7 @@ export function parseVTodoCalendar(ics: string): ParsedVTodo[] {
       uid,
       title: textValue(todo, 'summary') || t('settings.calendars.caldavTasks.untitledTask'),
       description: textValue(todo, 'description'),
+      location: textValue(todo, 'location'),
       status,
       completed: status === 'COMPLETED' || Boolean(completedAt) || percentComplete === 100,
       cancelled: status === 'CANCELLED',
@@ -374,6 +377,7 @@ export function createVTodoCalendar(event: OFCEvent, uid: string): string {
     event.title || t('settings.calendars.caldavTasks.untitledTask')
   );
   if (event.description) todo.addPropertyWithValue('description', event.description);
+  if (event.location) todo.addPropertyWithValue('location', event.location);
 
   const placement = eventPlacement(event);
   const taskMetadata = event.icalTask;
@@ -413,6 +417,7 @@ export function updateVTodoCalendar(
     newEvent.title || t('settings.calendars.caldavTasks.untitledTask')
   );
   replaceTextProperty(todo, 'description', newEvent.description);
+  replaceTextProperty(todo, 'location', newEvent.location);
   updateTaskDates(todo, oldEvent, newEvent);
   applyCompletion(todo, newEvent);
   todo.updatePropertyWithValue('last-modified', ical.Time.now());

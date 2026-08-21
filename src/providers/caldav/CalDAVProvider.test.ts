@@ -68,6 +68,7 @@ VERSION:2.0
 BEGIN:VEVENT
 UID:event1
 SUMMARY:Test Event 1
+LOCATION:External Room
 DTSTART:20230101T100000Z
 DTEND:20230101T110000Z
 END:VEVENT
@@ -138,6 +139,7 @@ END:VCALENDAR
 
     expect(events).toHaveLength(1);
     expect(events[0][0].title).toBe('Test Event 1');
+    expect(events[0][0].location).toBe('External Room');
   });
 
   it('should use compatibility fallback when REPORT returns 400', async () => {

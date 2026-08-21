@@ -187,6 +187,7 @@ BEGIN:VTODO
 UID:test-7
 SUMMARY:Original title
 DESCRIPTION:Original notes
+LOCATION:Original room
 DTSTART;TZID=Europe/Nicosia:20260820T100000
 DUE;TZID=Europe/Nicosia:20260820T120000
 STATUS:NEEDS-ACTION
@@ -204,6 +205,7 @@ END:VCALENDAR`;
       ...oldEvent,
       title: 'Updated title',
       description: 'Updated notes',
+      location: 'Updated room',
       type: 'rrule',
       startDate: '2026-08-21'
     } as OFCEvent;
@@ -219,6 +221,7 @@ END:VCALENDAR`;
       uid: 'test-7',
       title: 'Updated title',
       description: 'Updated notes',
+      location: 'Updated room',
       priority: 3,
       percentComplete: 50,
       rrule: 'FREQ=WEEKLY'
@@ -233,6 +236,7 @@ END:VCALENDAR`;
       uid: 'new-task',
       title: 'Created reminder',
       description: 'Notes',
+      location: 'Reminder room',
       date: '2026-08-22',
       endDate: null,
       allDay: true,
@@ -243,6 +247,7 @@ END:VCALENDAR`;
     expect(serialized).toContain('PRODID:-//Full Calendar Remastered//CalDAV VTODO//EN');
     expect(serialized).toContain('BEGIN:VTODO');
     expect(serialized).toContain('DUE;VALUE=DATE:20260822');
+    expect(serialized).toContain('LOCATION:Reminder room');
     expect(serialized).toContain('STATUS:NEEDS-ACTION');
     expect(serialized).toContain('PERCENT-COMPLETE:0');
     expect(serialized).not.toContain('BEGIN:VEVENT');

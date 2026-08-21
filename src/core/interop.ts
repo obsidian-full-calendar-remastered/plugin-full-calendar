@@ -154,6 +154,7 @@ export function toEventInput(
       recurringEventId: event.recurringEventId,
       category: event.category,
       subCategory: event.subCategory,
+      location: event.location,
       isShadow: false // Flag to identify the real event
     },
     // Support for background events and other display types
@@ -574,6 +575,7 @@ export function fromEventApi(
     title: (extendedProps.cleanTitle as string | undefined) || event.title,
     category,
     subCategory, // Add subCategory here
+    location: extendedProps.location as string | undefined,
     ...(event.allDay ? {} : { timezone: sourceZone }),
     recurringEventId: extendedProps.recurringEventId as string | undefined,
     ...(event.allDay

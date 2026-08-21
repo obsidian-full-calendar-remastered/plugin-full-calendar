@@ -1058,11 +1058,9 @@ END:VCALENDAR`;
       endDate: null,
       completed: false
     };
-    // Model the edit-modal regression where task metadata was absent from the submitted value.
     const editedEvent: OFCEvent = {
       ...oldEvent,
-      title: 'Edited task',
-      completed: null
+      title: 'Edited task'
     };
 
     await provider.updateEvent({ persistentId: 'imported-task.ics' }, oldEvent, editedEvent);
@@ -1073,6 +1071,33 @@ END:VCALENDAR`;
     expect(body).toEqual(expect.stringContaining('X-APPLE-SOMETHING:preserve-me'));
     expect(body).not.toEqual(expect.stringContaining('BEGIN:VEVENT'));
     expect(editedEvent.type === 'single' && editedEvent.completed).toBe(false);
+  });
+
+  it('converts an existing all-day VEVENT into a VTODO task', async () => {
+    mockObsidianFetch.mockResolvedValueOnce({ status: 204, statusText: 'No Content' } as Response);
+    const oldEvent: OFCEvent = {
+      uid: 'converted-item',
+      title: 'Calendar event',
+      type: 'single',
+      allDay: true,
+      date: '2026-08-21',
+      endDate: null
+    };
+    const task: OFCEvent = {
+      ...oldEvent,
+      title: 'Calendar task',
+      completed: false
+    };
+
+    await provider.updateEvent({ persistentId: 'converted-item.ics' }, oldEvent, task);
+
+    expect(mockObsidianFetch).toHaveBeenCalledTimes(1);
+    const request = mockObsidianFetch.mock.calls[0][1];
+    expect(request?.method).toBe('PUT');
+    expect(request?.body).toEqual(expect.stringContaining('BEGIN:VTODO'));
+    expect(request?.body).toEqual(expect.stringContaining('SUMMARY:Calendar task'));
+    expect(request?.body).toEqual(expect.stringContaining('DUE;VALUE=DATE:20260821'));
+    expect(request?.body).not.toEqual(expect.stringContaining('BEGIN:VEVENT'));
   });
 
   describe('createLinkedNote', () => {

@@ -34,7 +34,7 @@ CalDAV tasks (`VTODO` components) that do not have a scheduled or due date are p
 The global **Linked Note Link Strategy** also applies to CalDAV tasks. Name-based mode reuses the exact task-title file across reschedules and recurring occurrences; deadline-based mode keeps dated occurrence notes separate.
 
 !!! note "Task identity during write-back"
-    Full Calendar stores calendar appointments as `VEVENT` and tasks as `VTODO`. An all-day task remains a task when it is created, renamed, or rescheduled through Obsidian; `all-day` controls placement only and does not convert the item into an event. Ordinary events continue to use `VEVENT`.
+    Full Calendar stores calendar appointments as `VEVENT` and tasks as `VTODO`. An all-day task remains a task when it is created, renamed, or rescheduled through Obsidian; `all-day` controls placement only and does not convert the item into an event. Changing an event into a task replaces its `VEVENT` representation with `VTODO`; changing it back writes `VEVENT` again.
 
 ### Linked Task Date Properties
 

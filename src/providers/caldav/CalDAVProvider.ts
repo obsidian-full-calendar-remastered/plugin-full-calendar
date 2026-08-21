@@ -1318,20 +1318,16 @@ export class CalDAVProvider
     // Preserve the component type of imported tasks. The generic event formatter emits
     // VEVENT even for tasks, which caused an edited VTODO to become an all-day event.
     let icsContent: string;
-    if (isTask(oldEvent) || isTask(newEvent)) {
-      const taskEvent: OFCEvent =
-        newEvent.type === 'single'
-          ? {
-              ...newEvent,
-              completed:
-                newEvent.completed ??
-                (oldEvent.type === 'single' ? (oldEvent.completed ?? false) : false)
-            }
-          : { ...newEvent, isTask: true };
-      const response = await this.doRequest(url, { method: 'GET' });
-      const originalIcs = await response.text();
-      icsContent = updateVTodoCalendar(originalIcs, newEvent.uid, oldEvent, taskEvent);
-      Object.assign(newEvent, taskEvent);
+    if (isTask(newEvent)) {
+      if (isTask(oldEvent)) {
+        const response = await this.doRequest(url, { method: 'GET' });
+        const originalIcs = await response.text();
+        icsContent = updateVTodoCalendar(originalIcs, newEvent.uid, oldEvent, newEvent);
+      } else {
+        // This is an explicit VEVENT → VTODO conversion, so there is no VTODO in
+        // the original resource for updateVTodoCalendar() to patch.
+        icsContent = createVTodoCalendar(newEvent, newEvent.uid);
+      }
     } else {
       icsContent = eventToIcs(newEvent);
     }

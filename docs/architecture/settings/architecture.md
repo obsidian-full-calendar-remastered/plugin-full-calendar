@@ -16,6 +16,20 @@ This page describes how settings are modeled and applied.
 - Features own their setting UI and behavior handlers.
 - Settings updates propagate to views, cache, and providers.
 - If a setting is exposed in more than one UI location, each control must write the same typed settings field and trigger the same downstream refresh path. For example, the Tasks backlog date-field selector in Settings and in the Tasks Backlog view both write `tasksIntegration.backlogDateTarget` and refresh backlog views through the provider registry.
+- **Default calendar for new events**: `defaultCalendarId` is stored globally on `FullCalendarSettings` and optionally overridden per workspace on `WorkspaceSettings`. Resolution lives in [resolveDefaultCalendar.ts](../../../src/ui/modals/resolveDefaultCalendar.ts) as a pure function, applied by [event_modal.ts](../../../src/ui/modals/event_modal.ts):
+
+    | Order | Source | Skipped when |
+    |---|---|---|
+    | 1 | Explicit `defaultCalendarId` argument to `launchCreateModal` | Not a writable calendar |
+    | 2 | Active workspace `defaultCalendarId` | Not writable, or hidden by that workspace's `visibleCalendars` |
+    | 3 | Global `defaultCalendarId` | Not writable, or hidden by the active workspace |
+    | 4 | First writable calendar the active workspace displays | Workspace hides every writable calendar |
+    | 5 | First writable calendar (index `0`) | — |
+
+    Applied through `selectDefaultCalendar()` in [writableCalendars.ts](../../../src/utils/writableCalendars.ts), which is shared by the create modal and the NLP dispatcher's `resolveCalendarId` so both entry points resolve identically.
+
+    Deliberately **not** merged in `WorkspaceManager.getCalendarConfig()`: that method composes the configuration handed to FullCalendar for rendering, and this field never reaches the view layer. Importing `WorkspaceManager` from the modal would also pull the view layer into the create path. Legacy numeric `defaultCalendar` values are dropped on load by [utilsSettings.ts](../../../src/ui/settings/utilsSettings.ts); the field was never read, so nothing is lost.
+
 - **Open Daily Note on click**: The `openDailyNoteOnDateClick` setting enables/disables navigation from calendar header date labels and Month view day number links to Obsidian Daily Notes. The click handler stops event propagation to prevent triggering the month view create event modal.
 
 ## Debounced Settings Save and Flush Lifecycle

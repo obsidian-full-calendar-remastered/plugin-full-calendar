@@ -793,6 +793,11 @@
         "description": "Configure settings for creating local Obsidian notes linked to remote calendar events.",
         "learnMore": "Linked Notes Guide"
       },
+      "defaultCalendar": {
+        "label": "Default calendar for new events",
+        "description": "Calendar pre-selected when you create an event. Workspaces can override this.",
+        "firstAvailable": "First available calendar"
+      },
       "defaults": {
         "iCloud": "iCloud Calendar",
         "new": "New {{type}} Calendar",
@@ -1477,6 +1482,13 @@
         "businessHoursEnd": {
           "label": "Business hours end time",
           "description": "When your working day ends (format: HH:mm)"
+        },
+        "defaultCalendar": {
+          "label": "Default calendar for new events",
+          "description": "Calendar pre-selected when creating an event in this workspace",
+          "options": {
+            "useDefault": "Use global default"
+          }
         },
         "timelineCategories": {
           "label": "Timeline categories",

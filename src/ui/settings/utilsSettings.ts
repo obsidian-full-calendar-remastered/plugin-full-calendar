@@ -48,7 +48,7 @@ export function migrateAndSanitizeSettings(settings: unknown): {
   // Start from raw, ensure required arrays/objects
   let newSettings = {
     calendarSources: raw.calendarSources || [],
-    defaultCalendar: raw.defaultCalendar ?? 0,
+    defaultCalendarId: typeof raw.defaultCalendarId === 'string' ? raw.defaultCalendarId : null,
     firstDay: raw.firstDay ?? 0,
     initialView: raw.initialView ?? { desktop: 'timeGridWeek', mobile: 'timeGrid3Days' },
     timeFormat24h: raw.timeFormat24h ?? false,

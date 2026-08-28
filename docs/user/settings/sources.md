@@ -42,7 +42,10 @@ Access these settings in **Full Calendar Settings → Calendar Sources**.
 
 ## Global Source Settings
 
-*   **Default Calendar**: Choose which calendar is selected by default when creating a new event via the UI or [FCR Command](../features/nlp.md).
+*   **Default Calendar**: Choose which calendar is selected by default when creating a new event via the UI or [FCR Command](../features/nlp.md). Only calendars that accept new events are listed. Individual [Workspaces](workspaces.md) can override this; leave it on *First available calendar* to keep the previous behavior of selecting the first writable source.
+
+    !!! note "Falls back automatically"
+        If the chosen calendar is later deleted, becomes read-only, or is hidden by the active workspace, the plugin falls back to the workspace default, then the global default, then the first writable calendar the active workspace can display. This applies to events created from the calendar UI and from [FCR Commands](../features/nlp.md) alike.
 *   **Linked Note Link Strategy**:
     * `Name-based`: Reuse or create the exact sanitized event-title file in the configured linked-notes folder. Existing matching files keep their body and unrelated properties; no collision suffix is added.
     * `Deadline-based`: Keep separate notes for dated recurring occurrences, using occurrence identity and collision-safe filenames.

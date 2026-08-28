@@ -10,6 +10,7 @@ import FullCalendarPlugin from '../../../main';
 import { WorkspaceSettings, generateWorkspaceId } from '../../../types/settings';
 import { CalendarInfo } from '../../../types/calendar_settings';
 import { t } from '../../i18n/i18n';
+import { listWritableCalendars } from '../../../utils/writableCalendars';
 
 export class WorkspaceModal extends Modal {
   plugin: FullCalendarPlugin;
@@ -192,6 +193,22 @@ export class WorkspaceModal extends Modal {
       cls: 'ofc-workspace-calendar-checkboxes'
     });
     this.renderCalendarCheckboxes(this.visibleCalendarsContainer, calendars);
+
+    // Default calendar for new events, overriding the global setting.
+    new Setting(section)
+      .setName(t('modals.workspace.fields.defaultCalendar.label'))
+      .setDesc(t('modals.workspace.fields.defaultCalendar.description'))
+      .addDropdown(dropdown => {
+        dropdown.addOption('', t('modals.workspace.fields.defaultCalendar.options.useDefault'));
+        listWritableCalendars().forEach(calendar => {
+          dropdown.addOption(calendar.id, calendar.name || calendar.id);
+        });
+
+        dropdown.setValue(this.workspace.defaultCalendarId ?? '');
+        dropdown.onChange(value => {
+          this.workspace.defaultCalendarId = value === '' ? undefined : value;
+        });
+      });
   }
 
   private renderCalendarCheckboxes(container: HTMLElement, calendars: CalendarInfo[]) {

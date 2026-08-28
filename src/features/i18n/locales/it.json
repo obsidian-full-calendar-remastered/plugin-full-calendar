@@ -895,6 +895,11 @@
           "malformedMissingCalendar": "Malformed iCalendar data: missing VCALENDAR.",
           "malformedData": "Malformed iCalendar data: {{message}}"
         }
+      },
+      "defaultCalendar": {
+        "label": "Default calendar for new events",
+        "description": "Calendar pre-selected when you create an event. Workspaces can override this.",
+        "firstAvailable": "First available calendar"
       }
     },
     "categorization": {
@@ -1504,6 +1509,13 @@
         "basisQueryPath": {
           "label": "Bases query file path",
           "description": "Optional path to a .base file containing filter rules to apply on top of this workspace (e.g., queries/work.base)"
+        },
+        "defaultCalendar": {
+          "label": "Default calendar for new events",
+          "description": "Calendar pre-selected when creating an event in this workspace",
+          "options": {
+            "useDefault": "Use global default"
+          }
         }
       },
       "calendarTypes": {

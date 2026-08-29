@@ -11,6 +11,7 @@ import {
 import { t } from '../../features/i18n/i18n';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
 import { OFCEvent } from '../../types';
+import { getEventInstanceDate } from '../../features/timezone/Timezone';
 
 type ActionGroup = EventContextAction[];
 
@@ -188,6 +189,10 @@ async function buildProviderActions(
   return (await provider.getEventContextActions?.(context)) ?? [];
 }
 
+function getContextInstanceDate(context: ProviderEventContext): string | undefined {
+  return getEventInstanceDate(context.start, context.event.allDay, context.event.timezone);
+}
+
 async function buildNavigationActions(
   plugin: FullCalendarPlugin,
   context: ProviderEventContext
@@ -203,8 +208,7 @@ async function buildNavigationActions(
   };
   if (provider && typeof linkedNoteProvider.createLinkedNote === 'function') {
     // Derive the instanceDate for recurring events the same way buildDeleteActions does.
-    const instanceDate =
-      context.start instanceof Date ? context.start.toISOString().slice(0, 10) : undefined;
+    const instanceDate = getContextInstanceDate(context);
     actions.push({
       id: 'navigation:open-linked-note',
       title: t('ui.view.contextMenu.openLinkedNote'),
@@ -257,8 +261,7 @@ function buildDeleteActions(
           (context.event.type === 'recurring' || context.event.type === 'rrule') &&
           context.start
         ) {
-          const instanceDate =
-            context.start instanceof Date ? context.start.toISOString().slice(0, 10) : undefined;
+          const instanceDate = getContextInstanceDate(context);
           await PluginState.getCache().deleteEvent(context.eventId, { instanceDate });
         } else {
           await PluginState.getCache().deleteEvent(context.eventId);

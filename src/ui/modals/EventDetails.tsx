@@ -5,11 +5,13 @@ import { DateTime } from 'luxon';
 import { setIcon } from 'obsidian';
 import { rrulestr } from 'rrule';
 import { linkify } from '../../utils/meetingUrl';
+import { resolveEffectiveTimezone } from '../../features/timezone/Timezone';
 
 interface EventDetailsProps {
   event: OFCEvent;
   calendarName: string;
   location?: { path: string; lineNumber?: number } | null;
+  instanceDate?: string;
   onClose: () => void;
   onOpenNote?: () => void;
 }
@@ -28,6 +30,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
   event,
   calendarName,
   location,
+  instanceDate,
   onClose,
   onOpenNote
 }) => {
@@ -61,20 +64,24 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
   };
 
   const formatJsDate = (date: Date) => {
-    return DateTime.fromJSDate(date).toLocaleString({
-      weekday: 'short',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
+    const displayZone = resolveEffectiveTimezone(event.timezone);
+    return DateTime.fromJSDate(date)
+      .setZone(event.allDay ? 'utc' : displayZone)
+      .toLocaleString({
+        weekday: 'short',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
   };
 
   const formatTime = (timeStr: string) => {
     return DateTime.fromFormat(timeStr, 'HH:mm').toLocaleString(DateTime.TIME_SIMPLE);
   };
 
-  const dateString =
-    event.type === 'single'
+  const dateString = instanceDate
+    ? formatDate(instanceDate)
+    : event.type === 'single'
       ? formatDate(event.date)
       : event.type === 'recurring' && event.startRecur
         ? formatDate(event.startRecur)

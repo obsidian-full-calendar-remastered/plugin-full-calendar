@@ -7,6 +7,7 @@ import FullCalendarPlugin from '../../main';
 import { TimeState, EnrichedOFCEvent } from '../../core/TimeEngine';
 import { t } from '../i18n/i18n';
 import { launchReminderModal } from './ui/reminder_modal';
+import { resolveEffectiveTimezone } from '../timezone/Timezone';
 
 export class NotificationManager {
   #plugin: FullCalendarPlugin;
@@ -174,7 +175,8 @@ export class NotificationManager {
     const title = t('notifications.eventStarting.title'); // "Event Starting"
 
     // Customize body based on type
-    const timeStr = !event.allDay && start ? start.toLocal().toFormat('h:mm a') : '';
+    const displayZone = resolveEffectiveTimezone();
+    const timeStr = !event.allDay && start ? start.setZone(displayZone).toFormat('h:mm a') : '';
 
     let body = `${event.title}`;
     if (timeStr) body += ` at ${timeStr}`;

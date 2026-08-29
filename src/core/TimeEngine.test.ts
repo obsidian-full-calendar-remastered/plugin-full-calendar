@@ -150,4 +150,31 @@ describe('TimeEngine', () => {
 
     expect(state.current?.id).toBe('timed');
   });
+
+  it('normalizes Windows timezone identifiers via Timezone module', async () => {
+    Settings.now = () => Date.parse('2026-06-15T08:00:00.000Z');
+
+    const event = {
+      type: 'single',
+      title: 'Berlin meeting',
+      date: '2026-06-15',
+      startTime: '10:00',
+      endTime: '11:00',
+      timezone: 'W. Europe Standard Time', // Normalizes to Europe/Berlin (UTC+2 in summer)
+      allDay: false,
+      endDate: null
+    } as OFCEvent;
+
+    const engine = createTimeEngine([{ id: 'evt-berlin', event }]);
+    const rebuildOccurrenceCache = (
+      engine as unknown as { rebuildOccurrenceCache: () => Promise<void> }
+    ).rebuildOccurrenceCache.bind(engine);
+    await rebuildOccurrenceCache();
+
+    const occurrence = engine.getOccurrenceCache()[0];
+    expect(occurrence).toBeDefined();
+    // 10:00 Berlin (UTC+2) is 08:00 UTC
+    expect(occurrence.start.toUTC().toISO()).toBe('2026-06-15T08:00:00.000Z');
+    expect(occurrence.end.toUTC().toISO()).toBe('2026-06-15T09:00:00.000Z');
+  });
 });

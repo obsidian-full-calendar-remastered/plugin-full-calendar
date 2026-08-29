@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { DateTime } from 'luxon';
 import { t } from '../../i18n/i18n';
 import { EnrichedOFCEvent } from '../../../core/TimeEngine';
+import { resolveEffectiveTimezone } from '../../timezone/Timezone';
 
 interface ReminderModalProps {
   occurrence: EnrichedOFCEvent;
@@ -29,7 +30,8 @@ export const ReminderModal = ({
 
   const event = occurrence.event;
 
-  const formatDateTime = (dt: DateTime) => dt.toLocal().toFormat('h:mm a');
+  const displayZone = resolveEffectiveTimezone();
+  const formatDateTime = (dt: DateTime) => dt.setZone(displayZone).toFormat('h:mm a');
 
   const snoozeOptions = [
     { label: t('modals.reminder.presets.5m'), value: 5 },

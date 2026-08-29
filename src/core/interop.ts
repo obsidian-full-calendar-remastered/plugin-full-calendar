@@ -150,11 +150,14 @@ export function toEventInput(
     title: event.title,
     allDay: event.allDay,
     extendedProps: {
+      ...event,
       uid: event.uid,
       recurringEventId: event.recurringEventId,
       category: event.category,
       subCategory: event.subCategory,
       location: event.location,
+      description: event.description,
+      url: event.url,
       isShadow: false // Flag to identify the real event
     },
     // Support for background events and other display types
@@ -512,9 +515,10 @@ export function fromEventApi(
   settings: FullCalendarSettings,
   newResource?: string
 ): OFCEvent {
-  let category: string | undefined = (event.extendedProps as { category?: string }).category;
-  let subCategory: string | undefined = (event.extendedProps as { subCategory?: string })
-    .subCategory;
+  const extendedProps = (event.extendedProps || {}) as Record<string, unknown>;
+
+  let category: string | undefined = extendedProps.category as string | undefined;
+  let subCategory: string | undefined = extendedProps.subCategory as string | undefined;
 
   // Check for resource ID safely - resource property may be added by FullCalendar resource plugin
   const resourceId =
@@ -538,11 +542,17 @@ export function fromEventApi(
   }
 
   const sourceZone =
-    (!event.allDay && (event.extendedProps.sourceTimezone as string)) ||
+    (!event.allDay && (extendedProps.sourceTimezone as string)) ||
     settings.displayTimezone ||
     Intl.DateTimeFormat().resolvedOptions().timeZone;
   const isRecurring: boolean =
-    event.extendedProps.daysOfWeek !== undefined || event.extendedProps.fcrDaily === true;
+    extendedProps.daysOfWeek !== undefined ||
+    extendedProps.fcrDaily === true ||
+    extendedProps.repeatInterval !== undefined ||
+    extendedProps.repeatOn !== undefined ||
+    extendedProps.month !== undefined ||
+    extendedProps.dayOfMonth !== undefined ||
+    (extendedProps.type === 'recurring' && !extendedProps.rrule);
   const startDate = event.allDay
     ? (event.startStr ? DateTime.fromISO(event.startStr).toISODate() : null) ||
       DateTime.fromJSDate(event.start as Date).toISODate() ||
@@ -566,58 +576,90 @@ export function fromEventApi(
       ? getDate(new Date(event.end.getTime() - 1), sourceZone)
       : startDate;
 
-  const extendedProps = (event.extendedProps || {}) as Record<string, unknown>;
   const taskCompleted = extendedProps.taskCompleted as string | boolean | null | undefined;
   const timedStart = event.start as Date;
   const timedEnd = event.end ?? new Date(timedStart.getTime() + 60 * 60 * 1000);
-  return {
-    uid: extendedProps.uid as string | undefined,
+
+  const {
+    isShadow: _isShadow,
+    sourceTimezone: _sourceTimezone,
+    taskCompleted: _taskCompleted,
+    cleanTitle: _cleanTitle,
+    isTask: _isTask,
+    startTime: _oldStartTime,
+    endTime: _oldEndTime,
+    date: _oldDate,
+    endDate: _oldEndDate,
+    allDay: _oldAllDay,
+    type: _oldType,
+    timezone: _oldTimezone,
+    title: _oldTitle,
+    category: _oldCategory,
+    subCategory: _oldSubCategory,
+    ...restProps
+  } = extendedProps;
+
+  const baseResult = {
+    ...restProps,
     title: (extendedProps.cleanTitle as string | undefined) || event.title,
     category,
-    subCategory, // Add subCategory here
+    subCategory,
     location: extendedProps.location as string | undefined,
-    ...(event.allDay ? {} : { timezone: sourceZone }),
+    description: extendedProps.description as string | undefined,
+    url: extendedProps.url as string | undefined,
+    uid: extendedProps.uid as string | undefined,
     recurringEventId: extendedProps.recurringEventId as string | undefined,
+    ...(event.allDay ? {} : { timezone: sourceZone }),
     ...(event.allDay
-      ? { allDay: true }
+      ? { allDay: true as const }
       : {
-          allDay: false,
+          allDay: false as const,
           startTime: getTime(timedStart, sourceZone),
           endTime: getTime(timedEnd, sourceZone)
-        }),
-
-    ...(isRecurring
-      ? {
-          type: 'recurring' as const,
-          endDate: null,
-          ...(extendedProps.fcrDaily ? { fcrDaily: true } : {}),
-          ...(extendedProps.repeatInterval
-            ? { repeatInterval: extendedProps.repeatInterval as number }
-            : {}),
-          ...(extendedProps.repeatOn
-            ? { repeatOn: extendedProps.repeatOn as { week: number; weekday: number } }
-            : {}),
-          ...(extendedProps.daysOfWeek
-            ? {
-                daysOfWeek: (extendedProps.daysOfWeek as number[]).map((i: number) => DAYS[i]) as (
-                  'U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S'
-                )[]
-              }
-            : {}),
-          startRecur: extendedProps.startRecur
-            ? getDate(extendedProps.startRecur as Date, sourceZone)
-            : undefined,
-          endRecur: extendedProps.endRecur
-            ? getDate(extendedProps.endRecur as Date, sourceZone)
-            : undefined,
-          skipDates: [], // Default to empty as exception info is unavailable
-          isTask: extendedProps.isTask as boolean | undefined
-        }
-      : {
-          type: 'single',
-          date: startDate,
-          ...(startDate !== endDate ? { endDate } : { endDate: null }),
-          completed: extendedProps.isTask ? (taskCompleted ?? false) : taskCompleted
         })
+  };
+
+  if (isRecurring) {
+    return {
+      ...baseResult,
+      type: 'recurring' as const,
+      endDate: null,
+      ...(extendedProps.fcrDaily ? { fcrDaily: true } : {}),
+      ...(extendedProps.repeatInterval
+        ? { repeatInterval: extendedProps.repeatInterval as number }
+        : {}),
+      ...(extendedProps.repeatOn
+        ? { repeatOn: extendedProps.repeatOn as { week: number; weekday: number } }
+        : {}),
+      ...(extendedProps.daysOfWeek
+        ? {
+            daysOfWeek: (
+              extendedProps.daysOfWeek as (number | 'U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S')[]
+            ).map(i => (typeof i === 'number' ? DAYS[i] : i)) as (
+              'U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S'
+            )[]
+          }
+        : {}),
+      startRecur: extendedProps.startRecur
+        ? typeof extendedProps.startRecur === 'string'
+          ? extendedProps.startRecur
+          : getDate(extendedProps.startRecur as Date, sourceZone)
+        : undefined,
+      endRecur: extendedProps.endRecur
+        ? typeof extendedProps.endRecur === 'string'
+          ? extendedProps.endRecur
+          : getDate(extendedProps.endRecur as Date, sourceZone)
+        : undefined,
+      skipDates: (extendedProps.skipDates as string[]) || [],
+      isTask: extendedProps.isTask as boolean | undefined
+    };
+  }
+
+  return {
+    ...baseResult,
+    type: 'single' as const,
+    date: startDate,
+    ...(startDate !== endDate ? { endDate } : { endDate: null }),
+    completed: extendedProps.isTask ? (taskCompleted ?? false) : taskCompleted
   };
 }

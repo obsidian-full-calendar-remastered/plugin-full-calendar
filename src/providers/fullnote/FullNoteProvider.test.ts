@@ -838,6 +838,66 @@ text_property: "[[example]]"
     expect(newContent).toContain('timezone: Europe/Berlin');
   });
 
+  it('preserves description in frontmatter when updating event time/date', async () => {
+    const filename = 'event-with-desc.md';
+    const dirName = 'events';
+    const initialEvent: Partial<OFCEvent> = {
+      title: 'Project Sync',
+      description: 'Quarterly review meeting',
+      location: 'Room 204',
+      date: '2026-05-15',
+      startTime: '10:00',
+      endTime: '11:00',
+      timezone: 'Europe/Berlin',
+      allDay: false
+    };
+
+    const obsidian = makeApp(
+      MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder('events').file(filename, new FileBuilder().frontmatter(initialEvent))
+        )
+        .done()
+    );
+
+    const calendar = new FullNoteProvider(
+      { directory: dirName, id: 'local_1' },
+      makePlugin({ enableAdvancedCategorization: false }),
+      obsidian
+    );
+
+    const events = await calendar.getEvents();
+    expect(events.length).toBe(1);
+    const parsedEvent = events[0][0];
+    expect(parsedEvent).toBeDefined();
+    expect(parsedEvent?.description).toBe('Quarterly review meeting');
+    expect(parsedEvent?.location).toBe('Room 204');
+
+    const updatedEvent: OFCEvent = {
+      ...parsedEvent,
+      allDay: false,
+      startTime: '11:00',
+      endTime: '12:00'
+    };
+
+    const handle = calendar.getEventHandle(parsedEvent);
+    expect(handle).not.toBeNull();
+    await calendar.updateEvent(handle!, parsedEvent, updatedEvent);
+
+    const mockObsidian = obsidian as unknown as MockObsidian;
+    const mockRewrite = mockObsidian.rewrite;
+    const [, rewriteCallback] = mockRewrite.mock.calls[0] as [string, (content: string) => string];
+    const file = obsidian.getFileByPath(`events/${filename}`);
+    if (!file) throw new Error(`Expected file events/${filename} to exist`);
+    const existingContent = await obsidian.read(file);
+    const newContent = rewriteCallback(existingContent);
+
+    expect(newContent).toContain('description: Quarterly review meeting');
+    expect(newContent).toContain('location: Room 204');
+    expect(newContent).toContain('startTime: "11:00"');
+    expect(newContent).toContain('endTime: "12:00"');
+  });
+
   it('downstream: modifies time in display TZ but provider receives preconvertd source TZ', async () => {
     // 1. Initial Local Provider Event in 'Europe/Berlin' Source TZ
     const sourceZone = 'Europe/Berlin';

@@ -22,6 +22,7 @@ import { EventApi } from '@fullcalendar/core';
 import { toEventInput, fromEventApi } from './interop';
 import { OFCEvent } from '../types';
 import { FullCalendarSettings, DEFAULT_SETTINGS } from '../types/settings';
+import { getInlineEventFromLine, modifyListItem } from '../providers/dailynote/parser_dailyN';
 
 jest.mock(
   'obsidian',
@@ -119,6 +120,167 @@ describe('interop toEventInput tests', () => {
       } as unknown as EventApi;
 
       expect(fromEventApi(eventApi, baseSettings).location).toBe('Conference Room B');
+    });
+
+    it('should preserve description, url, location, alarms, notify, and custom metadata across toEventInput and fromEventApi', () => {
+      const event: OFCEvent = {
+        type: 'single',
+        title: 'Detailed Event',
+        description: 'Important meeting notes',
+        url: 'https://example.com/meeting',
+        location: 'Building A, Room 302',
+        notify: { value: 15 },
+        alarms: [{ minutesBefore: 30, action: 'DISPLAY' }],
+        display: 'block',
+        endReminder: true,
+        uid: 'uid-custom-1',
+        date: '2026-08-29',
+        startTime: '09:00',
+        endTime: '10:30',
+        timezone: 'Asia/Shanghai',
+        allDay: false,
+        endDate: null
+      };
+
+      const rendered = toEventInput('detailed-id', event, baseSettings);
+      expect(rendered).not.toBeNull();
+      expect(rendered?.extendedProps?.description).toBe('Important meeting notes');
+      expect(rendered?.extendedProps?.url).toBe('https://example.com/meeting');
+      expect(rendered?.extendedProps?.location).toBe('Building A, Room 302');
+      expect(rendered?.extendedProps?.notify).toEqual({ value: 15 });
+      expect(rendered?.extendedProps?.alarms).toEqual([{ minutesBefore: 30, action: 'DISPLAY' }]);
+
+      // Simulate dragging to 10:00 - 11:30 in Asia/Shanghai
+      const startDt = DateTime.fromISO('2026-08-29T10:00:00', { zone: 'Asia/Shanghai' }).toJSDate();
+      const endDt = DateTime.fromISO('2026-08-29T11:30:00', { zone: 'Asia/Shanghai' }).toJSDate();
+
+      const eventApi = {
+        id: 'detailed-id',
+        title: 'Detailed Event',
+        allDay: false,
+        start: startDt,
+        end: endDt,
+        extendedProps: rendered?.extendedProps
+      } as unknown as EventApi;
+
+      const result = fromEventApi(eventApi, baseSettings);
+      expect(result.type).toBe('single');
+      expect(result.title).toBe('Detailed Event');
+      expect(result.description).toBe('Important meeting notes');
+      expect(result.url).toBe('https://example.com/meeting');
+      expect(result.location).toBe('Building A, Room 302');
+      expect(result.notify).toEqual({ value: 15 });
+      expect(result.alarms).toEqual([{ minutesBefore: 30, action: 'DISPLAY' }]);
+      expect(result.display).toBe('block');
+      expect(result.endReminder).toBe(true);
+      expect(result.uid).toBe('uid-custom-1');
+      expect(result.allDay).toBe(false);
+      if (result.type === 'single' && !result.allDay) {
+        expect(result.startTime).toBe('10:00');
+        expect(result.endTime).toBe('11:30');
+        expect(result.timezone).toBe('Asia/Shanghai');
+      }
+    });
+
+    it('should preserve description when dragging a daily note timeline event and rewriting note line', () => {
+      // 1. Initial daily note line with description
+      const originalLine =
+        '- Breakfast [description:: Times早餐]  [startTime:: 09:00]  [endTime:: 10:30]  [timezone:: Asia/Shanghai]  [uid:: 1]';
+      const parsedEvent = getInlineEventFromLine(originalLine, { date: '2026-08-29' });
+      expect(parsedEvent).not.toBeNull();
+      expect(parsedEvent?.description).toBe('Times早餐');
+      expect(parsedEvent?.title).toBe('Breakfast');
+
+      // 2. Render to FullCalendar EventInput
+      const rendered = toEventInput('daily-event-1', parsedEvent!, baseSettings);
+      expect(rendered?.extendedProps?.description).toBe('Times早餐');
+
+      // 3. User drags event to 10:00 - 11:30
+      const startDt = DateTime.fromISO('2026-08-29T10:00:00', { zone: 'Asia/Shanghai' }).toJSDate();
+      const endDt = DateTime.fromISO('2026-08-29T11:30:00', { zone: 'Asia/Shanghai' }).toJSDate();
+
+      const eventApi = {
+        id: 'daily-event-1',
+        title: 'Breakfast',
+        allDay: false,
+        start: startDt,
+        end: endDt,
+        extendedProps: rendered?.extendedProps
+      } as unknown as EventApi;
+
+      // 4. fromEventApi generates modifiedEvent
+      const modifiedEvent = fromEventApi(eventApi, baseSettings);
+      expect(modifiedEvent.description).toBe('Times早餐');
+
+      // 5. DailyNoteProvider updates the line with modifyListItem
+      const updatedLine = modifyListItem(originalLine, modifiedEvent, { format: 'default' });
+      expect(updatedLine).not.toBeNull();
+      expect(updatedLine).toContain('[description:: Times早餐]');
+      expect(updatedLine).toContain('[startTime:: 10:00]');
+      expect(updatedLine).toContain('[endTime:: 11:30]');
+      expect(updatedLine).toContain('[uid:: 1]');
+    });
+
+    it('should preserve description when transitioning between timed and all-day slots', () => {
+      const timedEvent: OFCEvent = {
+        type: 'single',
+        title: 'Conference Talk',
+        description: 'Room 404 Keynote',
+        location: 'Main Hall',
+        date: '2026-09-01',
+        startTime: '14:00',
+        endTime: '15:00',
+        timezone: 'Europe/Budapest',
+        allDay: false,
+        endDate: null
+      };
+
+      // 1. Drag timed -> all-day
+      const renderedTimed = toEventInput('talk-id', timedEvent, baseSettings);
+      const allDayEventApi = {
+        id: 'talk-id',
+        title: 'Conference Talk',
+        allDay: true,
+        start: new Date('2026-09-01T00:00:00.000Z'),
+        end: new Date('2026-09-02T00:00:00.000Z'),
+        startStr: '2026-09-01',
+        endStr: '2026-09-02',
+        extendedProps: renderedTimed?.extendedProps
+      } as unknown as EventApi;
+
+      const convertedToAllDay = fromEventApi(allDayEventApi, baseSettings);
+      expect(convertedToAllDay.allDay).toBe(true);
+      expect(convertedToAllDay.description).toBe('Room 404 Keynote');
+      expect(convertedToAllDay.location).toBe('Main Hall');
+      expect((convertedToAllDay as Record<string, unknown>).startTime).toBeUndefined();
+      expect((convertedToAllDay as Record<string, unknown>).endTime).toBeUndefined();
+
+      // 2. Drag all-day -> timed
+      const renderedAllDay = toEventInput('talk-id', convertedToAllDay, baseSettings);
+      const timedStartDt = DateTime.fromISO('2026-09-01T16:00:00', {
+        zone: 'Europe/Budapest'
+      }).toJSDate();
+      const timedEndDt = DateTime.fromISO('2026-09-01T17:00:00', {
+        zone: 'Europe/Budapest'
+      }).toJSDate();
+
+      const timedEventApi = {
+        id: 'talk-id',
+        title: 'Conference Talk',
+        allDay: false,
+        start: timedStartDt,
+        end: timedEndDt,
+        extendedProps: renderedAllDay?.extendedProps
+      } as unknown as EventApi;
+
+      const convertedToTimed = fromEventApi(timedEventApi, baseSettings);
+      expect(convertedToTimed.allDay).toBe(false);
+      expect(convertedToTimed.description).toBe('Room 404 Keynote');
+      expect(convertedToTimed.location).toBe('Main Hall');
+      if (convertedToTimed.type === 'single' && !convertedToTimed.allDay) {
+        expect(convertedToTimed.startTime).toBe('16:00');
+        expect(convertedToTimed.endTime).toBe('17:00');
+      }
     });
 
     it('should handle all-day single events', () => {

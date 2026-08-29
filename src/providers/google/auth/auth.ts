@@ -240,11 +240,13 @@ export async function startGoogleLogin(
   // For mobile: Open window FIRST (synchronously) to avoid iOS popup blocker.
   // iOS requires window.open() to be called in the same event loop tick as the user action.
   let mobileWindow: Window | null = null;
+  let popupBlocked = false;
   if (isMobile && !useCopyPaste) {
     mobileWindow = window.open('about:blank', '_blank');
     if (!mobileWindow) {
-      showNotice(t('google.auth.popupBlocked'));
-      return;
+      // WKWebView (iPadOS/iOS) blocked the popup. Don't give up: fall back to
+      // the copy-paste/auth-URL modal so the user can open it in external Safari.
+      popupBlocked = true;
     }
   }
 
@@ -308,6 +310,11 @@ export async function startGoogleLogin(
     } else {
       startDesktopLogin(plugin, authUrl);
     }
+  } else if (isMobile && popupBlocked) {
+    // The popup was blocked by WKWebView (iPadOS/iOS). Surface the auth URL in a
+    // copy-paste modal as a fallback so the user can complete the flow in Safari.
+    showNotice(t('google.auth.popupBlocked'));
+    showAuthUI(plugin, authUrl, true, true);
   } else if (isMobile && mobileWindow) {
     // Redirect the already-open window to the OAuth URL
     mobileWindow.location.href = authUrl;

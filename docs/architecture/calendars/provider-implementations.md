@@ -40,9 +40,13 @@ Parses list items under configured heading and performs line-targeted updates. I
 Note lookup and creation are delegated through a source adapter:
 
 - `ObsidianDailyNoteSourceAdapter` preserves the existing `obsidian-daily-notes-interface` integration for core Daily Notes and Periodic Notes.
-- `JournalsDailyNoteSourceAdapter` validates the optional Journals runtime API, selects a configured Day journal, and delegates resolution/creation to that journal. Journals remains optional and owns its folder, naming, template, and frontmatter initialization.
+- `JournalsDailyNoteSourceAdapter` consumes a `JournalsBridge`, selects a configured Day journal, and delegates resolution/creation to that exact journal. Journals remains optional and owns its folder, naming, template, and frontmatter initialization.
 
-Both adapters feed the same heading parser, serializer, UID allocator, and CRUD implementation. The Journals adapter is intentionally narrow because Journals does not currently publish a documented third-party API; runtime shape checks contain that compatibility boundary.
+`JournalsBridge` is the only compatibility boundary. It prefers Journals 3.2+'s `obsidian-journals-api` locator and documented asynchronous surface, then falls back to the capability-checked Journals 2.x runtime. Provider and UI code do not branch on plugin version strings or private 3.x fields. The official adapter uses `listJournals({ writeType: "day" })`, `notesFor`, `journalOf`, and `ensureNote`; exact journal-name selectors preserve multiple-Day-journal isolation. The legacy adapter retains `journals`, `getJournal`, `index`, and `journal.open` behavior for 2.x.
+
+Both adapters feed the same heading parser, serializer, UID allocator, and CRUD implementation. The 3.2 API makes note operations asynchronous, so CRUD awaits bridge results. FCR's synchronous event-handle and file-relevance contracts use only a selected-journal path/date cache hydrated by authoritative API reads and maintained by `noteAdded`/`noteRemoved` subscriptions. Provider teardown disposes those subscriptions during source reload and plugin unload. `journalRenamed` migrates every matching persisted `journalId`; Journals defines the journal name itself as identity.
+
+Journals 3.2 does not expose journal templates through its public API. Heading suggestions therefore come from headings in existing selected-journal notes, while manual heading entry remains available. The 2.x adapter continues to inspect its public-at-runtime template settings for the legacy UX.
 
 Daily Notes and Journals have independent persisted source discriminators (`dailynote` and `journals`). `JournalsProvider` reuses `DailyNoteProvider` as its date-note CRUD base, while remaining separately registered so multiple selected Day journals can coexist without participating in the single Daily Note source limit. Legacy Journals sources saved as `type: dailynote` plus `provider: journals` are migrated to `type: journals`.
 

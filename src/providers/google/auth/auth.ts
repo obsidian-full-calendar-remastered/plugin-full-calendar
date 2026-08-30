@@ -371,7 +371,8 @@ export async function exchangeCodeForToken(
       client_id: clientId,
       code: code,
       code_verifier: oauthState.pkce.verifier,
-      state: state
+      state: state,
+      redirect_uri: redirectUri
     };
     requestBody = JSON.stringify(body);
     requestHeaders = { 'Content-Type': 'application/json' };

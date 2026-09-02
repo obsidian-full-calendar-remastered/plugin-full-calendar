@@ -1,0 +1,2007 @@
+{
+  "chrono": {
+    "ui": {
+      "title": "配置数据分析组",
+      "description": "创建分组来分类您的活动。引擎将使用这些规则来生成个性化分析。",
+      "save": "保存配置",
+      "cancel": "取消",
+      "addGroup": "添加新数据分析组",
+      "groupName": "组名称",
+      "groupNamePlaceholder": "例如：工作",
+      "deleteGroup": "删除此组",
+      "persona": {
+        "name": "作为角色分析",
+        "desc": "选择要应用于此组的分析模型。",
+        "productivity": "🎯 生产力",
+        "wellness": "❤️ 健康与日常",
+        "none": "⚪ (在仪表板中忽略)"
+      },
+      "hierarchies": {
+        "name": "匹配层级",
+        "desc": "例如：工作日历、个人日历",
+        "add": "添加层级..."
+      },
+      "projects": {
+        "name": "匹配项目",
+        "desc": "例如：凤凰计划、Q4报告",
+        "add": "添加项目..."
+      },
+      "mutedProjects": {
+        "name": "排除项目",
+        "desc": "排除特定项目（区分大小写，精确匹配），将其排除在习惯一致性检查之外。",
+        "add": "添加排除项目..."
+      },
+      "subprojectKeywords": {
+        "name": "匹配子项目关键词",
+        "desc": "添加关键词，如果在子项目中任何位置找到将匹配。",
+        "placeholder": "例如：设计\n研究\n会议"
+      },
+      "mutedSubprojectKeywords": {
+        "name": "排除子项目关键词",
+        "desc": "通过关键词排除活动。如果子项目包含以下任何关键词（不区分大小写），则将其排除在习惯一致性检查之外。",
+        "placeholder": "例如：已完成\n归档\n旧"
+      },
+      "unsavedChanges": {
+        "title": "未保存的更改",
+        "message": "您有未保存的更改。关闭前是否保存？",
+        "saveAndClose": "保存并关闭",
+        "discard": "放弃更改"
+      },
+      "folderSelectPlaceholder": "选择一个包含时间追踪文件的文件夹...",
+      "errors": {
+        "groupExists": "组名称\"{{name}}\"已存在。"
+      },
+      "docs": {
+        "configurationGuide": "配置指南",
+        "matchingRules": "匹配规则",
+        "faq": "常见问题",
+        "personaGuide": "角色指南",
+        "insightsGuide": "分析参考",
+        "ruleParameters": "规则参数",
+        "terminology": "术语",
+        "filtersGuide": "筛选语法"
+      }
+    },
+    "analyser": {
+      "header": "📊 ChronoAnalyser",
+      "subtitle": "对您的时间追踪数据进行交互式分析",
+      "proTip": "专业提示",
+      "clickNextTip": "点击查看下一个提示",
+      "insights": {
+        "title": "💡 洞察",
+        "generate": "生成分析",
+        "configure": "配置分析",
+        "placeholder": "点击 \"生成分析\" 以分析您的数据。"
+      },
+      "filters": {
+        "hierarchy": "📂 按层级筛选（日历来源）",
+        "hierarchyPlaceholder": "所有层级（输入以筛选...）",
+        "project": "📋 按项目筛选",
+        "projectPlaceholder": "所有项目（输入以筛选...）",
+        "category": "🔍 按类别筛选（例如：关键词 -排除）",
+        "categoryPlaceholder": "例如：task.* -review",
+        "dateRange": "📅 日期范围",
+        "dateRangePlaceholder": "选择日期范围（yyyy-mm-dd 到 yyyy-mm-dd）",
+        "today": "今天",
+        "yesterday": "昨天",
+        "thisWeek": "本周",
+        "thisMonth": "本月",
+        "clearDates": "🗑️ 清除日期",
+        "clearDatesTooltip": "清除日期筛选"
+      },
+      "config": {
+        "metric": "📏 指标",
+        "duration": "持续时间（小时）",
+        "count": "事件计数",
+        "analysisType": "🎯 分析类型",
+        "pie": "按分类（饼图）",
+        "sunburst": "按分类（旭日图）",
+        "timeSeries": "时间序列趋势",
+        "activity": "活动模式",
+        "breakdownLevel": "📈 细分级别",
+        "hierarchy": "层级",
+        "project": "项目",
+        "subproject": "子项目",
+        "projectsByHierarchy": "按层级显示项目",
+        "subprojectsByProject": "按项目显示子项目",
+        "granularity": "🕒 粒度",
+        "daily": "每日",
+        "weekly": "每周",
+        "monthly": "每月",
+        "chartType": "📊 图表类型",
+        "overallTrend": "整体趋势",
+        "stackedByCategory": "按分类堆叠",
+        "stackBy": "📚 堆叠依据",
+        "analyzeBy": "📅 分析维度",
+        "dayOfWeek": "星期几",
+        "hourOfDay": "一天中的小时（任务开始）",
+        "heatmap": "热力图（天 vs 小时）",
+        "tooltips": {
+          "categorywise": "可视化时间在不同类别之间的分布。",
+          "timeSeries": "可视化一段时间内耗时的变化。",
+          "activity": "识别任务通常何时执行的模式。",
+          "dayOfWeek": "显示一个柱状图，展示每周每天的总小时数。",
+          "hourOfDay": "显示一个柱状图，展示每天各小时开始的任务所占的总小时数。",
+          "heatmap": "显示一个热力图，行是星期几，列是一天中的小时，单元格的颜色强度代表在该日期/小时组合开始任务的总小时数。"
+        }
+      },
+      "stats": {
+        "totalHours": "总小时数（已筛选）",
+        "filesInFilter": "筛选中的文件数",
+        "activeAnalysis": "当前分析"
+      },
+      "log": {
+        "title": "📋 处理日志与问题",
+        "noIssues": "未发现问题。"
+      },
+      "details": {
+        "title": "分类详情",
+        "close": "关闭",
+        "project": "项目",
+        "subproject": "子项目（完整）",
+        "duration": "持续时间（小时）",
+        "date": "日期",
+        "filePath": "文件路径"
+      },
+      "demo": {
+        "title": "演示模式",
+        "description": "您正在查看 ChronoAnalyser 的示例数据。配置您自己的分析组以永久切换到实时数据。",
+        "turnOff": "关闭演示"
+      }
+    }
+  },
+  "commands": {
+    "newEvent": "新建事件",
+    "resetCache": "重置事件缓存",
+    "revalidateRemote": "重新验证远程日历",
+    "openCalendar": "打开日历",
+    "openChronoAnalyser": "打开数据分析器（仅桌面版）",
+    "openSidebar": "在侧边栏打开",
+    "syncActivityWatch": "同步 ActivityWatch",
+    "nlpQuickAdd": "FCR 命令",
+    "syncFcrReminder": "同步 FCR Reminder Companion",
+    "shareAvailability": "Share Availability",
+    "exportIcs": "Export Event Cache as ICS file",
+    "showLoadDebugLog": "Show load debug timing log"
+  },
+  "notices": {
+    "settingsUpdated": "日历已将您的日历设置更新为新格式。",
+    "cacheReset": "日历已重置。",
+    "chronoAnalyserMobileDisabled": "数据分析功能仅在 Obsidian 桌面版中可用。",
+    "chronoAnalyserInitializing": "数据分析器：正在初始化事件缓存...",
+    "chronoAnalyserLoadFailed": "加载数据分析器失败。请检查控制台。",
+    "chronoAnalyserConfigureFirst": "请先使用 ⚙️ 图标配置您的数据分析组。",
+    "chronoAnalyserGeneratingInsights": "正在生成分析（这可能需要一些时间）...",
+    "chronoAnalyserInsightsFailed": "生成分析失败。请检查开发者控制台获取错误信息。",
+    "chronoAnalyserInsightsSaved": "分析配置已保存！",
+    "googleAuthFailed": "Google 认证失败。请重试。",
+    "bulkUpdateError": "批量更新时出错。请检查控制台获取详情。",
+    "providerNotRegistered": "{{providerType}} 提供者未注册。",
+    "timezoneChanged": "系统时区已更改为 {{timezone}}。日历视图已更新。",
+    "revalidatingRemotes": "正在重新验证远程日历...",
+    "revalidationFailed": "一个或多个远程日历加载失败。请检查控制台获取详情。",
+    "revalidationSuccess": "远程日历已重新验证。",
+    "cannotOpenRemote": "无法打开远程事件的笔记。",
+    "bulkCategorization": {
+      "noNotesFound": "未找到可分类的本地事件笔记。",
+      "complete": "批量分类完成。"
+    },
+    "bulkDecategorization": {
+      "noNotesFound": "未找到可取消分类的本地事件笔记。",
+      "complete": "批量取消分类完成。"
+    },
+    "tasks": {
+      "createViaPlugin": "使用 Tasks 插件界面创建新任务。",
+      "defaultValidation": "此任务无法安排在此日期。",
+      "scheduledNoModal": "任务已安排，但无法打开 Tasks 编辑弹窗。",
+      "apiUnavailable": "Obsidian Tasks 插件 API 不可用。"
+    },
+    "tasknotes": {
+      "addSourceFirst": "请先添加一个 TaskNotes 日历源，然后返回此处配置集成。",
+      "handoffSingleOnly": "TaskNotes 的 NLP 转发当前仅支持单个事件。",
+      "handoffTitleRequired": "TaskNotes 的 NLP 转发需要标题。",
+      "handoffStartTimeRequired": "TaskNotes 的 NLP 转发需要有效的开始时间用于有时限的事件。",
+      "invalidSourceId": "TaskNotes 提供程序源 ID 必须遵循 tasknotes_[n] 模式（接收：{{sourceId}}）。",
+      "createModalUnavailable": "TaskNotes 插件不可用或未公开创建模态集成。",
+      "selectorUnavailable": "TaskNotes 插件不可用或未公开选择器集成。"
+    },
+    "milestones": {
+      "sponsorDesc": "If FCR added value, please consider supporting the work:",
+      "sponsorBtn": "Support Development",
+      "goalBtn": "See Financial Goal"
+    },
+    "chronoAnalyserDemoLoaded": "ChronoAnalyser 示例已加载。",
+    "chronoAnalyserDemoLoadedFromCache": "ChronoAnalyser 示例已从缓存加载。",
+    "chronoAnalyserDemoLoadFailed": "无法加载 ChronoAnalyser 示例。回退到实时数据。",
+    "configureLinkedNotesDirFirst": "请先在设置中配置一个链接笔记目录。",
+    "failedToCreateLinkedNote": "创建链接笔记失败。",
+    "fcrReminderSynced": "FCR Reminder Companion 已成功同步。",
+    "fcrReminderCompanionOfflineBold": "警告：FCR Reminder Companion 守护进程处于离线状态。在启动之前，您将无法收到本地桌面通知。",
+    "chronoAnalyserChartLoadFailed": "Failed to load charting library. Please check your internet connection.",
+    "templateFileNotFoundPreset": "Template preset note file '{{path}}' was not found. Note creation aborted.",
+    "noPresetsConfigured": "No template presets are configured. Please add at least one template preset in settings."
+  },
+  "eventCache": {
+    "calendarNotFound": "无法添加事件：未找到 ID 为 {{calendarId}} 的日历。",
+    "providerNotFound": "无法添加事件：未找到类型为 {{type}} 的提供者。",
+    "readOnly": "无法向只读日历添加事件。",
+    "createFailed": "创建事件失败。更改已撤销。",
+    "deleteFailed": "删除事件失败。更改已撤销。",
+    "updateFailed": "更新事件失败。更改已撤销。",
+    "movePartialSuccess": "事件移动成功，但部分子事件可能未移动。"
+  },
+  "recurEvents": {
+    "promotingChildren": "正在提升 {{count}} 个子事件。",
+    "deletedAndPromoted": "重复事件已删除，子事件已提升。",
+    "deletingWithChildren": "正在删除重复事件及其 {{count}} 个子覆盖事件...",
+    "deletedAll": "成功删除重复事件及所有子事件。",
+    "preservingTiming": "保留修改的事件时间并取消完成任务。",
+    "revertingControl": "将控制权归还主重复事件序列。",
+    "updatingChildren": "正在更新 {{count}} 个子事件以匹配新的父事件标题。",
+    "updateError": "更新重复事件时出错。部分子事件可能未更新。",
+    "movingChildren": "正在将 {{count}} 个子事件移动到新日历。"
+  },
+  "ribbon": {
+    "openCalendar": "打开日历"
+  },
+  "settings": {
+    "categories": {
+      "general": {
+        "label": "通用",
+        "description": "通用行为、提醒和最近更新。"
+      },
+      "appearance": {
+        "label": "外观",
+        "description": "自定义日历外观、时间格式和可见性。"
+      },
+      "calendars": {
+        "label": "日历",
+        "description": "管理日历来源和提供者特定配置。"
+      },
+      "organization": {
+        "label": "组织",
+        "description": "使用工作区和事件分类组织视图。"
+      },
+      "integrations": {
+        "label": "集成",
+        "description": "连接外部服务如 Google 和 ActivityWatch。"
+      }
+    },
+    "general": {
+      "desktopInitialView": {
+        "label": "桌面端初始视图",
+        "description": "选择桌面设备上的初始视图范围。"
+      },
+      "mobileInitialView": {
+        "label": "移动端初始视图",
+        "description": "选择移动设备上的初始视图范围。"
+      },
+      "displayTimezone": {
+        "label": "显示时区",
+        "description": "选择显示事件的时区。默认为系统时区。更改此设置将重新加载日历。"
+      },
+      "clickToCreateEvent": {
+        "label": "在月视图中点击日期创建事件",
+        "description": "关闭此选项则点击时打开日视图。"
+      },
+      "openDailyNoteOnDateClick": {
+        "label": "点击日期打开日记",
+        "description": "左键点击日期列标题或月视图中的日期数字，以打开或创建对应的日记。"
+      },
+      "linkedNotesDirectory": {
+        "label": "链接笔记目录",
+        "description": "选择用于创建事件链接笔记的文件夹路径。",
+        "vaultRoot": "/ (Vault Root)"
+      },
+      "linkedNoteTemplate": {
+        "label": "关联笔记模板",
+        "description": "定义用于创建新关联笔记的模板。支持：{{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
+        "placeholder": "输入笔记的 Markdown 模板..."
+      },
+      "linkedNoteLinkStrategy": {
+        "label": "Linked note link strategy",
+        "description": "Choose whether recurring event occurrences share one title-based note or use separate date-specific notes.",
+        "deadline": "Deadline-based (one note per occurrence)",
+        "name": "Name-based (one note per event series)"
+      },
+      "enableLinkedNoteTemplatesPreset": {
+        "label": "Enable template presets",
+        "description": "Select multiple template notes from your vault to choose from when creating new linked notes."
+      },
+      "linkedNoteTemplatesPresets": {
+        "addLabel": "Add template preset",
+        "addDesc": "Select a template file from your vault to add to the presets list.",
+        "addPlaceholder": "Choose a template note to add...",
+        "removeButton": "Remove"
+      },
+      "loadDebugTiming": {
+        "label": "Enable load debug timing",
+        "description": "Measure and log detailed execution timing breakdown for initial plugin startup, stage loading, and each calendar provider.",
+        "viewLog": "View Load Debug Log"
+      }
+    },
+    "reminders": {
+      "title": "提醒",
+      "enableDefault": {
+        "label": "启用默认提醒",
+        "description": "自动为新事件添加提醒。"
+      },
+      "defaultTime": {
+        "label": "默认提醒时间",
+        "description": "事件前提醒分钟数（默认：10）"
+      }
+    },
+    "appearance": {
+      "title": "外观",
+      "enableLivePreview": {
+        "label": "启用实时预览事件装饰",
+        "description": "直接在您的日记和事件笔记编辑器中显示样式化的事件和标题。"
+      },
+      "firstDay": {
+        "label": "每周起始日",
+        "description": "选择每周从哪一天开始。"
+      },
+      "timeFormat24h": {
+        "label": "24小时制",
+        "description": "以24小时制显示时间。"
+      },
+      "businessHours": {
+        "enable": {
+          "label": "启用工作时间",
+          "description": "在时间网格视图中突出显示您的工作时间，以区分工作时间和个人时间。"
+        },
+        "days": {
+          "label": "工作日",
+          "description": "选择一周中的工作日。"
+        },
+        "startTime": {
+          "label": "工作时间开始时间",
+          "description": "工作日开始时间（格式：HH:mm）"
+        },
+        "endTime": {
+          "label": "工作时间结束时间",
+          "description": "工作日结束时间（格式：HH:mm）"
+        },
+        "options": {
+          "mondayFriday": "周一至周五",
+          "everyDay": "每天",
+          "mondayThursday": "周一至周四",
+          "tuesdaySaturday": "周二至周六"
+        }
+      },
+      "viewTimeRange": {
+        "title": "视图时间范围",
+        "slotMinTime": {
+          "label": "最早显示时间",
+          "description": "设置时间网格视图中可见的最早时间（格式：HH:mm）"
+        },
+        "slotMaxTime": {
+          "label": "最晚显示时间",
+          "description": "设置时间网格视图中可见的最晚时间（格式：HH:mm）"
+        },
+        "allDaySlot": {
+          "label": "显示全天行（周/日视图）",
+          "description": "在周和日时间网格视图顶部切换全天行。"
+        },
+        "timeGridDayHeaderFormat": {
+          "label": "周/日头部日期格式",
+          "description": "选择周和日视图中日期标签的显示方式。",
+          "options": {
+            "ddmmDay": "DD/MM 日",
+            "mmddDay": "MM/DD 日",
+            "dayDdmm": "日 DD/MM",
+            "dayMmdd": "日 MM/DD",
+            "ddmmyyyyDay": "DD/MM/YYYY 日",
+            "mmddyyyyDay": "MM/DD/YYYY 日"
+          }
+        }
+      },
+      "dayVisibility": {
+        "title": "日期可见性",
+        "weekends": {
+          "label": "显示周末",
+          "description": "是否在日历中显示周末（周六和周日）"
+        },
+        "hiddenDays": {
+          "label": "隐藏日期",
+          "description": "选择要从日历中隐藏的星期几",
+          "options": {
+            "showAll": "显示所有日期",
+            "hideWeekends": "隐藏周末（周日、周六）",
+            "hideSunday": "仅隐藏周日",
+            "hideSaturday": "仅隐藏周六",
+            "hideMonday": "隐藏周一",
+            "hideTuesday": "隐藏周二",
+            "hideWednesday": "隐藏周三",
+            "hideThursday": "隐藏周四",
+            "hideFriday": "隐藏周五"
+          }
+        }
+      },
+      "dayMaxEvents": {
+        "label": "每日最大事件数（月视图）",
+        "description": "限制月视图中每天显示的事件数量",
+        "options": {
+          "default": "使用默认限制",
+          "unlimited": "无限制（显示全部）",
+          "one": "最多1个事件",
+          "two": "最多2个事件",
+          "three": "最多3个事件",
+          "four": "最多4个事件",
+          "five": "最多5个事件",
+          "ten": "最多10个事件"
+        }
+      },
+      "enableBackgroundEvents": {
+        "label": "启用背景事件",
+        "description": "允许将事件显示为背景元素，如假期、专注时间或课程表。"
+      },
+      "showEventInStatusBar": {
+        "label": "在状态栏显示当前事件",
+        "description": "在 Obsidian 状态栏显示当前正在运行的事件标题。"
+      },
+      "highlightCurrentOrNextEvent": "突出显示当前或下一个事件",
+      "highlightCurrentOrNextEventDesc": "突出显示当前进行的计时事件；如果没有，则突出显示紧接着的下一个计时事件。",
+      "milestones": {
+        "label": "里程碑",
+        "description": "只读本地里程碑，追踪所有日历中的成功事件活动。",
+        "openButton": "打开里程碑",
+        "modal": {
+          "title": "里程碑",
+          "description": "里程碑是匿名的、本地的且只读的。它们会随着成功操作的完成而解锁。",
+          "completed": "已完成",
+          "inProgress": "进行中",
+          "progress": "已完成 {{current}}"
+        },
+        "definitions": {
+          "nightOwl": {
+            "title": "深夜猫头鹰",
+            "description": "在深夜时段（晚上10点至凌晨4点）成功执行 15 次日历操作。",
+            "target": "目标：15 次深夜操作"
+          },
+          "earlyBird": {
+            "title": "早起鸟儿",
+            "description": "在清晨时段（早上5点至上午8点）成功执行 15 次日历操作。",
+            "target": "目标：15 次清晨操作"
+          },
+          "weekendWarrior": {
+            "title": "周末勇士",
+            "description": "在周六和周日执行 40 次成功的日历操作。",
+            "target": "目标：40 次周末操作"
+          },
+          "timezoneNomad": {
+            "title": "游牧规划师",
+            "description": "维护跨越 5 个或更多不同时区的事件。",
+            "target": "目标：5 个不同的时区"
+          },
+          "superOrganizer": {
+            "title": "超级组织者",
+            "description": "维护 5 个或更多活跃的工作区配置。",
+            "target": "目标：5 个工作区"
+          },
+          "nlpWhisperer": {
+            "title": "NLP 耳语者",
+            "description": "使用 FCR NLP 快速添加命令创建 50 个事件。",
+            "target": "目标：50 次 NLP 创建"
+          },
+          "powerPlanner": {
+            "title": "全能策划人",
+            "description": "同时配置并激活至少 3 种不同的日历提供商类型。",
+            "target": "目标：3 个活跃的提供商类型"
+          },
+          "devMilestone": {
+            "title": "开发者里程碑",
+            "description": "通过设置中的 dev: 1 立即触发的开发者测试里程碑。",
+            "target": "目标：开发模式已激活"
+          },
+          "createdCentury": {
+            "title": "百场创建者",
+            "description": "成功创建 100 个事件。",
+            "target": "目标：创建 100 个事件"
+          },
+          "createdMaster": {
+            "title": "事件架构师",
+            "description": "成功创建 500 个事件。",
+            "target": "目标：创建 500 个事件"
+          },
+          "createdLegend": {
+            "title": "日历泰坦",
+            "description": "成功创建 5,000 个事件。",
+            "target": "目标：创建 5,000 个事件"
+          },
+          "deletedCentury": {
+            "title": "修剪学徒",
+            "description": "成功删除 100 个事件。",
+            "target": "目标：删除 100 个事件"
+          },
+          "deletedMaster": {
+            "title": "库园丁",
+            "description": "成功删除 500 个事件。",
+            "target": "目标：删除 500 个事件"
+          },
+          "updatedMaster": {
+            "title": "精进引擎",
+            "description": "成功更新 500 个事件。",
+            "target": "目标：更新 500 个事件"
+          },
+          "updatedLegend": {
+            "title": "精确重写者",
+            "description": "成功更新 5,000 个事件。",
+            "target": "目标：更新 5,000 个事件"
+          },
+          "movedMaster": {
+            "title": "时间线编排者",
+            "description": "成功在日历间移动 500 个事件。",
+            "target": "目标：移动 500 个事件"
+          },
+          "remoteArchitect": {
+            "title": "远程架构师",
+            "description": "在 ICS、CalDAV 和 Google 提供者处创建 500 个事件。",
+            "target": "目标：在远程提供者处创建 500 个事件"
+          },
+          "taskOrchestrator": {
+            "title": "任务指挥官",
+            "description": "通过 Tasks + TaskNotes 集成创建 1,000 个事件。",
+            "target": "目标：通过任务集成创建 1,000 个事件"
+          },
+          "polyglotBuilder": {
+            "title": "多语构建者",
+            "description": "在 3 种不同提供者类型中各创建 500 个事件。",
+            "target": "目标：3 个提供者，各创建 500 个事件"
+          },
+          "cycleMaster": {
+            "title": "循环大师",
+            "description": "同时达到 500 个创建与 500 个删除的平衡。",
+            "target": "目标：创建/删除 平衡达到 500"
+          },
+          "opsLegend": {
+            "title": "运营传奇",
+            "description": "累计达到 10,000 次成功操作（创建/删除/更新/移动）。",
+            "target": "目标：10,000 次成功操作"
+          },
+          "habitualPlanner": {
+            "title": "习惯规划者",
+            "description": "连续 20 天执行日历操作。",
+            "target": "目标：20 天连续操作"
+          },
+          "dedicated": {
+            "title": "奉献者",
+            "description": "首次与最近记录操作之间保持至少 3 个月的时间跨度。",
+            "target": "目标：90 天历史跨度"
+          },
+          "marathoner": {
+            "title": "耐力达人",
+            "description": "累计达到 100,000 次成功操作。",
+            "target": "目标：100,000 次操作"
+          },
+          "nlpSavant": {
+            "title": "NLP 奇才",
+            "description": "使用 NLP 输入创建 1,000 个事件。",
+            "target": "目标：通过 NLP 创建 1,000 个事件"
+          },
+          "globalCitizen": {
+            "title": "全球公民",
+            "description": "在 3 个或更多不同时区创建事件。",
+            "target": "目标：3 个不同的时区"
+          },
+          "syncSpecialist": {
+            "title": "同步专家",
+            "description": "维护 5 个或更多活动的远程日历（Google/ICS/CalDAV）。",
+            "target": "目标：5 个活动的远程日历"
+          },
+          "recurringMaster": {
+            "title": "重复大师",
+            "description": "创建 30 个重复事件系列。",
+            "target": "目标：30 个重复系列"
+          },
+          "greatMigration": {
+            "title": "大迁移",
+            "description": "在不同日历间移动 200 个事件。",
+            "target": "目标：移动 200 个事件"
+          },
+          "perfectionist": {
+            "title": "完美主义者",
+            "description": "在一周内每天至少创建 3 个事件，达到完美周。",
+            "target": "目标：7/7 天，每天 3 个以上事件"
+          },
+          "digitalLibrarian": {
+            "title": "数字馆长",
+            "description": "在本地日历中维护超过 10,000 个未删除事件。",
+            "target": "目标：10,000 个本地活动事件"
+          },
+          "nightOwl100": {
+            "title": "Midnight Dynamo",
+            "description": "Successfully perform 100 calendar operations during late-night hours (10 PM to 4 AM).",
+            "target": "Target: 100 late-night actions"
+          },
+          "earlyBird100": {
+            "title": "Dawn Ascendant",
+            "description": "Successfully perform 100 calendar operations during early-morning hours (5 AM to 8 AM).",
+            "target": "Target: 100 early-morning actions"
+          },
+          "weekendWarrior250": {
+            "title": "Sabbath Champion",
+            "description": "Perform 250 successful calendar operations on Saturdays and Sundays.",
+            "target": "Target: 250 weekend actions"
+          },
+          "nlpWhisperer200": {
+            "title": "NLP Conjurer",
+            "description": "Create 200 events using FCR NLP quick-add commands.",
+            "target": "Target: 200 NLP creations"
+          },
+          "superOrganizer10": {
+            "title": "Director General",
+            "description": "Maintain 10 or more active workspace configurations.",
+            "target": "Target: 10 workspaces"
+          },
+          "syncSpecialist8": {
+            "title": "Universal Connector",
+            "description": "Maintain 8 or more active remote calendars (Google/ICS/CalDAV).",
+            "target": "Target: 8 active remote calendars"
+          },
+          "createdTotal25000": {
+            "title": "Calendar Emperor",
+            "description": "Successfully create 25,000 events.",
+            "target": "Target: 25,000 created events"
+          },
+          "createdTotal100000": {
+            "title": "Time Overlord",
+            "description": "Successfully create 100,000 events.",
+            "target": "Target: 100,000 created events"
+          },
+          "habitualPlanner100": {
+            "title": "The Eternal Planner",
+            "description": "Perform calendar actions on 100 consecutive days.",
+            "target": "Target: 100-day action streak"
+          },
+          "dedicated365": {
+            "title": "Chronicle Sovereign",
+            "description": "Maintain at least 1 year (365 days) between first and latest recorded action.",
+            "target": "Target: 365-day history span"
+          },
+          "totalOps250000": {
+            "title": "Operations Sovereign",
+            "description": "Reach 250,000 total successful operations (create/delete/update/move).",
+            "target": "Target: 250,000 successful operations"
+          },
+          "totalOps1000000": {
+            "title": "Time-Space Continuum",
+            "description": "Reach 1,000,000 total successful operations.",
+            "target": "Target: 1,000,000 successful operations"
+          }
+        }
+      }
+    },
+    "calendars": {
+      "title": "管理日历",
+      "addCalendar": "添加日历",
+      "addCalendarTooltip": "添加日历",
+      "defaults": {
+        "iCloud": "iCloud 日历",
+        "new": "新建 {{type}} 日历",
+        "journals": "Journals"
+      },
+      "types": {
+        "local": "完整笔记",
+        "dailynote": "日记",
+        "icloud": "iCloud",
+        "caldav": "CalDAV",
+        "ical": "ICS",
+        "google": "Google 日历",
+        "tasks": "Obsidian Tasks",
+        "bases": "Obsidian Bases",
+        "tasknotes": "TaskNotes",
+        "outlook": "Outlook Calendar",
+        "holidays": "Holidays",
+        "journals": "Journals",
+        "caldavTasks": "CalDAV Tasks"
+      },
+      "fullNote": {
+        "directory": {
+          "label": "目录",
+          "description": "存储事件笔记的目录"
+        },
+        "template": {
+          "label": "自定义模板",
+          "description": "定义在此日历中创建新事件时使用的模板。支持：{{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
+        },
+        "taskCompletionStyle": {
+          "label": "Completion style",
+          "description": "Choose how completed tasks are marked in the frontmatter. ISO Date/Time string preserves completion time; Boolean writes true/false.",
+          "options": {
+            "datetime": "ISO Date/Time String",
+            "boolean": "Boolean (true/false)"
+          }
+        }
+      },
+      "dailyNote": {
+        "heading": {
+          "label": "标题",
+          "description": "日记中存储事件的标题。",
+          "summary": "in daily notes",
+          "journalSummary": "in journal entries"
+        },
+        "format": {
+          "label": "格式",
+          "description": "选择在日记中如何写入有时限的事件。",
+          "options": {
+            "default": "默认",
+            "dayPlanner": "日程计划格式"
+          }
+        },
+        "provider": {
+          "options": {
+            "dailyNotes": "Daily Notes / Periodic Notes",
+            "journals": "Journals"
+          }
+        },
+        "journal": {
+          "label": "Day journal",
+          "description": "Select the Journals Day journal to use.",
+          "select": "Select a Day journal",
+          "unavailable": "Install and enable the Journals plugin to use this provider.",
+          "none": "Configure a Day journal in Journals before adding this calendar."
+        }
+      },
+      "ics": {
+        "url": {
+          "label": "URL",
+          "description": ".ics 文件的 URL"
+        }
+      },
+      "caldav": {
+        "url": {
+          "label": "集合 URL",
+          "description": "粘贴您的日历集合 URL（例如 https://calendar.zoho.in/caldav/<id>/events/）"
+        },
+        "username": {
+          "label": "用户名",
+          "description": "账户用户名"
+        },
+        "password": {
+          "label": "密码",
+          "description": "账户密码"
+        },
+        "importButton": "导入日历",
+        "importing": "正在导入...",
+        "importFailed": "导入日历失败",
+        "errors": {
+          "authentication": "CalDAV authentication failed (HTTP 401).",
+          "permissionDenied": "CalDAV permission denied (HTTP 403).",
+          "invalidCollection": "The URL is not a valid CalDAV calendar collection. Enter the direct collection URL.",
+          "conflict": "The remote CalDAV resource changed (HTTP {{status}}). Refresh and try again.",
+          "requestFailed": "CalDAV request failed (HTTP {{status}}): {{statusText}}"
+        }
+      },
+      "tasks": {
+        "zeroConfig": {
+          "label": "无需配置",
+          "description": "此提供者自动读取您现有的 Obsidian Tasks 插件设置。所有带有截止日期的任务将作为只读事件显示在日历上。"
+        },
+        "calendarName": {
+          "label": "日历名称",
+          "description": "此日历的显示名称"
+        },
+        "readOnly": {
+          "label": "事件",
+          "description": "事件编辑直接在 Tasks 模型中进行，而不是在日历编辑弹窗中。"
+        },
+        "adding": "正在添加...",
+        "cancel": "取消"
+      },
+      "tasknotes": {
+        "zeroConfig": {
+          "label": "无需配置",
+          "description": "此提供者直接从您的库中读取 TaskNotes 任务，并将计划的任务映射到日历事件。"
+        },
+        "calendarName": {
+          "label": "日历名称",
+          "description": "此日历的显示名称",
+          "placeholder": "TaskNotes"
+        },
+        "dispatchMode": {
+          "label": "NLP 调度终点",
+          "description": "选择 Full Calendar 将 TaskNotes 目标 NLP 请求转发到何处。",
+          "options": {
+            "search": "搜索 + 创建 (选择器模态框)",
+            "create": "直接创建 (任务创建模态框 NLP)"
+          }
+        },
+        "readOnly": {
+          "label": "事件",
+          "description": "编辑事件将打开 TaskNotes 编辑器。拖放操作将更新计划日期和持续时间，不显示模态框。"
+        },
+        "adding": "正在添加...",
+        "cancel": "取消"
+      },
+      "docs": {
+        "providerGuides": "提供商指南：",
+        "fullNote": "完整笔记日历",
+        "dailyNote": "日记日历",
+        "ics": "ICS 日历",
+        "caldav": "CalDAV 日历",
+        "google": "Google 日历",
+        "tasks": "Tasks 集成",
+        "bases": "Bases 日历",
+        "taskNotes": "TaskNotes 集成",
+        "outlook": "Outlook 日历",
+        "journals": "Journals calendar",
+        "caldavTasks": "CalDAV Tasks"
+      },
+      "linkedNotes": {
+        "title": "链接笔记设置",
+        "description": "配置用于创建与远程日历事件相关联的本地 Obsidian 笔记的设置。",
+        "learnMore": "链接笔记指南"
+      },
+      "holidays": {
+        "calendarName": {
+          "label": "日历名称",
+          "description": "日历列表中显示的名称"
+        },
+        "country": {
+          "label": "国家",
+          "description": "ISO 3166-1 alpha-2 国家代码，例如：US、GB、DE、CA。"
+        },
+        "state": {
+          "label": "州 / 省",
+          "description": "区域假期的州或省代码，例如：ca、ny、on、by。仅针对国家级假期请留空。"
+        },
+        "region": {
+          "label": "地区",
+          "description": "市或区级别的子区域代码。如不需要请留空。"
+        },
+        "holidayTypes": {
+          "label": "节假日类型",
+          "description": "要显示哪些等级的节假日。",
+          "options": {
+            "public": "仅公共假期",
+            "public_bank": "公共 + 银行假期",
+            "public_bank_observance": "公共 + 银行 + 纪念日",
+            "all_except_optional": "除可选外全部",
+            "all": "所有类型"
+          }
+        },
+        "display": {
+          "label": "显示样式",
+          "description": "假期事件在日历上的渲染方式。",
+          "options": {
+            "block": "普通事件（块）",
+            "background": "背景事件",
+            "inverseBackground": "反向背景",
+            "auto": "自动",
+            "none": "隐藏"
+          }
+        },
+        "adding": "正在添加..."
+      },
+      "caldavTasks": {
+        "title": "CalDAV Tasks",
+        "description": "Connect VTODO-compatible CalDAV task lists, including Apple Reminders.",
+        "backlogTitle": "CalDAV Tasks backlog",
+        "untitledTask": "Untitled task",
+        "importButton": "Add task list",
+        "importFailed": "Failed to add CalDAV task list",
+        "errors": {
+          "importFailedDetails": "Failed to add CalDAV task list: {{message}}",
+          "invalidCollection": "The URL is not a valid CalDAV task collection. Enter the direct task-list collection URL.",
+          "noVtodoCapability": "This CalDAV collection does not advertise VTODO support. Choose a task or reminder collection.",
+          "skippedMalformed": "Skipped {{count}} malformed CalDAV task resource(s).",
+          "recurringCreation": "Creating recurring CalDAV tasks is not yet supported.",
+          "unsupportedType": "This CalDAV VTODO event type is not supported.",
+          "missingUid": "Cannot update a CalDAV task without a UID.",
+          "completionUpdate": "Failed to update CalDAV task completion.",
+          "recurringInstance": "Editing individual recurring CalDAV task instances is not yet supported.",
+          "vtodoNotFound": "CalDAV task {{uid}} was not found in its resource.",
+          "malformedMissingCalendar": "Malformed iCalendar data: missing VCALENDAR.",
+          "malformedData": "Malformed iCalendar data: {{message}}"
+        }
+      },
+      "defaultCalendar": {
+        "label": "Default calendar for new events",
+        "description": "Calendar pre-selected when you create an event. Workspaces can override this.",
+        "firstAvailable": "First available calendar"
+      }
+    },
+    "categorization": {
+      "title": "高级分类与时间线",
+      "learnMoreLink": "这里",
+      "enable": {
+        "label": "启用高级分类（基于标题）",
+        "description": "启用基于分类的着色并解锁时间线视图。这将修改事件笔记标题，并允许按分类进行时间线可视化。"
+      },
+      "disable": {
+        "modalTitle": "⚠️ 禁用高级分类",
+        "modalDescription": "选择如何禁用此功能。您可以禁用而不清理以保留事件标题和保存的分类设置，或禁用并清理以移除已知的分类前缀和保存的分类颜色。",
+        "buttonDisableWithoutCleanup": "禁用但不清理",
+        "buttonDisable": "禁用并清理笔记",
+        "buttonCancel": "取消"
+      }
+    },
+    "workspaces": {
+      "title": "工作区",
+      "description": "创建和管理日历工作区。每个工作区可以有自己的视图设置、可见日历和过滤器。",
+      "addNew": {
+        "label": "添加新工作区",
+        "description": "创建新的日历工作区"
+      },
+      "buttons": {
+        "new": "新建工作区",
+        "edit": "编辑",
+        "duplicate": "复制",
+        "activate": "激活",
+        "active": "已激活",
+        "delete": "删除"
+      },
+      "defaultName": "新工作区",
+      "copyName": "{{name}} 副本"
+    },
+    "quickStart": {
+      "description": "要开始，请使用 \"Manage calendars\" 部分中的 \"+\" 按钮添加日历来源。"
+    },
+    "viewOptions": {
+      "day": "日",
+      "week": "周",
+      "month": "月",
+      "list": "列表",
+      "threeDays": "3天",
+      "timelineWeek": "时间线周",
+      "timelineDay": "时间线日"
+    },
+    "weekdays": {
+      "sunday": "周日",
+      "monday": "周一",
+      "tuesday": "周二",
+      "wednesday": "周三",
+      "thursday": "周四",
+      "friday": "周五",
+      "saturday": "周六"
+    },
+    "changelog": {
+      "title": "更新日志",
+      "versionWithNumber": "版本 {{version}}",
+      "whatsNewPageLink": "新功能页面",
+      "changelogPageLink": "更新日志",
+      "loadOlder": {
+        "button": "加载更早版本",
+        "loading": "加载中...",
+        "errorOffline": "加载更早版本失败。您可能处于离线状态。"
+      },
+      "modal": {
+        "title": "FCR 新功能",
+        "seeAllButton": "查看所有更新日志",
+        "donationMessage": "FCR 是通过 AI 增强工程高速构建的。如果它为您提供了价值，请考虑每月捐助 25 美元，以帮助维持这种可持续的发展速度。",
+        "donationButton": "透明度报告与捐赠"
+      },
+      "whatsNew": "新功能",
+      "viewFull": "查看完整更新日志"
+    },
+    "utils": {
+      "timelineDisabled": "时间线视图已禁用。将桌面默认视图重置为“周”。"
+    },
+    "warnings": {
+      "oneDailyNote": "只允许一个日记。"
+    },
+    "activityWatch": {
+      "title": "ActivityWatch 集成",
+      "enable": {
+        "label": "启用 ActivityWatch 同步",
+        "description": "定期从您的本地 ActivityWatch 实例拉取数据。"
+      },
+      "configButton": "⚙️ 配置 ActivityWatch",
+      "sync": {
+        "targetNotSet": "Activitywatch 同步：未设置目标日历。请在设置中配置。",
+        "targetNotFoundOrReadOnly": "Activitywatch 同步：目标日历 ({{calendarId}}) 未找到或为只读。",
+        "fetchingData": "Activitywatch 同步：正在获取数据...",
+        "failedFetchBuckets": "获取 buckets 失败。状态：{{status}}",
+        "addedEvents": "ActivityWatch 同步：添加了 {{count}} 个事件！",
+        "failedWithError": "ActivityWatch 同步失败：{{message}}",
+        "failed": "ActivityWatch 同步失败。",
+        "enabledPrompt": "Activitywatch 已启用。请点击齿轮图标配置目标日历。"
+      }
+    },
+    "tasksIntegration": {
+      "title": "Obsidian Tasks 集成",
+      "description": "配置日历如何从 Tasks 待办列表安排任务。",
+      "configButton": "配置 Tasks 集成",
+      "modal": {
+        "title": "Tasks 集成"
+      },
+      "backlogDateTarget": {
+        "label": "待办列表筛选日期字段",
+        "description": "选择待办列表跟踪的 Tasks 日期标记。待办列表显示缺少此选定日期标记的任务。",
+        "scheduled": "计划日期",
+        "start": "开始日期",
+        "due": "截止日期"
+      },
+      "includeGlobalQueryInBacklog": {
+        "label": "在待办事项中包含全局查询",
+        "description": "将 Obsidian Tasks 全局查询过滤器应用于待办事项视图。"
+      },
+      "backlogQuery": {
+        "label": "待办列表查询",
+        "description": "仅将此 Tasks 查询应用于 Full Calendar 待办列表。任务必须匹配每个受支持的行才会显示。",
+        "placeholder": "path does not include Templates\nfolder includes Projects\ntags do not include someday"
+      },
+      "calendarDisplayDateTarget": {
+        "label": "日历显示日期字段",
+        "description": "选择日历用于显示 Tasks 事件的 Tasks 日期标记。没有回退到其他日期标记的选项。重启 Obsidian 或重新加载插件以使此更改完全生效。"
+      },
+      "openEditModalAfterBacklogDrop": {
+        "label": "从待办列表拖放后打开 Tasks 编辑弹窗",
+        "description": "将任务从待办列表拖放到日历后立即打开 Obsidian Tasks 编辑弹窗。"
+      },
+      "taskDisplayFormat": {
+        "label": "Task time format",
+        "description": "Choose how Full Calendar writes time into Tasks lines.",
+        "standard": "Standard format",
+        "dayPlanner": "Day Planner Format"
+      }
+    },
+    "tasknotesIntegration": {
+      "title": "TaskNotes 集成",
+      "descriptionConfigured": "配置 NLP 如何调度到 TaskNotes。",
+      "descriptionMissingSource": "TaskNotes 集成可用。添加 TaskNotes 日历源以进行配置。",
+      "docsLink": "TaskNotes 集成",
+      "configButton": "配置 TaskNotes 集成",
+      "noSource": "在配置 TaskNotes 集成之前，请先添加 TaskNotes 日历源。",
+      "modal": {
+        "title": "TaskNotes 集成"
+      },
+      "source": {
+        "label": "TaskNotes 日历源",
+        "description": "选择要配置的 TaskNotes 日历源。"
+      },
+      "dispatchMode": {
+        "label": "NLP 调度终点",
+        "description": "选择 Full Calendar 应该打开 TaskNotes 搜索 NLP 还是创建 NLP。",
+        "options": {
+          "search": "搜索 + 创建 (选择器模态框)",
+          "create": "直接创建 (任务创建模态框 NLP)"
+        }
+      }
+    },
+    "footer": {
+      "message": "喜欢您所看到的吗？",
+      "buyMeACoffee": "☕ 请我喝杯咖啡",
+      "suggestFeature": "💡 建议新功能",
+      "raiseIssue": "🐛 反馈问题"
+    },
+    "fcrReminder": {
+      "title": "FCR Reminder Companion",
+      "description": "将即将到来的日历事件与持久运行的 FCR Reminder 后台守护程序同步，即使 Obsidian 完全关闭也能接收本地系统级别的弹出通知。",
+      "learnMore": "FCR 提醒指南",
+      "enable": {
+        "label": "启用 companion 集成",
+        "description": "将即将到来的事件闹钟同步到后台 companion 守护进程。"
+      },
+      "apiUrl": {
+        "label": "Companion 服务器 URL",
+        "description": "FCR Reminder 守护进程的回环地址。",
+        "placeholder": "http://127.0.0.1:45677"
+      },
+      "offlineBanner": {
+        "title": "⚠️ Companion 应用已离线",
+        "message": "FCR Reminder 未运行。请启动 companion 应用以启用本地离线通知。"
+      }
+    },
+    "taskBacklog": {
+      "addUnscheduledTask": "Add unscheduled task",
+      "sourceLabel": "Task backlog source",
+      "placeholder": "Task title...",
+      "newTitleLabel": "New task name",
+      "addBtnLabel": "Add task",
+      "helpText": "在选定的提供商中创建未计划的任务。 ",
+      "learnMore": "任务待办列表指南",
+      "title": "Task backlog",
+      "missingDateLabel": "Missing date",
+      "searchPlaceholder": "Filter by task title, source, or location",
+      "searchAriaLabel": "Filter task backlog by task title, source, or location",
+      "clearSearchAriaLabel": "Clear backlog search",
+      "showAdvancedFiltersAriaLabel": "Show advanced filters",
+      "hideAdvancedFiltersAriaLabel": "Hide advanced filters",
+      "countFiltered": "{{shown}} of {{total}} unscheduled tasks",
+      "countUnscheduledSingular": "{{count}} unscheduled task",
+      "countUnscheduledPlural": "{{count}} unscheduled tasks",
+      "noProvidersTitle": "No task backlog providers configured.",
+      "noProvidersHelp": "Add a Tasks or CalDAV calendar source to use the backlog view.",
+      "emptyNoMatchesTitle": "No tasks matched \"{{query}}\".",
+      "emptyNoMatchesHelp": "Try fewer keywords or search by part of the task title, source, or location.",
+      "emptyUnscheduledTitle": "No unscheduled tasks.",
+      "emptyUnscheduledHelp": "Tasks missing their scheduling date will appear here.",
+      "openNoteAriaLabel": "Open note for {{title}}",
+      "paginationPrevious": "Previous",
+      "paginationNext": "Next",
+      "paginationPage": "Page {{current}} of {{total}}",
+      "loadMore": "Load more ({{count}})"
+    },
+    "weather": {
+      "label": "Weather forecast",
+      "description": "Configure weather geocoding and display settings to show forecasts in your calendar views.",
+      "configTooltip": "Configure Weather Settings",
+      "status": {
+        "hidden": "Weather forecast is hidden.",
+        "enabled": "Enabled: {{mode}} (Lat {{latitude}}, Lng {{longitude}})",
+        "noLocation": "Enabled: No location set.",
+        "cityFallback": "City"
+      },
+      "modal": {
+        "title": "Weather Integration Settings",
+        "hideToggle": {
+          "label": "Hide weather forecast in calendar UI",
+          "description": "Turn this on to completely hide weather forecasts from daily, weekly, and monthly calendar views."
+        },
+        "inputMode": {
+          "label": "Location input mode",
+          "description": "Choose whether to enter a city/region name (resolved via Open-Meteo) or specify exact coordinates directly.",
+          "city": "City / Region name",
+          "coords": "Coordinates (Latitude / Longitude)"
+        },
+        "latitude": {
+          "label": "Latitude",
+          "description": "Specify the exact latitude of your location (e.g. 50.0880).",
+          "placeholder": "E.g. 50.0880"
+        },
+        "longitude": {
+          "label": "Longitude",
+          "description": "Specify the exact longitude of your location (e.g. 14.4208).",
+          "placeholder": "E.g. 14.4208"
+        },
+        "city": {
+          "label": "Weather city / region",
+          "description": "Enter your city or region name (e.g. Prague) to get weather forecasts in your calendar views.",
+          "placeholder": "E.g. Prague",
+          "status": {
+            "resolved": "Resolved: Lat {{latitude}}, Lng {{longitude}}",
+            "unresolved": "Could not resolve coordinates.",
+            "empty": "No location set.",
+            "resolving": "Resolving location..."
+          }
+        },
+        "unit": {
+          "label": "Temperature unit",
+          "description": "Choose whether to display temperatures in Celsius or Fahrenheit.",
+          "celsius": "Celsius (°C)",
+          "fahrenheit": "Fahrenheit (°F)"
+        }
+      },
+      "detailModal": {
+        "title": "详细天气 - {{date}}",
+        "hourlyHeader": "每小时预报",
+        "apparentTemp": "体感温度: {{temp}}°C",
+        "noHourly": "暂无每小时预报数据。"
+      },
+      "conditions": {
+        "unknown": "Unknown",
+        "clearSky": "Clear sky",
+        "mainlyClear": "Mainly clear",
+        "partlyCloudy": "Partly cloudy",
+        "overcast": "Overcast",
+        "fog": "Fog",
+        "depositingRimeFog": "Depositing rime fog",
+        "lightDrizzle": "Light drizzle",
+        "moderateDrizzle": "Moderate drizzle",
+        "denseDrizzle": "Dense drizzle",
+        "lightFreezingDrizzle": "Light freezing drizzle",
+        "denseFreezingDrizzle": "Dense freezing drizzle",
+        "slightRain": "Slight rain",
+        "moderateRain": "Moderate rain",
+        "heavyRain": "Heavy rain",
+        "lightFreezingRain": "Light freezing rain",
+        "heavyFreezingRain": "Heavy freezing rain",
+        "slightSnowFall": "Slight snow fall",
+        "moderateSnowFall": "Moderate snow fall",
+        "heavySnowFall": "Heavy snow fall",
+        "snowGrains": "Snow grains",
+        "slightRainShowers": "Slight rain showers",
+        "moderateRainShowers": "Moderate rain showers",
+        "violentRainShowers": "Violent rain showers",
+        "slightSnowShowers": "Slight snow showers",
+        "heavySnowShowers": "Heavy snow showers",
+        "thunderstorm": "Thunderstorm",
+        "thunderstormWithSlightHail": "Thunderstorm with slight hail",
+        "thunderstormWithHeavyHail": "Thunderstorm with heavy hail"
+      }
+    },
+    "credentials": {
+      "legacyToggle": {
+        "name": "Store credentials in plaintext (sync compatibility)",
+        "desc": "Enable this if you sync your Obsidian vault across devices and want to avoid logging in again on every device. Keep disabled for maximum local security (uses OS keychain)."
+      },
+      "keychainMissing": "Keychain credentials missing on this device"
+    },
+    "breakTimer": {
+      "title": "Break Timer",
+      "enable": {
+        "label": "Enable break timer",
+        "description": "Periodically remind yourself to take a break with a fullscreen overlay and desktop notification."
+      },
+      "interval": {
+        "label": "Break interval (minutes)",
+        "description": "How long to wait before reminding you to take a break."
+      },
+      "idleThreshold": {
+        "label": "Idle reset threshold (minutes)",
+        "description": "If you are inactive for this long, the break timer resets (no immediate break when you return)."
+      },
+      "duration": {
+        "label": "Break duration (seconds)",
+        "description": "How long the break overlay stays on screen."
+      }
+    }
+  },
+  "modals": {
+    "reminder": {
+      "snoozeFor": "稍后提醒",
+      "dismiss": "关闭",
+      "openNote": "打开笔记",
+      "snooze": "稍后提醒",
+      "snoozeWarningTitle": "⚠️ 稍后提醒将移动事件",
+      "snoozeWarningBody": "这是一个默认提醒。稍后提醒将把事件开始时间向前移动。",
+      "presets": {
+        "5m": "5 分钟",
+        "10m": "10 分钟",
+        "15m": "15 分钟",
+        "30m": "30 分钟",
+        "1h": "1 小时"
+      }
+    },
+    "editEvent": {
+      "title": {
+        "new": "新建事件",
+        "edit": "编辑事件"
+      },
+      "advancedOptions": "高级选项",
+      "buttons": {
+        "openNote": "打开笔记",
+        "delete": "删除",
+        "save": "保存事件"
+      },
+      "errors": {
+        "createNoCalendars": "无法创建事件：没有可写的日历。",
+        "createError": "创建事件时出错：{{message}}",
+        "eventNotFound": "未找到事件。",
+        "detailsNotFound": "未找到事件详情。",
+        "parentNotFound": "无法找到父重复事件。",
+        "updateError": "更新事件时出错：{{message}}",
+        "deleteError": "删除事件时出错：{{message}}"
+      },
+      "confirmations": {
+        "editParentTitle": "编辑父事件？",
+        "editParentMessage": "此属性继承自父重复事件。是否要打开父事件进行修改？"
+      },
+      "misc": {
+        "unknownCalendar": "未知日历"
+      },
+      "fields": {
+        "title": {
+          "placeholder": "事件标题"
+        },
+        "category": {
+          "placeholder": "分类（可选）"
+        },
+        "display": {
+          "label": "显示",
+          "tooltip": "选择此事件在日历上的显示方式",
+          "options": {
+            "auto": "普通事件",
+            "background": "背景事件",
+            "none": "隐藏"
+          }
+        },
+        "inCalendar": {
+          "label": "在日历中"
+        },
+        "date": {
+          "label": "日期"
+        },
+        "time": {
+          "label": "时间"
+        },
+        "options": {
+          "label": "选项",
+          "allDay": "全天",
+          "isTask": "是任务",
+          "completed": "已完成"
+        },
+        "notification": {
+          "label": "通知",
+          "presets": {
+            "30m": "30 分钟",
+            "1h": "1 小时",
+            "6h": "6 小时",
+            "12h": "12 小时",
+            "24h": "24 小时"
+          }
+        },
+        "repeats": {
+          "label": "重复",
+          "options": {
+            "none": "无",
+            "daily": "每日",
+            "weekly": "每周",
+            "monthly": "每月",
+            "yearly": "每年"
+          },
+          "repeatEvery": "每",
+          "day": "天",
+          "days": "天",
+          "week": "周",
+          "weeks": "周",
+          "month": "月",
+          "months": "月",
+          "year": "年",
+          "years": "年",
+          "repeatOn": "重复于",
+          "onDay": "在第 {{day}} 天",
+          "onThe": "在",
+          "ordinal": {
+            "first": "第一",
+            "second": "第二",
+            "third": "第三",
+            "fourth": "第四",
+            "last": "最后"
+          },
+          "yearlyText": "每年在 {{date}} 重复。",
+          "endRepeat": "结束重复"
+        },
+        "location": {
+          "placeholder": "添加地点..."
+        },
+        "description": {
+          "placeholder": "添加描述..."
+        }
+      },
+      "tooltips": {
+        "recurringTaskCompletion": "重复任务的完成状态可以在日历视图中切换单个实例。",
+        "dailyNoteRecurring": "日记不支持重复事件。请改用 \"Full Note\" 日历。",
+        "inheritedProperty": "此属性是继承的。点击编辑父重复事件。",
+        "caldavTaskRecurrence": "Existing VTODO recurrence is preserved, but creating or changing recurring CalDAV tasks is not yet supported."
+      }
+    },
+    "deleteRecurring": {
+      "title": "删除重复事件",
+      "description": "这是一个重复事件。您想如何处理它的所有未来 \"override\" 实例（即您已拖动或修改的事件）？",
+      "deleteInstance": {
+        "name": "仅删除此实例",
+        "description": "仅删除 {{date}} 的实例。这将跳过此日期的重复。",
+        "button": "删除此实例"
+      },
+      "promoteChildren": {
+        "name": "提升子事件",
+        "description": "将所有覆盖事件（如果有的话）转换为独立的单一事件。它们将不再与此重复系列关联。",
+        "button": "提升子事件"
+      },
+      "deleteAll": {
+        "name": "删除子事件",
+        "description": "删除与此重复系列关联的所有未来覆盖事件。此操作无法撤销。",
+        "button": "全部删除"
+      },
+      "cancel": "取消"
+    },
+    "workspace": {
+      "title": {
+        "create": "创建工作区",
+        "edit": "编辑工作区"
+      },
+      "sections": {
+        "general": "通用",
+        "viewConfiguration": "视图配置",
+        "calendarFilters": "日历过滤器",
+        "categoryFilters": "分类过滤器",
+        "appearanceOverrides": "外观覆盖",
+        "viewClipping": "视图裁剪和时间范围",
+        "advancedBases": "Advanced Bases Filtering"
+      },
+      "fields": {
+        "name": {
+          "label": "名称",
+          "description": "此工作区的唯一名称",
+          "placeholder": "例如：工作专注、家庭计划"
+        },
+        "desktopView": {
+          "label": "桌面视图",
+          "description": "桌面设备的默认视图"
+        },
+        "mobileView": {
+          "label": "移动视图",
+          "description": "移动设备的默认视图"
+        },
+        "defaultDate": {
+          "label": "默认日期（可选）",
+          "description": "激活工作区时跳转的日期（例如：\"today\"、\"2024-01-01\"）",
+          "placeholder": "today, next-week, 2024-01-01"
+        },
+        "visibleCalendars": {
+          "label": "可见日历",
+          "description": "选择要显示的日历（留空则显示全部）",
+          "noCalendars": "未配置日历。请先在主设置中配置日历。"
+        },
+        "categoryFilterMode": {
+          "label": "分类过滤模式",
+          "description": "选择如何过滤分类",
+          "options": {
+            "showOnly": "仅显示选中的分类",
+            "hide": "隐藏选中的分类"
+          }
+        },
+        "categories": {
+          "label": "分类",
+          "description": "选择要包含/排除的分类（留空则显示全部）",
+          "noCategories": "未配置分类。请在分类设置中配置分类。",
+          "requiresAdvanced": "分类过滤需要先在主设置中启用高级分类。"
+        },
+        "notices": {
+          "enableBases": "请先启用 Obsidian Bases 插件。"
+        },
+        "overrideBusinessHours": {
+          "label": "覆盖工作时间",
+          "description": "为此工作区启用自定义工作时间"
+        },
+        "enableBusinessHours": {
+          "label": "启用工作时间",
+          "description": "在此工作区显示工作时间高亮"
+        },
+        "businessDays": {
+          "label": "工作日",
+          "description": "选择一周中的工作日"
+        },
+        "businessHoursStart": {
+          "label": "工作时间开始时间",
+          "description": "工作日开始时间（格式：HH:mm）"
+        },
+        "businessHoursEnd": {
+          "label": "工作时间结束时间",
+          "description": "工作日结束时间（格式：HH:mm）"
+        },
+        "timelineCategories": {
+          "label": "时间线分类",
+          "description": "时间线分类组的默认状态",
+          "options": {
+            "useDefault": "使用默认设置",
+            "expanded": "默认展开",
+            "collapsed": "默认折叠"
+          }
+        },
+        "slotMinTime": {
+          "label": "最早显示时间",
+          "description": "覆盖时间网格视图中的最早可见时间（格式：HH:mm）",
+          "placeholder": "使用全局默认"
+        },
+        "slotMaxTime": {
+          "label": "最晚显示时间",
+          "description": "覆盖时间网格视图中的最晚可见时间（格式：HH:mm）",
+          "placeholder": "使用全局默认值"
+        },
+        "weekendDisplay": {
+          "label": "周末显示",
+          "description": "覆盖是否在日历中显示周末",
+          "options": {
+            "show": "显示周末",
+            "hide": "隐藏周末"
+          }
+        },
+        "hiddenDays": {
+          "label": "隐藏日期",
+          "description": "覆盖要从日历中隐藏的日期",
+          "options": {
+            "showAll": "显示所有日期",
+            "hideWeekends": "隐藏周末（周日、周六）",
+            "hideSunday": "隐藏周日",
+            "hideSaturday": "隐藏周六",
+            "hideMonday": "隐藏周一",
+            "hideFriday": "隐藏周五"
+          }
+        },
+        "dayMaxEvents": {
+          "label": "每日最大事件数（月视图）",
+          "description": "覆盖月视图中每天显示的最大事件数",
+          "options": {
+            "useDefault": "使用默认限制",
+            "noLimit": "无限制",
+            "one": "1 个事件",
+            "two": "2 个事件",
+            "three": "3 个事件",
+            "four": "4 个事件",
+            "five": "5 个事件",
+            "ten": "10 个事件"
+          }
+        },
+        "basisQueryPath": {
+          "label": "Bases query file path",
+          "description": "Optional path to a .base file containing filter rules to apply on top of this workspace (e.g., queries/work.base)"
+        },
+        "defaultCalendar": {
+          "label": "Default calendar for new events",
+          "description": "Calendar pre-selected when creating an event in this workspace",
+          "options": {
+            "useDefault": "Use global default"
+          }
+        }
+      },
+      "calendarTypes": {
+        "local": "本地：",
+        "dailyNotes": "日记：",
+        "ics": "ICS：",
+        "caldav": "CalDAV：",
+        "google": "Google：",
+        "outlook": "Outlook:"
+      },
+      "buttons": {
+        "save": "保存",
+        "create": "创建",
+        "cancel": "取消"
+      }
+    },
+    "bulkCategorize": {
+      "title": "选择批量更新方法",
+      "description": "您想如何自动分类本地日历中现有的事件？请注意，这是一次性操作，将修改您的事件笔记以匹配所需格式。",
+      "smartFolder": {
+        "name": "使用父文件夹（智能）",
+        "description": "使用父文件夹名称作为未分类事件的分类。已格式化为 \"分类 - 标题\" 的事件将被跳过。",
+        "button": "运行智能更新"
+      },
+      "forcedFolder": {
+        "name": "使用父文件夹（强制）",
+        "description": "将父文件夹名称前置到所有事件标题，即使它们已有分类。警告：这将创建嵌套分类。",
+        "button": "运行强制更新"
+      },
+      "forcedDefault": {
+        "name": "强制默认更新",
+        "description": "将您提供的分类前置到所有事件标题。如果已存在分类，新分类将添加在前面（例如：\"新 - 旧 - 标题\"）。",
+        "placeholder": "输入默认分类",
+        "button": "设置默认值",
+        "errorEmpty": "请输入分类名称。"
+      }
+    },
+    "activityWatchSetup": {
+      "saved": "Activitywatch 配置已保存",
+      "apiUrl": "API URL",
+      "targetCalendar": "目标日历",
+      "unselected": "未选择",
+      "strategy": {
+        "title": "同步策略",
+        "auto": "从上次检查同步",
+        "custom": "自定义日期范围",
+        "datePlaceholder": "选择开始和结束日期",
+        "lastSynced": "上次检查",
+        "neverSynced": "从未检查",
+        "autoSyncEnabled": "启用自动同步",
+        "autoSyncIntervalMins": "自动同步间隔（分钟）",
+        "autoDescription": "手动和自动同步都会更新上次检查时间。",
+        "customDescription": "仅调试用的手动范围。它不会更新上次检查时间，也无法自动运行。"
+      },
+      "profiles": {
+        "title": "上下文配置（最佳拟合 FSM）",
+        "config": "配置配置",
+        "btnDelete": "删除",
+        "name": "配置名称",
+        "category": "分类（颜色标签）",
+        "activationThreshold": "激活阈值（分钟）",
+        "softBreakLimit": "软休息限制（分钟）",
+        "titleTemplate": "标题模板",
+        "titleTemplatePlaceholder": "例如：工作 - {app}",
+        "primaryEvidenceRules": "主要证据规则（可以开始和维持会话）",
+        "supportingEvidenceRules": "支持证据规则（可以维持，但不能开始）",
+        "hardBreakRules": "硬中断规则（立即结束会话）",
+        "btnAddProfile": "+ 添加上下文配置"
+      },
+      "rules": {
+        "bucketPlaceholder": "Bucket（例如：window）",
+        "fieldPlaceholder": "字段（例如：app）",
+        "matchPatternPlaceholder": "匹配模式",
+        "regex": "正则表达式",
+        "btnAdd": "+ 添加规则"
+      },
+      "buttons": {
+        "save": "保存",
+        "cancel": "取消"
+      }
+    },
+    "rescheduleRecurring": {
+      "title": "Reschedule Recurring Event",
+      "description": "This is a recurring event. Choose whether to reschedule only this occurrence or the entire recurring sequence.",
+      "rescheduleInstance": {
+        "name": "Reschedule only this instance",
+        "description": "Move only the instance on {{date}}. The rest of the sequence will keep its current schedule.",
+        "descriptionNoDate": "Move only this instance. The rest of the sequence will keep its current schedule.",
+        "button": "Move This Instance"
+      },
+      "rescheduleSequence": {
+        "name": "Reschedule entire sequence",
+        "description": "Update the recurring event itself so every occurrence follows the new schedule.",
+        "button": "Move Sequence"
+      },
+      "cancel": "Cancel"
+    },
+    "linkedNotePreset": {
+      "title": "Select a Template Preset",
+      "description": "Choose a template to use for creating this linked note:",
+      "cancel": "Cancel"
+    }
+  },
+  "google": {
+    "auth": {
+      "expired": "Google 认证已过期。请重新连接您的账户。",
+      "authFailed": "无法认证日历。请尝试在设置中重新添加。",
+      "popupBlocked": "弹窗被阻止。请允许 Obsidian 的弹窗。",
+      "customCredsMissing": "必须在插件设置中设置自定义 Google Client ID 和 Secret。",
+      "stateMismatch": "Google 认证失败。状态不匹配。",
+      "success": "成功连接 Google 账户！",
+      "failed": "连接 Google 账户失败。请检查开发者控制台获取详情。",
+      "copyModalTitle": "Google Authorization Link",
+      "copyModalDesc": "Please copy the link below, paste it into your browser of choice, complete the authorization, and then return to Obsidian.",
+      "copyModalCopyButton": "Copy Link",
+      "copyModalCopiedButton": "Copied!",
+      "copyModalCloseButton": "Close",
+      "waitingModalTitle": "Waiting for Authentication",
+      "waitingModalDesc": "Obsidian is waiting for you to complete the authentication in your browser. Once completed, this window will close automatically.",
+      "waitingModalCancel": "Cancel"
+    },
+    "title": "Google 账户",
+    "customCredentials": {
+      "enable": {
+        "label": "使用自定义 Google Cloud 凭据",
+        "description": "使用您自己的 OAuth Client ID 和 Secret 代替默认值。插件目前已通过 Google 验证，但您仍可使用此选项。"
+      },
+      "clientId": {
+        "label": "客户端 ID",
+        "description": "您的 Google OAuth 2.0 客户端 ID"
+      },
+      "clientSecret": {
+        "label": "客户端密钥",
+        "description": "您的 Google OAuth 2.0 客户端密钥"
+      }
+    },
+    "noAccounts": "未连接 Google 账户。请在日历部分添加 Google 日历以连接账户。",
+    "accountDescription": "已连接账户。ID：{{id}}",
+    "buttons": {
+      "disconnect": "断开连接",
+      "selectCalendars": "选择日历",
+      "connectAccount": "连接 Google 账户",
+      "backToAccounts": "返回账户",
+      "addCalendars": "添加 {{count}} 个日历",
+      "addCalendarsPlural": "添加 {{count}} 个日历",
+      "selectTaskLists": "Select task lists",
+      "addTaskList": "Add Google Task List"
+    },
+    "selectAccount": {
+      "title": "连接 Google 账户"
+    },
+    "selectCalendars": {
+      "title": "从 {{email}} 选择日历",
+      "noCalendars": "未找到新日历，或此账户的所有日历均已添加。",
+      "description": "选择要添加到 Obsidian 的日历。"
+    },
+    "loading": "加载中...",
+    "selectTasks": {
+      "title": "Select Google Task Lists for {{email}}",
+      "noTaskLists": "No remaining task lists found on this account.",
+      "description": "Select the Google Task lists you want to add."
+    },
+    "errors": {
+      "tokenRefreshFailed": "Failed to refresh token for {{email}}. Please try connecting the account again.",
+      "fetchTaskListsFailed": "Failed to fetch task lists for {{email}}. {{message}}"
+    },
+    "copyPasteAuth": {
+      "enable": {
+        "label": "Copy-paste authorization",
+        "description": "Show a popup with the authorization URL to manually copy and paste into a browser of your choice, instead of automatically opening the system default browser."
+      }
+    }
+  },
+  "ui": {
+    "view": {
+      "errors": {
+        "cacheNotLoaded": "日历事件缓存未加载。",
+        "chronoAnalyserDesktopOnly": "数据分析器仅在桌面版可用。",
+        "chronoAnalyserFailed": "打开数据分析器失败。请检查控制台。",
+        "modifyEventFailed": "修改事件失败。",
+        "taskScheduleFailed": "安排任务失败：{{message}}"
+      },
+      "success": {
+        "taskScheduled": "任务安排成功"
+      },
+      "workspace": {
+        "switcherLabel": "工作区"
+      },
+      "buttons": {
+        "analysis": "分析",
+        "defaultView": "默认视图"
+      },
+      "contextMenu": {
+        "turnIntoTask": "转换为任务",
+        "removeCheckbox": "移除复选框",
+        "openLinkedNote": "打开关联笔记",
+        "goToNote": "转到笔记",
+        "delete": "删除",
+        "noActions": "远程事件没有可用操作"
+      }
+    },
+    "buttons": {
+      "addCalendar": "添加日历"
+    },
+    "navigation": {
+      "thisMonth": "本月",
+      "thisWeek": "本周",
+      "customDate": "自定义日期...",
+      "viewMonth": "月视图",
+      "viewWeek": "周视图",
+      "viewDay": "日视图"
+    }
+  },
+  "notifications": {
+    "eventStarting": {
+      "title": "事件即将开始"
+    },
+    "allDaySuffix": "（全天）",
+    "inMinutes": "（{{mins}} 分钟后）",
+    "failed": "日历：创建桌面通知失败。",
+    "errorBody": "日历：无法显示桌面通知。请检查控制台获取错误。"
+  },
+  "global": {
+    "learnMore": "了解更多：",
+    "settingsHeader": "在聚焦的设置分组之间切换，以保持配置更精简、更易于浏览。",
+    "learnMoreLink": "了解更多"
+  },
+  "api": {
+    "authorization": {
+      "title": "授权请求",
+      "requestingPluginMessage": "插件 \"{{pluginId}}\" 正在请求访问 Full Calendar。",
+      "reasonLabel": "原因：{{reason}}",
+      "permissionsLabel": "选择要授予的权限。您可以稍后在设置中更改这些权限。",
+      "approve": "批准",
+      "deny": "拒绝"
+    },
+    "settings": {
+      "title": "API access",
+      "managePermissions": "Manage permissions for \"{{pluginId}}\".",
+      "noAuthorizedPlugins": "No external plugins are authorized.",
+      "editAccess": "Edit access",
+      "revoke": "Revoke",
+      "cancel": "Cancel",
+      "save": "Save",
+      "serverTitle": "Local REST Server",
+      "serverEnable": "Enable REST Server",
+      "serverEnableDesc": "Starts a local HTTP server inside Obsidian, enabling programmatic integrations from the command-line (CLI), scripts, or third-party web apps via REST API. Listening on localhost (127.0.0.1) only.",
+      "serverPort": "REST Server Port",
+      "serverPortDesc": "The port number the local REST API server should listen on. Requires enabling the REST server.",
+      "patTitle": "Personal Access Tokens (PATs)",
+      "patGenerate": "Generate Token",
+      "patNone": "No Personal Access Tokens generated yet.",
+      "patScopes": "Scopes: {{scopes}}",
+      "patCreated": "Created: {{date}}",
+      "patLastUsed": "Last Used: {{date}}",
+      "patNeverUsed": "Never",
+      "patModalTitle": "Generate Personal Access Token",
+      "patModalDesc": "Personal Access Tokens allow you to query, create, or modify events in Full Calendar from DataviewJS, Templater, or command-line (CLI) scripts without showing authorization popups.",
+      "patModalName": "Token Name",
+      "patModalNameDesc": "Describe what this token is for (e.g., 'PythonSyncScript').",
+      "patModalPermissions": "Permissions / Scopes",
+      "patModalCancel": "Cancel",
+      "patModalGenerate": "Generate Token",
+      "patSuccessTitle": "Token Generated Successfully",
+      "patSuccessDesc": "Your new Personal Access Token '{{name}}' has been created. Copy this token now. You will not be able to see it again!",
+      "patSuccessCopy": "Copy",
+      "patSuccessCopied": "Copied!",
+      "patSuccessClose": "I have copied the token"
+    }
+  },
+  "nlp": {
+    "modalTitle": "FCR 命令",
+    "placeholder": "例如：明天下午4点 团队例会，打开设置，跳到下周二",
+    "submit": "执行",
+    "cancel": "取消",
+    "previewHint": "输入命令 — 创建事件、切换视图、打开设置等。",
+    "noCalendars": "没有可写的日历。请先添加一个日历。",
+    "parseSuccess": "命令已执行。",
+    "navigating": "正在导航到 {{view}} 视图。",
+    "intents": {
+      "CREATE_EVENT": "📅 创建事件",
+      "NEW_EVENT": "📅 新事件（空）",
+      "NAVIGATE_DAY": "🧭 导航 → 日视图",
+      "NAVIGATE_WEEK": "🧭 导航 → 周视图",
+      "NAVIGATE_MONTH": "🧭 导航 → 月视图",
+      "OPEN_CALENDAR": "📖 打开日历",
+      "OPEN_SIDEBAR": "📖 打开侧边栏",
+      "OPEN_SETTINGS": "⚙️ 打开设置",
+      "OPEN_CHRONO": "📊 打开 ChronoAnalyser",
+      "SHOW_CHANGELOG": "📋 显示更新日志",
+      "RESET_CACHE": "🗑️ 重置事件缓存",
+      "REVALIDATE_REMOTE": "🔄 重新验证远程日历",
+      "SYNC_ACTIVITYWATCH": "⏱️ 同步 ActivityWatch",
+      "GOTO_DATE": "📆 转到日期",
+      "SHOW_MILESTONES": "🏅 显示里程碑"
+    },
+    "descriptions": {
+      "OPEN_SETTINGS": "打开 Full Calendar 的设置选项卡。",
+      "OPEN_CHRONO": "启动 ChronoAnalyser 仪表板。",
+      "SHOW_CHANGELOG": "显示最新的发行说明。",
+      "RESET_CACHE": "清除并重建事件缓存。",
+      "REVALIDATE_REMOTE": "强制刷新所有远程日历的同步。",
+      "SYNC_ACTIVITYWATCH": "从 ActivityWatch 拉取最新数据。",
+      "SHOW_MILESTONES": "在设置中打开里程碑页面。"
+    },
+    "preview": {
+      "target": "目标",
+      "title": "标题",
+      "date": "日期",
+      "time": "时间",
+      "allDay": "全天",
+      "calendar": "日历",
+      "recurrence": "重复",
+      "every": "每",
+      "patternsMatched": "✓ 匹配 {{count}} 个模式"
+    },
+    "notices": {
+      "cacheReset": "事件缓存已重置。",
+      "awNotEnabled": "ActivityWatch 未启用。请先在设置中启用。",
+      "fcrCompanionNotEnabled": "FCR Reminder Companion 未启用。请先在设置中启用。"
+    }
+  },
+  "outlook": {
+    "auth": {
+      "expired": "Outlook 身份验证已过期。请重新连接您的帐户。",
+      "authFailed": "无法验证 Outlook 日历。请在设置中重新添加。",
+      "desktopOnly": "Outlook 登录目前仅在桌面可用。",
+      "clientIdMissing": "需要 Microsoft 客户端 ID。请在 集成 > Outlook 中配置。",
+      "proxyMissing": "需要 Microsoft 代理 URL。请在 集成 > Outlook 中配置。",
+      "stateMismatch": "Outlook 身份验证失败。状态不匹配。",
+      "success": "已成功连接 Outlook 帐户！",
+      "failed": "连接 Outlook 帐户失败。请检查开发者控制台以获取详细信息。",
+      "callbackSuccess": "身份验证成功！请返回 Obsidian。",
+      "callbackFailed": "身份验证失败。请检查 Obsidian 控制台并重试。"
+    },
+    "title": "Outlook 帐户",
+    "docs": {
+      "setupGuide": "Outlook 日历设置"
+    },
+    "customCredentials": {
+      "enable": {
+        "label": "使用自定义 Microsoft 凭据",
+        "description": "使用您自己的 Microsoft Client ID 和代理 URL，替换内置默认值。"
+      }
+    },
+    "config": {
+      "clientId": {
+        "label": "Microsoft 客户端 ID",
+        "description": "用于 Microsoft 登录的 OAuth 应用客户端 ID。"
+      },
+      "proxyUrl": {
+        "label": "Vercel 代理 URL",
+        "description": "您的 Microsoft 令牌代理的基础 URL（例如：https://your-app.vercel.app）。",
+        "placeholder": "https://your-app.vercel.app"
+      },
+      "clientIdPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    },
+    "misc": {
+      "settingsSourcesLink": "日历来源设置"
+    },
+    "noAccounts": "未连接任何 Outlook 帐户。请在“日历”中添加一个 Outlook 日历以连接。",
+    "accountDescription": "已连接的帐户。ID：{{id}}",
+    "buttons": {
+      "disconnect": "断开连接",
+      "selectCalendars": "选择日历",
+      "connectAccount": "连接 Outlook 帐户",
+      "backToAccounts": "返回帐户",
+      "addCalendars": "添加 {{count}} 个日历",
+      "addCalendarsPlural": "添加 {{count}} 个日历"
+    },
+    "selectAccount": {
+      "title": "连接 Outlook 帐户"
+    },
+    "selectCalendars": {
+      "title": "从 {{email}} 选择日历",
+      "noCalendars": "未找到新日历，或此帐户的所有日历已被添加。",
+      "description": "请选择要添加到 Obsidian 的 Outlook 日历。"
+    },
+    "errors": {
+      "fetchCalendars": "无法获取 {{email}} 的 Outlook 日历。{{message}}",
+      "unknown": "未知错误"
+    },
+    "loading": "加载中..."
+  },
+  "linkedNotes": {
+    "untitledNote": "未命名的链接笔记"
+  },
+  "availability": {
+    "settings": {
+      "header": "Availability Sharing",
+      "headerDesc": "Configure settings for generating availability schedules and uploading them to GitHub Gists.",
+      "githubPat": "GitHub Personal Access Token",
+      "githubPatDesc": "Used to upload availability as secret Gists. Requires the \"gist\" scope.",
+      "githubPatLink": "👉 Generate a GitHub token with the Gist scope pre-selected",
+      "exportPath": "Default export path",
+      "exportPathDesc": "Vault folder path where availability markdown files will be saved (leave blank for root).",
+      "startTime": "Default Daily start time",
+      "startTimeDesc": "Start hour for calculated daily slots when sharing availability.",
+      "endTime": "Default Daily ennd time",
+      "endTimeDesc": "End hour for calculated daily slots when sharing availability.",
+      "links": {
+        "guide": "Availability Guide",
+        "security": "API & Security Settings",
+        "privacy": "Privacy Policy"
+      },
+      "privacyCleanupTitle": "Data Privacy & Cleanup",
+      "privacyCleanupDesc": "No calendar data, schedules, or event details are ever sent to our servers. All calculations occur locally on your device. Published web links are stored as secret Gists under your own GitHub account.",
+      "cleanupTokenHelp": "To clear your Access Token locally, delete the token field above. To delete a published web link, delete the secret Gist from your",
+      "cleanupGistLink": "GitHub Gists Dashboard."
+    },
+    "modal": {
+      "title": "Share Availability",
+      "excludeWeekends": "Exclude Weekends",
+      "excludeWeekendsDesc": "Skip Saturday and Sunday availability slots",
+      "anonymize": "Anonymization Level",
+      "anonymizeDesc": "Choose whether to include event titles",
+      "anonymizeFull": "Fully Anonymized (Free/Busy status)",
+      "anonymizeSemi": "Semi-Anonymized (Show Event Titles)",
+      "calendarsTitle": "Calendars to Include",
+      "noCalendars": "No calendars configured.",
+      "btnMarkdown": "Export as Markdown File",
+      "btnWebLink": "Generate Web Link",
+      "setupTitle": "Enable Web Sharing",
+      "setupDesc": "To share your schedule online, the plugin publishes a secret file under your GitHub account. No account registration or server database is needed.",
+      "setupStep1": "Step 1: Generate your GitHub Access Token",
+      "setupStep1Link": "👉 Click here to create a pre-configured token",
+      "setupStep2": "Step 2: Paste your token below to enable",
+      "setupPlaceholder": "github_pat_...",
+      "btnSaveAndGenerate": "Save Token & Generate Link",
+      "btnGenerating": "Generating Link...",
+      "noticeSuccessMd": "Availability exported to vault at: {{path}}",
+      "noticeSuccessGist": "Availability schedule published! Link copied to clipboard.",
+      "noticeFailedMd": "Export failed: {{error}}",
+      "noticeFailedGist": "Web link generation failed: {{error}}",
+      "successModalTitle": "Web Link Generated!",
+      "successModalDesc": "Your availability schedule is online. Copy the link below to share it with clients or colleagues:",
+      "successModalCopy": "Copy Link",
+      "successModalCopied": "Copied!",
+      "dateRange": "Date Range",
+      "dateRangeDesc": "Select the start and end dates for the availability period.",
+      "timeRange": "Daily Time Range",
+      "timeRangeDesc": "Select the daily start and end hours for available slots.",
+      "btnBack": "Back",
+      "warningLargeRange": "Warning: Selecting a date range longer than 90 days may cause performance slowdowns.",
+      "introDesc": "Configure your availability options below to export a formatted Markdown schedule to your vault, or generate a secure, interactive web booking page."
+    }
+  },
+  "exportModal": {
+    "title": "Export Event Cache",
+    "calendarsTitle": "Calendars to Include",
+    "fileName": "Export File Name",
+    "fileNameDesc": "Name of the generated .ics file.",
+    "targetFolder": "Target Vault Folder",
+    "targetFolderDesc": "Folder in your vault where the file will be saved.",
+    "btnSave": "Save to Vault",
+    "btnDownload": "Download ICS File",
+    "btnCancel": "Cancel",
+    "noCalendars": "No calendars available for export.",
+    "noticeSuccessSave": "Successfully saved calendar export to {{path}}",
+    "noticeFailedSave": "Failed to save calendar export: {{error}}",
+    "noticeNoCalendarsSelected": "Please select at least one calendar to export.",
+    "filterTitle": "Filter Events",
+    "includeTypes": "Include Types",
+    "includeTypesDesc": "Select whether to include events, tasks, or both.",
+    "includeTypesAll": "Events and Tasks",
+    "includeTypesEvents": "Events Only",
+    "includeTypesTasks": "Tasks Only",
+    "taskStatus": "Task Completion Status",
+    "taskStatusDesc": "Filter tasks by their completion status.",
+    "taskStatusAll": "All Tasks",
+    "taskStatusIncomplete": "Incomplete Tasks Only",
+    "taskStatusCompleted": "Completed Tasks Only",
+    "period": "Export Period",
+    "periodDesc": "Select whether to export all events or a specific date range.",
+    "periodAll": "Export All Events",
+    "periodRange": "Specific Date Range",
+    "dateRange": "Date Range",
+    "dateRangeDesc": "Select the start and end dates to export.",
+    "includeAllDay": "Include All-Day Events",
+    "includeAllDayDesc": "Toggle whether to include all-day events/tasks.",
+    "excludeWeekends": "Exclude Weekends",
+    "excludeWeekendsDesc": "Filter out events that occur on Saturdays or Sundays.",
+    "filterDailyTimeRange": "Filter by Daily Time Range",
+    "filterDailyTimeRangeDesc": "Only export timed events occurring between specific hours of the day.",
+    "dailyTimeRange": "Daily Hours",
+    "dailyTimeRangeDesc": "Select the daily time window.",
+    "categoriesTitle": "Categories to Include"
+  }
+}

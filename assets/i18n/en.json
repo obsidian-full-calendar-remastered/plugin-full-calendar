@@ -1,0 +1,2010 @@
+{
+  "global": {
+    "learnMore": "Learn more: ",
+    "learnMoreLink": "Learn more",
+    "settingsHeader": "Switch between focused setting groups to keep configuration lighter and easier to scan."
+  },
+  "chrono": {
+    "ui": {
+      "title": "Configure Insight Groups",
+      "description": "Create groups to categorize your activities. The engine will use these rules to generate personalized insights.",
+      "save": "Save Configuration",
+      "cancel": "Cancel",
+      "addGroup": "Add New Insight Group",
+      "groupName": "Group Name",
+      "groupNamePlaceholder": "e.g., Work",
+      "deleteGroup": "Delete this group",
+      "persona": {
+        "name": "Analyze as Persona",
+        "desc": "Choose the analytical model to apply to this group.",
+        "productivity": "🎯 Productivity",
+        "wellness": "❤️ Wellness & Routine",
+        "none": "⚪ (Ignore in Dashboard)"
+      },
+      "hierarchies": {
+        "name": "Matching Hierarchies",
+        "desc": "e.g., Work Calendar, Personal Calendar",
+        "add": "Add hierarchy..."
+      },
+      "projects": {
+        "name": "Matching Projects",
+        "desc": "e.g., Project Phoenix, Q4 Report",
+        "add": "Add project..."
+      },
+      "mutedProjects": {
+        "name": "Muted Projects",
+        "desc": "Mute specific projects (case-sensitive, exact match) to exclude them from Habit Consistency checks.",
+        "add": "Add muted project..."
+      },
+      "subprojectKeywords": {
+        "name": "Matching Sub-project Keywords",
+        "desc": "Add keywords that will match if found anywhere in a sub-project.",
+        "placeholder": "eg., design\nresearch\nmeeting"
+      },
+      "mutedSubprojectKeywords": {
+        "name": "Muted Sub-project Keywords",
+        "desc": "Mute activities by keyword. If a sub-project contains any of these (case-insensitive) keywords, it will be excluded from Habit Consistency checks.",
+        "placeholder": "e.g., completed\narchive\nold"
+      },
+      "unsavedChanges": {
+        "title": "Unsaved Changes",
+        "message": "You have unsaved changes. Would you like to save them before closing?",
+        "saveAndClose": "Save and Close",
+        "discard": "Discard Changes"
+      },
+      "folderSelectPlaceholder": "Select a folder with your time tracking files...",
+      "docs": {
+        "configurationGuide": "Configuration guide",
+        "matchingRules": "Matching rules",
+        "faq": "FAQ",
+        "personaGuide": "Persona guide",
+        "insightsGuide": "Insight reference",
+        "ruleParameters": "Rule parameters",
+        "terminology": "Terminology",
+        "filtersGuide": "Filter syntax"
+      },
+      "errors": {
+        "groupExists": "Group name \"{{name}}\" already exists."
+      }
+    },
+    "analyser": {
+      "header": "📊 ChronoAnalyser",
+      "subtitle": "Interactive analysis of your time tracking data",
+      "demo": {
+        "title": "DEMO MODE",
+        "description": "You are exploring sample ChronoAnalyser data. Configure your own insight groups to switch permanently to live data.",
+        "turnOff": "Turn off demo"
+      },
+      "proTip": "Pro tip",
+      "clickNextTip": "Click to see the next tip",
+      "insights": {
+        "title": "💡 Insights",
+        "generate": "Generate insights",
+        "configure": "Configure insights",
+        "placeholder": "Click \"Generate Insights\" to analyze your data."
+      },
+      "filters": {
+        "hierarchy": "📂 Filter by hierarchy (calendar source)",
+        "hierarchyPlaceholder": "All hierarchies (type to filter...)",
+        "project": "📋 Filter by project",
+        "projectPlaceholder": "All projects (type to filter...)",
+        "category": "🔍 Filter by category (e.g., keyword -exclude)",
+        "categoryPlaceholder": "E.g., task.* -review",
+        "dateRange": "📅 Date range",
+        "dateRangePlaceholder": "Select date range (yyyy-mm-dd to yyyy-mm-dd)",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "thisWeek": "This week",
+        "thisMonth": "This month",
+        "clearDates": "🗑️ Clear dates",
+        "clearDatesTooltip": "Clear date filters"
+      },
+      "config": {
+        "metric": "📏 Metric",
+        "duration": "Duration (hours)",
+        "count": "Event count",
+        "analysisType": "🎯 Analysis type",
+        "pie": "Categorywise (pie)",
+        "sunburst": "Categorywise (sunburst)",
+        "timeSeries": "Time-series trend",
+        "activity": "Activity patterns",
+        "breakdownLevel": "📈 Breakdown level",
+        "hierarchy": "Hierarchy",
+        "project": "Project",
+        "subproject": "Sub-project",
+        "projectsByHierarchy": "Projects by hierarchy",
+        "subprojectsByProject": "Sub-projects by project",
+        "granularity": "🕒 Granularity",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "chartType": "📊 Chart type",
+        "overallTrend": "Overall trend",
+        "stackedByCategory": "Stacked by category",
+        "stackBy": "📚 Stack by",
+        "analyzeBy": "📅 Analyze by",
+        "dayOfWeek": "Day of week",
+        "hourOfDay": "Hour of day (task start)",
+        "heatmap": "Heatmap (day vs hour)",
+        "tooltips": {
+          "categorywise": "Visualize how time is distributed across different categories.",
+          "timeSeries": "Visualize how time spent changes over a period.",
+          "activity": "Identify patterns in when tasks are typically performed.",
+          "dayOfWeek": "Displays a bar chart showing the total hours spent on each day of the week.",
+          "hourOfDay": "Displays a bar chart showing the total hours associated with tasks that start in each hour of the day.",
+          "heatmap": "Displays a heatmap where rows are days of the week, columns are hours of the day, and the color intensity of each cell represents the total hours for tasks starting at that specific day/hour combination."
+        }
+      },
+      "stats": {
+        "totalHours": "Total Hours (Filtered)",
+        "filesInFilter": "Files in Filter",
+        "activeAnalysis": "Active Analysis"
+      },
+      "log": {
+        "title": "📋 Processing log & issues",
+        "noIssues": "No issues found."
+      },
+      "details": {
+        "title": "Category details",
+        "close": "Close",
+        "project": "Project",
+        "subproject": "Sub-project (full)",
+        "duration": "Duration (hrs)",
+        "date": "Date",
+        "filePath": "File path"
+      }
+    }
+  },
+  "commands": {
+    "newEvent": "New Event",
+    "resetCache": "Reset Event Cache",
+    "revalidateRemote": "Revalidate remote calendars",
+    "openCalendar": "Open Calendar",
+    "openChronoAnalyser": "Open ChronoAnalyser (Desktop Only)",
+    "openSidebar": "Open in sidebar",
+    "syncActivityWatch": "Sync ActivityWatch",
+    "nlpQuickAdd": "FCR Command",
+    "syncFcrReminder": "Sync FCR Reminder Companion",
+    "shareAvailability": "Share Availability",
+    "exportIcs": "Export Event Cache as ICS file",
+    "showLoadDebugLog": "Show load debug timing log"
+  },
+  "notices": {
+    "settingsUpdated": "Full Calendar has updated your calendar settings to a new format.",
+    "cacheReset": "Full Calendar has been reset.",
+    "chronoAnalyserMobileDisabled": "The ChronoAnalyser feature is only available on the desktop version of Obsidian.",
+    "chronoAnalyserInitializing": "ChronoAnalyser: Initializing event cache...",
+    "chronoAnalyserLoadFailed": "Failed to load ChronoAnalyser. Please check the console.",
+    "chronoAnalyserChartLoadFailed": "Failed to load charting library. Please check your internet connection.",
+    "chronoAnalyserConfigureFirst": "Please configure your Insight Groups first using the ⚙️ icon.",
+    "chronoAnalyserGeneratingInsights": "Generating insights (this may take a moment)...",
+    "chronoAnalyserInsightsFailed": "Failed to generate insights. Check the developer console for errors.",
+    "chronoAnalyserInsightsSaved": "Insights configuration saved!",
+    "chronoAnalyserDemoLoaded": "ChronoAnalyser demo loaded.",
+    "chronoAnalyserDemoLoadedFromCache": "ChronoAnalyser demo loaded from cache.",
+    "chronoAnalyserDemoLoadFailed": "Could not load the ChronoAnalyser demo. Falling back to live data.",
+    "googleAuthFailed": "Google authentication failed. Please try again.",
+    "bulkUpdateError": "Error during bulk update. Check console for details.",
+    "providerNotRegistered": "{{providerType}} provider is not registered.",
+    "timezoneChanged": "System timezone changed to {{timezone}}. Full Calendar view updated to match.",
+    "revalidatingRemotes": "Revalidating remote calendars...",
+    "revalidationFailed": "One or more remote calendars failed to load. Check the console for details.",
+    "revalidationSuccess": "Remote calendars revalidated.",
+    "fcrReminderSynced": "FCR Reminder Companion synchronized successfully.",
+    "fcrReminderCompanionOfflineBold": "WARNING: The FCR Reminder Companion daemon is offline. You will NOT receive native desktop notifications until it is started.",
+    "cannotOpenRemote": "Cannot open note for a remote event.",
+    "configureLinkedNotesDirFirst": "Please configure a Linked Notes Directory in settings first.",
+    "failedToCreateLinkedNote": "Failed to create linked note.",
+    "templateFileNotFoundPreset": "Template preset note file '{{path}}' was not found. Note creation aborted.",
+    "noPresetsConfigured": "No template presets are configured. Please add at least one template preset in settings.",
+    "bulkCategorization": {
+      "noNotesFound": "No local event notes found to categorize.",
+      "complete": "Bulk categorization complete."
+    },
+    "bulkDecategorization": {
+      "noNotesFound": "No local event notes found to de-categorize.",
+      "complete": "Bulk de-categorization complete."
+    },
+    "tasks": {
+      "createViaPlugin": "Use the Tasks plugin interface to create new tasks.",
+      "defaultValidation": "This task cannot be scheduled on this date.",
+      "scheduledNoModal": "Task scheduled, but could not open Tasks edit modal.",
+      "apiUnavailable": "Obsidian Tasks plugin API not available."
+    },
+    "tasknotes": {
+      "addSourceFirst": "Add a TaskNotes calendar source first, then return here to configure integration.",
+      "handoffSingleOnly": "TaskNotes NLP handoff currently supports single events only.",
+      "handoffTitleRequired": "TaskNotes NLP handoff requires a title.",
+      "handoffStartTimeRequired": "TaskNotes NLP handoff requires a valid start time for timed events.",
+      "invalidSourceId": "TaskNotes provider source ID must follow tasknotes_[n] pattern (received: {{sourceId}}).",
+      "createModalUnavailable": "TaskNotes plugin is unavailable or does not expose create modal integration.",
+      "selectorUnavailable": "TaskNotes plugin is unavailable or does not expose selector integration."
+    },
+    "milestones": {
+      "sponsorDesc": "If FCR added value, please consider supporting the work:",
+      "sponsorBtn": "Support Development",
+      "goalBtn": "See Financial Goal"
+    }
+  },
+  "eventCache": {
+    "calendarNotFound": "Cannot add event: calendar with ID {{calendarId}} not found.",
+    "providerNotFound": "Cannot add event: provider for type {{type}} not found.",
+    "readOnly": "Cannot add event to a read-only calendar.",
+    "createFailed": "Failed to create event. Change has been reverted.",
+    "deleteFailed": "Failed to delete event. Change has been reverted.",
+    "updateFailed": "Failed to update event. Change has been reverted.",
+    "movePartialSuccess": "Event moved successfully, but some children may not have been moved."
+  },
+  "recurEvents": {
+    "promotingChildren": "Promoting {{count}} child event(s).",
+    "deletedAndPromoted": "Recurring event deleted and children promoted.",
+    "deletingWithChildren": "Deleting recurring event and its {{count}} child override(s)...",
+    "deletedAll": "Successfully deleted recurring event and all children.",
+    "preservingTiming": "Preserving modified event timing and uncompleting task.",
+    "revertingControl": "Reverting control to Main Recurring event sequence.",
+    "updatingChildren": "Updating {{count}} child event(s) to match new parent title.",
+    "updateError": "Error updating recurring event. Some children may not have been updated.",
+    "movingChildren": "Moving {{count}} child event(s) to the new calendar."
+  },
+  "ribbon": {
+    "openCalendar": "Open Full Calendar"
+  },
+  "settings": {
+    "categories": {
+      "general": {
+        "label": "General",
+        "description": "General behavior, reminders, and recent updates."
+      },
+      "appearance": {
+        "label": "Appearance",
+        "description": "Customize calendar appearance, time formats, and visibility."
+      },
+      "calendars": {
+        "label": "Calendars",
+        "description": "Manage calendar sources and provider-specific configuration."
+      },
+      "organization": {
+        "label": "Organization",
+        "description": "Organize views with workspaces and event categorization."
+      },
+      "integrations": {
+        "label": "Integrations",
+        "description": "Connect external services like Google, Outlook, and ActivityWatch."
+      }
+    },
+    "general": {
+      "desktopInitialView": {
+        "label": "Desktop initial view",
+        "description": "Choose the initial view range on desktop devices."
+      },
+      "mobileInitialView": {
+        "label": "Mobile initial view",
+        "description": "Choose the initial view range on mobile devices."
+      },
+      "displayTimezone": {
+        "label": "Display timezone",
+        "description": "Choose the timezone for displaying events. Defaults to your system timezone. Changing this will reload the calendar."
+      },
+      "clickToCreateEvent": {
+        "label": "Click on a day in month view to create event",
+        "description": "Switch off to open day view on click instead."
+      },
+      "openDailyNoteOnDateClick": {
+        "label": "Open daily note on date click",
+        "description": "Left-click on date column headers or Month view day numbers to open or create the daily note."
+      },
+      "loadDebugTiming": {
+        "label": "Enable load debug timing",
+        "description": "Measure and log detailed execution timing breakdown for initial plugin startup, stage loading, and each calendar provider.",
+        "viewLog": "View Load Debug Log"
+      },
+      "linkedNotesDirectory": {
+        "label": "Linked notes directory",
+        "description": "Choose the folder path where event linked notes will be created.",
+        "vaultRoot": "/ (Vault Root)"
+      },
+      "linkedNoteLinkStrategy": {
+        "label": "Linked note link strategy",
+        "description": "Choose whether recurring event occurrences share one title-based note or use separate date-specific notes.",
+        "deadline": "Deadline-based (one note per occurrence)",
+        "name": "Name-based (one note per event series)"
+      },
+      "linkedNoteTemplate": {
+        "label": "Linked note template",
+        "description": "Define the template used for creating new linked notes. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}",
+        "placeholder": "Enter note Markdown template..."
+      },
+      "enableLinkedNoteTemplatesPreset": {
+        "label": "Enable template presets",
+        "description": "Select multiple template notes from your vault to choose from when creating new linked notes."
+      },
+      "linkedNoteTemplatesPresets": {
+        "addLabel": "Add template preset",
+        "addDesc": "Select a template file from your vault to add to the presets list.",
+        "addPlaceholder": "Choose a template note to add...",
+        "removeButton": "Remove"
+      }
+    },
+    "reminders": {
+      "title": "Reminders",
+      "enableDefault": {
+        "label": "Enable default reminder",
+        "description": "Automatically add a reminder to new events."
+      },
+      "defaultTime": {
+        "label": "Default reminder time",
+        "description": "Minutes before event to remind (default: 10)"
+      }
+    },
+    "breakTimer": {
+      "title": "Break Timer",
+      "enable": {
+        "label": "Enable break timer",
+        "description": "Periodically remind yourself to take a break with a fullscreen overlay and desktop notification."
+      },
+      "interval": {
+        "label": "Break interval (minutes)",
+        "description": "How long to wait before reminding you to take a break."
+      },
+      "idleThreshold": {
+        "label": "Idle reset threshold (minutes)",
+        "description": "If you are inactive for this long, the break timer resets (no immediate break when you return)."
+      },
+      "duration": {
+        "label": "Break duration (seconds)",
+        "description": "How long the break overlay stays on screen."
+      }
+    },
+    "weather": {
+      "label": "Weather forecast",
+      "description": "Configure weather geocoding and display settings to show forecasts in your calendar views.",
+      "configTooltip": "Configure Weather Settings",
+      "status": {
+        "hidden": "Weather forecast is hidden.",
+        "enabled": "Enabled: {{mode}} (Lat {{latitude}}, Lng {{longitude}})",
+        "noLocation": "Enabled: No location set.",
+        "cityFallback": "City"
+      },
+      "modal": {
+        "title": "Weather Integration Settings",
+        "hideToggle": {
+          "label": "Hide weather forecast in calendar UI",
+          "description": "Turn this on to completely hide weather forecasts from daily, weekly, and monthly calendar views."
+        },
+        "unit": {
+          "label": "Temperature unit",
+          "description": "Choose whether to display temperatures in Celsius or Fahrenheit.",
+          "celsius": "Celsius (°C)",
+          "fahrenheit": "Fahrenheit (°F)"
+        },
+        "inputMode": {
+          "label": "Location input mode",
+          "description": "Choose whether to enter a city/region name (resolved via Open-Meteo) or specify exact coordinates directly.",
+          "city": "City / Region name",
+          "coords": "Coordinates (Latitude / Longitude)"
+        },
+        "latitude": {
+          "label": "Latitude",
+          "description": "Specify the exact latitude of your location (e.g. 50.0880).",
+          "placeholder": "E.g. 50.0880"
+        },
+        "longitude": {
+          "label": "Longitude",
+          "description": "Specify the exact longitude of your location (e.g. 14.4208).",
+          "placeholder": "E.g. 14.4208"
+        },
+        "city": {
+          "label": "Weather city / region",
+          "description": "Enter your city or region name (e.g. Prague) to get weather forecasts in your calendar views.",
+          "placeholder": "E.g. Prague",
+          "status": {
+            "resolved": "Resolved: Lat {{latitude}}, Lng {{longitude}}",
+            "unresolved": "Could not resolve coordinates.",
+            "empty": "No location set.",
+            "resolving": "Resolving location..."
+          }
+        }
+      },
+      "detailModal": {
+        "title": "Detailed Weather - {{date}}",
+        "hourlyHeader": "Hourly Forecast",
+        "apparentTemp": "Apparent: {{temp}}°C",
+        "noHourly": "No hourly forecast data available."
+      },
+      "conditions": {
+        "unknown": "Unknown",
+        "clearSky": "Clear sky",
+        "mainlyClear": "Mainly clear",
+        "partlyCloudy": "Partly cloudy",
+        "overcast": "Overcast",
+        "fog": "Fog",
+        "depositingRimeFog": "Depositing rime fog",
+        "lightDrizzle": "Light drizzle",
+        "moderateDrizzle": "Moderate drizzle",
+        "denseDrizzle": "Dense drizzle",
+        "lightFreezingDrizzle": "Light freezing drizzle",
+        "denseFreezingDrizzle": "Dense freezing drizzle",
+        "slightRain": "Slight rain",
+        "moderateRain": "Moderate rain",
+        "heavyRain": "Heavy rain",
+        "lightFreezingRain": "Light freezing rain",
+        "heavyFreezingRain": "Heavy freezing rain",
+        "slightSnowFall": "Slight snow fall",
+        "moderateSnowFall": "Moderate snow fall",
+        "heavySnowFall": "Heavy snow fall",
+        "snowGrains": "Snow grains",
+        "slightRainShowers": "Slight rain showers",
+        "moderateRainShowers": "Moderate rain showers",
+        "violentRainShowers": "Violent rain showers",
+        "slightSnowShowers": "Slight snow showers",
+        "heavySnowShowers": "Heavy snow showers",
+        "thunderstorm": "Thunderstorm",
+        "thunderstormWithSlightHail": "Thunderstorm with slight hail",
+        "thunderstormWithHeavyHail": "Thunderstorm with heavy hail"
+      }
+    },
+    "appearance": {
+      "title": "Appearance",
+      "highlightCurrentOrNextEvent": "Highlight current or next event",
+      "highlightCurrentOrNextEventDesc": "Highlights the current timed event, or the immediate next timed event if none is active.",
+      "enableLivePreview": {
+        "label": "Enable Live Preview event decoration",
+        "description": "Show styled events and headers directly in your Daily Notes and event note editors."
+      },
+      "firstDay": {
+        "label": "Starting day of the week",
+        "description": "Choose what day of the week to start."
+      },
+      "timeFormat24h": {
+        "label": "24-hour format",
+        "description": "Display the time in a 24-hour format."
+      },
+      "businessHours": {
+        "enable": {
+          "label": "Enable business hours",
+          "description": "Highlight your working hours in time-grid views to distinguish work time from personal time."
+        },
+        "days": {
+          "label": "Business days",
+          "description": "Select which days of the week are business days."
+        },
+        "startTime": {
+          "label": "Business hours start time",
+          "description": "When your working day begins (format: HH:mm)"
+        },
+        "endTime": {
+          "label": "Business hours end time",
+          "description": "When your working day ends (format: HH:mm)"
+        },
+        "options": {
+          "mondayFriday": "Monday - Friday",
+          "everyDay": "Every day",
+          "mondayThursday": "Monday - Thursday",
+          "tuesdaySaturday": "Tuesday - Saturday"
+        }
+      },
+      "viewTimeRange": {
+        "title": "View Time Range",
+        "slotMinTime": {
+          "label": "Earliest time to display",
+          "description": "Set the earliest time visible in time grid views (format: HH:mm)"
+        },
+        "slotMaxTime": {
+          "label": "Latest time to display",
+          "description": "Set the latest time visible in time grid views (format: HH:mm)"
+        },
+        "allDaySlot": {
+          "label": "Show all-day row (week/day views)",
+          "description": "Toggle the all-day row at the top of week and day time-grid views."
+        },
+        "timeGridDayHeaderFormat": {
+          "label": "Week/day header date format",
+          "description": "Choose how day labels are displayed in week and day views.",
+          "options": {
+            "ddmmDay": "DD/MM day",
+            "mmddDay": "MM/DD day",
+            "dayDdmm": "day DD/MM",
+            "dayMmdd": "day MM/DD",
+            "ddmmyyyyDay": "DD/MM/YYYY day",
+            "mmddyyyyDay": "MM/DD/YYYY day"
+          }
+        }
+      },
+      "dayVisibility": {
+        "title": "Day Visibility",
+        "weekends": {
+          "label": "Show weekends",
+          "description": "Whether to display weekend days (Saturday and Sunday) in the calendar"
+        },
+        "hiddenDays": {
+          "label": "Hidden days",
+          "description": "Select days of the week to hide from the calendar",
+          "options": {
+            "showAll": "Show all days",
+            "hideWeekends": "Hide weekends (Sun, Sat)",
+            "hideSunday": "Hide Sunday only",
+            "hideSaturday": "Hide Saturday only",
+            "hideMonday": "Hide Monday",
+            "hideTuesday": "Hide Tuesday",
+            "hideWednesday": "Hide Wednesday",
+            "hideThursday": "Hide Thursday",
+            "hideFriday": "Hide Friday"
+          }
+        }
+      },
+      "dayMaxEvents": {
+        "label": "Max events per day (month view)",
+        "description": "Limit the number of events shown per day in month view",
+        "options": {
+          "default": "Use default limit",
+          "unlimited": "No limit (show all)",
+          "one": "1 event maximum",
+          "two": "2 events maximum",
+          "three": "3 events maximum",
+          "four": "4 events maximum",
+          "five": "5 events maximum",
+          "ten": "10 events maximum"
+        }
+      },
+      "enableBackgroundEvents": {
+        "label": "Enable background events",
+        "description": "Allow events to be displayed as background elements for things like vacations, focus time, or class schedules."
+      },
+      "showEventInStatusBar": {
+        "label": "Show current event in status bar",
+        "description": "Display the title of the currently running event in the Obsidian status bar."
+      },
+      "milestones": {
+        "label": "Milestones",
+        "description": "Read-only local milestones that track successful event activity across calendars.",
+        "openButton": "Open milestones",
+        "modal": {
+          "title": "Milestones",
+          "description": "Milestones are anonymous, local, and read-only. They unlock as successful actions are completed.",
+          "completed": "Completed",
+          "inProgress": "In progress",
+          "progress": "{{current}} done"
+        },
+        "definitions": {
+          "createdCentury": {
+            "title": "Century Maker",
+            "description": "Successfully create 100 events.",
+            "target": "Target: 100 created events"
+          },
+          "createdMaster": {
+            "title": "Event Architect",
+            "description": "Successfully create 500 events.",
+            "target": "Target: 500 created events"
+          },
+          "createdLegend": {
+            "title": "Calendar Titan",
+            "description": "Successfully create 5,000 events.",
+            "target": "Target: 5,000 created events"
+          },
+          "deletedCentury": {
+            "title": "Pruning Apprentice",
+            "description": "Successfully delete 100 events.",
+            "target": "Target: 100 deleted events"
+          },
+          "deletedMaster": {
+            "title": "Vault Gardener",
+            "description": "Successfully delete 500 events.",
+            "target": "Target: 500 deleted events"
+          },
+          "updatedMaster": {
+            "title": "Refinement Engine",
+            "description": "Successfully update 500 events.",
+            "target": "Target: 500 updated events"
+          },
+          "updatedLegend": {
+            "title": "Precision Rewriter",
+            "description": "Successfully update 5,000 events.",
+            "target": "Target: 5,000 updated events"
+          },
+          "movedMaster": {
+            "title": "Timeline Choreographer",
+            "description": "Successfully move 500 events between calendars.",
+            "target": "Target: 500 moved events"
+          },
+          "remoteArchitect": {
+            "title": "Remote Architect",
+            "description": "Create 500 events across ICS, CalDAV, and Google providers.",
+            "target": "Target: 500 remote created events"
+          },
+          "taskOrchestrator": {
+            "title": "Task Orchestrator",
+            "description": "Create 1,000 events through Tasks + TaskNotes integrations.",
+            "target": "Target: 1,000 task-integration created events"
+          },
+          "polyglotBuilder": {
+            "title": "Polyglot Builder",
+            "description": "Reach 500 created events in 3 different provider types.",
+            "target": "Target: 3 providers at 500 created each"
+          },
+          "cycleMaster": {
+            "title": "Cycle Master",
+            "description": "Reach both 500 created and 500 deleted events.",
+            "target": "Target: 500 create/delete balance"
+          },
+          "opsLegend": {
+            "title": "Operations Legend",
+            "description": "Reach 10,000 total successful operations (create/delete/update/move).",
+            "target": "Target: 10,000 successful operations"
+          },
+          "habitualPlanner": {
+            "title": "Habitual Planner",
+            "description": "Perform calendar actions on 20 consecutive days.",
+            "target": "Target: 20-day action streak"
+          },
+          "dedicated": {
+            "title": "The Dedicated",
+            "description": "Maintain at least 3 months between first and latest recorded action.",
+            "target": "Target: 90-day history span"
+          },
+          "marathoner": {
+            "title": "Marathoner",
+            "description": "Reach 100,000 total successful operations.",
+            "target": "Target: 100,000 operations"
+          },
+          "nlpSavant": {
+            "title": "NLP Savant",
+            "description": "Create 1,000 events using NLP input.",
+            "target": "Target: 1,000 NLP-created events"
+          },
+          "globalCitizen": {
+            "title": "Global Citizen",
+            "description": "Create events in 3 or more different time zones.",
+            "target": "Target: 3 distinct time zones"
+          },
+          "syncSpecialist": {
+            "title": "Sync Specialist",
+            "description": "Maintain 5 or more active remote calendars (Google/ICS/CalDAV).",
+            "target": "Target: 5 active remote calendars"
+          },
+          "recurringMaster": {
+            "title": "Recurring Master",
+            "description": "Create 30 recurring event series.",
+            "target": "Target: 30 recurring series"
+          },
+          "greatMigration": {
+            "title": "The Great Migration",
+            "description": "Move 200 events between different calendars.",
+            "target": "Target: 200 moved events"
+          },
+          "perfectionist": {
+            "title": "The Perfectionist",
+            "description": "Have a perfect week with at least 3 created events every day Monday-Sunday.",
+            "target": "Target: 7/7 days with 3+ events"
+          },
+          "digitalLibrarian": {
+            "title": "Digital Librarian",
+            "description": "Maintain over 10,000 non-deleted events across local calendars.",
+            "target": "Target: 10,000 live local events"
+          },
+          "nightOwl": {
+            "title": "Night Owl",
+            "description": "Successfully perform 15 calendar operations during late-night hours (10 PM to 4 AM).",
+            "target": "Target: 15 late-night actions"
+          },
+          "earlyBird": {
+            "title": "Early Bird",
+            "description": "Successfully perform 15 calendar operations during early-morning hours (5 AM to 8 AM).",
+            "target": "Target: 15 early-morning actions"
+          },
+          "weekendWarrior": {
+            "title": "Weekend Warrior",
+            "description": "Perform 40 successful calendar operations on Saturdays and Sundays.",
+            "target": "Target: 40 weekend actions"
+          },
+          "timezoneNomad": {
+            "title": "Nomadic Scheduler",
+            "description": "Maintain events spanning 5 or more distinct time zones.",
+            "target": "Target: 5 distinct time zones"
+          },
+          "superOrganizer": {
+            "title": "Super Organizer",
+            "description": "Maintain 5 or more active workspace configurations.",
+            "target": "Target: 5 workspaces"
+          },
+          "nlpWhisperer": {
+            "title": "NLP Whisperer",
+            "description": "Create 50 events using FCR NLP quick-add commands.",
+            "target": "Target: 50 NLP creations"
+          },
+          "powerPlanner": {
+            "title": "Power Planner",
+            "description": "Keep at least 3 distinct calendar provider types concurrently configured and active.",
+            "target": "Target: 3 active provider types"
+          },
+          "devMilestone": {
+            "title": "Developer Milestone",
+            "description": "A developer testing milestone triggered immediately via dev: 1 in settings.",
+            "target": "Target: Dev Mode Active"
+          },
+          "nightOwl100": {
+            "title": "Midnight Dynamo",
+            "description": "Successfully perform 100 calendar operations during late-night hours (10 PM to 4 AM).",
+            "target": "Target: 100 late-night actions"
+          },
+          "earlyBird100": {
+            "title": "Dawn Ascendant",
+            "description": "Successfully perform 100 calendar operations during early-morning hours (5 AM to 8 AM).",
+            "target": "Target: 100 early-morning actions"
+          },
+          "weekendWarrior250": {
+            "title": "Sabbath Champion",
+            "description": "Perform 250 successful calendar operations on Saturdays and Sundays.",
+            "target": "Target: 250 weekend actions"
+          },
+          "nlpWhisperer200": {
+            "title": "NLP Conjurer",
+            "description": "Create 200 events using FCR NLP quick-add commands.",
+            "target": "Target: 200 NLP creations"
+          },
+          "superOrganizer10": {
+            "title": "Director General",
+            "description": "Maintain 10 or more active workspace configurations.",
+            "target": "Target: 10 workspaces"
+          },
+          "syncSpecialist8": {
+            "title": "Universal Connector",
+            "description": "Maintain 8 or more active remote calendars (Google/ICS/CalDAV).",
+            "target": "Target: 8 active remote calendars"
+          },
+          "createdTotal25000": {
+            "title": "Calendar Emperor",
+            "description": "Successfully create 25,000 events.",
+            "target": "Target: 25,000 created events"
+          },
+          "createdTotal100000": {
+            "title": "Time Overlord",
+            "description": "Successfully create 100,000 events.",
+            "target": "Target: 100,000 created events"
+          },
+          "habitualPlanner100": {
+            "title": "The Eternal Planner",
+            "description": "Perform calendar actions on 100 consecutive days.",
+            "target": "Target: 100-day action streak"
+          },
+          "dedicated365": {
+            "title": "Chronicle Sovereign",
+            "description": "Maintain at least 1 year (365 days) between first and latest recorded action.",
+            "target": "Target: 365-day history span"
+          },
+          "totalOps250000": {
+            "title": "Operations Sovereign",
+            "description": "Reach 250,000 total successful operations (create/delete/update/move).",
+            "target": "Target: 250,000 successful operations"
+          },
+          "totalOps1000000": {
+            "title": "Time-Space Continuum",
+            "description": "Reach 1,000,000 total successful operations.",
+            "target": "Target: 1,000,000 successful operations"
+          }
+        }
+      }
+    },
+    "calendars": {
+      "title": "Manage calendars",
+      "addCalendar": "Add calendar",
+      "addCalendarTooltip": "Add Calendar",
+      "linkedNotes": {
+        "title": "Linked Note Settings",
+        "description": "Configure settings for creating local Obsidian notes linked to remote calendar events.",
+        "learnMore": "Linked Notes Guide"
+      },
+      "defaultCalendar": {
+        "label": "Default calendar for new events",
+        "description": "Calendar pre-selected when you create an event. Workspaces can override this.",
+        "firstAvailable": "First available calendar"
+      },
+      "defaults": {
+        "iCloud": "iCloud Calendar",
+        "new": "New {{type}} Calendar",
+        "journals": "Journals"
+      },
+      "types": {
+        "local": "Full note",
+        "dailynote": "Daily Note",
+        "journals": "Journals",
+        "icloud": "iCloud",
+        "caldav": "CalDAV",
+        "caldavTasks": "CalDAV Tasks",
+        "ical": "ICS",
+        "google": "Google Calendar",
+        "outlook": "Outlook Calendar",
+        "tasks": "Obsidian Tasks",
+        "tasknotes": "TaskNotes",
+        "bases": "Obsidian Bases",
+        "holidays": "Holidays"
+      },
+      "fullNote": {
+        "directory": {
+          "label": "Directory",
+          "description": "Directory to store event notes"
+        },
+        "template": {
+          "label": "Custom template",
+          "description": "Define the template used for creating new events in this calendar. Supports: {{title}}, {{description}}, {{date}}, {{timeString}}, {{location}}, {{calendarName}}, {{url}}"
+        },
+        "taskCompletionStyle": {
+          "label": "Completion style",
+          "description": "Choose how completed tasks are marked in the frontmatter. ISO Date/Time string preserves completion time; Boolean writes true/false.",
+          "options": {
+            "datetime": "ISO Date/Time String",
+            "boolean": "Boolean (true/false)"
+          }
+        }
+      },
+      "dailyNote": {
+        "provider": {
+          "options": {
+            "dailyNotes": "Daily Notes / Periodic Notes",
+            "journals": "Journals"
+          }
+        },
+        "journal": {
+          "label": "Day journal",
+          "description": "Select the Journals Day journal to use.",
+          "select": "Select a Day journal",
+          "loading": "Loading Day journals from Journals…",
+          "unavailable": "Install and enable the Journals plugin to use this provider.",
+          "unsupported": "Journals is enabled, but this version does not expose a supported integration API.",
+          "error": "Journals is enabled, but Full Calendar could not load its Day journals. Check the developer console for details.",
+          "none": "Journals is enabled, but no Day journals are configured."
+        },
+        "heading": {
+          "label": "Heading",
+          "description": "Heading to store events under in each date note.",
+          "summary": "in daily notes",
+          "journalSummary": "in journal entries"
+        },
+        "format": {
+          "label": "Format",
+          "description": "Choose how timed events are written in daily notes.",
+          "options": {
+            "default": "Default",
+            "dayPlanner": "DayPlanner Format"
+          }
+        }
+      },
+      "ics": {
+        "url": {
+          "label": "URL",
+          "description": "URL of the .ics file"
+        }
+      },
+      "caldav": {
+        "url": {
+          "label": "Collection URL",
+          "description": "Paste your calendar collection URL (e.g. https://calendar.zoho.in/caldav/<id>/events/)"
+        },
+        "username": {
+          "label": "Username",
+          "description": "Username for the account"
+        },
+        "password": {
+          "label": "Password",
+          "description": "Password for the account"
+        },
+        "importButton": "Import Calendars",
+        "importing": "Importing...",
+        "importFailed": "Failed to import calendar",
+        "errors": {
+          "authentication": "CalDAV authentication failed (HTTP 401).",
+          "permissionDenied": "CalDAV permission denied (HTTP 403).",
+          "invalidCollection": "The URL is not a valid CalDAV calendar collection. Enter the direct collection URL.",
+          "conflict": "The remote CalDAV resource changed (HTTP {{status}}). Refresh and try again.",
+          "requestFailed": "CalDAV request failed (HTTP {{status}}): {{statusText}}"
+        }
+      },
+      "caldavTasks": {
+        "title": "CalDAV Tasks",
+        "description": "Connect VTODO-compatible CalDAV task lists, including Apple Reminders.",
+        "backlogTitle": "CalDAV Tasks backlog",
+        "untitledTask": "Untitled task",
+        "importButton": "Add task list",
+        "importFailed": "Failed to add CalDAV task list",
+        "errors": {
+          "importFailedDetails": "Failed to add CalDAV task list: {{message}}",
+          "invalidCollection": "The URL is not a valid CalDAV task collection. Enter the direct task-list collection URL.",
+          "noVtodoCapability": "This CalDAV collection does not advertise VTODO support. Choose a task or reminder collection.",
+          "skippedMalformed": "Skipped {{count}} malformed CalDAV task resource(s).",
+          "recurringCreation": "Creating recurring CalDAV tasks is not yet supported.",
+          "unsupportedType": "This CalDAV VTODO event type is not supported.",
+          "missingUid": "Cannot update a CalDAV task without a UID.",
+          "completionUpdate": "Failed to update CalDAV task completion.",
+          "recurringInstance": "Editing individual recurring CalDAV task instances is not yet supported.",
+          "vtodoNotFound": "CalDAV task {{uid}} was not found in its resource.",
+          "malformedMissingCalendar": "Malformed iCalendar data: missing VCALENDAR.",
+          "malformedData": "Malformed iCalendar data: {{message}}"
+        }
+      },
+      "tasks": {
+        "zeroConfig": {
+          "label": "Zero Configuration Required",
+          "description": "This provider automatically reads your existing Obsidian Tasks plugin settings. All tasks with due dates will be displayed on the calendar as read-only events."
+        },
+        "calendarName": {
+          "label": "Calendar Name",
+          "description": "Display name for this calendar"
+        },
+        "readOnly": {
+          "label": "Events",
+          "description": "Event Edits happen directly in the Tasks Model and not the Full Calendar Edit Modal."
+        },
+        "adding": "Adding...",
+        "cancel": "Cancel"
+      },
+      "tasknotes": {
+        "zeroConfig": {
+          "label": "Zero Configuration Required",
+          "description": "This provider reads TaskNotes tasks directly from your vault and maps scheduled tasks to calendar events."
+        },
+        "calendarName": {
+          "label": "Calendar Name",
+          "description": "Display name for this calendar",
+          "placeholder": "TaskNotes"
+        },
+        "dispatchMode": {
+          "label": "NLP Dispatch Endpoint",
+          "description": "Choose where Full Calendar forwards TaskNotes-targeted NLP requests.",
+          "options": {
+            "search": "Search + Create (selector modal)",
+            "create": "Direct Create (task creation modal NLP)"
+          }
+        },
+        "readOnly": {
+          "label": "Events",
+          "description": "Event edits open the TaskNotes editor. Drag-and-drop updates scheduled date and duration without showing a modal."
+        },
+        "adding": "Adding...",
+        "cancel": "Cancel"
+      },
+      "holidays": {
+        "calendarName": {
+          "label": "Calendar Name",
+          "description": "Display name shown in the calendar list"
+        },
+        "country": {
+          "label": "Country",
+          "description": "ISO 3166-1 alpha-2 country code, e.g. US, GB, DE, CA."
+        },
+        "state": {
+          "label": "State / Province",
+          "description": "State or province code for regional holidays, e.g. ca, ny, on, by. Leave empty for national holidays only."
+        },
+        "region": {
+          "label": "Region",
+          "description": "Sub-state region code for city or district level holidays. Leave empty if not needed."
+        },
+        "holidayTypes": {
+          "label": "Holiday Types",
+          "description": "Which tiers of holidays to display.",
+          "options": {
+            "public": "Public holidays only",
+            "public_bank": "Public + Bank holidays",
+            "public_bank_observance": "Public + Bank + Observance",
+            "all_except_optional": "All except optional",
+            "all": "All types"
+          }
+        },
+        "display": {
+          "label": "Display Style",
+          "description": "How holiday events are rendered on the calendar.",
+          "options": {
+            "block": "Normal event (block)",
+            "background": "Background event",
+            "inverseBackground": "Inverse background",
+            "auto": "Auto",
+            "none": "Hidden"
+          }
+        },
+        "adding": "Adding..."
+      },
+      "docs": {
+        "providerGuides": "Provider guides: ",
+        "fullNote": "Full Note calendar",
+        "dailyNote": "Daily Note calendar",
+        "journals": "Journals calendar",
+        "ics": "ICS calendars",
+        "caldav": "CalDAV calendars",
+        "caldavTasks": "CalDAV Tasks",
+        "google": "Google calendar",
+        "outlook": "Outlook calendar",
+        "tasks": "Tasks integration",
+        "bases": "Bases calendar",
+        "taskNotes": "TaskNote integration"
+      }
+    },
+    "categorization": {
+      "title": "Advanced categorization and Timeline",
+      "learnMoreLink": "here",
+      "enable": {
+        "label": "Enable advanced categorization (Title-based)",
+        "description": "Enable category-based coloring and unlock timeline views. This will modify event note titles and allow timeline visualization by category."
+      },
+      "disable": {
+        "modalTitle": "⚠️ Disable advanced categorization",
+        "modalDescription": "Choose how to disable this feature. You can disable without cleanup to preserve event titles and saved category settings, or disable and clean up to remove known category prefixes and saved category colors.",
+        "buttonDisableWithoutCleanup": "Disable without cleanup",
+        "buttonDisable": "Disable and clean up notes",
+        "buttonCancel": "Cancel"
+      }
+    },
+    "workspaces": {
+      "title": "Workspaces",
+      "description": "Create and manage calendar workspaces. Each workspace can have its own view settings, visible calendars, and filters.",
+      "addNew": {
+        "label": "Add new workspace",
+        "description": "Create a new calendar workspace"
+      },
+      "buttons": {
+        "new": "New Workspace",
+        "edit": "Edit",
+        "duplicate": "Duplicate",
+        "activate": "Activate",
+        "active": "Active",
+        "delete": "Delete"
+      },
+      "defaultName": "New Workspace",
+      "copyName": "{{name}} Copy"
+    },
+    "quickStart": {
+      "description": "To begin, add a calendar source using the \"+\" button in the \"Manage calendars\" section."
+    },
+    "viewOptions": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "list": "List",
+      "threeDays": "3 Days",
+      "timelineWeek": "Timeline Week",
+      "timelineDay": "Timeline Day"
+    },
+    "weekdays": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "changelog": {
+      "title": "Changelog",
+      "versionWithNumber": "Version {{version}}",
+      "modal": {
+        "title": "What's New in FCR",
+        "seeAllButton": "See all changelogs",
+        "donationMessage": "FCR is built at high velocity with AI-augmented engineering. If this has provided value to you, consider contributing to $25/month subsidy to help keep this pace sustainable.",
+        "donationButton": "Transparency Report & Donation"
+      },
+      "whatsNew": "What's New",
+      "viewFull": "View full changelog",
+      "whatsNewPageLink": "What's New page",
+      "changelogPageLink": "Changelog",
+      "loadOlder": {
+        "button": "Load older versions",
+        "loading": "Loading...",
+        "errorOffline": "Failed to load older versions. You may be offline."
+      }
+    },
+    "utils": {
+      "timelineDisabled": "Timeline view is disabled. Resetting default desktop view to \"Week\"."
+    },
+    "warnings": {
+      "oneDailyNote": "Only one daily note is allowed."
+    },
+    "activityWatch": {
+      "title": "ActivityWatch Integration",
+      "enable": {
+        "label": "Enable ActivityWatch Sync",
+        "description": "Periodically pull data from your local ActivityWatch instance."
+      },
+      "configButton": "⚙️ Configure ActivityWatch",
+      "sync": {
+        "targetNotSet": "Activitywatch sync: target calendar not set. Please configure in settings.",
+        "targetNotFoundOrReadOnly": "Activitywatch sync: target calendar ({{calendarId}}) not found or read-only.",
+        "fetchingData": "Activitywatch sync: fetching data...",
+        "failedFetchBuckets": "Failed to fetch buckets. Status: {{status}}",
+        "addedEvents": "ActivityWatch sync: added {{count}} events!",
+        "failedWithError": "ActivityWatch sync failed: {{message}}",
+        "failed": "ActivityWatch sync failed.",
+        "enabledPrompt": "Activitywatch enabled. Please configure the target calendar by clicking the gear icon."
+      }
+    },
+    "taskBacklog": {
+      "title": "Task backlog",
+      "addUnscheduledTask": "Add unscheduled task",
+      "sourceLabel": "Task backlog source",
+      "placeholder": "Task title...",
+      "newTitleLabel": "New task name",
+      "addBtnLabel": "Add task",
+      "missingDateLabel": "Missing date",
+      "searchPlaceholder": "Filter by task title, source, or location",
+      "searchAriaLabel": "Filter task backlog by task title, source, or location",
+      "clearSearchAriaLabel": "Clear backlog search",
+      "showAdvancedFiltersAriaLabel": "Show advanced filters",
+      "hideAdvancedFiltersAriaLabel": "Hide advanced filters",
+      "countFiltered": "{{shown}} of {{total}} unscheduled tasks",
+      "countUnscheduledSingular": "{{count}} unscheduled task",
+      "countUnscheduledPlural": "{{count}} unscheduled tasks",
+      "noProvidersTitle": "No task backlog providers configured.",
+      "noProvidersHelp": "Add a Tasks or CalDAV calendar source to use the backlog view.",
+      "emptyNoMatchesTitle": "No tasks matched \"{{query}}\".",
+      "emptyNoMatchesHelp": "Try fewer keywords or search by part of the task title, source, or location.",
+      "emptyUnscheduledTitle": "No unscheduled tasks.",
+      "emptyUnscheduledHelp": "Tasks missing their scheduling date will appear here.",
+      "openNoteAriaLabel": "Open note for {{title}}",
+      "paginationPrevious": "Previous",
+      "paginationNext": "Next",
+      "paginationPage": "Page {{current}} of {{total}}",
+      "loadMore": "Load more ({{count}})",
+      "helpText": "Creates an unscheduled task in your selected provider. ",
+      "learnMore": "Tasks Backlog Guide"
+    },
+    "tasksIntegration": {
+      "title": "Obsidian Tasks Integration",
+      "description": "Configure how Full Calendar schedules tasks from the Tasks backlog.",
+      "configButton": "Configure Tasks integration",
+      "modal": {
+        "title": "Tasks Integration"
+      },
+      "backlogDateTarget": {
+        "label": "Backlog filter date field",
+        "description": "Choose which Tasks date marker the backlog tracks. The backlog shows tasks missing this selected date marker.",
+        "scheduled": "Scheduled date",
+        "start": "Start date",
+        "due": "Due date"
+      },
+      "calendarDisplayDateTarget": {
+        "label": "Calendar display date field",
+        "description": "Choose which Tasks date marker Full Calendar uses to display Tasks events. There is no fallback to other date markers. Restart Obsidian or reload the plugin for this change to fully take effect."
+      },
+      "openEditModalAfterBacklogDrop": {
+        "label": "Open Tasks edit modal after backlog drop",
+        "description": "Open the Obsidian Tasks edit modal immediately after dragging a task from the backlog onto the calendar."
+      },
+      "includeGlobalQueryInBacklog": {
+        "label": "Include global query in the backlog",
+        "description": "Apply the Obsidian Tasks global query filters to the backlog view."
+      },
+      "backlogQuery": {
+        "label": "Backlog query",
+        "description": "Apply this Tasks query only to the Full Calendar backlog. Each supported line must match for a task to appear.",
+        "placeholder": "path does not include Templates\nfolder includes Projects\ntags do not include someday"
+      },
+      "taskDisplayFormat": {
+        "label": "Task time format",
+        "description": "Choose how Full Calendar writes time into Tasks lines.",
+        "standard": "Standard format",
+        "dayPlanner": "Day Planner Format"
+      }
+    },
+    "tasknotesIntegration": {
+      "title": "TaskNotes Integration",
+      "descriptionConfigured": "Configure how NLP dispatches to TaskNotes.",
+      "descriptionMissingSource": "TaskNotes integration is available. Add a TaskNotes calendar source to configure it.",
+      "docsLink": "TaskNotes integration",
+      "configButton": "Configure TaskNotes integration",
+      "noSource": "Add a TaskNotes calendar source first before configuring TaskNotes integration.",
+      "modal": {
+        "title": "TaskNotes Integration"
+      },
+      "source": {
+        "label": "TaskNotes Calendar Source",
+        "description": "Select which TaskNotes calendar source to configure."
+      },
+      "dispatchMode": {
+        "label": "NLP Dispatch Endpoint",
+        "description": "Choose whether Full Calendar should open TaskNotes search NLP or create NLP.",
+        "options": {
+          "search": "Search + Create (selector modal)",
+          "create": "Direct Create (task creation modal NLP)"
+        }
+      }
+    },
+    "fcrReminder": {
+      "title": "FCR Reminder Companion",
+      "description": "Sync your upcoming calendar events with the persistent FCR Reminder background companion daemon to receive native system-level toast notifications even when Obsidian is completely closed.",
+      "learnMore": "FCR Reminder Guide",
+      "enable": {
+        "label": "Enable companion integration",
+        "description": "Synchronize upcoming event alarms to the background companion daemon."
+      },
+      "apiUrl": {
+        "label": "Companion server url",
+        "description": "The loopback address of the FCR Reminder daemon.",
+        "placeholder": "http://127.0.0.1:45677"
+      },
+      "offlineBanner": {
+        "title": "⚠️ Companion app offline",
+        "message": "FCR Reminder is not running. Please start the companion app to enable native, offline notifications."
+      }
+    },
+    "footer": {
+      "message": "Do you like what you see?",
+      "buyMeACoffee": "☕ Buy me a coffee",
+      "suggestFeature": "💡 Suggest a new feature",
+      "raiseIssue": "🐛 Raise an issue"
+    },
+    "credentials": {
+      "legacyToggle": {
+        "name": "Store credentials in plaintext (sync compatibility)",
+        "desc": "Enable this if you sync your Obsidian vault across devices and want to avoid logging in again on every device. Keep disabled for maximum local security (uses OS keychain)."
+      },
+      "keychainMissing": "Keychain credentials missing on this device"
+    }
+  },
+  "modals": {
+    "linkedNotePreset": {
+      "title": "Select a Template Preset",
+      "description": "Choose a template to use for creating this linked note:",
+      "cancel": "Cancel"
+    },
+    "reminder": {
+      "snoozeFor": "Snooze for",
+      "dismiss": "Dismiss",
+      "openNote": "Open Note",
+      "snooze": "Snooze",
+      "snoozeWarningTitle": "⚠️ Snoozing Moves Event",
+      "snoozeWarningBody": "This is a default reminder. Snoozing will move the event start time forward.",
+      "presets": {
+        "5m": "5 minutes",
+        "10m": "10 minutes",
+        "15m": "15 minutes",
+        "30m": "30 minutes",
+        "1h": "1 hour"
+      }
+    },
+    "editEvent": {
+      "title": {
+        "new": "New Event",
+        "edit": "Edit Event"
+      },
+      "advancedOptions": "Advanced Options",
+      "buttons": {
+        "openNote": "Open Note",
+        "delete": "Delete",
+        "save": "Save Event"
+      },
+      "errors": {
+        "createNoCalendars": "Cannot create event: No writable calendars are available.",
+        "createError": "Error when creating event: {{message}}",
+        "eventNotFound": "Event not found.",
+        "detailsNotFound": "Event details not found.",
+        "parentNotFound": "Could not find the parent recurring event.",
+        "updateError": "Error when updating event: {{message}}",
+        "deleteError": "Error when deleting event: {{message}}"
+      },
+      "confirmations": {
+        "editParentTitle": "Edit Parent Event?",
+        "editParentMessage": "This property is inherited from the parent recurring event. Would you like to open the parent to make changes?"
+      },
+      "misc": {
+        "unknownCalendar": "Unknown Calendar"
+      },
+      "fields": {
+        "title": {
+          "placeholder": "Event Title"
+        },
+        "category": {
+          "placeholder": "Category (optional)"
+        },
+        "location": {
+          "placeholder": "Add location..."
+        },
+        "description": {
+          "placeholder": "Add description..."
+        },
+        "display": {
+          "label": "Display",
+          "tooltip": "Choose how this event appears on the calendar",
+          "options": {
+            "auto": "Normal event",
+            "background": "Background event",
+            "none": "Hidden"
+          }
+        },
+        "inCalendar": {
+          "label": "In Calendar"
+        },
+        "date": {
+          "label": "Date"
+        },
+        "time": {
+          "label": "Time"
+        },
+        "options": {
+          "label": "Options",
+          "allDay": "All day",
+          "isTask": "Is a Task",
+          "completed": "Completed"
+        },
+        "notification": {
+          "label": "Notify",
+          "presets": {
+            "30m": "30 minutes",
+            "1h": "1 hour",
+            "6h": "6 hours",
+            "12h": "12 hours",
+            "24h": "24 hours"
+          }
+        },
+        "repeats": {
+          "label": "Repeats",
+          "options": {
+            "none": "None",
+            "daily": "Daily",
+            "weekly": "Weekly",
+            "monthly": "Monthly",
+            "yearly": "Yearly"
+          },
+          "repeatEvery": "Repeat every",
+          "day": "day",
+          "days": "days",
+          "week": "week",
+          "weeks": "weeks",
+          "month": "month",
+          "months": "months",
+          "year": "year",
+          "years": "years",
+          "repeatOn": "Repeat on",
+          "onDay": "On day {{day}}",
+          "onThe": "On the",
+          "ordinal": {
+            "first": "first",
+            "second": "second",
+            "third": "third",
+            "fourth": "fourth",
+            "last": "last"
+          },
+          "yearlyText": "Repeats every year on {{date}}.",
+          "endRepeat": "End Repeat"
+        }
+      },
+      "tooltips": {
+        "recurringTaskCompletion": "Completion for recurring tasks can be toggled on individual instances in the calendar view.",
+        "dailyNoteRecurring": "Recurring events are not supported in Daily Notes. Please use a 'Full Note' calendar instead.",
+        "caldavTaskRecurrence": "Existing VTODO recurrence is preserved, but creating or changing recurring CalDAV tasks is not yet supported.",
+        "inheritedProperty": "This property is inherited. Click to edit the parent recurring event."
+      }
+    },
+    "deleteRecurring": {
+      "title": "Delete Recurring Event",
+      "description": "This is a recurring event. What would you like to do with all of its future \"override\" instances (i.e., events that you have dragged or modified)?",
+      "deleteInstance": {
+        "name": "Delete only this instance",
+        "description": "Delete only the instance on {{date}}. This will skip this date in the recurrence.",
+        "button": "Delete This Instance"
+      },
+      "promoteChildren": {
+        "name": "Promote child events",
+        "description": "Turn all overriden events (if any) into standalone, single events. They will no longer be linked to this recurring series.",
+        "button": "Promote Children"
+      },
+      "deleteAll": {
+        "name": "Delete entire sequence",
+        "description": "Delete the recurring event and every override associated with this recurring series. This cannot be undone.",
+        "button": "Delete Sequence"
+      },
+      "cancel": "Cancel"
+    },
+    "rescheduleRecurring": {
+      "title": "Reschedule Recurring Event",
+      "description": "This is a recurring event. Choose whether to reschedule only this occurrence or the entire recurring sequence.",
+      "rescheduleInstance": {
+        "name": "Reschedule only this instance",
+        "description": "Move only the instance on {{date}}. The rest of the sequence will keep its current schedule.",
+        "descriptionNoDate": "Move only this instance. The rest of the sequence will keep its current schedule.",
+        "button": "Move This Instance"
+      },
+      "rescheduleSequence": {
+        "name": "Reschedule entire sequence",
+        "description": "Update the recurring event itself so every occurrence follows the new schedule.",
+        "button": "Move Sequence"
+      },
+      "cancel": "Cancel"
+    },
+    "workspace": {
+      "title": {
+        "create": "Create Workspace",
+        "edit": "Edit Workspace"
+      },
+      "sections": {
+        "general": "General",
+        "viewConfiguration": "View Configuration",
+        "calendarFilters": "Calendar Filters",
+        "categoryFilters": "Category Filters",
+        "advancedBases": "Advanced Bases Filtering",
+        "appearanceOverrides": "Appearance Overrides",
+        "viewClipping": "View Clipping & Time Range"
+      },
+      "fields": {
+        "name": {
+          "label": "Name",
+          "description": "A unique name for this workspace",
+          "placeholder": "e.g., Work Focus, Family Planning"
+        },
+        "desktopView": {
+          "label": "Desktop view",
+          "description": "Default view for desktop devices"
+        },
+        "mobileView": {
+          "label": "Mobile view",
+          "description": "Default view for mobile devices"
+        },
+        "defaultDate": {
+          "label": "Default date (optional)",
+          "description": "Date to jump to when activating workspace (e.g., \"today\", \"2024-01-01\")",
+          "placeholder": "today, next-week, 2024-01-01"
+        },
+        "basisQueryPath": {
+          "label": "Bases query file path",
+          "description": "Optional path to a .base file containing filter rules to apply on top of this workspace (e.g., queries/work.base)"
+        },
+        "visibleCalendars": {
+          "label": "Visible calendars",
+          "description": "Select which calendars to show (leave empty to show all)",
+          "noCalendars": "No calendars configured. Configure calendars in the main settings first."
+        },
+        "categoryFilterMode": {
+          "label": "Category filter mode",
+          "description": "Choose how to filter categories",
+          "options": {
+            "showOnly": "Show only selected categories",
+            "hide": "Hide selected categories"
+          }
+        },
+        "categories": {
+          "label": "Categories",
+          "description": "Select categories to include/exclude (leave empty to show all)",
+          "noCategories": "No categories configured. Configure categories in the Categorization settings.",
+          "requiresAdvanced": "Category filtering requires Advanced Categorization to be enabled in the main settings."
+        },
+        "notices": {
+          "enableBases": "Please enable the Obsidian Bases plugin first."
+        },
+        "overrideBusinessHours": {
+          "label": "Override business hours",
+          "description": "Enable custom business hours for this workspace"
+        },
+        "enableBusinessHours": {
+          "label": "Enable business hours",
+          "description": "Show business hours highlighting in this workspace"
+        },
+        "businessDays": {
+          "label": "Business days",
+          "description": "Select which days of the week are business days"
+        },
+        "businessHoursStart": {
+          "label": "Business hours start time",
+          "description": "When your working day begins (format: HH:mm)"
+        },
+        "businessHoursEnd": {
+          "label": "Business hours end time",
+          "description": "When your working day ends (format: HH:mm)"
+        },
+        "defaultCalendar": {
+          "label": "Default calendar for new events",
+          "description": "Calendar pre-selected when creating an event in this workspace",
+          "options": {
+            "useDefault": "Use global default"
+          }
+        },
+        "timelineCategories": {
+          "label": "Timeline categories",
+          "description": "Default state for timeline category groups",
+          "options": {
+            "useDefault": "Use default setting",
+            "expanded": "Expanded by default",
+            "collapsed": "Collapsed by default"
+          }
+        },
+        "slotMinTime": {
+          "label": "Earliest time to display",
+          "description": "Override the earliest time visible in time grid views (format: HH:mm)",
+          "placeholder": "Use global default"
+        },
+        "slotMaxTime": {
+          "label": "Latest time to display",
+          "description": "Override the latest time visible in time grid views (format: HH:mm)",
+          "placeholder": "Use global default"
+        },
+        "weekendDisplay": {
+          "label": "Weekend display",
+          "description": "Override whether to show weekends in the calendar",
+          "options": {
+            "show": "Show weekends",
+            "hide": "Hide weekends"
+          }
+        },
+        "hiddenDays": {
+          "label": "Hidden days",
+          "description": "Override which days to hide from the calendar",
+          "options": {
+            "showAll": "Show all days",
+            "hideWeekends": "Hide weekends (Sun, Sat)",
+            "hideSunday": "Hide Sunday",
+            "hideSaturday": "Hide Saturday",
+            "hideMonday": "Hide Monday",
+            "hideFriday": "Hide Friday"
+          }
+        },
+        "dayMaxEvents": {
+          "label": "Max events per day (month view)",
+          "description": "Override the maximum number of events to show per day in month view",
+          "options": {
+            "useDefault": "Use default limit",
+            "noLimit": "No limit",
+            "one": "1 event",
+            "two": "2 events",
+            "three": "3 events",
+            "four": "4 events",
+            "five": "5 events",
+            "ten": "10 events"
+          }
+        }
+      },
+      "calendarTypes": {
+        "local": "Local:",
+        "dailyNotes": "Daily Notes:",
+        "ics": "ICS:",
+        "caldav": "CalDAV:",
+        "google": "Google:",
+        "outlook": "Outlook:"
+      },
+      "buttons": {
+        "save": "Save",
+        "create": "Create",
+        "cancel": "Cancel"
+      }
+    },
+    "bulkCategorize": {
+      "title": "Choose a Bulk-Update Method",
+      "description": "How would you like to automatically categorize existing events in your local calendars? Note that this is a one time operation that will modify your event notes to match the required formatting.",
+      "smartFolder": {
+        "name": "Use Parent Folder (Smart)",
+        "description": "Use parent folder names as the category for UN-categorized events. Events that already look like 'Category - Title' will be skipped.",
+        "button": "Run Smart Update"
+      },
+      "forcedFolder": {
+        "name": "Use Parent Folder (Forced)",
+        "description": "PREPENDS the parent folder name to ALL event titles, even if they already have a category. Warning: This creates nested categories.",
+        "button": "Run Forced Update"
+      },
+      "forcedDefault": {
+        "name": "Forced Default Update",
+        "description": "Prepends a category you provide to ALL event titles. If a category already exists, the new one will be added in front (e.g., New - Old - Title).",
+        "placeholder": "Enter default category",
+        "button": "Set Default",
+        "errorEmpty": "Please enter a category name."
+      }
+    },
+    "activityWatchSetup": {
+      "saved": "Activitywatch configuration saved",
+      "apiUrl": "API URL",
+      "targetCalendar": "Target Calendar",
+      "unselected": "Unselected",
+      "strategy": {
+        "title": "Sync Strategy",
+        "auto": "Sync from Last Checked",
+        "custom": "Custom Date Range",
+        "datePlaceholder": "Select Start and End Date",
+        "lastSynced": "Last checked",
+        "neverSynced": "Never checked",
+        "autoSyncEnabled": "Enable automatic sync",
+        "autoSyncIntervalMins": "Auto-sync interval (minutes)",
+        "autoDescription": "Manual and automatic syncs update the last checked time.",
+        "customDescription": "Debug-only manual range. It never updates the last checked time and cannot run automatically."
+      },
+      "profiles": {
+        "title": "Context Profiles (Best-Fit FSM)",
+        "config": "Profile Configuration",
+        "btnDelete": "Delete",
+        "name": "Profile Name",
+        "category": "Category (Color tag)",
+        "activationThreshold": "Activation Threshold (Mins)",
+        "softBreakLimit": "Soft Break Limit (Mins)",
+        "titleTemplate": "Title Template",
+        "titleTemplatePlaceholder": "e.g. Work - {app}",
+        "primaryEvidenceRules": "Primary Evidence Rules (Can start and sustain sessions)",
+        "supportingEvidenceRules": "Supporting Evidence Rules (Can sustain, but cannot start)",
+        "hardBreakRules": "Hard Break Rules (Instantly end the session)",
+        "btnAddProfile": "+ Add Context Profile"
+      },
+      "rules": {
+        "bucketPlaceholder": "Bucket (e.g. window)",
+        "fieldPlaceholder": "Field (e.g. app)",
+        "matchPatternPlaceholder": "Match Pattern",
+        "regex": "Regex",
+        "btnAdd": "+ Add Rule"
+      },
+      "buttons": {
+        "save": "Save",
+        "cancel": "Cancel"
+      }
+    }
+  },
+  "google": {
+    "auth": {
+      "expired": "Google authentication expired. Please reconnect your account.",
+      "authFailed": "Could not authenticate calendar. Please try re-adding it in settings.",
+      "popupBlocked": "Popup blocked. Please allow popups for Obsidian.",
+      "customCredsMissing": "Custom Google Client ID and Secret must be set in the plugin settings.",
+      "stateMismatch": "Google authentication failed. State mismatch.",
+      "success": "Successfully connected Google Account!",
+      "failed": "Failed to connect Google Account. Check the developer console for details.",
+      "copyModalTitle": "Google Authorization Link",
+      "copyModalDesc": "Please copy the link below, paste it into your browser of choice, complete the authorization, and then return to Obsidian.",
+      "copyModalCopyButton": "Copy Link",
+      "copyModalCopiedButton": "Copied!",
+      "copyModalCloseButton": "Close",
+      "waitingModalTitle": "Waiting for Authentication",
+      "waitingModalDesc": "Obsidian is waiting for you to complete the authentication in your browser. Once completed, this window will close automatically.",
+      "waitingModalCancel": "Cancel"
+    },
+    "title": "Google Accounts",
+    "copyPasteAuth": {
+      "enable": {
+        "label": "Copy-paste authorization",
+        "description": "Show a popup with the authorization URL to manually copy and paste into a browser of your choice, instead of automatically opening the system default browser."
+      }
+    },
+    "customCredentials": {
+      "enable": {
+        "label": "Use custom Google Cloud credentials",
+        "description": "Use your own OAuth Client ID and Secret instead of the default. Plugin currently stands verified by Google, but you may still use this option."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "description": "Your Google OAuth 2.0 Client ID"
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "description": "Your Google OAuth 2.0 Client Secret"
+      }
+    },
+    "noAccounts": "No Google accounts connected. Add Google calendar In Calendars section to connect an account.",
+    "accountDescription": "Connected account. ID: {{id}}",
+    "buttons": {
+      "disconnect": "Disconnect",
+      "selectCalendars": "Select Calendars",
+      "connectAccount": "Connect Google Account",
+      "backToAccounts": "Back to Accounts",
+      "addCalendars": "Add {{count}} Calendar",
+      "addCalendarsPlural": "Add {{count}} Calendars",
+      "selectTaskLists": "Select task lists",
+      "addTaskList": "Add Google Task List"
+    },
+    "selectAccount": {
+      "title": "Connect a Google Account"
+    },
+    "selectCalendars": {
+      "title": "Select Calendars from {{email}}",
+      "noCalendars": "No new calendars found, or all calendars from this account have been added.",
+      "description": "Choose which calendars you would like to add to Obsidian."
+    },
+    "selectTasks": {
+      "title": "Select Google Task Lists for {{email}}",
+      "noTaskLists": "No remaining task lists found on this account.",
+      "description": "Select the Google Task lists you want to add."
+    },
+    "errors": {
+      "tokenRefreshFailed": "Failed to refresh token for {{email}}. Please try connecting the account again.",
+      "fetchTaskListsFailed": "Failed to fetch task lists for {{email}}. {{message}}"
+    },
+    "loading": "Loading..."
+  },
+  "outlook": {
+    "auth": {
+      "expired": "Outlook authentication expired. Please reconnect your account.",
+      "authFailed": "Could not authenticate Outlook calendar. Please re-add it in settings.",
+      "desktopOnly": "Outlook sign-in is currently available on desktop only.",
+      "clientIdMissing": "Microsoft Client ID is required. Configure it in Integrations > Outlook.",
+      "proxyMissing": "Microsoft proxy URL is required. Configure it in Integrations > Outlook.",
+      "stateMismatch": "Outlook authentication failed. State mismatch.",
+      "success": "Successfully connected Outlook account!",
+      "failed": "Failed to connect Outlook account. Check the developer console for details.",
+      "callbackSuccess": "Authentication successful! Please return to Obsidian.",
+      "callbackFailed": "Authentication failed. Check Obsidian console and try again."
+    },
+    "title": "Outlook Accounts",
+    "docs": {
+      "setupGuide": "Outlook calendar setup"
+    },
+    "customCredentials": {
+      "enable": {
+        "label": "Use custom Microsoft credentials",
+        "description": "Use your own Microsoft Client ID and proxy URL instead of the built-in defaults."
+      }
+    },
+    "config": {
+      "clientId": {
+        "label": "Microsoft Client ID",
+        "description": "OAuth app Client ID used for Microsoft login."
+      },
+      "proxyUrl": {
+        "label": "Vercel proxy URL",
+        "description": "Base URL for your Microsoft token proxy (for example: https://your-app.vercel.app).",
+        "placeholder": "https://your-app.vercel.app"
+      },
+      "clientIdPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    },
+    "misc": {
+      "settingsSourcesLink": "Calendar sources settings"
+    },
+    "noAccounts": "No Outlook accounts connected. Add an Outlook calendar in Calendars to connect one.",
+    "accountDescription": "Connected account. ID: {{id}}",
+    "buttons": {
+      "disconnect": "Disconnect",
+      "selectCalendars": "Select Calendars",
+      "connectAccount": "Connect Outlook Account",
+      "backToAccounts": "Back to Accounts",
+      "addCalendars": "Add {{count}} Calendar",
+      "addCalendarsPlural": "Add {{count}} Calendars"
+    },
+    "selectAccount": {
+      "title": "Connect an Outlook Account"
+    },
+    "selectCalendars": {
+      "title": "Select Calendars from {{email}}",
+      "noCalendars": "No new calendars found, or all calendars from this account have already been added.",
+      "description": "Choose which Outlook calendars you would like to add to Obsidian."
+    },
+    "errors": {
+      "fetchCalendars": "Failed to fetch Outlook calendars for {{email}}. {{message}}",
+      "unknown": "Unknown error"
+    },
+    "loading": "Loading..."
+  },
+  "ui": {
+    "view": {
+      "errors": {
+        "cacheNotLoaded": "Full Calendar event cache not loaded.",
+        "chronoAnalyserDesktopOnly": "The ChronoAnalyser is only available on desktop.",
+        "chronoAnalyserFailed": "Failed to open ChronoAnalyser. Please check the console.",
+        "modifyEventFailed": "Failed to modify event.",
+        "taskScheduleFailed": "Failed to schedule task: {{message}}"
+      },
+      "success": {
+        "taskScheduled": "Task scheduled successfully"
+      },
+      "workspace": {
+        "switcherLabel": "Workspace"
+      },
+      "buttons": {
+        "analysis": "Analysis",
+        "defaultView": "Default View"
+      },
+      "contextMenu": {
+        "turnIntoTask": "Turn into task",
+        "removeCheckbox": "Remove checkbox",
+        "openLinkedNote": "Open linked note",
+        "goToNote": "Go to note",
+        "delete": "Delete",
+        "noActions": "No actions available on remote events"
+      }
+    },
+    "buttons": {
+      "addCalendar": "Add Calendar"
+    },
+    "navigation": {
+      "thisMonth": "This Month",
+      "thisWeek": "This Week",
+      "customDate": "Custom Date...",
+      "viewMonth": "View Month",
+      "viewWeek": "View Week",
+      "viewDay": "View Day"
+    }
+  },
+  "notifications": {
+    "eventStarting": {
+      "title": "Event Starting Soon"
+    },
+    "allDaySuffix": "(All-day)",
+    "inMinutes": "(In {{mins}} minutes)",
+    "failed": "Full Calendar: Failed to create desktop notification.",
+    "errorBody": "Full Calendar: Could not show desktop notification. Check console for errors."
+  },
+  "api": {
+    "authorization": {
+      "title": "Authorization request",
+      "requestingPluginMessage": "The plugin \"{{pluginId}}\" is requesting access to Full Calendar.",
+      "reasonLabel": "Reason: {{reason}}",
+      "permissionsLabel": "Select which permissions to grant. You can change these later in settings.",
+      "approve": "Approve",
+      "deny": "Deny"
+    },
+    "settings": {
+      "title": "API access",
+      "managePermissions": "Manage permissions for \"{{pluginId}}\".",
+      "noAuthorizedPlugins": "No external plugins are authorized.",
+      "editAccess": "Edit access",
+      "revoke": "Revoke",
+      "cancel": "Cancel",
+      "save": "Save",
+      "serverTitle": "Local REST Server",
+      "serverEnable": "Enable REST Server",
+      "serverEnableDesc": "Starts a local HTTP server inside Obsidian, enabling programmatic integrations from the command-line (CLI), scripts, or third-party web apps via REST API. Listening on localhost (127.0.0.1) only.",
+      "serverPort": "REST Server Port",
+      "serverPortDesc": "The port number the local REST API server should listen on. Requires enabling the REST server.",
+      "patTitle": "Personal Access Tokens (PATs)",
+      "patGenerate": "Generate Token",
+      "patNone": "No Personal Access Tokens generated yet.",
+      "patScopes": "Scopes: {{scopes}}",
+      "patCreated": "Created: {{date}}",
+      "patLastUsed": "Last Used: {{date}}",
+      "patNeverUsed": "Never",
+      "patModalTitle": "Generate Personal Access Token",
+      "patModalDesc": "Personal Access Tokens allow you to query, create, or modify events in Full Calendar from DataviewJS, Templater, or command-line (CLI) scripts without showing authorization popups.",
+      "patModalName": "Token Name",
+      "patModalNameDesc": "Describe what this token is for (e.g., 'PythonSyncScript').",
+      "patModalPermissions": "Permissions / Scopes",
+      "patModalCancel": "Cancel",
+      "patModalGenerate": "Generate Token",
+      "patSuccessTitle": "Token Generated Successfully",
+      "patSuccessDesc": "Your new Personal Access Token '{{name}}' has been created. Copy this token now. You will not be able to see it again!",
+      "patSuccessCopy": "Copy",
+      "patSuccessCopied": "Copied!",
+      "patSuccessClose": "I have copied the token"
+    }
+  },
+  "nlp": {
+    "modalTitle": "FCR Command",
+    "placeholder": "e.g., tomorrow at 4pm Team standup, open settings, go to next tuesday",
+    "submit": "Run",
+    "cancel": "Cancel",
+    "previewHint": "Type a command — create events, navigate views, open settings, and more.",
+    "noCalendars": "No writable calendars available. Please add a calendar first.",
+    "parseSuccess": "Command executed.",
+    "navigating": "Navigating to {{view}} view.",
+    "intents": {
+      "CREATE_EVENT": "📅 Create Event",
+      "NEW_EVENT": "📅 New Event (blank)",
+      "NAVIGATE_DAY": "🧭 Navigate → Day View",
+      "NAVIGATE_WEEK": "🧭 Navigate → Week View",
+      "NAVIGATE_MONTH": "🧭 Navigate → Month View",
+      "OPEN_CALENDAR": "📖 Open Calendar",
+      "OPEN_SIDEBAR": "📖 Open Sidebar",
+      "OPEN_SETTINGS": "⚙️ Open Settings",
+      "OPEN_CHRONO": "📊 Open ChronoAnalyser",
+      "SHOW_CHANGELOG": "📋 Show Changelog",
+      "SHOW_MILESTONES": "🏅 Show Milestones",
+      "RESET_CACHE": "🗑️ Reset Event Cache",
+      "REVALIDATE_REMOTE": "🔄 Revalidate Remote Calendars",
+      "SYNC_ACTIVITYWATCH": "⏱️ Sync ActivityWatch",
+      "GOTO_DATE": "📆 Go to Date"
+    },
+    "descriptions": {
+      "OPEN_SETTINGS": "Opens the Full Calendar settings tab.",
+      "OPEN_CHRONO": "Launches the ChronoAnalyser dashboard.",
+      "SHOW_CHANGELOG": "Displays the latest release notes.",
+      "SHOW_MILESTONES": "Opens the milestones page in settings.",
+      "RESET_CACHE": "Clears and rebuilds the event cache.",
+      "REVALIDATE_REMOTE": "Forces a fresh sync of all remote calendars.",
+      "SYNC_ACTIVITYWATCH": "Pulls latest data from ActivityWatch."
+    },
+    "preview": {
+      "target": "Target",
+      "title": "Title",
+      "date": "Date",
+      "time": "Time",
+      "allDay": "All day",
+      "calendar": "Calendar",
+      "recurrence": "Recurrence",
+      "every": "Every",
+      "patternsMatched": "✓ {{count}} pattern matched"
+    },
+    "notices": {
+      "cacheReset": "Event cache has been reset.",
+      "awNotEnabled": "ActivityWatch is not enabled. Enable it in settings first.",
+      "fcrCompanionNotEnabled": "FCR Reminder Companion is not enabled. Enable it in settings first."
+    }
+  },
+  "availability": {
+    "settings": {
+      "header": "Availability Sharing",
+      "headerDesc": "Configure settings for generating availability schedules. All calculations are performed locally and uploaded directly to GitHub.",
+      "links": {
+        "guide": "Availability Guide",
+        "security": "API & Security Settings",
+        "privacy": "Privacy Policy"
+      },
+      "privacyCleanupTitle": "Data Privacy & Cleanup",
+      "privacyCleanupDesc": "No calendar data, schedules, or event details are ever sent to our servers. All calculations occur locally on your device. Published web links are stored as secret Gists under your own GitHub account.",
+      "cleanupTokenHelp": "To clear your Access Token locally, delete the token field above. To delete a published web link, delete the secret Gist from your",
+      "cleanupGistLink": "GitHub Gists Dashboard.",
+      "githubPat": "GitHub Personal Access Token",
+      "githubPatDesc": "Used to upload availability as secret Gists. Requires the \"gist\" scope.",
+      "githubPatLink": "👉 Generate a GitHub token with the Gist scope pre-selected",
+      "exportPath": "Default Export Path",
+      "exportPathDesc": "Vault folder path where availability markdown files will be saved (leave blank for root).",
+      "startTime": "Default Daily Start Time",
+      "startTimeDesc": "Start hour for calculated daily slots when sharing availability.",
+      "endTime": "Default Daily End Time",
+      "endTimeDesc": "End hour for calculated daily slots when sharing availability."
+    },
+    "modal": {
+      "title": "Share Availability",
+      "introDesc": "Configure your availability options below to export a formatted Markdown schedule to your vault, or generate a secure, interactive web booking page.",
+      "dateRange": "Date Range",
+      "dateRangeDesc": "Select the start and end dates for the availability period.",
+      "timeRange": "Daily Time Range",
+      "timeRangeDesc": "Select the daily start and end hours for available slots.",
+      "excludeWeekends": "Exclude Weekends",
+      "excludeWeekendsDesc": "Skip Saturday and Sunday availability slots",
+      "anonymize": "Anonymization Level",
+      "anonymizeDesc": "Choose whether to include event titles",
+      "anonymizeFull": "Fully Anonymized (Free/Busy status)",
+      "anonymizeSemi": "Semi-Anonymized (Show Event Titles)",
+      "calendarsTitle": "Calendars to Include",
+      "noCalendars": "No calendars configured.",
+      "btnMarkdown": "Export as Markdown File",
+      "btnWebLink": "Generate Web Link",
+      "setupTitle": "Enable Web Sharing",
+      "setupDesc": "To share your schedule online, the plugin publishes a secret file under your GitHub account. All calendar calculations are performed locally on your device, and zero data is stored or tracked on our servers under any circumstances.",
+      "setupStep1": "Step 1: Generate your GitHub Access Token",
+      "setupStep1Link": "👉 Click here to create a pre-configured token",
+      "setupStep2": "Step 2: Paste your token below to enable",
+      "setupPlaceholder": "github_pat_...",
+      "btnSaveAndGenerate": "Save Token & Generate Link",
+      "btnGenerating": "Generating Link...",
+      "btnBack": "Back",
+      "noticeSuccessMd": "Availability exported to vault at: {{path}}",
+      "noticeSuccessGist": "Availability schedule published! Link copied to clipboard.",
+      "noticeFailedMd": "Export failed: {{error}}",
+      "noticeFailedGist": "Web link generation failed: {{error}}",
+      "successModalTitle": "Web Link Generated!",
+      "successModalDesc": "Your availability schedule is online. Copy the link below to share it with clients or colleagues:",
+      "successModalCopy": "Copy Link",
+      "successModalCopied": "Copied!",
+      "warningLargeRange": "Warning: Selecting a date range longer than 90 days may cause performance slowdowns."
+    }
+  },
+  "exportModal": {
+    "title": "Export Event Cache",
+    "calendarsTitle": "Calendars to Include",
+    "fileName": "Export File Name",
+    "fileNameDesc": "Name of the generated .ics file.",
+    "targetFolder": "Target Vault Folder",
+    "targetFolderDesc": "Folder in your vault where the file will be saved.",
+    "btnSave": "Save to Vault",
+    "btnDownload": "Download ICS File",
+    "btnCancel": "Cancel",
+    "noCalendars": "No calendars available for export.",
+    "noticeSuccessSave": "Successfully saved calendar export to {{path}}",
+    "noticeFailedSave": "Failed to save calendar export: {{error}}",
+    "noticeNoCalendarsSelected": "Please select at least one calendar to export.",
+    "filterTitle": "Filter Events",
+    "period": "Export Period",
+    "periodDesc": "Select whether to export all events or a specific date range.",
+    "periodAll": "Export All Events",
+    "periodRange": "Specific Date Range",
+    "dateRange": "Date Range",
+    "dateRangeDesc": "Select the start and end dates to export.",
+    "includeTypes": "Include Types",
+    "includeTypesDesc": "Select whether to include events, tasks, or both.",
+    "includeTypesAll": "Events and Tasks",
+    "includeTypesEvents": "Events Only",
+    "includeTypesTasks": "Tasks Only",
+    "includeAllDay": "Include All-Day Events",
+    "includeAllDayDesc": "Toggle whether to include all-day events/tasks.",
+    "excludeWeekends": "Exclude Weekends",
+    "excludeWeekendsDesc": "Filter out events that occur on Saturdays or Sundays.",
+    "filterDailyTimeRange": "Filter by Daily Time Range",
+    "filterDailyTimeRangeDesc": "Only export timed events occurring between specific hours of the day.",
+    "dailyTimeRange": "Daily Hours",
+    "dailyTimeRangeDesc": "Select the daily time window.",
+    "categoriesTitle": "Categories to Include",
+    "taskStatus": "Task Completion Status",
+    "taskStatusDesc": "Filter tasks by their completion status.",
+    "taskStatusAll": "All Tasks",
+    "taskStatusIncomplete": "Incomplete Tasks Only",
+    "taskStatusCompleted": "Completed Tasks Only"
+  },
+  "linkedNotes": {
+    "untitledNote": "Untitled Linked Note"
+  }
+}

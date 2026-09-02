@@ -1,0 +1,321 @@
+# Provider Implementations and Patches
+
+!!! abstract "Implementation focus"
+    This page summarizes important provider implementations and highlights non-standard behavior or patches that contributors must preserve.
+
+## Provider families & load priorities
+
+| Family      | Providers             | Load Priority | Notes |
+| ----------- | --------------------- | :---: | ----------------------------------------------------------------------- |
+| Local       | Full Note             | `10`  | Stage 0 local sync. Vault-backed, file-centric parsing and persistence. |
+| Local       | Daily Note            | `20`  | Stage 0 local sync. List item parsing under heading, Dataview format support. |
+| Local       | Journals              | `20`  | Stage 0 local sync. Reuses Daily Note date-note CRUD base for Day journals. |
+| Local       | Obsidian Bases        | `10`  | Stage 0 local sync. Evaluates `.base` filters and frontmatter date fields. Read-only. |
+| Integration | Tasks                 | `30`  | Stage 0 local sync. Plugin cache integration, surgical markdown line updates. |
+| Integration | TaskNotes             | `40`  | Stage 0 local sync. Service/UI integration with provider-owned NLP endpoint. |
+| Virtual     | Holidays              | `5`   | Stage 0 virtual. Computed on-the-fly from bundled data; no vault/network backing. |
+| Remote      | CalDAV                | `110` | Stage 1 & 2 remote async. RFC 4791 protocol support with defensive fallback. |
+| Remote      | CalDAV Tasks          | `115` | Stage 1 & 2 remote async. CalDAV VTODO task collection synchronization. |
+| Remote      | Google                | `120` | Stage 1 & 2 remote async. OAuth authenticated sync with recurrence handling. |
+| Remote      | Google Tasks          | `125` | Stage 1 & 2 remote async. Tasks API integration with union OAuth scope preservation. |
+| Remote      | ICS                   | `140` | Stage 1 & 2 remote async. Read-only hybrid provider (HTTP URL & local file). |
+| Remote      | Outlook               | `150` | Stage 1 & 2 remote async. OAuth Code + PKCE Graph API sync. |
+
+## Key implementation notes
+
+### Full Note Provider
+
+Creates one-note-per-event records, supports full CRUD, and uses robust filename collision handling to avoid destructive overwrites.
+
+**Location & Description Mapping**: Parses and writes `location` (geographic/logical address) and `description` (multiline text) dynamically inside the note's YAML frontmatter block.
+
+**Frontmatter Serialization & Colon Safety**: All string properties in frontmatter are escaped and double-quoted by default when serialized (`escapeYamlString` in `frontmatter.ts` and `noteUtils.ts`). This prevents unquoted colons (`title: Super: Event`) from breaking Obsidian's YAML metadata parser. When reading note files, `getEventsInFile` utilizes `parseFrontmatterWithFallback` if Obsidian's `metadataCache` fails or returns unparsed metadata due to unquoted colons in historical or manually-edited notes.
+
+**Recurrence rules**: Supports weekly, monthly (including specific weekday `repeatOn`), yearly, and daily (`fcrDaily` with optional `repeatInterval`) recurring events. Files for daily recurring events are named with `(Every day)` or `(Every X days)` to provide clean visual identification.
+
+### Daily Note Provider
+
+Parses list items under configured heading and performs line-targeted updates. Implements a persistent locally-allocated `uid` mechanism (`[uid:: N]`) instead of legacy deduplication matching, enabling deterministic title edits and O(1) hinted line lookups during sync updates.
+
+Note lookup and creation are delegated through a source adapter:
+
+- `ObsidianDailyNoteSourceAdapter` preserves the existing `obsidian-daily-notes-interface` integration for core Daily Notes and Periodic Notes.
+- `JournalsDailyNoteSourceAdapter` consumes a `JournalsBridge`, selects a configured Day journal, and delegates resolution/creation to that exact journal. Journals remains optional and owns its folder, naming, template, and frontmatter initialization.
+
+`JournalsBridge` is the only compatibility boundary. It prefers Journals 3.2+'s `obsidian-journals-api` locator and documented asynchronous surface, then falls back to the capability-checked Journals 2.x runtime. Provider and UI code do not branch on plugin version strings or private 3.x fields. The official adapter uses `listJournals({ writeType: "day" })`, `notesFor`, `journalOf`, and `ensureNote`; exact journal-name selectors preserve multiple-Day-journal isolation. The legacy adapter retains `journals`, `getJournal`, `index`, and `journal.open` behavior for 2.x.
+
+Both adapters feed the same heading parser, serializer, UID allocator, and CRUD implementation. The 3.2 API makes note operations asynchronous, so CRUD awaits bridge results. FCR's synchronous event-handle and file-relevance contracts use only a selected-journal path/date cache hydrated by authoritative API reads and maintained by `noteAdded`/`noteRemoved` subscriptions. Provider teardown disposes those subscriptions during source reload and plugin unload. `journalRenamed` migrates every matching persisted `journalId`; Journals defines the journal name itself as identity.
+
+Journals 3.2 does not expose journal templates through its public API. Heading suggestions therefore come from headings in existing selected-journal notes, while manual heading entry remains available. The 2.x adapter continues to inspect its public-at-runtime template settings for the legacy UX.
+
+Daily Notes and Journals have independent persisted source discriminators (`dailynote` and `journals`). `JournalsProvider` reuses `DailyNoteProvider` as its date-note CRUD base, while remaining separately registered so multiple selected Day journals can coexist without participating in the single Daily Note source limit. Legacy Journals sources saved as `type: dailynote` plus `provider: journals` are migrated to `type: journals`.
+
+**Location & Description Mapping**: Serializes `location` and `description` into Dataview inline attribute format (`[location:: My Location]  [description:: My Description]`) within the daily note bullet list items.
+
+Timed-event serialization is source-configured and provider-owned:
+
+- `default`: writes inline Dataview time fields such as `[startTime:: 02:30]` and `[endTime:: 03:30]`
+- `dayPlanner`: writes a strict prefixed title form: `HH:mm - HH:mm Title`
+
+Read behavior must stay format-agnostic:
+
+- First prefer inline `startTime` and `endTime` fields when present.
+- Only if those fields are absent, fall back to strict `HH:mm - HH:mm Title` parsing.
+- Do not couple read behavior to the provider's configured write format.
+
+This split allows forward writes to follow the selected provider format while preserving compatibility with older daily-note lines and mixed historical data.
+
+### ICS Provider (non-standard hybrid)
+
+Single provider supports both remote URLs (`http`, `https`, `webcal`) and local vault `.ics` files. It is intentionally read-only and normalizes remote/local acquisition into one contract surface.
+
+Timezone and recurrence edge handling rationale is documented in [RRULE Timezone Date-Shift Fix](../dev-logs/devlog_rrule_timezone_patch.md).
+
+### CalDAV Provider (protocol patch behavior)
+
+Uses direct `REPORT`/`GET` flow with robust XML namespace handling and fallback retrieval paths when calendar-data is not returned inline. This is intentionally defensive due to server variability.
+
+#### Legacy mixed VTODO & VEVENT dual-REPORT architecture
+- **Dual-REPORT Strategy:** Under the CalDAV RFC 4791 specification, time-range queries cannot filter for both `VEVENT` and `VTODO` components using a logical `OR` condition within a single `calendar-query` report, because sibling `comp-filter` elements are logically ANDed. To query both component types efficiently and standard-compliantly, the provider executes two sequential `REPORT` queries: one for `VEVENT` and one for `VTODO`.
+- **Fallback Avoidance:** If a server does not support standard `REPORT` queries and triggers a compatibility `PROPFIND` fallback (which fetches all files in the collection), the provider flags `fellBack = true` and skips the second `VTODO` `REPORT` query entirely, as the fallback has already fetched all objects (both events and tasks) in a single request.
+- **Component-preserving writes:** New task-model items serialize through the VTODO codec; ordinary events continue through the VEVENT formatter. Updating an existing task uses `GET → VTODO patch → conditional PUT`, keyed by UID, so an all-day task cannot regress into a VEVENT when edited through Full Calendar.
+- **Explicit component conversion:** Task identity in the submitted model selects the target component. VTODO → VTODO updates patch the fetched resource and preserve unmapped/server properties; VEVENT → VTODO and VTODO → VEVENT conversions serialize a fresh target component because the original resource has no component of that type to patch.
+- **Location invariant:** ICS parsing maps `LOCATION` into `OFCEvent.location`; `toEventInput`/`fromEventApi` carry it through FullCalendar interactions; VEVENT and VTODO serializers write it back. Drag, resize, conversion, and modal edits must therefore preserve imported locations instead of silently clearing them.
+- **Content Deduplication:** All retrieved calendar objects are combined and deduplicated based on their raw ICS payload content to eliminate any overlaps.
+- **Compatibility:** Existing `caldav` sources keep this mixed read path so saved configurations require no migration.
+
+#### CalDAV Tasks provider
+
+- **Source isolation:** `caldavtasks` registers `CalDAVTaskProvider`, which requests only `VCALENDAR > VTODO`. Compatibility fallbacks are filtered through the VTODO codec so `VEVENT` resources cannot enter the task source.
+- **Shared infrastructure:** The provider subclasses the existing CalDAV provider and reuses Basic authentication, SecretStorage IDs, collection validation, XML parsing, REPORT/PROPFIND fallback retrieval, href resolution, backlog scheduling, and request handling.
+- **Protocol model:** `vtodo.ts` maps DTSTART-first placement while retaining DTSTART and DUE independently in `OFCEvent.icalTask`. It also retains status, percent complete, completion time, priority, RRULE, created, and last-modified metadata.
+- **Safe writes:** Create emits `VCALENDAR + VTODO`. Update performs GET → component patch → conditional PUT, preserving UID, resource href, ETag, RRULE, nested alarms, timezone components, and unmapped/X-properties. Completion writes `STATUS:COMPLETED`, `PERCENT-COMPLETE:100`, and `COMPLETED`; reopening removes `COMPLETED` and resets percent complete.
+- **Undated tasks:** The provider implements `TaskBacklogProvider`; VTODOs without valid DTSTART/DUE remain available in the unified backlog instead of entering FullCalendar rendering.
+- **Recurrence boundary:** Existing RRULEs render and survive unrelated edits. Recurrence creation/change and per-instance VTODO writes remain intentionally unsupported.
+
+
+### Google Provider
+
+Uses OAuth-backed authenticated requests, handles recurrence exception/override edge cases (both modified and cancelled instances, for both timed and all-day occurrences, are parsed and merged into the master event's `skipDates`), and keeps provider-facing payload conversion isolated in parser/auth modules.
+
+**Location & Description Mapping**: Directly maps the canonical `location` and `description` string properties to/from Google's native API event resource fields.
+
+For token and permission boundaries, see [API Architecture](../system/api-architecture.md).
+
+### Google Tasks Provider
+
+Integrates with the Google Tasks API for complete two-way synchronization of tasks. It shares the existing Google Calendar authentication infrastructure (so connected Google accounts appear once in the integrations settings, but Google Tasks is configured as a separate calendar system).
+
+**Key Integration and Behavior Characteristics:**
+- **Zero-Impact Backlog Integration:** Satisfies the `TaskBacklogProvider` interface to automatically feed undated/incomplete tasks into the sidebar backlog view.
+- **Drag-and-Drop Scheduling:** Handles moving undated backlog items onto the calendar by setting their `due` date.
+- **Single-Event Mappings:** Tasks are strictly mapped to `single` OFCEvent structures since the Google Tasks API only supports single due dates and does not natively support complex event recurrences.
+- **Scope-per-Flow with Union Preservation:** Each OAuth flow requests only the scopes its provider needs (`CALENDAR_SCOPES` for Google Calendar, `TASKS_SCOPES` for Google Tasks), both including the standard `email` scope for OIDC account identification. However, because Google replaces an account's full token on every authorization, `startGoogleLogin` merges in the `grantedScopes` already stored on every existing `GoogleAccount` before building the auth URL. This guarantees that re-authorizing one provider never revokes another provider's access on the same Google account. The resolved union is stored back on `GoogleAccount.grantedScopes` by `GoogleAuthManager.addAccount` after each successful OAuth exchange, so the state is always current even across multiple re-authorizations.
+
+### Outlook Provider
+
+Uses OAuth Authorization Code + PKCE with proxy-backed token and refresh exchange. Parsing and payload mapping are isolated in parser/auth modules similar to Google provider boundaries.
+
+Outlook provider intentionally normalizes nullable Graph recurrence linkage (`seriesMasterId`) into optional event fields expected by core validation.
+
+Current limitation: recurring single-instance override write path is not yet implemented.
+
+### Tasks Provider (non-standard surgical writer)
+
+Not a simple calendar source: it integrates with Tasks plugin cache, supports task-completion toggles, time-token parsing in task text, and surgical markdown line rewrites while preserving task metadata patterns.
+
+Full flow and invariants are detailed in [Tasks Integration Architecture](tasks-integration.md).
+
+#### Tasks date-field integration contract
+
+The Tasks integration has two explicit date-field settings:
+
+- `settings.tasksIntegration.backlogDateTarget` controls which incomplete tasks appear in the Tasks Backlog.
+- `settings.tasksIntegration.calendarDisplayDateTarget` controls which Tasks date marker is used for calendar display and calendar event write-back.
+
+Backlog filtering must use `backlogDateTarget`, not a hardcoded definition of "undated":
+
+| Target          | Backlog filter                                   |
+| --------------- | ------------------------------------------------ |
+| `scheduledDate` | Include incomplete tasks without `scheduledDate` |
+| `startDate`     | Include incomplete tasks without `startDate`     |
+| `dueDate`       | Include incomplete tasks without `dueDate`       |
+
+Calendar display and write-back must use `calendarDisplayDateTarget` with no fallback:
+
+| Target          | Calendar display                | Markdown write-back              |
+| --------------- | ------------------------------- | -------------------------------- |
+| `scheduledDate` | Only tasks with `scheduledDate` | Write or replace `⏳ YYYY-MM-DD` |
+| `startDate`     | Only tasks with `startDate`     | Write or replace `🛫 YYYY-MM-DD` |
+| `dueDate`       | Only tasks with `dueDate`       | Write or replace `📅 YYYY-MM-DD` |
+
+Backlog filter UI entry points must use the same `backlogDateTarget` setting:
+
+- Settings -> Integrations -> Obsidian Tasks Integration.
+- The dropdown in the Tasks Backlog view header.
+
+Changing the setting must save plugin settings and call `providerRegistry.refreshBacklogViews()` so all open backlog views re-query the provider. Backlog filtering belongs in `TasksPluginProvider.getUndatedTasks()` because the provider owns the Tasks cache shape and the date-field mapping. UI components should not duplicate that filtering logic.
+
+Calendar event drag/update behavior writes `calendarDisplayDateTarget`. Backlog drag/drop writes `calendarDisplayDateTarget` and also writes `backlogDateTarget` when it differs, so a planned task no longer qualifies as a backlog candidate. Returning a task to the backlog clears both fields when they differ. `TasksPluginProvider._taskToOFCEvent()` must still read only `calendarDisplayDateTarget`; do not reintroduce scheduled/due/start fallback priority. Because event-cache contents are derived from the display field, changing `calendarDisplayDateTarget` may require an Obsidian restart or plugin reload for all open views to fully reflect the new policy.
+
+The `openEditModalAfterBacklogDrop` setting gates the Tasks plugin edit modal after backlog drops. Its default is `false`, so the normal drag/drop path stays fast and non-blocking unless the user explicitly opts into the modal.
+
+#### Tasks time-format contract
+
+- `settings.tasksIntegration.taskDisplayFormat` controls how timed tasks are serialized back to markdown.
+- Default is `dayPlanner` for new installs and forward writes.
+- `standard` remains available as a compatibility/user preference mode.
+
+Serialization modes:
+
+| Mode         | Example output |
+| ------------ | -------------- |
+| `dayPlanner` | `- [ ] 5:00 - 19:00 Task title ⏳ 2026-05-02` |
+| `standard`   | `- [ ] Task title (5:00 AM-7:00 AM) ⏳ 2026-05-02` |
+
+Parsing must support both schemas regardless of the selected write mode. Do not introduce a read-mode switch tied to `taskDisplayFormat`.
+
+### TaskNotes Provider (provider-owned NLP endpoint)
+
+TaskNotes is a plugin-runtime integration provider and intentionally avoids HTTP transport. It reads from TaskNotes cache APIs and writes via TaskNotes service/UI endpoints.
+
+Key contracts:
+
+- Create behavior is provider-owned and configurable by source `dispatchMode`.
+- Default dispatch endpoint is `search` (Search + Create selector flow).
+- Alternate endpoint `create` opens TaskNotes create modal directly.
+- Full Calendar NLP dispatch remains generic; provider decides endpoint semantics.
+
+TaskNotes create delegation path:
+
+```text
+1. NLP resolves target and calls EventCache.addEvent (1)
+2. Registry routes to TaskNotesProvider.createEvent (2)
+3. Provider opens UI and throws DelegatedProviderActionError (3)
+4. Cache handler rolls back optimistic state (4)
+```
+
+1.  Determines which calendar should handle the request based on the NLP result.
+2.  The registry acts as the central router for all provider operations.
+3.  The error signal tells the core that the action has been successfully handed off.
+4.  Ensures no "ghost" events remain in the UI while the user is in the other plugin's modal.
+
+This prevents duplicate modal UX and keeps provider-specific behavior outside dispatcher logic.
+
+The mutation lifecycle this relies on is defined in [EventCache Contract](../system/eventcache.md#mutation-lifecycle-authoritative-path).
+
+### Holiday Provider (virtual, bundled data)
+
+Read-only provider that surfaces [date-holidays](https://github.com/commenthol/date-holidays) data as all-day `OFCEvent` objects. No vault file, no network request, no `EventLocation`.
+
+**Architecture invariants:**
+
+- `isRemote = false`, `loadPriority = 5` — loads in the first provider wave alongside local sources.
+- CRUD methods (`createEvent`, `updateEvent`, `deleteEvent`, `createInstanceOverride`) unconditionally reject. `getCapabilities()` returns `{ canCreate: false, canEdit: false, canDelete: false }`.
+- Events are typed `single`, `allDay: true`, `date: YYYY-MM-DD`, ID format `date-holidays:{date}:{name}`.
+- **Timezone:** provider intentionally omits any timezone argument to `date-holidays`. All-day events carry no time component; the plugin's [`EventEnhancer`](../system/data-flow.md) applies the global display timezone uniformly. Passing a per-provider timezone here would cause double-correction.
+
+**Cache model:**
+
+Results are cached in `localStorage` keyed by a djb2 hash of `country|state|region|holidayTypes|display` plus year. TTL is 30 days. Hash change on config edit = automatic cache invalidation. `localStorage` failures are silently swallowed (plugin functions correctly; data is recomputed on next open).
+
+**Config hash inputs** (`src/providers/holidays/HolidayProvider.ts` `_computeConfigHash`):
+
+```
+country | state | region | holidayTypes | display
+```
+
+**Source files:**
+
+- `src/providers/holidays/typesHoliday.ts` — `HolidayProviderConfig`, `HolidayTypeFilter`, `getHolidayTypesForFilter()`
+- `src/providers/holidays/HolidayProvider.ts` — provider class, cache layer, `OFCEvent` conversion
+- `src/providers/holidays/ui/HolidayConfigComponent.tsx` — settings modal; links to [date-holidays country list](https://github.com/commenthol/date-holidays/blob/master/docs/Holidays.md) and [type specification](https://github.com/commenthol/date-holidays/blob/master/docs/specification.md#types-of-holidays) inline
+
+User docs: [Holidays calendar](../../user/calendars/holidays.md)
+
+### Obsidian Bases Provider
+
+Read-only provider (`isRemote = false`, `loadPriority = 10`) that reads Obsidian `.base` schema definitions and extracts events from vault markdown files matching the specified Base query filters.
+
+!!! info "Filter Evaluation Engine"
+    Parses `.base` YAML configuration and evaluates nested `or`, `and`, and `not` logical filter trees against files:
+    - `file.hasTag("tag")` — matches metadata cache tags (supporting `#tag` and `tag` syntax).
+    - `file.inFolder("folder")` — checks prefix path matching against `file.path`.
+    - `file.ext == "md"` — verifies markdown file extension.
+
+**Frontmatter Field Extraction & Categorization**:
+- Heuristically extracts event dates from frontmatter keys: `date`, `start`, `startTime`, or `due`.
+- Extracts categories (`category`, `Category`) and sub-categories (`subCategory`, `SubCategory`, `sub category`).
+- Synthesizes formatted event titles as `Category - SubCategory - Title` or `Category - Title` prior to passing through [`validateEvent()`](file:///d:/Codes/plugin-full-calendar/src/types.ts).
+- Sets `event.uid` to `file.path` to enable O(1) persistent navigation back to the source note on click.
+
+**Capability Contract**:
+- All write operations (`createEvent`, `updateEvent`, `deleteEvent`, `createInstanceOverride`) unconditionally reject. `getCapabilities()` returns `{ canCreate: false, canEdit: false, canDelete: false }`.
+
+**Source files:**
+
+- [`src/providers/bases/BasesProvider.tsx`](file:///d:/Codes/plugin-full-calendar/src/providers/bases/BasesProvider.tsx) — provider class, filter evaluator, and `OFCEvent` conversion
+- [`src/providers/bases/BasesConfigComponent.tsx`](file:///d:/Codes/plugin-full-calendar/src/providers/bases/BasesConfigComponent.tsx) — settings configuration component
+
+User docs: [Obsidian Bases calendar](../../user/calendars/bases.md)
+
+---
+
+## Cross-provider orchestration constraints
+
+- Registry is the only runtime router for provider read/write operations.
+- Providers expose capabilities (`canCreate`, `canEdit`, `canDelete`) and optional custom hooks (`toggleComplete`, `canBeScheduledAt`).
+- Persistent event identity must be surfaced through `getEventHandle()` so global identifier mapping remains stable.
+
+Provider contract and registration rules are specified in [Provider Architecture](architecture.md) and [Provider Blueprint](provider-blueprint.md).
+
+## Provider-agnostic recurring instance semantics
+
+Recurring-instance completion and skip behavior must remain provider-owned while the UI and core remain provider-agnostic.
+
+Contract location:
+
+- `src/providers/Provider.ts` defines `RecurringInstanceState` and optional `RecurringInstanceStateProvider` hooks.
+
+Contract shape:
+
+- `getRecurringInstanceState(event, instanceDate)` returns normalized state (`completed`, `skipped`) for a concrete instance date.
+- `setRecurringInstanceState(event, instanceDate, nextState)` applies provider-owned persistence and returns success/failure.
+
+Design goals:
+
+- No provider-specific recurrence fields (for example backend-specific arrays or flags) may leak into generic UI logic.
+- UI checkbox and styling logic must consume only normalized `RecurringInstanceState`.
+- Mutation orchestration remains generic; provider adapters translate normalized state into backend-native operations.
+
+### Rollout pattern for additional providers
+
+When adding recurring-instance semantics to another provider (CalDAV, Google, Tasks, etc.), follow this sequence:
+
+1. Keep provider-specific recurrence persistence internal to the provider implementation.
+2. Implement `RecurringInstanceStateProvider` in that provider.
+3. Map backend-native state to `RecurringInstanceState` in `getRecurringInstanceState(...)`.
+4. Map normalized target state back to backend-native write operations in `setRecurringInstanceState(...)`.
+5. Avoid introducing provider-type checks in shared UI/core pathways.
+
+This no-provider-branching rule aligns with [Data Flow](../system/data-flow.md#flow-invariants) and [Events Architecture](../events/architecture.md#design-boundaries).
+
+### Current adoption
+
+- TaskNotes provider implements this contract and adapts TaskNotes recurring-instance APIs behind the generic interface.
+- Existing providers that do not implement this optional interface continue to use legacy fallback behavior.
+
+## Integration anchors
+
+- `src/providers/Provider.ts`
+- `src/providers/ProviderRegistry.ts`
+- `src/providers/fullnote/FullNoteProvider.ts`
+- `src/providers/dailynote/DailyNoteProvider.ts`
+- `src/providers/bases/BasesProvider.tsx`
+- `src/providers/ics/ICSProvider.ts`
+- `src/providers/caldav/CalDAVProvider.ts`
+- `src/providers/google/GoogleProvider.ts`
+- `src/providers/googletasks/GoogleTasksProvider.ts`
+- `src/providers/tasks/TasksPluginProvider.ts`
+- `src/providers/tasknotes/TaskNotesProvider.ts`
+- `src/providers/holidays/HolidayProvider.ts`

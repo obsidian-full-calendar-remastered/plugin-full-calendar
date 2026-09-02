@@ -1,0 +1,572 @@
+[
+  {
+    "version": "0.12.9",
+    "changes": [
+      {
+        "type": "new",
+        "title": "ActivityWatch sync",
+        "description": "Added a dedicated ActivityWatch sync engine with continuity-aware ingestion, auto-sync scheduling, and title templating."
+      },
+      {
+        "type": "improvement",
+        "title": "Tasks integrations",
+        "description": "Checkout [Tasks Integration docs](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/tasks-plugin-integration/). Expanded Tasks backlog and display settings, plus payload handling and workflow improvements. ([#142](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/142), [#166](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/166), [#175](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/175))"
+      },
+      {
+        "type": "improvement",
+        "title": "Core sync identity",
+        "description": "Switched sync handling to keyed identity diffs with reverse lookup maps and safer continuity replacement to reduce churn and duplicate blocks."
+      },
+      {
+        "type": "improvement",
+        "title": "Settings and calendar UX",
+        "description": "Updated settings navigation, calendar interactions, search behavior, and mobile responsiveness."
+      },
+      {
+        "type": "fix",
+        "title": "Build, docs, and i18n",
+        "description": "Reduced startup and bundle overhead, refreshed locale loading, and added ActivityWatch architecture documentation."
+      }
+    ]
+  },
+  {
+    "version": "0.12.8",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Tasks Time Features",
+        "description": "Tasks can now have an optional time block. Drag and drop a task to a specific time or back to all-day to update it. (#227)"
+      },
+      {
+        "type": "new",
+        "title": "CalDAV enhancements",
+        "description": "Auto-fetch calendar name and color when importing, validate collection. (#230)"
+      },
+      {
+        "type": "improvement",
+        "title": "Advanced Categorization",
+        "description": "Robust advanced categorization workflows and modal UX. Added \"Disable without cleanup\" option. (#222, #231)"
+      },
+      {
+        "type": "improvement",
+        "title": "Robust Timezone Handling",
+        "description": "Prevent RRULE TZID one-day date shift in recurrence expansion (#194) and prevent timezone shift for all-day date-only events. (#223, #231)"
+      },
+      {
+        "type": "fix",
+        "title": "Provider Sync & Remote Payloads",
+        "description": "Refactored file delete handling during rename races. (#224) Hardened CalDAV payload parsing for null-body and malformed XML. (#218)"
+      },
+      {
+        "type": "fix",
+        "title": "Localization & Mobile UI",
+        "description": "Updated UI responsiveness on desktop & mobile. Workspace filters now display user-defined calendar names. Updated ES/FR/IT translations."
+      }
+    ]
+  },
+  {
+    "version": "0.12.7.1",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Local ICS Support",
+        "description": "You can now view `.ics` files stored directly in your Obsidian vault!"
+      },
+      {
+        "type": "improvement",
+        "title": "Timezone & DST Hardening",
+        "description": "The timezone pipeline has been completely rewritten and hardened to properly handle recurring events crossing Daylight Saving Time boundaries, and complex EU/US transit scenarios without drifting. Removed luxon dependency."
+      },
+      {
+        "type": "improvement",
+        "title": "Staged Loading Architecture viz v0.12.7.1",
+        "description": "Dramatic startup performance improvements (5x in [selective audit](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/changelog/#version-01271)). Providers now quickly load a 3-month window surrounding the current date first, then quietly load your full calendar history in the background."
+      },
+      {
+        "type": "improvement",
+        "title": "Codebase Linting & Safety",
+        "description": "Migrated to ESLint 9 and native obsidianmd rules. Eliminated unsafe casting and improved the UI responsiveness by wrapping unhandled background promises."
+      },
+      {
+        "type": "fix",
+        "title": "UI Fixes and LiveSync Compatibility",
+        "description": "Improved mobile responsiveness across various views. Fixed UI injection conflicts with the Self-Hosted LiveSync plugin."
+      }
+    ]
+  },
+  {
+    "version": "0.12.6",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Full CalDAV Two-Way Sync",
+        "description": "CalDAV calendars now support two-way synchronization. Create, edit, and delete events directly in Obsidian."
+      },
+      {
+        "type": "new",
+        "title": "Mobile Improvements",
+        "description": "Workspaces and Monthly View are now fully supported on mobile devices with an improved UI."
+      },
+      {
+        "type": "new",
+        "title": "Rich Read-Only Modal",
+        "description": "The event viewer for read-only events now displays full details including descriptions and attendees."
+      },
+      {
+        "type": "improvement",
+        "title": "ICS Parsing Hardening",
+        "description": "Robust parsing for Outlook/Exchange timezones, better date validation, and crash prevention for invalid ICS feeds."
+      },
+      {
+        "type": "fix",
+        "title": "Google Calendar Credentials Menu",
+        "description": "Fixed an issue where the Google Calendar settings menu for credentials was not displaying correctly."
+      }
+    ]
+  },
+  {
+    "version": "0.12.5",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Obsidian Bases provider",
+        "description": "Add [Bases](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/bases/) as a calendar source (BETA)."
+      },
+      {
+        "type": "improvement",
+        "title": "Provider initialization and cache resync",
+        "description": "Providers invoke initialize() after creation, load events into the cache with onAllComplete callbacks, adjust load priorities, and refresh event sources without full re-render when resyncing. (#173)"
+      },
+      {
+        "type": "improvement",
+        "title": "ChronoAnalyser data integrity",
+        "description": "[ChronoAnalyser](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/chrono_analyser/introduction/) now pulls from the main EventStore and parses category/project/subproject hierarchies correctly for accurate analysis."
+      },
+      {
+        "type": "fix",
+        "title": "CalDAV validation and parsing",
+        "description": "[CalDAVProvider](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/caldav/) now validates calendar collections with PROPFIND, parses calendar-data via DOMParser, adds JSDOM-backed tests, and surfaces clearer errors when URLs are invalid. (#193)"
+      },
+      {
+        "type": "fix",
+        "title": "Google OAuth and recurring timezone handling",
+        "description": "Mobile OAuth opens windows synchronously to avoid popup blockers (#191); recurring Google events honor exdates and BYDAY across timezones, correctly hiding deleted instances and preserving durations. (#190, #94)"
+      }
+    ]
+  },
+  {
+    "version": "0.12.3.1-beta",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Tasks Provider Rearchitected for Performance and Precision",
+        "description": "The [Tasks provider](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/tasks-plugin-integration/) now uses the official Tasks plugin's live cache for instant updates and performs surgical edits to preserve user metadata like links and tags. (#151, #155)"
+      },
+      {
+        "type": "improvement",
+        "title": "Robust and Stable Settings UI",
+        "description": "The settings panel has been refactored for stability, with a more reliable color picker and a consistent layout for all calendar sources. (#141)"
+      },
+      {
+        "type": "improvement",
+        "title": "Provider-Specific Task Completion",
+        "description": "Calendar providers can now implement their own custom logic for completing tasks, allowing for more flexible integrations. (#143, #144)"
+      },
+      {
+        "type": "fix",
+        "title": "ICS Timezone Fallback",
+        "description": "Remote ICS calendars with unrecognized timezones will now safely fall back to UTC instead of failing to load. (#91)"
+      }
+    ]
+  },
+  {
+    "version": "0.12.3",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Deep Tasks Integration with Backlog & Filtering",
+        "description": "First-class support for Obsidian Tasks, including a task backlog, drag-and-drop scheduling, and full CUD (Create, Update, Delete) operations directly within the calendar."
+      },
+      {
+        "type": "new",
+        "title": "Advanced Date Navigation",
+        "description": "New \"Go To\" dropdown in the toolbar with a date picker and context-aware navigation. Right-click to jump to specific dates, weeks, or months."
+      },
+      {
+        "type": "fix",
+        "title": "Notification and Reminder Reliability",
+        "description": "End-time reminders now fire correctly for events that are already in progress."
+      },
+      {
+        "type": "fix",
+        "title": "Core Component Stability",
+        "description": "Fixed bugs related to the event creation modal, Daily Notes calendar, and new calendar creation in settings."
+      }
+    ]
+  },
+  {
+    "version": "0.12.2-beta",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Multi-day Daily Note events",
+        "description": "Daily Note provider now supports explicit multi-day events via an [endDate:: YYYY-MM-DD] inline field with fallback to legacy overnight detection."
+      },
+      {
+        "type": "new",
+        "title": "Status bar current/upcoming events",
+        "description": "Lightweight status bar module displays current and next events by subscribing to TimeEngine."
+      },
+      {
+        "type": "new",
+        "title": "Interactive time-axis zoom",
+        "description": "Ctrl/Cmd + scroll to zoom time axis in timeGrid and resourceTimeline views for rapid focus changes (#96)."
+      },
+      {
+        "type": "new",
+        "title": "Interval & positional recurrence rules",
+        "description": "Adds interval repeats (e.g., every 2 weeks) and positional monthly rules (2nd Tuesday, last Friday) with iCal interoperability (#97)."
+      },
+      {
+        "type": "improvement",
+        "title": "Codebase compliance & safety",
+        "description": "Removed loose any casts, migrated inline styles to CSS, added instanceof guards, and simplified unload lifecycle."
+      },
+      {
+        "type": "improvement",
+        "title": "Reactive calendar view lifecycle",
+        "description": "view-config-changed triggers cache repopulate; new resync event prompts focused re-render for instant settings feedback."
+      },
+      {
+        "type": "improvement",
+        "title": "NotificationManager refactor",
+        "description": "Converted to passive subscriber of TimeEngine instead of maintaining its own internal interval."
+      },
+      {
+        "type": "fix",
+        "title": "Timezone conversion for cross-day events",
+        "description": "convertEvent rewritten as a pure function handling explicit endDate and legacy overnight cases with stricter type guards."
+      }
+    ]
+  },
+  {
+    "version": "0.12.1-beta",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Event reminder system with desktop notifications",
+        "description": "New notification manager provides native desktop notifications for upcoming events. Get reminded 10 minutes before an event starts and optionally before it ends."
+      },
+      {
+        "type": "new",
+        "title": "Multi-account Google Calendar integration",
+        "description": "Connect and manage multiple Google accounts with a dedicated account management hub. Streamlined two-step wizard for adding calendars from any connected account."
+      },
+      {
+        "type": "improvement",
+        "title": "Provider-based architecture with multi-account support",
+        "description": "Complete overhaul from Instance-based to a provider-based architecture enabling stateful features and multi-account supports. Each calendar source is now self-contained with improved isolation and performance."
+      },
+      {
+        "type": "improvement",
+        "title": "Event-driven settings with instant updates",
+        "description": "Settings now use publish/subscribe model with granular events (sources-changed, view-config-changed). Calendar re-renders instantly without flicker or unnecessary reloads."
+      },
+      {
+        "type": "improvement",
+        "title": "Lazy-loading for faster startup",
+        "description": "Heavy dependencies like FullCalendar engine and React modals are now dynamically imported only when needed, dramatically improving startup time and memory usage."
+      },
+      {
+        "type": "improvement",
+        "title": "Centralized event enhancement pipeline",
+        "description": "New EventEnhancer module centralizes timezone conversions and category parsing, with dedicated WorkspaceManager for filtering and display logic."
+      },
+      {
+        "type": "fix",
+        "title": "Timezone handling for recurring events",
+        "description": "Recurring events now properly handle timezones with endDate support, resolving timezone branching issues."
+      },
+      {
+        "type": "fix",
+        "title": "ICS remote events loading fix",
+        "description": "Remove ICS events should now load properly."
+      }
+    ]
+  },
+  {
+    "version": "0.11.9",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Calendar Workspaces",
+        "description": "Save and switch between customized calendar setups (sources, filters, and view). Includes a header switcher, command palette action, and optional default workspace."
+      },
+      {
+        "type": "improvement",
+        "title": "Faster switching and rendering",
+        "description": "Workspace changes apply incrementally to sources, filters, and current view, reducing re-renders and improving performance in large calendars."
+      },
+      {
+        "type": "fix",
+        "title": "Edit modal subcategory parsing",
+        "description": "Fixes an issue where sub-categories could disappear when editing from the modal for certain titles."
+      }
+    ]
+  },
+  {
+    "version": "0.11.8",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Business Hours and Background Events",
+        "description": "Highlight working hours in calendar views and display background events like vacations or focus blocks. Fully configurable in settings and event frontmatter."
+      },
+      {
+        "type": "new",
+        "title": "Timeline View: Shadow Events",
+        "description": "Optional display of category shadow events in Timeline View for better context and planning."
+      },
+      {
+        "type": "improvement",
+        "title": "Sub-category editing in event modal",
+        "description": "Event modal now shows and allows editing of sub-categories directly in the title field."
+      },
+      {
+        "type": "improvement",
+        "title": "Settings UI reorganization",
+        "description": "Settings modal has been reorganized for clarity, with added tooltips and a footer for version/help links."
+      },
+      {
+        "type": "fix",
+        "title": "Recurring task timing preserved on undo",
+        "description": "Fixes a bug where child events lost their timing when undoing completed recurring tasks."
+      },
+      {
+        "type": "fix",
+        "title": "All-day recurring events behave correctly",
+        "description": "All-day events are now treated as floating in recurrence rules, avoiding unwanted time shifts."
+      }
+    ]
+  },
+  {
+    "version": "0.11.7",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Google Calendar integration with two-way sync",
+        "description": "Connect your Google account to create, modify, and delete single or recurring events directly in Obsidian, with full OAuth 2.0 authentication and calendar selection."
+      },
+      {
+        "type": "improvement",
+        "title": "Unified and reusable form components",
+        "description": "Inputs like URL, Username, Password, and Directory Select are now standardized with a read-only mode for consistent display, and a generic TextInput replaces one-off components."
+      },
+      {
+        "type": "improvement",
+        "title": "Refined settings UI and changelog view",
+        "description": "Settings are modularized into clearer sections with improved type safety, and a new changelog component has been added for update visibility."
+      },
+      {
+        "type": "improvement",
+        "title": "Better event parsing and caching pipeline",
+        "description": "Calendar parsers now use a unified enhancement pipeline, and event caching is more reliable with modularized update managers."
+      },
+      {
+        "type": "fix",
+        "title": "Daily Note Calendar parsing and cache updates",
+        "description": "Fixed issues with daily note parsing and improved cache updates to correctly reflect changes when frontmatter is updated."
+      }
+    ]
+  },
+  {
+    "version": "0.11.6",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Advanced categorization with hierarchical timeline view",
+        "description": "Events can now be organized by categories and sub-categories in a new resource timeline view. Expandable groups and aggregated parent rows make it easier to manage complex schedules."
+      },
+      {
+        "type": "new",
+        "title": "License update",
+        "description": "The plugin license has been updated to GPLv3 to comply with FullCalendar requirements."
+      },
+      {
+        "type": "improvement",
+        "title": "Cleaner UI and initial view options",
+        "description": "The event modal and settings UI have been polished with dropdown options and a new initial view setting that supports the timeline view."
+      },
+      {
+        "type": "improvement",
+        "title": "Smarter event titles and filenames",
+        "description": "Events now display clearer titles (e.g., \"SubCategory - Event Name\") while keeping filenames and internal data consistent."
+      }
+    ]
+  },
+  {
+    "version": "0.11.5-beta",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Monthly and yearly recurring events",
+        "description": "You can now create events that repeat every month or every year — perfect for anniversaries, billing cycles, or annual planning."
+      },
+      {
+        "type": "new",
+        "title": "Repeats dropdown in event modal",
+        "description": "Replaced the old recurring checkbox with a dropdown menu for choosing none, weekly, monthly, or yearly recurrence, with context-aware controls."
+      },
+      {
+        "type": "improvement",
+        "title": "Descriptive filenames for recurring notes",
+        "description": "Recurring events now generate clean, readable filenames like \"(Every month on the 15th) My Event.md\"."
+      },
+      {
+        "type": "improvement",
+        "title": "Improved timezone and all-day support",
+        "description": "Timezone handling for recurring events has been refined, and all-day recurring events now display correctly."
+      },
+      {
+        "type": "fix",
+        "title": "Right-click toggle for recurring tasks",
+        "description": "Recurring tasks can now be marked complete via right-click, just like one-time tasks."
+      }
+    ]
+  },
+  {
+    "version": "0.11.4",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Smarter recurring events and tasks",
+        "description": "Recurring events can now be edited per-instance — drag, resize, or complete a task without affecting the whole series. Changes are reversible and tracked cleanly."
+      },
+      {
+        "type": "improvement",
+        "title": "Safe deletion with confirmation options",
+        "description": "Deleting a recurring event now asks whether to remove just one instance, the entire series, or promote existing edits to standalone events."
+      },
+      {
+        "type": "improvement",
+        "title": "Better task behavior for repeating events",
+        "description": "Recurring tasks now behave just like regular ones — you can check them off individually, and they show up correctly in the calendar."
+      },
+      {
+        "type": "fix",
+        "title": "Multiday allday events fix by @yalikebaz",
+        "description": "Multiday allday events made inclusive for local calenders. Thanks to @yalikebaz for the fix!"
+      },
+      {
+        "type": "fix",
+        "title": "Performance and architecture improvements",
+        "description": "Refactored recurring event logic, improved performance on large calendars, and cleaned up the plugin architecture to prepare for future features."
+      }
+    ]
+  },
+  {
+    "version": "0.11.3",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Insights engine has smarter dashboard with personas",
+        "description": "Adding persona (predefined rules like \"Productivity\", \"Routine\") to categories in insight config setting now cater to more powerful analysis."
+      },
+      {
+        "type": "fix",
+        "title": "Insights panel and dashboard bugfixes",
+        "description": "Multiple bugfixes and UI adjustments focused on the insights panel."
+      }
+    ]
+  },
+  {
+    "version": "0.11.2",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Insights engine in ChronoAnalyser",
+        "description": "New intelligent engine that can analyse your calender for past events and give you cool insights."
+      },
+      {
+        "type": "improvement",
+        "title": "Redesigned ChronoAnalyser UI/UX",
+        "description": "ChronoAnalyser now much more elegant. Check it using the `Analysis` button in the Full-Calendar window."
+      },
+      {
+        "type": "fix",
+        "title": "Multiple bugfixes in ChronoAnalyser",
+        "description": "Make ChronoAnalyser more stable and reliable. Plotting and insights now work more reliably."
+      }
+    ]
+  },
+  {
+    "version": "0.11.1",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Category coloring engine and settings UI",
+        "description": "A new optional setting, 'Enable Category Coloring,' allows you to color events based on a category defined in the event's title (e.g., 'Work - Project Meeting'). This overrides the default calendar color for fine-grained visual organization."
+      },
+      {
+        "type": "new",
+        "title": "Category-aware event modal",
+        "description": "The edit/create event modal now features a dedicated 'Category' input field. It provides intelligent autocomplete suggestions based on all your previously used categories, making categorization fast and consistent."
+      },
+      {
+        "type": "improvement",
+        "title": "Redesigned event modal UI/UX",
+        "description": "The edit/create event modal has been completely redesigned with a polished two-column layout, logical grouping of fields, and a dedicated footer for actions, improving clarity and ergonomics."
+      },
+      {
+        "type": "improvement",
+        "title": "Color palette enhancements",
+        "description": "Colors no longer defaults to black, but is now rotated from a carefully choosen palette."
+      },
+      {
+        "type": "improvement",
+        "title": "Open note workflow enhancement",
+        "description": "Clicking 'Open Note' in the modal now opens the note in a split view, improving calendar-note navigation."
+      }
+    ]
+  },
+  {
+    "version": "0.10.13-beta",
+    "changes": [
+      {
+        "type": "improvement",
+        "title": "Robust timezone support",
+        "description": "Events from local and remote calendars are now fully timezone-aware, fixing bugs related to DST and travel."
+      },
+      {
+        "type": "new",
+        "title": "Strict timezone mode for daily notes",
+        "description": "A new setting allows users to anchor daily note events to a specific timezone, just like regular notes."
+      },
+      {
+        "type": "fix",
+        "title": "Correctly parse UTC events from ICS feeds",
+        "description": "Fixed a critical bug where events specified in UTC from Google Calendar and other sources would appear at the wrong time."
+      }
+    ]
+  },
+  {
+    "version": "0.10.8",
+    "changes": [
+      {
+        "type": "new",
+        "title": "ChronoAnalyser released",
+        "description": "ChronoAnalyser can now analyse you time spending! Check the new `Analysis` button in the Full-Calendar window."
+      }
+    ]
+  },
+  {
+    "version": "0.10.7",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Initial plugin release",
+        "description": "Welcome to the first version of the enhanced Full Calendar!"
+      }
+    ]
+  }
+]

@@ -10,89 +10,36 @@ import {
 
 import type { Moment } from 'moment';
 import type { DailyNoteProviderConfig } from './typesDaily';
+import {
+  getLegacyJournalsPlugin,
+  isLegacyDayJournal,
+  resolveJournalsBridge,
+  type JournalsBridge,
+  type JournalsDateRange,
+  type JournalsNoteDescriptor,
+  type LegacyDayJournal,
+  type LegacyJournalsPluginApi,
+  type MaybePromise
+} from '../journals/JournalsBridge';
 
-export const JOURNALS_PLUGIN_ID = 'journals';
-
-type JournalEntry = {
-  date: string;
-  journal: string;
-  path?: string;
-};
-
-export type JournalsDayJournal = {
-  name: string;
-  type: string;
-  get(date: string): JournalEntry | null;
-  getNotePath(entry: JournalEntry): string;
-  open(entry: JournalEntry): Promise<void>;
-};
-
-type JournalsIndex = {
-  getAllPaths(journalId: string): string[];
-  getForPath(path: string): JournalEntry | null;
-};
-
-export type JournalsPluginApi = {
-  journals: JournalsDayJournal[];
-  getJournal(name: string): JournalsDayJournal | undefined;
-  getJournalConfig?(name: string): { templates?: string[] } | undefined;
-  index: JournalsIndex;
-};
-
-type AppWithPlugins = App & {
-  plugins?: {
-    getPlugin?(id: string): unknown;
-    plugins?: Record<string, unknown>;
-  };
-};
+export type JournalsDayJournal = LegacyDayJournal;
+export type JournalsPluginApi = LegacyJournalsPluginApi;
 
 export type DailyNoteSourceAdapter = {
-  getAllFiles(): TFile[];
+  getAllFiles(range?: JournalsDateRange): MaybePromise<TFile[]>;
   getExistingFileForDate(date: string, dateMoment: Moment): TFile | null;
+  resolveExistingFileForDate(date: string, dateMoment: Moment): MaybePromise<TFile | null>;
   getFileForDate(date: string, dateMoment: Moment, create: boolean): Promise<TFile | null>;
-  getDateForFile(file: TFile): string | null;
+  getDateForFile(file: TFile): MaybePromise<string | null>;
   isFileRelevant(file: TFile): boolean;
 };
 
-function isJournalEntry(value: unknown): value is JournalEntry {
-  if (!value || typeof value !== 'object') return false;
-  const entry = value as Record<string, unknown>;
-  return typeof entry.date === 'string' && typeof entry.journal === 'string';
-}
-
-function isDayJournal(value: unknown): value is JournalsDayJournal {
-  if (!value || typeof value !== 'object') return false;
-  const journal = value as Record<string, unknown>;
-  return (
-    journal.type === 'day' &&
-    typeof journal.name === 'string' &&
-    typeof journal.get === 'function' &&
-    typeof journal.getNotePath === 'function' &&
-    typeof journal.open === 'function'
-  );
-}
-
-function isJournalsPluginApi(value: unknown): value is JournalsPluginApi {
-  if (!value || typeof value !== 'object') return false;
-  const plugin = value as Record<string, unknown>;
-  if (!Array.isArray(plugin.journals) || typeof plugin.getJournal !== 'function') return false;
-  if (plugin.getJournalConfig !== undefined && typeof plugin.getJournalConfig !== 'function') {
-    return false;
-  }
-  if (!plugin.index || typeof plugin.index !== 'object') return false;
-  const index = plugin.index as Record<string, unknown>;
-  return typeof index.getAllPaths === 'function' && typeof index.getForPath === 'function';
-}
-
 export function getJournalsPlugin(app: App): JournalsPluginApi | null {
-  const plugins = (app as AppWithPlugins).plugins;
-  const candidate =
-    plugins?.getPlugin?.(JOURNALS_PLUGIN_ID) ?? plugins?.plugins?.[JOURNALS_PLUGIN_ID];
-  return isJournalsPluginApi(candidate) ? candidate : null;
+  return getLegacyJournalsPlugin(app);
 }
 
 export function getJournalsDayJournals(app: App): JournalsDayJournal[] {
-  return getJournalsPlugin(app)?.journals.filter(isDayJournal) ?? [];
+  return getJournalsPlugin(app)?.journals.filter(isLegacyDayJournal) ?? [];
 }
 
 const getHeadingsFromTemplates = (app: App, templates: string[]): string[] => {
@@ -129,6 +76,10 @@ export class ObsidianDailyNoteSourceAdapter implements DailyNoteSourceAdapter {
     return getDailyNote(dateMoment, getAllDailyNotes()) ?? null;
   }
 
+  resolveExistingFileForDate(date: string, dateMoment: Moment): TFile | null {
+    return this.getExistingFileForDate(date, dateMoment);
+  }
+
   async getFileForDate(_date: string, dateMoment: Moment, create: boolean): Promise<TFile | null> {
     const existing = this.getExistingFileForDate(_date, dateMoment);
     if (existing instanceof TFile || !create) return existing ?? null;
@@ -153,80 +104,136 @@ export class ObsidianDailyNoteSourceAdapter implements DailyNoteSourceAdapter {
 }
 
 export class JournalsDailyNoteSourceAdapter implements DailyNoteSourceAdapter {
-  private readonly plugin: JournalsPluginApi | null;
-  private readonly journalId: string | undefined;
+  private journalId: string | undefined;
+  private readonly filesByDate = new Map<string, TFile>();
+  private readonly datesByPath = new Map<string, string>();
+  private unsubscribe: (() => void) | null = null;
 
   constructor(
     private readonly app: App,
     config: DailyNoteProviderConfig
   ) {
-    this.plugin = getJournalsPlugin(app);
     this.journalId = config.journalId;
   }
 
-  private getJournal(): JournalsDayJournal {
-    if (!this.plugin) {
-      throw new Error('Journals is not installed/enabled, or its runtime API is incompatible.');
-    }
+  private getJournalId(): string {
     if (!this.journalId) {
       throw new Error('No Journals Day journal is selected.');
     }
-    const journal = this.plugin.getJournal(this.journalId);
-    if (!isDayJournal(journal)) {
-      throw new Error(
-        `The selected Journals Day journal "${this.journalId}" is unavailable. It may have been renamed or deleted.`
-      );
-    }
-    return journal;
+    return this.journalId;
   }
 
-  getAllFiles(): TFile[] {
-    const journal = this.getJournal();
-    const plugin = this.plugin;
-    if (!plugin) return [];
-    return plugin.index
-      .getAllPaths(journal.name)
-      .map(path => this.app.vault.getFileByPath(path))
-      .filter((file): file is TFile => file instanceof TFile);
+  private getBridge(): JournalsBridge {
+    const resolution = resolveJournalsBridge(this.app);
+    if (resolution.state === 'available') return resolution.bridge;
+    if (resolution.state === 'missing') {
+      throw new Error('Journals is not installed/enabled.');
+    }
+    throw new Error('Journals is enabled, but its API is unsupported by Full Calendar.');
+  }
+
+  private remember(note: JournalsNoteDescriptor): TFile | null {
+    if (note.journal !== this.getJournalId() || !note.file) return null;
+    this.filesByDate.set(note.date, note.file);
+    this.datesByPath.set(note.file.path, note.date);
+    return note.file;
+  }
+
+  private forget(path: string, date?: string): void {
+    const knownDate = date ?? this.datesByPath.get(path);
+    this.datesByPath.delete(path);
+    if (knownDate && this.filesByDate.get(knownDate)?.path === path) {
+      this.filesByDate.delete(knownDate);
+    }
+  }
+
+  private rememberNotes(notes: readonly JournalsNoteDescriptor[]): TFile[] {
+    return notes.flatMap(note => {
+      const file = this.remember(note);
+      return file ? [file] : [];
+    });
+  }
+
+  private mapMaybePromise<T, U>(value: MaybePromise<T>, map: (item: T) => U): MaybePromise<U> {
+    return value instanceof Promise ? value.then(map) : map(value);
+  }
+
+  initialize(events: {
+    noteAdded?: (path: string) => void;
+    noteRemoved?: (path: string) => void;
+    journalRenamed?: (from: string, to: string) => void;
+  }): void {
+    this.teardown();
+    const resolution = resolveJournalsBridge(this.app);
+    if (resolution.state !== 'available' || resolution.bridge.kind !== 'official') return;
+    this.unsubscribe = resolution.bridge.subscribe({
+      noteAdded: note => {
+        if (note.journal !== this.journalId) return;
+        const file = this.app.vault.getFileByPath(note.path);
+        if (file instanceof TFile) this.remember({ ...note, file });
+        events.noteAdded?.(note.path);
+      },
+      noteRemoved: note => {
+        if (note.journal !== this.journalId) return;
+        this.forget(note.path, note.date);
+        events.noteRemoved?.(note.path);
+      },
+      journalRenamed: ({ from, to }) => {
+        if (from !== this.journalId) return;
+        this.journalId = to;
+        events.journalRenamed?.(from, to);
+      }
+    });
+  }
+
+  teardown(): void {
+    this.unsubscribe?.();
+    this.unsubscribe = null;
+  }
+
+  getAllFiles(range?: JournalsDateRange): MaybePromise<TFile[]> {
+    const notes = this.getBridge().getNotes(this.getJournalId(), range);
+    return this.mapMaybePromise(notes, value => this.rememberNotes(value));
+  }
+
+  resolveExistingFileForDate(date: string, _dateMoment: Moment): MaybePromise<TFile | null> {
+    const note = this.getBridge().getNoteForDate(this.getJournalId(), date);
+    return this.mapMaybePromise(note, value => (value ? this.remember(value) : null));
   }
 
   getExistingFileForDate(date: string, _dateMoment: Moment): TFile | null {
-    if (!this.plugin) return null;
-    const journal = this.getJournal();
-    const entry = journal.get(date);
-    if (!isJournalEntry(entry) || !entry.path) return null;
-    return this.app.vault.getFileByPath(entry.path);
+    const bridge = this.getBridge();
+    if (bridge.kind === 'legacy') {
+      const note = bridge.getNoteForDate(this.getJournalId(), date);
+      if (!(note instanceof Promise)) return note ? this.remember(note) : null;
+    }
+    return this.filesByDate.get(date) ?? null;
   }
 
   async getFileForDate(date: string, _dateMoment: Moment, create: boolean): Promise<TFile | null> {
-    const journal = this.getJournal();
-    const entry = journal.get(date);
-    if (!isJournalEntry(entry)) {
-      throw new Error(`Journals could not resolve an entry for ${date}.`);
-    }
+    const existing = await this.resolveExistingFileForDate(date, _dateMoment);
+    if (existing || !create) return existing;
 
-    if (entry.path) {
-      const existing = this.app.vault.getFileByPath(entry.path);
-      if (existing) return existing;
-      throw new Error(`Journals resolved ${date} to a missing file: ${entry.path}.`);
-    }
-    if (!create) return null;
-
-    await journal.open(entry);
-    const path = journal.getNotePath(entry);
-    const created = this.app.vault.getFileByPath(path);
+    const note = await this.getBridge().ensureNote(this.getJournalId(), date);
+    const created = this.remember(note);
     if (!created) {
-      throw new Error(`Journals did not create the expected entry for ${date} at ${path}.`);
+      throw new Error(`Journals did not create the expected entry for ${date}.`);
     }
     return created;
   }
 
-  getDateForFile(file: TFile): string | null {
-    return this.plugin?.index.getForPath(file.path)?.date ?? null;
+  getDateForFile(file: TFile): MaybePromise<string | null> {
+    const known = this.datesByPath.get(file.path);
+    if (known) return known;
+    const note = this.getBridge().journalOf(file);
+    return this.mapMaybePromise(note, value => {
+      if (!value || value.journal !== this.getJournalId()) return null;
+      this.remember(value);
+      return value.date;
+    });
   }
 
   isFileRelevant(file: TFile): boolean {
-    if (!this.plugin) return false;
-    return this.plugin.index.getForPath(file.path)?.journal === this.getJournal().name;
+    return this.datesByPath.has(file.path);
   }
 }

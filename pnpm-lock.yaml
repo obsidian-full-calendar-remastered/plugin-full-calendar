@@ -77,6 +77,9 @@ importers:
       obsidian-daily-notes-interface:
         specifier: ^0.9.5
         version: 0.9.5(obsidian@1.13.1(@codemirror/state@6.7.1)(@codemirror/view@6.43.8))
+      obsidian-journals-api:
+        specifier: ^1.0.0
+        version: 1.0.0(obsidian@1.13.1(@codemirror/state@6.7.1)(@codemirror/view@6.43.8))
       plotly.js:
         specifier: ^3.7.0
         version: 3.7.0(mapbox-gl@1.13.3)
@@ -4331,6 +4334,11 @@ packages:
   obsidian-daily-notes-interface@0.9.5:
     resolution: {integrity: sha512-Jk1hFagCcMAC1B/LGHCeSLRWIvNCX4qJ6a5HDpUZqs8ckmdszzDKNTdnJZgCVzsUEQKdATJmoNW2kjMzk7+qhw==}
     engines: {node: '>=22.9.0'}
+    peerDependencies:
+      obsidian: '>=1.0.0'
+
+  obsidian-journals-api@1.0.0:
+    resolution: {integrity: sha512-MnEz6cZUE3lIjrEhsoGMUWLTcxfNZ2aJj7FFxpLShp2T4ZWL3kGEUQ0HQEG8yNzPPCQq7xy6u4dMvlHCxTDiaQ==}
     peerDependencies:
       obsidian: '>=1.0.0'
 
@@ -10639,6 +10647,10 @@ snapshots:
     dependencies:
       obsidian: 1.13.1(@codemirror/state@6.7.1)(@codemirror/view@6.43.8)
       tslib: 2.5.0
+
+  obsidian-journals-api@1.0.0(obsidian@1.13.1(@codemirror/state@6.7.1)(@codemirror/view@6.43.8)):
+    dependencies:
+      obsidian: 1.13.1(@codemirror/state@6.7.1)(@codemirror/view@6.43.8)
 
   obsidian@1.13.1(@codemirror/state@6.7.1)(@codemirror/view@6.43.8):
     dependencies:

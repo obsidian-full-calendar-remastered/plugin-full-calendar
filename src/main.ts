@@ -249,9 +249,10 @@ export default class FullCalendarPlugin extends Plugin {
     this.registerEvent(
       this.app.vault.on('rename', (file, oldPath) => {
         if (file instanceof TFile) {
-          // A rename is a delete at the old path.
-          // The 'changed' event will pick up the creation at the new path.
-          void PluginState.getProviderRegistry().handleFileDelete(oldPath);
+          void (async () => {
+            await PluginState.getProviderRegistry().handleFileDelete(oldPath);
+            await PluginState.getProviderRegistry().handleFileUpdate(file);
+          })();
         }
       })
     );

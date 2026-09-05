@@ -31,7 +31,12 @@ jest.mock(
       }
     }
 
-    class TFile extends TAbstractFile {}
+    class TFile extends TAbstractFile {
+      get basename(): string {
+        const dotIndex = this.name.lastIndexOf('.');
+        return dotIndex >= 0 ? this.name.slice(0, dotIndex) : this.name;
+      }
+    }
 
     class TFolder extends TAbstractFile {
       children: TAbstractFile[] = [];
@@ -1104,6 +1109,134 @@ text_property: "[[example]]"
           allDay: true
         })
       );
+    });
+
+    it('extracts clean title from filename when frontmatter title is missing without prepending date', async () => {
+      const filename = '2026-09-05 Dentist.md';
+      const app = MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder(dirName).file(
+            filename,
+            new FileBuilder().frontmatter({ date: '2026-09-05', allDay: true }).text('Dentist note')
+          )
+        )
+        .done();
+
+      const obsidian = makeApp(app);
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const file = obsidian.getFileByPath(`${dirName}/${filename}`);
+      expect(file).not.toBeNull();
+
+      const events = await calendar.getEventsInFile(file!);
+      expect(events).toHaveLength(1);
+      expect(events[0][0]).toMatchObject(
+        expect.objectContaining({ title: 'Dentist', date: '2026-09-05' })
+      );
+    });
+
+    it('prioritizes frontmatter title over filename even when filename has a different name', async () => {
+      const filename = '2026-09-05 Legacy Filename.md';
+      const app = MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder(dirName).file(
+            filename,
+            new FileBuilder()
+              .frontmatter({
+                title: 'Authoritative Frontmatter Title',
+                date: '2026-09-05',
+                allDay: true
+              })
+              .text('Content')
+          )
+        )
+        .done();
+
+      const obsidian = makeApp(app);
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const file = obsidian.getFileByPath(`${dirName}/${filename}`);
+      expect(file).not.toBeNull();
+
+      const events = await calendar.getEventsInFile(file!);
+      expect(events).toHaveLength(1);
+      expect(events[0][0].title).toBe('Authoritative Frontmatter Title');
+    });
+
+    it('handles note with custom filename without dates or calendar prefixes', async () => {
+      const filename = 'CustomNoteWithoutDate.md';
+      const app = MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder(dirName).file(
+            filename,
+            new FileBuilder()
+              .frontmatter({
+                title: 'Standalone Task',
+                date: '2026-09-05',
+                isTask: true,
+                completed: false
+              })
+              .text('Task body')
+          )
+        )
+        .done();
+
+      const obsidian = makeApp(app);
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const file = obsidian.getFileByPath(`${dirName}/${filename}`);
+      expect(file).not.toBeNull();
+
+      const events = await calendar.getEventsInFile(file!);
+      expect(events).toHaveLength(1);
+      expect(events[0][0]).toMatchObject(
+        expect.objectContaining({ title: 'Standalone Task', date: '2026-09-05', completed: false })
+      );
+    });
+
+    it('cleans recurring prefix from filename when frontmatter title is missing', async () => {
+      const filename = '(Every M,W) Team Standup.md';
+      const app = MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder(dirName).file(
+            filename,
+            new FileBuilder()
+              .frontmatter({
+                type: 'recurring',
+                daysOfWeek: ['M', 'W'],
+                startRecur: '2026-06-23'
+              })
+              .text('Standup notes')
+          )
+        )
+        .done();
+
+      const obsidian = makeApp(app);
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const file = obsidian.getFileByPath(`${dirName}/${filename}`);
+      expect(file).not.toBeNull();
+
+      const events = await calendar.getEventsInFile(file!);
+      expect(events).toHaveLength(1);
+      expect(events[0][0].title).toBe('Team Standup');
+      expect(events[0][0].type).toBe('recurring');
     });
   });
 });

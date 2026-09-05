@@ -15,6 +15,8 @@ This page describes how event logic is organized.
 - UI actions trigger changes, but EventCache owns event state.
 - Recurrence logic is delegated to dedicated feature managers.
 - Provider write operations are routed through provider registry.
+- **Frontmatter is the authoritative source for event identity.** The `title:` field in a note's YAML frontmatter is what appears on the calendar. Filenames are purely for file organisation and must never be used as the primary source of truth for event titles or identity. All local provider read paths (`FullNoteProvider`, `BasesProvider`, `FrontmatterCardDecorator`) must apply the same resolution order: frontmatter `title:` first, cleaned basename via `extractCleanTitleFromBasename()` as fallback.
+- **Vault renames must trigger both delete and re-index.** When `vault.on('rename')` fires, the handler must call `handleFileDelete(oldPath)` followed by `handleFileUpdate(newFile)`. Relying solely on `metadataCache.on('changed')` is insufficient because that event only fires on content edits, not renames.
 - Recurring instance completion/skip semantics are exposed through provider-agnostic contracts and implemented inside providers (no provider-specific recurrence branching in shared UI/core paths).
 - Provider-specific recurring overrides are declared through `CalendarProviderCapabilities.ownsRecurringInstanceOverrides`. Shared recurrence code checks that capability instead of hardcoding provider types.
 - CalDAV recurrence overrides are edited inside the shared server `.ics` object. Updating or deleting one override must replace or remove only the matching `VEVENT` with the same `UID` and `RECURRENCE-ID`; it must not PUT a one-event calendar over the whole resource or DELETE the resource URL.

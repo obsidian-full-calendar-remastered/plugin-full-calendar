@@ -5,6 +5,7 @@ import { OFCEvent, EventLocation, CalendarInfo, validateEvent } from '../../type
 import { FCReactComponent, EventHandle } from '../typesProvider';
 import FullCalendarPlugin from '../../main';
 import { ObsidianInterface } from '../../ObsidianAdapter';
+import { extractCleanTitleFromBasename } from '../utils/noteUtils';
 import { BasesConfigComponent, BasesConfigComponentProps } from './BasesConfigComponent';
 
 export interface BasesProviderConfig {
@@ -174,7 +175,10 @@ export class BasesProvider implements CalendarProvider<BasesProviderConfig>, Syn
     const date: unknown = metadata.date || metadata.start || metadata.startTime || metadata.due;
     if (!date) return null;
 
-    const title: string = typeof metadata.title === 'string' ? metadata.title : file.basename;
+    const title: string =
+      typeof metadata.title === 'string' && metadata.title.trim() !== ''
+        ? metadata.title.trim()
+        : extractCleanTitleFromBasename(file.basename);
     const category: string | undefined =
       typeof metadata.category === 'string'
         ? metadata.category

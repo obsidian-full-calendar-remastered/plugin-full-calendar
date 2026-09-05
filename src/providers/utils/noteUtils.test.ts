@@ -5,6 +5,7 @@
 
 import {
   sanitizeTitleForFilename,
+  extractCleanTitleFromBasename,
   basenameFromEvent,
   filenameForEvent,
   serializeFrontmatter,
@@ -28,6 +29,51 @@ describe('noteUtils', () => {
     it('should collapse multiple spaces', () => {
       const spacedTitle = 'Hello    World';
       expect(sanitizeTitleForFilename(spacedTitle)).toBe('Hello World');
+    });
+  });
+
+  describe('extractCleanTitleFromBasename', () => {
+    it('should strip leading ISO date prefix', () => {
+      expect(extractCleanTitleFromBasename('2026-09-05 Team Standup')).toBe('Team Standup');
+      expect(extractCleanTitleFromBasename('2024-01-01 Doctor Appointment')).toBe(
+        'Doctor Appointment'
+      );
+    });
+
+    it('should strip recurring prefixes', () => {
+      expect(extractCleanTitleFromBasename('(Every day) Daily Meeting')).toBe('Daily Meeting');
+      expect(extractCleanTitleFromBasename('(Every 3 days) Interval Meeting')).toBe(
+        'Interval Meeting'
+      );
+      expect(extractCleanTitleFromBasename('(Every M,W) Weekly Standup')).toBe('Weekly Standup');
+      expect(extractCleanTitleFromBasename('(Every month on the 1) Rent Payment')).toBe(
+        'Rent Payment'
+      );
+      expect(extractCleanTitleFromBasename('(Every year on May 20) Birthday')).toBe('Birthday');
+      expect(extractCleanTitleFromBasename('(Recurring) Gym Session')).toBe('Gym Session');
+    });
+
+    it('should strip both date and recurrence if combined', () => {
+      expect(extractCleanTitleFromBasename('2026-09-05 (Every M,W) Weekly Standup')).toBe(
+        'Weekly Standup'
+      );
+    });
+
+    it('should strip unique path suffix', () => {
+      expect(extractCleanTitleFromBasename('2026-05-20 Single Event-_-_-1')).toBe('Single Event');
+      expect(extractCleanTitleFromBasename('Dentist Appointment-_-_-2')).toBe(
+        'Dentist Appointment'
+      );
+    });
+
+    it('should preserve standard note names without calendar prefixes', () => {
+      expect(extractCleanTitleFromBasename('Meeting with Alice')).toBe('Meeting with Alice');
+      expect(extractCleanTitleFromBasename('Project Plan 2026')).toBe('Project Plan 2026');
+    });
+
+    it('should fallback gracefully when basename is only a date or empty', () => {
+      expect(extractCleanTitleFromBasename('2026-09-05')).toBe('2026-09-05');
+      expect(extractCleanTitleFromBasename('')).toBe('Untitled Event');
     });
   });
 

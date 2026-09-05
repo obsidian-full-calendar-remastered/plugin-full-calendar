@@ -4,7 +4,7 @@ This is the most powerful and flexible calendar type. Each event is a separate n
 
 Events are defined by the YAML frontmatter at the top of the note. The plugin manages this frontmatter when you [create or edit events](../events/manage.md) in the calendar view.
 
-The note's filename is also managed by the plugin to ensure it's easy to find, typically in the format `<YYYY-MM-DD> <Event title>.md`.
+The note's filename is also managed by the plugin to make notes easy to locate, typically in the format `<YYYY-MM-DD> <Event title>.md`. However, **the filename is purely for file organisation** — the plugin always reads the event title from the `title:` frontmatter field.
 
 !!! success "Best for..."
     Users who want to treat events as first-class notes, adding rich context like meeting agendas, personal reflections, or related tasks. This is the only calendar type that supports all features, including multi-day events.
@@ -33,7 +33,7 @@ When you create or edit an event note, the plugin manages its YAML frontmatter. 
 
 | Key | Type | Description |
 | --- | --- | --- |
-| `title` | String | The clean title of the event (enclosed in double quotes if it contains colons or special YAML characters, e.g., `title: "Super: Event"`). |
+| `title` | String | **The authoritative event title.** This is what appears on the calendar, regardless of the note's filename. Enclosed in double quotes if it contains colons or special YAML characters (e.g., `title: "Super: Event"`). |
 | `category` | String | The optional category tag. |
 | `location` | String | The optional location or address string (e.g., `Office Room 4B`). |
 | `description` | String | A multiline description/notes block. |
@@ -48,6 +48,23 @@ When you create or edit an event note, the plugin manages its YAML frontmatter. 
 
 !!! tip "Interactive Locations & Descriptions"
     URLs in the `location` and `description` fields are automatically linkified and rendered as clickable hyperlinks in the [Event Details modal](../events/manage.md#video-conference--linkification-support). For details, see [Video Conference & Linkification Support](../events/manage.md#video-conference--linkification-support).
+
+---
+
+## Event title priority
+
+The plugin resolves the displayed event title using the following priority order:
+
+1. **`title:` frontmatter field** *(authoritative)* — if present and non-empty, this is always used.
+2. **Cleaned filename fallback** — if `title:` is absent, the plugin derives a clean title from the filename by stripping known auto-generated prefixes:
+   - ISO date prefix → `2026-09-05 Team Standup` becomes `Team Standup`
+   - Recurrence prefix → `(Every M,W) Team Standup` becomes `Team Standup`
+   - Unique suffix → `Meeting-_-_-1` becomes `Meeting`
+
+This means you can freely rename note files without affecting what the calendar shows, as long as the `title:` frontmatter field is set.
+
+!!! tip "Rename-safe events"
+    Because the calendar identity is always derived from frontmatter — never the filename — renaming a note in the file explorer will not cause it to disappear from the calendar. The plugin detects renames immediately and re-indexes the note at its new path.
 
 ---
 

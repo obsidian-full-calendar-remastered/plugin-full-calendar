@@ -3,6 +3,7 @@ import { EditorState, RangeSetBuilder } from '@codemirror/state';
 import { TFile } from 'obsidian';
 import { LivePreviewDecorator } from '../../../features/livepreview/LivePreviewDecorator';
 import { PluginState } from '../../../core/PluginState';
+import { extractCleanTitleFromBasename } from '../../utils/noteUtils';
 import { launchEditModal } from '../../../ui/modals/event_modal';
 import {
   createColorDot,
@@ -157,7 +158,8 @@ export class FrontmatterCardDecorator implements LivePreviewDecorator {
       endTime = innerEvent.endTime || undefined;
     }
 
-    const eventTitle = innerEvent.title || file.basename || 'Untitled Event';
+    const eventTitle =
+      innerEvent.title || extractCleanTitleFromBasename(file.basename) || 'Untitled Event';
 
     const widget = Decoration.widget({
       widget: new FrontmatterCardWidget(

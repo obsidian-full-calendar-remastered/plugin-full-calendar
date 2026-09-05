@@ -27,6 +27,18 @@
 
 Creates one-note-per-event records, supports full CRUD, and uses robust filename collision handling to avoid destructive overwrites.
 
+**Frontmatter-first event identity**: The plugin treats frontmatter as the authoritative source for all event data. The note's filename is used only for file organisation and is never the basis for what is displayed on the calendar. Specifically:
+
+- `getEventsInFile()` reads the `title:` field from frontmatter. If absent or empty, it falls back to `extractCleanTitleFromBasename()` (`src/providers/utils/noteUtils.ts`), which strips known auto-generated prefixes before using the filename as a fallback title:
+    - ISO date prefix (e.g. `2026-09-05 Meeting` → `Meeting`)
+    - Recurrence prefix (e.g. `(Every M,W) Standup` → `Standup`)
+    - Unique suffix (e.g. `Meeting-_-_-1` → `Meeting`)
+- Event UID is always set to `file.path` after parsing (`event.uid = file.path`). This is the stable persistent identifier — not the title, not the filename stem.
+
+**Vault rename handling**: `main.ts` listens for `vault.on('rename')` and calls both `handleFileDelete(oldPath)` and `handleFileUpdate(newFile)` in sequence. This immediately removes the old path from the cache and re-indexes the note under its new path. Without `handleFileUpdate`, the event would disappear from the calendar because `metadataCache.on('changed')` does not fire on renames — only on content edits. The existing `isBulkUpdating` guard in `CacheSyncHandler` prevents double-processing when the plugin itself renames files via `updateEvent()`.
+
+**`basenameFromEvent` / `filenameForEvent`**: These remain in use for *creating* new event notes and for deciding if a file should be renamed when a user edits title or date via the modal. They are intentionally **not** used for reading.
+
 **Location & Description Mapping**: Parses and writes `location` (geographic/logical address) and `description` (multiline text) dynamically inside the note's YAML frontmatter block.
 
 **Frontmatter Serialization & Colon Safety**: All string properties in frontmatter are escaped and double-quoted by default when serialized (`escapeYamlString` in `frontmatter.ts` and `noteUtils.ts`). This prevents unquoted colons (`title: Super: Event`) from breaking Obsidian's YAML metadata parser. When reading note files, `getEventsInFile` utilizes `parseFrontmatterWithFallback` if Obsidian's `metadataCache` fails or returns unparsed metadata due to unquoted colons in historical or manually-edited notes.
@@ -242,6 +254,7 @@ Read-only provider (`isRemote = false`, `loadPriority = 10`) that reads Obsidian
 **Frontmatter Field Extraction & Categorization**:
 - Heuristically extracts event dates from frontmatter keys: `date`, `start`, `startTime`, or `due`.
 - Extracts categories (`category`, `Category`) and sub-categories (`subCategory`, `SubCategory`, `sub category`).
+- **Title resolution** follows the same frontmatter-first policy as `FullNoteProvider`: the `title:` frontmatter field is authoritative; if absent or empty, `extractCleanTitleFromBasename()` is used as a fallback (stripping date prefixes, recurrence prefixes, and unique suffixes before displaying the filename as a title).
 - Synthesizes formatted event titles as `Category - SubCategory - Title` or `Category - Title` prior to passing through [`validateEvent()`](file:///d:/Codes/plugin-full-calendar/src/types.ts).
 - Sets `event.uid` to `file.path` to enable O(1) persistent navigation back to the source note on click.
 

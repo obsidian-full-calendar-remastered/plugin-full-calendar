@@ -18,6 +18,7 @@ import { ObsidianInterface } from '../../ObsidianAdapter';
 import { FullNoteConfigComponent } from './FullNoteConfigComponent';
 import {
   basenameFromEvent,
+  extractCleanTitleFromBasename,
   filenameForEvent,
   findUniquePath,
   waitForFileAtPath,
@@ -225,10 +226,17 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
     const eventType =
       frontmatterType === 'recurring' || frontmatterType === 'rrule' ? frontmatterType : 'single';
 
+    const frontmatterTitle =
+      typeof frontmatter.title === 'string' && frontmatter.title.trim() !== ''
+        ? frontmatter.title.trim()
+        : null;
+
+    const fallbackBasename = file.basename || (file.name ? file.name.replace(/\.[^/.]+$/, '') : '');
+
     const rawEventData = {
       ...frontmatter,
       type: eventType,
-      title: frontmatter.title || file.basename
+      title: frontmatterTitle ?? extractCleanTitleFromBasename(fallbackBasename)
     } as Record<string, unknown>;
 
     const event = validateEvent(rawEventData);

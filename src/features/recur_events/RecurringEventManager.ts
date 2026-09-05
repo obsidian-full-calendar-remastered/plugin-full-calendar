@@ -384,9 +384,10 @@ export class RecurringEventManager {
       masterEventId,
       e => {
         if (e.type !== 'recurring' && e.type !== 'rrule') return e;
-        const skipDates = e.skipDates.includes(instanceDateToSkip)
-          ? e.skipDates
-          : [...e.skipDates, instanceDateToSkip];
+        const currentSkipDates = e.skipDates || [];
+        const skipDates = currentSkipDates.includes(instanceDateToSkip)
+          ? currentSkipDates
+          : [...currentSkipDates, instanceDateToSkip];
         return { ...e, skipDates };
       },
       { silent: true }

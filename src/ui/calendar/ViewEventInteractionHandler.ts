@@ -342,7 +342,7 @@ export class ViewEventInteractionHandler {
     const provider = PluginState.getProviderRegistry().getInstance(calendarId);
 
     const isRecurringSystem =
-      event.type === 'recurring' || event.type === 'rrule' || event.recurringEventId;
+      event.type === 'recurring' || event.type === 'rrule' || !!event.recurringEventId;
 
     if (provider && isRecurringSystem && eventApi.start) {
       const instanceDate = getEventDate(eventApi, event.timezone);
@@ -370,30 +370,30 @@ export class ViewEventInteractionHandler {
       }
     }
 
+    if (isRecurringSystem) {
+      if (!eventApi.start) return false;
+
+      const instanceDate = getEventDate(eventApi, event.timezone);
+      if (!instanceDate) return false;
+
+      try {
+        await PluginState.getCache().toggleRecurringInstance(eventId, instanceDate, isDone);
+        return true;
+      } catch (e) {
+        if (e instanceof Error) {
+          showNotice(e.message);
+        }
+        return false;
+      }
+    }
+
     if (provider && provider.toggleComplete) {
       return await provider.toggleComplete(eventId, isDone);
     }
 
-    if (!isRecurringSystem) {
-      const { toggleTask } = await import('../../types/tasks');
-      await PluginState.getCache().updateEventWithId(eventId, toggleTask(event, isDone));
-      return true;
-    }
-
-    if (!eventApi.start) return false;
-
-    const instanceDate = getEventDate(eventApi, event.timezone);
-    if (!instanceDate) return false;
-
-    try {
-      await PluginState.getCache().toggleRecurringInstance(eventId, instanceDate, isDone);
-      return true;
-    } catch (e) {
-      if (e instanceof Error) {
-        showNotice(e.message);
-      }
-      return false;
-    }
+    const { toggleTask } = await import('../../types/tasks');
+    await PluginState.getCache().updateEventWithId(eventId, toggleTask(event, isDone));
+    return true;
   }
 
   public async handleDrop(taskId: string, date: Date, allDay: boolean): Promise<void> {

@@ -57,14 +57,19 @@ export class InternalAPI {
         active: true
       });
     } else {
-      await Promise.all(leaves.map(l => (l.view as CalendarView).onOpen()));
+      const leaf = leaves[0];
+      await plugin.app.workspace.revealLeaf(leaf);
+      plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
     }
   }
 
   public async openSidebar(): Promise<void> {
     const plugin = PluginState.getPlugin();
     const { FULL_CALENDAR_SIDEBAR_VIEW_TYPE } = await import('../ui/view');
-    if (plugin.app.workspace.getLeavesOfType(FULL_CALENDAR_SIDEBAR_VIEW_TYPE).length) {
+    const leaves = plugin.app.workspace.getLeavesOfType(FULL_CALENDAR_SIDEBAR_VIEW_TYPE);
+    if (leaves.length > 0) {
+      await plugin.app.workspace.revealLeaf(leaves[0]);
+      plugin.app.workspace.setActiveLeaf(leaves[0], { focus: true });
       return;
     }
     const targetLeaf = plugin.app.workspace.getRightLeaf(false);
@@ -73,6 +78,7 @@ export class InternalAPI {
         type: FULL_CALENDAR_SIDEBAR_VIEW_TYPE
       });
       await plugin.app.workspace.revealLeaf(targetLeaf);
+      plugin.app.workspace.setActiveLeaf(targetLeaf, { focus: true });
     } else {
       console.warn('Right leaf not found for calendar view!');
     }

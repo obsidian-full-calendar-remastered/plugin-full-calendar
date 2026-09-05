@@ -21,7 +21,7 @@ import { rrulestr } from 'rrule';
 import { DateTime, Duration } from 'luxon';
 
 import { OFCEvent } from '../types';
-import { getCalendarColors } from '../ui/view';
+import { getCalendarColors } from '../ui/calendar/utils';
 import { FullCalendarSettings } from '../types/settings';
 
 import { EventApi, EventInput } from '@fullcalendar/core';

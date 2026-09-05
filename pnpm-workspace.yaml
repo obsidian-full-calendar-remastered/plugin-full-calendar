@@ -1,4 +1,5 @@
 allowBuilds:
+  '@parcel/watcher': true
   '@swc/core': true
   es5-ext: true
   esbuild: true

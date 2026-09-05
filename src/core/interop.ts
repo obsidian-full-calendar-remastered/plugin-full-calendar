@@ -513,7 +513,8 @@ export function toEventInput(
 export function fromEventApi(
   event: EventApi,
   settings: FullCalendarSettings,
-  newResource?: string
+  newResource?: string,
+  options?: { forceSingle?: boolean }
 ): OFCEvent {
   const extendedProps = (event.extendedProps || {}) as Record<string, unknown>;
 
@@ -546,13 +547,14 @@ export function fromEventApi(
     settings.displayTimezone ||
     Intl.DateTimeFormat().resolvedOptions().timeZone;
   const isRecurring: boolean =
-    extendedProps.daysOfWeek !== undefined ||
-    extendedProps.fcrDaily === true ||
-    extendedProps.repeatInterval !== undefined ||
-    extendedProps.repeatOn !== undefined ||
-    extendedProps.month !== undefined ||
-    extendedProps.dayOfMonth !== undefined ||
-    (extendedProps.type === 'recurring' && !extendedProps.rrule);
+    !options?.forceSingle &&
+    (extendedProps.daysOfWeek !== undefined ||
+      extendedProps.fcrDaily === true ||
+      extendedProps.repeatInterval !== undefined ||
+      extendedProps.repeatOn !== undefined ||
+      extendedProps.month !== undefined ||
+      extendedProps.dayOfMonth !== undefined ||
+      (extendedProps.type === 'recurring' && !extendedProps.rrule));
   const startDate = event.allDay
     ? (event.startStr ? DateTime.fromISO(event.startStr).toISODate() : null) ||
       DateTime.fromJSDate(event.start as Date).toISODate() ||
@@ -596,6 +598,16 @@ export function fromEventApi(
     title: _oldTitle,
     category: _oldCategory,
     subCategory: _oldSubCategory,
+    daysOfWeek: _oldDaysOfWeek,
+    rrule: _oldRrule,
+    fcrDaily: _oldFcrDaily,
+    repeatInterval: _oldRepeatInterval,
+    repeatOn: _oldRepeatOn,
+    startRecur: _oldStartRecur,
+    endRecur: _oldEndRecur,
+    skipDates: _oldSkipDates,
+    month: _oldMonth,
+    dayOfMonth: _oldDayOfMonth,
     ...restProps
   } = extendedProps;
 
@@ -639,6 +651,10 @@ export function fromEventApi(
               'U' | 'M' | 'T' | 'W' | 'R' | 'F' | 'S'
             )[]
           }
+        : {}),
+      ...(extendedProps.month !== undefined ? { month: extendedProps.month as number } : {}),
+      ...(extendedProps.dayOfMonth !== undefined
+        ? { dayOfMonth: extendedProps.dayOfMonth as number }
         : {}),
       startRecur: extendedProps.startRecur
         ? typeof extendedProps.startRecur === 'string'

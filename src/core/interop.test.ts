@@ -355,6 +355,51 @@ describe('interop toEventInput tests', () => {
       expect(timed.startTime).toBe('09:00');
       expect(timed.endTime).toBe('10:00');
     });
+
+    it('should force single event type and strip recurrence fields when forceSingle option is true', () => {
+      const recurringEvent: OFCEvent = {
+        type: 'recurring',
+        title: 'Weekly Standup',
+        daysOfWeek: ['M'],
+        allDay: false,
+        startTime: '10:00',
+        endTime: '11:00',
+        endDate: null,
+        repeatInterval: 1,
+        skipDates: ['2026-09-01']
+      };
+
+      const rendered = toEventInput('recurring-id', recurringEvent, baseSettings);
+      const movedEventApi = {
+        id: 'recurring-id',
+        title: 'Weekly Standup',
+        allDay: false,
+        start: new Date('2026-09-07T14:00:00.000Z'),
+        end: new Date('2026-09-07T15:00:00.000Z'),
+        startStr: '2026-09-07T14:00:00.000Z',
+        endStr: '2026-09-07T15:00:00.000Z',
+        extendedProps: rendered?.extendedProps
+      } as unknown as EventApi;
+
+      const singleOverride = fromEventApi(movedEventApi, baseSettings, undefined, {
+        forceSingle: true
+      });
+
+      expect(singleOverride.type).toBe('single');
+      expect(singleOverride.title).toBe('Weekly Standup');
+      if (singleOverride.type === 'single') {
+        expect(singleOverride.date).toBe('2026-09-07');
+        expect(singleOverride.allDay).toBe(false);
+        if (!singleOverride.allDay) {
+          expect(singleOverride.startTime).toBeDefined();
+          expect(singleOverride.endTime).toBeDefined();
+        }
+      }
+      expect((singleOverride as Record<string, unknown>).daysOfWeek).toBeUndefined();
+      expect((singleOverride as Record<string, unknown>).repeatInterval).toBeUndefined();
+      expect((singleOverride as Record<string, unknown>).skipDates).toBeUndefined();
+      expect((singleOverride as Record<string, unknown>).rrule).toBeUndefined();
+    });
   });
 
   // ==========================================================================

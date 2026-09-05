@@ -244,6 +244,9 @@ export class ViewEventInteractionHandler {
         }
 
         const modifiedEvent = fromEventApi(newEvent, config, newResource);
+        const singleInstanceOverride = fromEventApi(newEvent, config, newResource, {
+          forceSingle: true
+        });
         const { RescheduleRecurringModal } = await import('../modals/RescheduleRecurringModal');
         new RescheduleRecurringModal(
           this.ctx.app,
@@ -251,7 +254,7 @@ export class ViewEventInteractionHandler {
             void PluginState.getCache().modifyRecurringInstance(
               oldEvent.id,
               instanceDate,
-              modifiedEvent
+              singleInstanceOverride
             );
           },
           () => {
@@ -270,7 +273,7 @@ export class ViewEventInteractionHandler {
         (originalEvent.recurringEventId || originalEvent.recurrenceId)
       ) {
         const oldDate = getEventDate(oldEvent, originalEvent.timezone);
-        const modifiedEvent = fromEventApi(newEvent, config, newResource);
+        const modifiedEvent = fromEventApi(newEvent, config, newResource, { forceSingle: true });
         const masterDetails = PluginState.getCache()
           .store.getAllEvents()
           .find(candidate => {

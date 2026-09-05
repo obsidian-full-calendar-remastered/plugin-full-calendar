@@ -235,7 +235,8 @@ export class AvailabilityShareModal extends Modal {
     // Step 1
     const step1Setting = new Setting(setupPanel).setName(t('availability.modal.setupStep1'));
     const step1Link = step1Setting.descEl.createEl('a', {
-      text: t('availability.modal.setupStep1Link')
+      text: t('availability.modal.setupStep1Link'),
+      cls: 'ofc-doc-link external-link'
     });
     step1Link.setAttribute('href', '#');
     step1Link.addEventListener('click', e => {

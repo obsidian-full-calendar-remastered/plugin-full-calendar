@@ -229,9 +229,23 @@ export const ActivityWatchConfigComponent: React.FC<Props> = ({ plugin: _plugin,
             <div className="setting-item-name">{t('settings.activityWatch.title')}</div>
             <div className="setting-item-description">
               {t('settings.activityWatch.enable.description')} Learn more:{' '}
-              <a href={toDocsUrl('user/calendars/activitywatch/')}>ActivityWatch integration</a>
+              <a
+                href={toDocsUrl('user/calendars/activitywatch/')}
+                className="ofc-doc-link external-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                ActivityWatch integration
+              </a>
               {' | '}
-              <a href={toDocsUrl('user/guides/troubleshooting')}>Troubleshooting</a>
+              <a
+                href={toDocsUrl('user/guides/troubleshooting')}
+                className="ofc-doc-link external-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Troubleshooting
+              </a>
             </div>
           </div>
         </section>

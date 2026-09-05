@@ -50,7 +50,8 @@ export class AvailabilitySettingsModal extends Modal {
     const linkDiv = descEl.createDiv();
     linkDiv.setCssProps({ marginTop: '6px' });
     const tokenLink = linkDiv.createEl('a', {
-      text: t('availability.settings.githubPatLink')
+      text: t('availability.settings.githubPatLink'),
+      cls: 'ofc-doc-link external-link'
     });
     tokenLink.setAttribute('href', '#');
     tokenLink.addEventListener('click', e => {
@@ -74,7 +75,8 @@ export class AvailabilitySettingsModal extends Modal {
     });
 
     const gistDashboardLink = privacyLinksDiv.createEl('a', {
-      text: t('availability.settings.cleanupGistLink')
+      text: t('availability.settings.cleanupGistLink'),
+      cls: 'ofc-doc-link external-link'
     });
     gistDashboardLink.setAttribute('href', '#');
     gistDashboardLink.addEventListener('click', e => {

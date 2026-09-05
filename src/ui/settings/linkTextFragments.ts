@@ -60,7 +60,18 @@ export function createLinksFragment(
       return;
     }
 
-    const linkEl = createEl('a', { text: segment.text, href: segment.href });
+    const isExternal = /^(?:https?:)?\/\//i.test(segment.href);
+    const linkEl = createEl('a', {
+      text: segment.text,
+      href: segment.href,
+      cls: isExternal ? 'external-link ofc-doc-link' : 'internal-link ofc-doc-link',
+      attr: isExternal
+        ? {
+            target: '_blank',
+            rel: 'noopener noreferrer'
+          }
+        : undefined
+    });
     fragment.append(linkEl);
 
     previousSegmentWasLink = true;

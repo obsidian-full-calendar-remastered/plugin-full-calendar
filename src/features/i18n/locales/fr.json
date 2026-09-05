@@ -1702,7 +1702,8 @@
         "openLinkedNote": "Ouvrir la note liée",
         "goToNote": "Aller à la note",
         "delete": "Supprimer",
-        "noActions": "Aucune action disponible sur les événements distants"
+        "noActions": "Aucune action disponible sur les événements distants",
+        "openLocationUrl": "Open location in browser"
       }
     },
     "buttons": {

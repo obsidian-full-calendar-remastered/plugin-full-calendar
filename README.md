@@ -1,6 +1,6 @@
 <div align="right">
   <img src="https://img.shields.io/github/downloads/obsidian-full-calendar-remastered/plugin-full-calendar/total?label=Downloads" alt="Downloads" />
-  <a href="#contributors-"><img src="https://img.shields.io/badge/all_contributors-16-orange.svg?style=flat-square" alt="All Contributors" /></a>
+  <a href="#contributors-"><img src="https://img.shields.io/badge/all_contributors-17-orange.svg?style=flat-square" alt="All Contributors" /></a>
   <a href="https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/"><img src="https://img.shields.io/badge/Version-v_0.13.5.7-blue" alt="Version" /></a>
 </div>
 
@@ -24,6 +24,7 @@ Full Calendar supports multiple calendar sources:
 - [**CalDAV**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/caldav/): Two-way sync with CalDAV servers
 - [**CalDAV Tasks**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/caldav-tasks/): Two-way VTODO task/reminder sync, tested with iCloud Reminders
 - [**Google Calendar**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/gcal/): Two-way sync with Google Calendar
+- [**Google Tasks**](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/gtasks/): Two-way sync with Google Tasks
 
 Integrations include
 

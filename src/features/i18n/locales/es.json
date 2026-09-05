@@ -1702,7 +1702,8 @@
         "openLinkedNote": "Abrir nota vinculada",
         "goToNote": "Ir a la nota",
         "delete": "Eliminar",
-        "noActions": "No hay acciones disponibles en eventos remotos"
+        "noActions": "No hay acciones disponibles en eventos remotos",
+        "openLocationUrl": "Open location in browser"
       }
     },
     "buttons": {

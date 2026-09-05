@@ -1702,7 +1702,8 @@
         "openLinkedNote": "Verknüpfte Notiz öffnen",
         "goToNote": "Gehe zur Notiz",
         "delete": "Löschen",
-        "noActions": "Keine Aktionen für Remote-Ereignisse verfügbar"
+        "noActions": "Keine Aktionen für Remote-Ereignisse verfügbar",
+        "openLocationUrl": "Open location in browser"
       }
     },
     "buttons": {

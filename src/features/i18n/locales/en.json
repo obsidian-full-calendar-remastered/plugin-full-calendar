@@ -1769,7 +1769,8 @@
         "openLinkedNote": "Open linked note",
         "goToNote": "Go to note",
         "delete": "Delete",
-        "noActions": "No actions available on remote events"
+        "noActions": "No actions available on remote events",
+        "openLocationUrl": "Open location in browser"
       }
     },
     "buttons": {

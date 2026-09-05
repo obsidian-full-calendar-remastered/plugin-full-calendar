@@ -8,7 +8,10 @@ jest.mock(
     Menu: class {
       addItem = (
         cb: (item: {
-          setTitle: (t: string) => { setIcon: () => void };
+          setTitle: (t: string) => {
+            setIcon: () => { setDisabled: () => void };
+            setDisabled: () => void;
+          };
           setIcon: () => void;
           setDisabled: () => void;
           onClick: (fn: () => void) => void;
@@ -16,17 +19,18 @@ jest.mock(
       ) => {
         let title = '';
         let clickHandler: (() => void) | undefined;
-        cb({
+        const fluentItem = {
           setTitle: (t: string) => {
             title = t;
-            return { setIcon: () => {} };
+            return fluentItem;
           },
-          setIcon: () => {},
-          setDisabled: () => {},
+          setIcon: () => fluentItem,
+          setDisabled: () => fluentItem,
           onClick: (fn: () => void) => {
             clickHandler = fn;
           }
-        });
+        };
+        cb(fluentItem);
         mockMenuItems.push({ title, onClick: clickHandler });
       };
       addSeparator = jest.fn();
@@ -171,5 +175,135 @@ describe('EventContextMenuBuilder timezone instanceDate handling', () => {
     );
 
     openOrCreateSpy.mockRestore();
+  });
+});
+
+describe('EventContextMenuBuilder location URL actions', () => {
+  beforeEach(() => {
+    mockMenuItems.length = 0;
+  });
+
+  const makeContextMenuSetup = async (overrides: {
+    location?: string | null;
+    isEditable?: boolean;
+  }) => {
+    const { location = null, isEditable = false } = overrides;
+
+    const mockEvent = {
+      id: 'test-event-1',
+      title: 'Test Event',
+      type: 'single' as const,
+      date: '2026-09-05',
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00',
+      location: location ?? undefined
+    };
+
+    const { PluginState } = await import('../../core/PluginState');
+    jest.spyOn(PluginState, 'getCache').mockReturnValue({
+      store: {
+        getEventDetails: () => ({
+          calendarId: 'test-cal',
+          event: mockEvent,
+          location: null
+        })
+      },
+      isEventEditable: () => isEditable,
+      deleteEvent: jest.fn()
+    } as unknown as ReturnType<typeof PluginState.getCache>);
+
+    jest.spyOn(PluginState, 'getProviderRegistry').mockReturnValue({
+      getInstance: () => null, // no linked-note support
+      getCapabilities: () => ({
+        canCreate: isEditable,
+        canEdit: isEditable,
+        canDelete: isEditable
+      })
+    } as unknown as ReturnType<typeof PluginState.getProviderRegistry>);
+
+    jest.spyOn(PluginState, 'getSettings').mockReturnValue({
+      displayTimezone: 'UTC'
+    } as unknown as ReturnType<typeof PluginState.getSettings>);
+
+    const mockEventApi = {
+      id: 'test-event-1',
+      title: 'Test Event',
+      start: new Date('2026-09-05T10:00:00.000Z'),
+      display: 'auto'
+    };
+
+    return { mockEventApi };
+  };
+
+  it('shows "Open location in browser" for a read-only event with a URL location', async () => {
+    const { openEventContextMenu } = await import('./EventContextMenuBuilder');
+    const { mockEventApi } = await makeContextMenuSetup({
+      location: 'https://meet.google.com/abc-def',
+      isEditable: false
+    });
+
+    await openEventContextMenu(
+      {} as import('../../main').default,
+      mockEventApi as unknown as import('@fullcalendar/core').EventApi,
+      {} as MouseEvent
+    );
+
+    const item = mockMenuItems.find(i => i.title === 'ui.view.contextMenu.openLocationUrl');
+    expect(item).toBeDefined();
+  });
+
+  it('calls window.open with the location URL when clicked', async () => {
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+    const { openEventContextMenu } = await import('./EventContextMenuBuilder');
+    const { mockEventApi } = await makeContextMenuSetup({
+      location: 'https://meet.google.com/abc-def',
+      isEditable: false
+    });
+
+    await openEventContextMenu(
+      {} as import('../../main').default,
+      mockEventApi as unknown as import('@fullcalendar/core').EventApi,
+      {} as MouseEvent
+    );
+
+    const item = mockMenuItems.find(i => i.title === 'ui.view.contextMenu.openLocationUrl');
+    item?.onClick?.();
+    await new Promise(resolve => window.setTimeout(resolve, 10));
+
+    expect(openSpy).toHaveBeenCalledWith('https://meet.google.com/abc-def', '_blank');
+    openSpy.mockRestore();
+  });
+
+  it('does NOT show location menu item when location is a plain string', async () => {
+    const { openEventContextMenu } = await import('./EventContextMenuBuilder');
+    const { mockEventApi } = await makeContextMenuSetup({
+      location: 'Conference Room B',
+      isEditable: false
+    });
+
+    await openEventContextMenu(
+      {} as import('../../main').default,
+      mockEventApi as unknown as import('@fullcalendar/core').EventApi,
+      {} as MouseEvent
+    );
+
+    const item = mockMenuItems.find(i => i.title === 'ui.view.contextMenu.openLocationUrl');
+    expect(item).toBeUndefined();
+  });
+
+  it('does NOT show location menu item when event has no location', async () => {
+    const { openEventContextMenu } = await import('./EventContextMenuBuilder');
+    const { mockEventApi } = await makeContextMenuSetup({ location: null, isEditable: false });
+
+    await openEventContextMenu(
+      {} as import('../../main').default,
+      mockEventApi as unknown as import('@fullcalendar/core').EventApi,
+      {} as MouseEvent
+    );
+
+    const item = mockMenuItems.find(i => i.title === 'ui.view.contextMenu.openLocationUrl');
+    expect(item).toBeUndefined();
   });
 });

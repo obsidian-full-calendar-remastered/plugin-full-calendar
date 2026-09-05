@@ -1702,7 +1702,8 @@
         "openLinkedNote": "打开关联笔记",
         "goToNote": "转到笔记",
         "delete": "删除",
-        "noActions": "远程事件没有可用操作"
+        "noActions": "远程事件没有可用操作",
+        "openLocationUrl": "Open location in browser"
       }
     },
     "buttons": {

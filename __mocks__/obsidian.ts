@@ -78,6 +78,36 @@ export function parseYaml(yaml: string): Record<string, string> | null {
     return Object.fromEntries([[k.trim(), v.join(":").trim()]]);
 }
 
+export function getAllTags(cache: { tags?: { tag: string }[]; frontmatter?: { tags?: string | string[]; tag?: string | string[] } }): string[] | null {
+    if (!cache) return null;
+    const tags = new Set<string>();
+    if (cache.tags) {
+        for (const t of cache.tags) {
+            tags.add(t.tag);
+        }
+    }
+    const extractTags = (val: unknown) => {
+        if (typeof val === 'string') {
+            for (const t of val.split(',')) {
+                const trimmed = t.trim();
+                if (trimmed) tags.add(trimmed.startsWith('#') ? trimmed : `#${trimmed}`);
+            }
+        } else if (Array.isArray(val)) {
+            for (const item of val) {
+                if (typeof item === 'string') {
+                    const trimmed = item.trim();
+                    if (trimmed) tags.add(trimmed.startsWith('#') ? trimmed : `#${trimmed}`);
+                }
+            }
+        }
+    };
+    if (cache.frontmatter) {
+        if (cache.frontmatter.tags) extractTags(cache.frontmatter.tags);
+        if (cache.frontmatter.tag) extractTags(cache.frontmatter.tag);
+    }
+    return tags.size > 0 ? Array.from(tags) : null;
+}
+
 export class Notice {
     static notices: string[] = [];
 

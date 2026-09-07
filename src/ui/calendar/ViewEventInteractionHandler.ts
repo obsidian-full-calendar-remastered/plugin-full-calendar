@@ -14,6 +14,7 @@ import { ViewContext } from './ViewContext';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
 import { OFCEvent } from '../../types';
 import { openLinkedFileInExistingLeafOrNew } from '../../utils/leafUtils';
+import { getEventInstanceDate, resolveEffectiveTimezone } from '../../features/timezone/Timezone';
 
 const shiftIsoDate = (date: string | undefined, days: number): string | undefined => {
   if (!date || days === 0) {
@@ -23,16 +24,17 @@ const shiftIsoDate = (date: string | undefined, days: number): string | undefine
   return DateTime.fromISO(date).plus({ days }).toISODate() || date;
 };
 
-const getEventDate = (eventApi: EventApi): string | null =>
-  eventApi.start ? DateTime.fromJSDate(eventApi.start).toISODate() : null;
+const getEventDate = (eventApi: EventApi, timezone?: string | null): string | null =>
+  getEventInstanceDate(eventApi.start, eventApi.allDay, timezone, eventApi.startStr) ?? null;
 
-const getDayDelta = (oldEvent: EventApi, newEvent: EventApi): number => {
+const getDayDelta = (oldEvent: EventApi, newEvent: EventApi, timezone?: string | null): number => {
   if (!oldEvent.start || !newEvent.start) {
     return 0;
   }
 
-  const oldStart = DateTime.fromJSDate(oldEvent.start).startOf('day');
-  const newStart = DateTime.fromJSDate(newEvent.start).startOf('day');
+  const zone = resolveEffectiveTimezone(timezone);
+  const oldStart = DateTime.fromJSDate(oldEvent.start).setZone(zone).startOf('day');
+  const newStart = DateTime.fromJSDate(newEvent.start).setZone(zone).startOf('day');
   return Math.round(newStart.diff(oldStart, 'days').days);
 };
 
@@ -46,7 +48,7 @@ function buildRecurringSequenceReschedule(
     return masterEvent;
   }
 
-  const dayDelta = getDayDelta(oldEvent, newEvent);
+  const dayDelta = getDayDelta(oldEvent, newEvent, masterEvent.timezone);
   const nextEvent = {
     ...masterEvent,
     allDay: modifiedInstance.allDay,
@@ -97,7 +99,7 @@ export class ViewEventInteractionHandler {
       'getRecurringInstanceState' in provider &&
       typeof provider.getRecurringInstanceState === 'function'
     ) {
-      const instanceDate = DateTime.fromJSDate(eventApi.start).toISODate();
+      const instanceDate = getEventDate(eventApi, event.timezone);
       if (!instanceDate) {
         return null;
       }
@@ -112,12 +114,10 @@ export class ViewEventInteractionHandler {
 
   public async handleEventClick(info: EventClickArg): Promise<void> {
     try {
-      const instanceDate = info.event.start
-        ? DateTime.fromJSDate(info.event.start).toISODate() || undefined
-        : undefined;
+      const eventDetails = PluginState.getCache().store.getEventDetails(info.event.id);
+      const instanceDate = getEventDate(info.event, eventDetails?.event?.timezone) || undefined;
 
       if (info.jsEvent.getModifierState('Control') || info.jsEvent.getModifierState('Meta')) {
-        const eventDetails = PluginState.getCache().store.getEventDetails(info.event.id);
         if (eventDetails) {
           const { calendarId, event } = eventDetails;
           const provider = PluginState.getProviderRegistry().getInstance(calendarId);
@@ -153,7 +153,6 @@ export class ViewEventInteractionHandler {
         return;
       }
 
-      const eventDetails = PluginState.getCache().store.getEventDetails(info.event.id);
       if (!eventDetails) return;
 
       const { calendarId } = eventDetails;
@@ -239,12 +238,15 @@ export class ViewEventInteractionHandler {
           throw new Error('Recurring instance is missing original start date.');
         }
 
-        const instanceDate = getEventDate(oldEvent);
+        const instanceDate = getEventDate(oldEvent, originalEvent.timezone);
         if (!instanceDate) {
           throw new Error('Could not determine instance date from recurring event.');
         }
 
         const modifiedEvent = fromEventApi(newEvent, config, newResource);
+        const singleInstanceOverride = fromEventApi(newEvent, config, newResource, {
+          forceSingle: true
+        });
         const { RescheduleRecurringModal } = await import('../modals/RescheduleRecurringModal');
         new RescheduleRecurringModal(
           this.ctx.app,
@@ -252,7 +254,7 @@ export class ViewEventInteractionHandler {
             void PluginState.getCache().modifyRecurringInstance(
               oldEvent.id,
               instanceDate,
-              modifiedEvent
+              singleInstanceOverride
             );
           },
           () => {
@@ -270,8 +272,8 @@ export class ViewEventInteractionHandler {
         originalEvent.type === 'single' &&
         (originalEvent.recurringEventId || originalEvent.recurrenceId)
       ) {
-        const oldDate = getEventDate(oldEvent);
-        const modifiedEvent = fromEventApi(newEvent, config, newResource);
+        const oldDate = getEventDate(oldEvent, originalEvent.timezone);
+        const modifiedEvent = fromEventApi(newEvent, config, newResource, { forceSingle: true });
         const masterDetails = PluginState.getCache()
           .store.getAllEvents()
           .find(candidate => {
@@ -343,10 +345,10 @@ export class ViewEventInteractionHandler {
     const provider = PluginState.getProviderRegistry().getInstance(calendarId);
 
     const isRecurringSystem =
-      event.type === 'recurring' || event.type === 'rrule' || event.recurringEventId;
+      event.type === 'recurring' || event.type === 'rrule' || !!event.recurringEventId;
 
     if (provider && isRecurringSystem && eventApi.start) {
-      const instanceDate = DateTime.fromJSDate(eventApi.start).toISODate();
+      const instanceDate = getEventDate(eventApi, event.timezone);
       if (instanceDate) {
         if (
           'getRecurringInstanceState' in provider &&
@@ -371,30 +373,30 @@ export class ViewEventInteractionHandler {
       }
     }
 
+    if (isRecurringSystem) {
+      if (!eventApi.start) return false;
+
+      const instanceDate = getEventDate(eventApi, event.timezone);
+      if (!instanceDate) return false;
+
+      try {
+        await PluginState.getCache().toggleRecurringInstance(eventId, instanceDate, isDone);
+        return true;
+      } catch (e) {
+        if (e instanceof Error) {
+          showNotice(e.message);
+        }
+        return false;
+      }
+    }
+
     if (provider && provider.toggleComplete) {
       return await provider.toggleComplete(eventId, isDone);
     }
 
-    if (!isRecurringSystem) {
-      const { toggleTask } = await import('../../types/tasks');
-      await PluginState.getCache().updateEventWithId(eventId, toggleTask(event, isDone));
-      return true;
-    }
-
-    if (!eventApi.start) return false;
-
-    const instanceDate = DateTime.fromJSDate(eventApi.start).toISODate();
-    if (!instanceDate) return false;
-
-    try {
-      await PluginState.getCache().toggleRecurringInstance(eventId, instanceDate, isDone);
-      return true;
-    } catch (e) {
-      if (e instanceof Error) {
-        showNotice(e.message);
-      }
-      return false;
-    }
+    const { toggleTask } = await import('../../types/tasks');
+    await PluginState.getCache().updateEventWithId(eventId, toggleTask(event, isDone));
+    return true;
   }
 
   public async handleDrop(taskId: string, date: Date, allDay: boolean): Promise<void> {

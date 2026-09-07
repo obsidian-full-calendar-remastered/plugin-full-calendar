@@ -48,7 +48,7 @@ import { ViewUIHandler } from './calendar/ViewUIHandler';
 import { ViewEventInteractionHandler } from './calendar/ViewEventInteractionHandler';
 import { ViewSettingsHandler } from './calendar/ViewSettingsHandler';
 import { buildLinkedNoteHoverPayload } from '../features/linked-notes/linkedNoteHover';
-export { getCalendarColors } from './calendar/utils';
+export { getCalendarColors, isLightColor } from './calendar/utils';
 
 export const FULL_CALENDAR_VIEW_TYPE = 'full-calendar-view';
 export const FULL_CALENDAR_SIDEBAR_VIEW_TYPE = 'full-calendar-sidebar-view';

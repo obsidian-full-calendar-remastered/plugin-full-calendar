@@ -38,7 +38,7 @@ If the Bases plugin is disabled, Full Calendar will prompt you to enable it befo
 For each file selected by your Base:
 
 - **Date / time:** pulled from frontmatter keys `date`, `start`, `startTime`, or `due` (first match). If none are present, the note is skipped.
-- **Title:** `title` frontmatter, otherwise the note filename.
+- **Title:** `title` frontmatter (authoritative) — if absent, a cleaned version of the note filename is used (date prefixes and recurrence prefixes are stripped automatically).
 - **Category / subcategory:** taken from `category`/`Category` and `sub category`/`subCategory` frontmatter. The title is expanded to `Category - Subcategory - Title` when present.
 - **All-day:** defaults to `true` unless `allDay` frontmatter is provided.
 - **Type:** defaults to `single` unless you set `type` in frontmatter.

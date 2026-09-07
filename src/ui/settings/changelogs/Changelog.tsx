@@ -40,6 +40,7 @@ const renderMarkdownLinks = (text: string): React.ReactNode[] =>
     return (
       <a
         href={segment.href}
+        className="ofc-doc-link external-link"
         target="_blank"
         rel="noopener noreferrer"
         key={`md-link-${idx}`}

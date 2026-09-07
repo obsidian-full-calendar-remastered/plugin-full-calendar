@@ -177,28 +177,56 @@ export class ObsidianIO implements ObsidianInterface {
   waitForMetadata(file: TFile): Promise<CachedMetadata> {
     return new Promise((resolve, _reject) => {
       const cache = this.metadataCache.getFileCache(file);
-      let ref: EventRef | null = null;
       if (cache) {
         resolve(cache);
         return;
       }
-      ref = this.metadataCache.on('changed', (changedFile, _data, cache) => {
+
+      let changedRef: EventRef | null = null;
+      let resolveRef: EventRef | null = null;
+
+      const cleanup = () => {
+        if (changedRef) this.metadataCache.offref(changedRef);
+        if (resolveRef) this.metadataCache.offref(resolveRef);
+      };
+
+      changedRef = this.metadataCache.on('changed', (changedFile, _data, newCache) => {
         if (changedFile.path !== file.path) {
           return;
         }
-        resolve(cache);
-        if (ref) {
-          this.metadataCache.offref(ref);
-        } else {
-          console.warn('No ref was found after cache loaded.');
-        }
-        return;
+        cleanup();
+        resolve(newCache);
       });
+
+      // Obsidian fires 'resolve' on file renames when metadata is resolved
+      const extendedCache = this.metadataCache as unknown as {
+        on: (name: string, cb: (resolvedFile: TFile) => void) => EventRef;
+      };
+      if (typeof extendedCache.on === 'function') {
+        resolveRef = extendedCache.on('resolve', resolvedFile => {
+          if (resolvedFile.path !== file.path) {
+            return;
+          }
+          const resolvedCache = this.metadataCache.getFileCache(file);
+          if (resolvedCache) {
+            cleanup();
+            resolve(resolvedCache);
+          }
+        });
+      }
     });
   }
 
-  read(file: TFile): Promise<string> {
-    return this.vault.cachedRead(file);
+  async read(file: TFile): Promise<string> {
+    try {
+      const cached = await this.vault.cachedRead(file);
+      if (cached) {
+        return cached;
+      }
+    } catch {
+      // If cachedRead fails (e.g. during a rename race), fall back to direct disk read
+    }
+    return this.vault.read(file);
   }
 
   async process<T>(file: TFile, func: (text: string) => T): Promise<T> {

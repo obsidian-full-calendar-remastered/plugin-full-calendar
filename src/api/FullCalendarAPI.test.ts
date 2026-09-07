@@ -52,7 +52,17 @@ describe('FullCalendarAPI Unit Tests', () => {
     apiTokens: Record<string, unknown>;
     authorizedTokens: Record<string, unknown>;
   };
-  let mockPlugin: { app: { workspace: { getLeavesOfType: jest.Mock } } };
+  let mockPlugin: {
+    app: {
+      workspace: {
+        getLeavesOfType: jest.Mock;
+        getLeaf: jest.Mock;
+        getRightLeaf: jest.Mock;
+        revealLeaf: jest.Mock;
+        setActiveLeaf: jest.Mock;
+      };
+    };
+  };
   let mockCache: {
     getAllEvents: jest.Mock;
     getEventById: jest.Mock;
@@ -75,7 +85,11 @@ describe('FullCalendarAPI Unit Tests', () => {
     mockPlugin = {
       app: {
         workspace: {
-          getLeavesOfType: jest.fn().mockReturnValue([])
+          getLeavesOfType: jest.fn().mockReturnValue([]),
+          getLeaf: jest.fn(),
+          getRightLeaf: jest.fn(),
+          revealLeaf: jest.fn().mockResolvedValue(undefined),
+          setActiveLeaf: jest.fn()
         }
       }
     };
@@ -130,6 +144,72 @@ describe('FullCalendarAPI Unit Tests', () => {
       const events = internalApi.getEvents({});
       expect(events.length).toBe(1);
       expect(events[0].id).toBe('event-1');
+    });
+
+    it('should create and activate a new tab leaf when openCalendar is called with no existing leaves', async () => {
+      const mockLeaf = {
+        setViewState: jest.fn().mockResolvedValue(undefined)
+      };
+      mockPlugin.app.workspace.getLeavesOfType.mockReturnValue([]);
+      mockPlugin.app.workspace.getLeaf.mockReturnValue(mockLeaf);
+
+      await internalApi.openCalendar();
+
+      expect(mockPlugin.app.workspace.getLeaf).toHaveBeenCalledWith('tab');
+      expect(mockLeaf.setViewState).toHaveBeenCalledWith({
+        type: 'full-calendar-view',
+        active: true
+      });
+      expect(mockPlugin.app.workspace.revealLeaf).not.toHaveBeenCalled();
+    });
+
+    it('should reveal and focus the existing leaf when openCalendar is called and a leaf already exists', async () => {
+      const existingLeaf = {
+        view: { inSidebar: false }
+      };
+      mockPlugin.app.workspace.getLeavesOfType.mockReturnValue([existingLeaf]);
+
+      await internalApi.openCalendar();
+
+      expect(mockPlugin.app.workspace.getLeaf).not.toHaveBeenCalled();
+      expect(mockPlugin.app.workspace.revealLeaf).toHaveBeenCalledWith(existingLeaf);
+      expect(mockPlugin.app.workspace.setActiveLeaf).toHaveBeenCalledWith(existingLeaf, {
+        focus: true
+      });
+    });
+
+    it('should create and reveal a right leaf when openSidebar is called with no existing sidebar leaves', async () => {
+      const mockSidebarLeaf = {
+        setViewState: jest.fn().mockResolvedValue(undefined)
+      };
+      mockPlugin.app.workspace.getLeavesOfType.mockReturnValue([]);
+      mockPlugin.app.workspace.getRightLeaf.mockReturnValue(mockSidebarLeaf);
+
+      await internalApi.openSidebar();
+
+      expect(mockPlugin.app.workspace.getRightLeaf).toHaveBeenCalledWith(false);
+      expect(mockSidebarLeaf.setViewState).toHaveBeenCalledWith({
+        type: 'full-calendar-sidebar-view'
+      });
+      expect(mockPlugin.app.workspace.revealLeaf).toHaveBeenCalledWith(mockSidebarLeaf);
+      expect(mockPlugin.app.workspace.setActiveLeaf).toHaveBeenCalledWith(mockSidebarLeaf, {
+        focus: true
+      });
+    });
+
+    it('should reveal and focus the existing sidebar leaf when openSidebar is called and leaf already exists', async () => {
+      const existingSidebarLeaf = {
+        view: { inSidebar: true }
+      };
+      mockPlugin.app.workspace.getLeavesOfType.mockReturnValue([existingSidebarLeaf]);
+
+      await internalApi.openSidebar();
+
+      expect(mockPlugin.app.workspace.getRightLeaf).not.toHaveBeenCalled();
+      expect(mockPlugin.app.workspace.revealLeaf).toHaveBeenCalledWith(existingSidebarLeaf);
+      expect(mockPlugin.app.workspace.setActiveLeaf).toHaveBeenCalledWith(existingSidebarLeaf, {
+        focus: true
+      });
     });
   });
 

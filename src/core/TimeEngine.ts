@@ -17,6 +17,7 @@ import { RRule, rrulestr } from 'rrule';
 import { OFCEvent, EventLocation } from '../types';
 import EventCache from './EventCache';
 import { EventFilterSortEngine } from './EventFilterSortEngine';
+import { resolveEffectiveTimezone } from '../features/timezone/Timezone';
 
 // ============== INTERFACES ==============
 
@@ -42,12 +43,8 @@ const MAX_OCCURRENCES = 100; // Max number of occurrences to cache to prevent pe
 
 const parseEventDateTime = (date: string, time?: string, timezone?: string): DateTime => {
   const dateTimeString = time ? `${date}T${time}` : date;
-  if (!timezone) {
-    return DateTime.fromISO(dateTimeString);
-  }
-
-  const zone = timezone === 'Z' || timezone.toLowerCase() === 'utc' ? 'utc' : timezone;
-  const zoned = DateTime.fromISO(dateTimeString, { zone });
+  const zone = resolveEffectiveTimezone(timezone);
+  const zoned = DateTime.fromISO(dateTimeString, { zone, setZone: true });
   return zoned.isValid ? zoned : DateTime.fromISO(dateTimeString);
 };
 
@@ -320,30 +317,19 @@ export class TimeEngine {
               let start: DateTime;
               if (!event.allDay && event.startTime && dateStr) {
                 const [h, m] = event.startTime.split(':').map(Number);
-                if (event.timezone) {
-                  // Event has an explicit timezone (e.g. CalDAV/Google): build
-                  // the occurrence in that zone so the UTC offset is correct.
-                  const zone =
-                    event.timezone === 'Z' || event.timezone.toLowerCase() === 'utc'
-                      ? 'utc'
-                      : event.timezone;
-                  start = DateTime.fromObject(
-                    {
-                      year: baseDate.year,
-                      month: baseDate.month,
-                      day: baseDate.day,
-                      hour: h,
-                      minute: m,
-                      second: 0,
-                      millisecond: 0
-                    },
-                    { zone }
-                  );
-                } else {
-                  // No explicit timezone: pin the wall-clock time in local zone
-                  // so DST transitions don't shift the notification time.
-                  start = baseDate.set({ hour: h, minute: m, second: 0, millisecond: 0 });
-                }
+                const zone = resolveEffectiveTimezone(event.timezone);
+                start = DateTime.fromObject(
+                  {
+                    year: baseDate.year,
+                    month: baseDate.month,
+                    day: baseDate.day,
+                    hour: h,
+                    minute: m,
+                    second: 0,
+                    millisecond: 0
+                  },
+                  { zone }
+                );
               } else {
                 start = baseDate;
               }

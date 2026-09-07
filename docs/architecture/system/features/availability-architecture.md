@@ -30,20 +30,23 @@ The following pipeline describes how availability is fetched, resolved, and shar
 ## Key Components
 
 ### 1. Slot Solver (`AvailabilityService`)
-The [AvailabilityService](file:///d:/Codes/plugin-full-calendar/src/features/availability/AvailabilityService.ts) acts as the core logical engine:
+The [AvailabilityService](file:///d:/Codes/plugin-full-calendar/src/features/availability/AvailabilityService.ts) acts as the core logical engine:  
+
 - Queries timed events using [PluginState.getInternalAPI().getEvents()](file:///d:/Codes/plugin-full-calendar/src/api/FullCalendarAPI.ts#L119).
 - Filters out all-day events to prevent holidays from blocking schedules.
 - Sorts and merges overlapping/adjacent busy slots into continuous intervals.
 - Generates the complement gaps within the configured daily bounds to determine available slots.
 
 ### 2. Gist Upload Wrapper (`GithubGistService`)
-The [GithubGistService](file:///d:/Codes/plugin-full-calendar/src/features/availability/GithubGistService.ts) interfaces with the GitHub API:
+The [GithubGistService](file:///d:/Codes/plugin-full-calendar/src/features/availability/GithubGistService.ts) interfaces with the GitHub API:  
+
 - Uses Obsidian's [requestUrl](file:///d:/Codes/plugin-full-calendar/src/features/availability/GithubGistService.ts#L8) to bypass browser CORS restrictions.
 - Handles authorization using the token retrieved from the [CredentialStore](file:///d:/Codes/plugin-full-calendar/src/features/credentials/CredentialStore.ts).
 - Reuses the stored Gist ID to patch existing availability files, preventing Gist sprawl.
 
 ### 3. Serverless Client Viewer (`share.html`)
-The public-facing schedule viewer is a single, standalone HTML asset located at [docs/assets/share.html](file:///d:/Codes/plugin-full-calendar/docs/assets/share.html):
+The public-facing schedule viewer is a single, standalone HTML asset located at [docs/assets/share.html](file:///d:/Codes/plugin-full-calendar/docs/assets/share.html):  
+
 - **Client-Side Rendering**: Fetches and parses the Gist content dynamically on page load.
 - **Timezone Aware**: Uses [Luxon](https://moment.github.io/luxon/) to transform absolute ISO datetimes into the host IANA timezone or the viewer's local browser timezone.
 
@@ -72,7 +75,8 @@ The public-facing schedule viewer is a single, standalone HTML asset located at 
 
 ## Robustness & Validation
 
-To ensure stability and prevent resource exhaustion, the following validations are executed:
+To ensure stability and prevent resource exhaustion, the following validations are executed:  
+
 - **Timezone Sanitization:** If the display timezone is configured as `'system'`, the system resolves it dynamically to the current IANA environment timezone.
 - **Chronological Validation:** Validates that `startDate <= endDate`, throwing an error otherwise.
 - **Time Window Validation:** Validates that `startTime < endTime`, throwing an error if start is after or equal to end. Robustly parses time formats and falls back to default hours (`09:00` and `17:00`) on empty or malformed strings.

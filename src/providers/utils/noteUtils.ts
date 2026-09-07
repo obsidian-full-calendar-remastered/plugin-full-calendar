@@ -16,6 +16,37 @@ export function sanitizeTitleForFilename(title: string): string {
     .trim();
 }
 
+/**
+ * Cleanly extracts an event title from a note's basename by stripping
+ * standard calendar prefixes (dates, recurrence patterns) and unique suffixes.
+ * Used as a fallback when frontmatter does not explicitly specify a title.
+ */
+export function extractCleanTitleFromBasename(basename: string): string {
+  if (!basename) {
+    return 'Untitled Event';
+  }
+
+  // 1. Strip unique path suffix if present, e.g. "-_-_-1"
+  let cleaned = basename.replace(/-_-_-\d+$/, '').trim();
+
+  // 2. Strip leading ISO date prefix, e.g. "2026-09-05 "
+  cleaned = cleaned.replace(/^\d{4}-\d{2}-\d{2}\s+/, '').trim();
+
+  // 3. Strip leading recurrence prefix in parentheses, e.g.
+  // "(Every day) ", "(Every 3 days) ", "(Every M,W) ", "(Every month on the 1) ",
+  // "(Every year on May 20) ", "(Recurring) ", or "(RRULE:...) "
+  cleaned = cleaned.replace(/^\([^)]+\)\s*/, '').trim();
+
+  // 4. If cleaning stripped everything (e.g. file named "2026-09-05.md"),
+  // fallback to the base without unique suffix, or 'Untitled Event'
+  if (!cleaned) {
+    const fallback = basename.replace(/-_-_-\d+$/, '').trim();
+    return fallback || 'Untitled Event';
+  }
+
+  return cleaned;
+}
+
 export const basenameFromEvent = (event: OFCEvent, settings: TitleSettingsLike): string => {
   const fullTitle = settings.enableAdvancedCategorization
     ? constructTitle(event.category, event.subCategory, event.title)

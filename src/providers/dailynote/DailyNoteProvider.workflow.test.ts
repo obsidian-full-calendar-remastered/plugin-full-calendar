@@ -290,6 +290,48 @@ describe('DailyNoteProvider workflow', () => {
     );
   });
 
+  it('preserves description attribute when updating timed daily note event', async () => {
+    const app = createMockApp();
+    const provider = new DailyNoteProvider(
+      { id: 'dailynote_1', heading: 'Calendar' },
+      makePlugin(),
+      app
+    );
+
+    const initialEvent: OFCEvent = {
+      type: 'single',
+      title: 'Daily - 早餐',
+      description: 'Times早餐',
+      allDay: false,
+      startTime: '09:00',
+      endTime: '10:30',
+      timezone: 'Asia/Shanghai',
+      date: '2026-08-29',
+      endDate: null
+    };
+
+    const [createdEvent, createdLocation] = await provider.createEvent(initialEvent);
+    const createdPath = createdLocation.file.path;
+    expect(contentsByPath.get(createdPath)).toContain('[description:: Times早餐]');
+    expect(contentsByPath.get(createdPath)).toContain('[startTime:: 09:00]');
+
+    // Simulate drag/resize to 10:00 - 11:30
+    const updatedEvent: OFCEvent = {
+      ...createdEvent,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:30'
+    };
+
+    const handle = provider.getEventHandle(createdEvent);
+    await provider.updateEvent(handle!, createdEvent, updatedEvent);
+
+    const updatedContent = contentsByPath.get(createdPath) || '';
+    expect(updatedContent).toContain('[description:: Times早餐]');
+    expect(updatedContent).toContain('[startTime:: 10:00]');
+    expect(updatedContent).toContain('[endTime:: 11:30]');
+  });
+
   it('waits for metadata before parsing a daily note during startup scan', async () => {
     const file = makeFile('Daily/2026-03-29.md');
     dailyNotesByPath.set(file.path, file);

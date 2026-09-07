@@ -4,6 +4,8 @@ import { OFCEvent } from '../types';
 import { FullCalendarSettings } from '../types/settings';
 import type FullCalendarPlugin from '../main';
 import type EventCache from '../core/EventCache';
+import { TFile } from 'obsidian';
+import type { CalendarInfo, TestSource } from '../types/calendar_settings';
 
 // Mock Obsidian modules
 jest.mock(
@@ -259,6 +261,57 @@ describe('ProviderRegistry Unit Tests', () => {
       const resolved = await registry.getProviderForType('test-type');
       expect(loader).toHaveBeenCalled();
       expect(resolved).toBe(mockClass);
+    });
+  });
+
+  describe('File update and delete handling', () => {
+    it('should delete old path and sync new file on file rename workflow', async () => {
+      const mockEvent: OFCEvent = {
+        type: 'single',
+        title: 'Renamed Meeting',
+        date: '2026-09-05',
+        allDay: true,
+        endDate: null
+      };
+
+      const mockInstance = {
+        isRemote: false,
+        isFileRelevant: jest.fn().mockReturnValue(true),
+        getEventsInFile: jest
+          .fn()
+          .mockResolvedValue([
+            [mockEvent, { file: { path: 'events/NewName.md' }, lineNumber: undefined }]
+          ])
+      };
+
+      (registry as unknown as { instances: Map<string, unknown> }).instances.set(
+        'local_1',
+        mockInstance
+      );
+      const testSource: CalendarInfo = {
+        type: 'FOR_TEST_ONLY',
+        id: 'local_1',
+        color: ''
+      } satisfies TestSource & { color: string };
+      registry.updateSources([testSource]);
+
+      await registry.handleFileDelete('events/OldName.md');
+      expect(mockCache.syncFile).toHaveBeenCalledWith({ path: 'events/OldName.md' }, []);
+
+      const mockNewFile = Object.assign(new TFile(), { path: 'events/NewName.md' });
+      await registry.handleFileUpdate(mockNewFile);
+
+      expect(mockInstance.isFileRelevant).toHaveBeenCalledWith(mockNewFile);
+      expect(mockInstance.getEventsInFile).toHaveBeenCalledWith(mockNewFile);
+      expect(mockCache.syncFile).toHaveBeenCalledWith(
+        mockNewFile,
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: mockEvent,
+            calendarId: 'local_1'
+          })
+        ])
+      );
     });
   });
 });

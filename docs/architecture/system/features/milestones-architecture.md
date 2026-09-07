@@ -67,15 +67,18 @@ Representative computation types:
 
 The settings milestones page consumes `getMilestoneCards()` and does not mutate milestone state. Card fields include id, title, description, targetLabel, current, percent, and unlocked.
 
-Sorting contract:
+Sorting contract:  
+
 - Unlocked cards first.
 - Lexicographic title order inside same unlock group.
 
-Locked Indicator Styling:
+Locked Indicator Styling:  
+
 - Cards for unachieved milestones are visually grayed out (`opacity: 0.6` and `grayscale(100%)`).
 - A hover transition is implemented that smoothly scales opacity to `0.85` and reduces grayscale to `40%`, encouraging the user to interact and discover advanced goals.
 
-Toast Notification & Conversion Banner:
+Toast Notification & Conversion Banner:  
+
 - Toast alerts are styled using rich, premium glassmorphic properties (gradient overlays, backdrop filters, custom spring animations).
 - The first line of the toast displays the actual milestone title, while the second line displays the description.
 - Contains a call-to-action conversion footer with a yellow primary "Sponsor" button and a shaded secondary "See Financial Goal" button.

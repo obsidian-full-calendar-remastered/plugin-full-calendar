@@ -18,7 +18,7 @@ import { showNotice } from '../../utils/showNotice';
 
 import { PluginState } from '../../core/PluginState';
 
-import { DateTime } from 'luxon';
+import { DateTime, Settings } from 'luxon';
 import ical from 'ical.js';
 
 import FullCalendarPlugin from '../../main';
@@ -189,6 +189,57 @@ export function normalizeTimezone(zone: string | undefined | null): string {
 
   // Return original if no mapping found (will be handled by caller)
   return zone;
+}
+
+/**
+ * Resolves the effective timezone for an event or display context.
+ * Falls back in order: eventTimezone -> settings.displayTimezone -> system timezone.
+ */
+export function resolveEffectiveTimezone(eventTimezone?: string | null): string {
+  if (eventTimezone && eventTimezone.trim() !== '') {
+    return normalizeTimezone(eventTimezone);
+  }
+  let displayTimezone: string | null | undefined;
+  try {
+    displayTimezone = PluginState.getSettings().displayTimezone;
+  } catch {
+    // Settings not yet initialized or in unit test environment
+  }
+  const defaultZoneName =
+    Settings.defaultZone &&
+    typeof Settings.defaultZone.name === 'string' &&
+    Settings.defaultZone.name !== 'system' &&
+    Settings.defaultZone.name !== 'local' &&
+    Settings.defaultZone.name !== 'unspecified'
+      ? Settings.defaultZone.name
+      : undefined;
+
+  return displayTimezone || defaultZoneName || Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+/**
+ * Extracts a YYYY-MM-DD ISO date string representing the local occurrence date of an event.
+ * Respects all-day events (UTC) and effective timezone offsets for timed events.
+ */
+export function getEventInstanceDate(
+  start: Date | string | null | undefined,
+  allDay: boolean = false,
+  timezone?: string | null,
+  startStr?: string | null
+): string | undefined {
+  if (!start) return undefined;
+  if (typeof start === 'string') {
+    return DateTime.fromISO(start).toISODate() || undefined;
+  }
+  if (allDay) {
+    return (
+      (startStr ? DateTime.fromISO(startStr).toISODate() : null) ||
+      DateTime.fromJSDate(start, { zone: 'utc' }).toISODate() ||
+      undefined
+    );
+  }
+  const effectiveZone = resolveEffectiveTimezone(timezone);
+  return DateTime.fromJSDate(start).setZone(effectiveZone).toISODate() || undefined;
 }
 
 /**

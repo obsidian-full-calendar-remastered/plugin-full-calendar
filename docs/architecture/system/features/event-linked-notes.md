@@ -23,7 +23,7 @@
 
 ## Identity Sources
 
-Deadline-based identity and renamed/moved-note recovery are **frontmatter-driven**. The canonical identifiers are:
+Deadline-based identity and renamed/moved-note recovery are **frontmatter-driven**. The canonical identifiers are:  
 
 * `fc-event-uid`
 * `fc-calendar-id`
@@ -35,11 +35,12 @@ Rendered body text and cache state are never authoritative.
 
 ## Architectural Principles & SOLID Boundaries
 
-To prevent architectural regression, this feature is built on three strict modular invariants:
+To prevent architectural regression, this feature is built on three strict modular invariants:  
 
 ### 1️⃣ Core-Blindness (SOLID: Open-Closed Principle)
 The core synchronization layers ([EventCache](../eventcache.md)), in-memory indexing ([EventStore](../event-storage.md#eventstore-model)), and the global provider registry are **100% blind** to the existence of linked notes. 
-Instead of the core mapping files to events:
+Instead of the core mapping files to events:  
+
 1. Remote providers (such as `GoogleProvider` or `CalDAVProvider`) retrieve their events from the cloud.
 2. In the `getEvents()` read-path, the provider queries the local `LinkedNoteIndex` for any notes containing the event's `fc-event-uid` (or matching calendar/UID frontmatter parameters).
 3. If found, the provider includes the local note path under `EventLocation` in the event payload, allowing the UI to reactively render editing/viewing options.
@@ -52,7 +53,8 @@ To avoid vault contamination and ensure data cleanliness:
 * Note body template rendering is handled by the pure `TemplateEngine` component. For a detailed breakdown of the templating engine's architecture, see **[Note Templating Architecture](templates.md)**.
 
 ### 3️⃣ Reactive Indexing
-Rather than executing expensive, repetitive full-vault scans on every calendar load:
+Rather than executing expensive, repetitive full-vault scans on every calendar load:  
+
 * `LinkedNoteIndex` builds and maintains a fast, reactive in-memory index map.
 * It leverages Obsidian's native `MetadataCache` to index remote event UIDs from file frontmatter.
 * It registers event listeners on `vault.on("create")`, `vault.on("rename")`, `vault.on("delete")`, and `metadataCache.on("changed")` to keep the cache perfectly synchronized in real-time as users add, delete, rename, or modify linked-note files.
@@ -64,7 +66,8 @@ Rather than executing expensive, repetitive full-vault scans on every calendar l
     Startup restoration is substantially more robust, but not mathematically guaranteed. A missed link after reload now requires a much narrower compound failure: the linked-note file must be absent from the initial scan, absent again at `workspace.onLayoutReady()`, still not become discoverable during `metadataCache.on("resolved")` reconciliation, and also never surface later through the directory-scoped `create`, `rename`, or `changed` events. This boundary is intentionally documented so contributors do not mistake the startup hydration phase for a stronger persistence contract than Obsidian itself exposes.
 
 ### 4️⃣ Centralized Note Creation (SOLID: DRY)
-All remote providers delegate to a single centralized helper `createLinkedNoteForProvider()` in `src/features/linked-notes/linkedNotes.ts`. This function:
+All remote providers delegate to a single centralized helper `createLinkedNoteForProvider()` in `src/features/linked-notes/linkedNotes.ts`. This function:  
+
 1. Reads the linked-note strategy, directory, and template from `PluginState.getSettings()`.
 2. In name mode, checks the exact sanitized title path first and attaches managed identity properties when reusing an existing file.
 3. Falls back to `LinkedNoteIndex` so renamed or moved notes remain resolvable.
@@ -75,11 +78,14 @@ All remote providers delegate to a single centralized helper `createLinkedNoteFo
 No provider implements its own frontmatter construction, template rendering, or file creation logic.
 
 ### 5️⃣ Configurable Recurring Event Identity
-The `linkedNoteLinkStrategy` setting selects how occurrence dates participate in note identity:
+The `linkedNoteLinkStrategy` setting selects how occurrence dates participate in note identity:  
+
 * **Deadline-based**: Uses instance-level mapping and remains the compatibility default.
 * **Name-based**: Resolves the exact sanitized title path before UID lookup. An existing file at that path is reused and receives only the managed calendar/UID identity properties; otherwise the exact path is created without a collision suffix. UID lookup remains the fallback for notes later renamed or moved.
 
-For deadline-based mapping:
+
+For deadline-based mapping:  
+
 * **Compound Key Indexing**: `LinkedNoteIndex` computes compound keys using `${eventUid}::${recurrenceId}` when the YAML frontmatter includes `fc-event-recurrence-id`.
 * **Fallback Strategy**: When querying notes, `LinkedNoteIndex.getFileForEvent(uid, recurrenceId)` prioritizes matching compound keys first, falling back to the master series note (`uid`) only if no instance note exists.
 * **Reactive Cache Scrubbing**: During reactive updates, if a note's frontmatter is modified to add or change the recurrence ID, `LinkedNoteIndex` automatically purges the old orphan key pointing to that same file path.
@@ -91,7 +97,8 @@ For name-based mapping, the exact title path is the first lookup key and intenti
 Hover preview follows the same primary identity rule without mutating frontmatter. `renderCalendar.eventDidMount` registers a native `mouseover` listener on each event element, matching Obsidian's Page Preview input contract; `CalendarView` then asks the linked-note hover builder for the exact title path before falling back to the event cache's UID-derived location. FullCalendar's synthetic `eventMouseEnter` callback must not be used here because it does not preserve Page Preview's event-to-event transition behavior after an unlinked event. Each request uses the individual event element as both `hoverParent` and `targetEl`. Consequently, separate event records and later schedulings with the same sanitized title preview one shared file in name mode.
 
 ### 6️⃣ Template Presets & Selection (Power Users)
-To support multiple custom layouts based on user choice:
+To support multiple custom layouts based on user choice:  
+
 * **Decoupled Settings**: When `enableLinkedNoteTemplatesPreset` is enabled in settings, the default template rendering path is bypassed.
 * **Vault-Based Presets**: The user specifies note paths from their vault to act as template files.
 * **Selector Modal UI**: The note creation flow (triggered inside `openOrCreateLinkedNote`) displays a React modal calling `chooseTemplatePreset`.

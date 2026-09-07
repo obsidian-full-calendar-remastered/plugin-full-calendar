@@ -83,7 +83,12 @@ const DISPLAY_OPTIONS: {
 function externalLink(href: string, label: string): React.ReactElement {
   return React.createElement(
     'a',
-    { href, target: '_blank', rel: 'noreferrer noopener', className: 'ofc-holiday-doc-link' },
+    {
+      href,
+      target: '_blank',
+      rel: 'noreferrer noopener',
+      className: 'ofc-holiday-doc-link ofc-doc-link external-link'
+    },
     label
   );
 }

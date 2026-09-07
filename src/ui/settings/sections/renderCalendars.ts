@@ -183,8 +183,9 @@ export function renderCalendarManagement(
   addCalendarButton(
     plugin,
     containerEl,
-    (source: CalendarInfo): void => {
-      calendarSettingsRef.current?.addSource(source);
+    (source: CalendarInfo | CalendarInfo[]): void => {
+      const sources = Array.isArray(source) ? source : [source];
+      calendarSettingsRef.current?.addSources(sources);
     },
     () => calendarSettingsRef.current?.getUsedDirectories() ?? []
   );

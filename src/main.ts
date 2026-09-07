@@ -24,7 +24,7 @@ import { PLUGIN_SLUG } from './types';
 import { DEPRECATED_PROVIDERS } from './ui/settings/deprecations';
 import EventCache from './core/EventCache';
 import { manageTimezone } from './features/timezone/Timezone';
-import { Plugin, TFile, App, EventRef } from 'obsidian';
+import { Plugin, TFile, TFolder, App, EventRef } from 'obsidian';
 import type { Workspace } from 'obsidian';
 import { initializeI18n, t } from './features/i18n/i18n';
 import './styles.css';
@@ -230,34 +230,69 @@ export default class FullCalendarPlugin extends Plugin {
     );
 
     // Respond to obsidian events
-    this.registerEvent(
-      this.app.metadataCache.on('changed', file => {
-        void PluginState.getProviderRegistry().handleFileUpdate(file);
+    const handleFileUpdateWrapper = (file: TFile) => {
+      void PluginState.getProviderRegistry().handleFileUpdate(file);
 
-        // If the modified file is the active workspace's Bases query file, trigger cache resync to reload it
-        const activeWorkspaceId = PluginState.getSettings().activeWorkspace;
-        if (activeWorkspaceId) {
-          const activeWorkspace = PluginState.getSettings().workspaces.find(
-            w => w.id === activeWorkspaceId
-          );
-          if (activeWorkspace && activeWorkspace.basisQueryPath === file.path) {
-            PluginState.getCache().resync();
-          }
+      // If the modified file is the active workspace's Bases query file, trigger cache resync to reload it
+      const activeWorkspaceId = PluginState.getSettings().activeWorkspace;
+      if (activeWorkspaceId) {
+        const activeWorkspace = PluginState.getSettings().workspaces.find(
+          w => w.id === activeWorkspaceId
+        );
+        if (activeWorkspace && activeWorkspace.basisQueryPath === file.path) {
+          PluginState.getCache().resync();
         }
-      })
-    );
+      }
+    };
+
+    this.registerEvent(this.app.metadataCache.on('changed', handleFileUpdateWrapper));
+
+    // Also listen to 'resolve' for when Obsidian finishes parsing metadata after renames/moves
+    const extendedMetadataCache = this.app.metadataCache as unknown as {
+      on: (name: string, cb: (resolvedFile: TFile) => void) => EventRef;
+    };
+    if (typeof extendedMetadataCache.on === 'function') {
+      this.registerEvent(extendedMetadataCache.on('resolve', handleFileUpdateWrapper));
+    }
+
+    const collectFolderFiles = (
+      folder: TFolder,
+      currentOldPrefix: string
+    ): { file: TFile; oldFilePath: string }[] => {
+      const pairs: { file: TFile; oldFilePath: string }[] = [];
+      for (const child of folder.children) {
+        if (child instanceof TFile) {
+          pairs.push({ file: child, oldFilePath: `${currentOldPrefix}/${child.name}` });
+        } else if (child instanceof TFolder) {
+          pairs.push(...collectFolderFiles(child, `${currentOldPrefix}/${child.name}`));
+        }
+      }
+      return pairs;
+    };
+
     this.registerEvent(
       this.app.vault.on('rename', (file, oldPath) => {
         if (file instanceof TFile) {
-          // A rename is a delete at the old path.
-          // The 'changed' event will pick up the creation at the new path.
-          void PluginState.getProviderRegistry().handleFileDelete(oldPath);
+          void (async () => {
+            await PluginState.getProviderRegistry().handleFileDelete(oldPath);
+            await PluginState.getProviderRegistry().handleFileUpdate(file);
+          })();
+        } else if (file instanceof TFolder) {
+          void (async () => {
+            const pairs = collectFolderFiles(file, oldPath);
+            for (const { file: childFile, oldFilePath } of pairs) {
+              await PluginState.getProviderRegistry().handleFileDelete(oldFilePath);
+              await PluginState.getProviderRegistry().handleFileUpdate(childFile);
+            }
+          })();
         }
       })
     );
     this.registerEvent(
       this.app.vault.on('delete', file => {
         if (file instanceof TFile) {
+          void PluginState.getProviderRegistry().handleFileDelete(file.path);
+        } else if (file instanceof TFolder) {
           void PluginState.getProviderRegistry().handleFileDelete(file.path);
         }
       })

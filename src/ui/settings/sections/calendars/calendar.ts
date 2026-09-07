@@ -39,6 +39,7 @@ import {
 import { WeatherDetailModal } from '../../../../features/weather/WeatherDetailModal';
 import { openDailyNoteForDate } from '../../../../features/daily-notes/openDailyNote';
 import { i18n } from '../../../../features/i18n/i18n';
+import { isLightColor } from '../../../calendar/utils';
 
 export interface ExtraRenderProps {
   eventClick?: (info: EventClickArg) => void;
@@ -1124,7 +1125,7 @@ export async function renderCalendar(
     eventDrop: modifyEventCallback,
     eventResize: modifyEventCallback,
 
-    eventDidMount: ({ event, el, textColor }) => {
+    eventDidMount: ({ event, el }) => {
       // Don't add context menu or checkboxes to shadow events
       if (event.extendedProps.isShadow) {
         el.addClass('fc-event-shadow');
@@ -1186,7 +1187,9 @@ export async function renderCalendar(
           }
 
           // Make the checkbox more visible against different color events.
-          if (textColor === 'black') {
+          const effectiveTextColor =
+            event.textColor || (eventColor && isLightColor(eventColor) ? 'black' : 'white');
+          if (effectiveTextColor === 'black') {
             checkbox.addClass('ofc-checkbox-black');
           } else {
             checkbox.addClass('ofc-checkbox-white');

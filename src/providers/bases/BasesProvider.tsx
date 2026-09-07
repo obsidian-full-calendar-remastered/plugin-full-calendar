@@ -5,6 +5,7 @@ import { OFCEvent, EventLocation, CalendarInfo, validateEvent } from '../../type
 import { FCReactComponent, EventHandle } from '../typesProvider';
 import FullCalendarPlugin from '../../main';
 import { ObsidianInterface } from '../../ObsidianAdapter';
+import { extractCleanTitleFromBasename } from '../utils/noteUtils';
 import { BasesConfigComponent, BasesConfigComponentProps } from './BasesConfigComponent';
 
 export interface BasesProviderConfig {
@@ -171,10 +172,14 @@ export class BasesProvider implements CalendarProvider<BasesProviderConfig>, Syn
     if (!metadata) return null;
 
     // Heuristic to find date fields
-    const date: unknown = metadata.date || metadata.start || metadata.startTime || metadata.due;
+    const date: unknown =
+      metadata.date || metadata.start || metadata.startTime || metadata.due || metadata.scheduled;
     if (!date) return null;
 
-    const title: string = typeof metadata.title === 'string' ? metadata.title : file.basename;
+    const title: string =
+      typeof metadata.title === 'string' && metadata.title.trim() !== ''
+        ? metadata.title.trim()
+        : extractCleanTitleFromBasename(file.basename);
     const category: string | undefined =
       typeof metadata.category === 'string'
         ? metadata.category
@@ -219,6 +224,34 @@ export class BasesProvider implements CalendarProvider<BasesProviderConfig>, Syn
     validatedEvent.uid = file.path;
 
     return [validatedEvent, { file: { path: file.path }, lineNumber: undefined }];
+  }
+
+  public isFileRelevant(file: TFile): boolean {
+    if (file.extension !== 'md') {
+      return false;
+    }
+    const metadata = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (!metadata) return false;
+    const date: unknown =
+      metadata.date || metadata.start || metadata.startTime || metadata.due || metadata.scheduled;
+    return !!date;
+  }
+
+  public async getEventsInFile(file: TFile): Promise<[OFCEvent, EventLocation | null][]> {
+    const baseFile = this.plugin.app.vault.getAbstractFileByPath(this.config.basePath);
+    if (baseFile instanceof TFile) {
+      try {
+        const content = await this.plugin.app.vault.read(baseFile);
+        const baseData = parseYaml(content) as BaseFile;
+        if (baseData.filters && !this.evaluateFilter(baseData.filters, file)) {
+          return [];
+        }
+      } catch (e) {
+        console.warn('Failed to parse Base file during file update', e);
+      }
+    }
+    const eventData = this.getEventFromFile(file);
+    return eventData ? [eventData] : [];
   }
 
   getEventHandle(event: OFCEvent): EventHandle | null {

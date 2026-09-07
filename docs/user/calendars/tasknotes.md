@@ -1,7 +1,7 @@
 # TaskNotes Integration
 
 !!! info "Obsidian Ecosystem Integration"
-    TaskNotes is a specialized provider that allows you to sync and manage scheduled tasks from the [TaskNotes plugin](https://github.com/YouFoundJK/obsidian-tasknotes) directly on your calendar.
+    TaskNotes is a specialized provider that allows you to sync and manage scheduled tasks from the [TaskNotes plugin](https://github.com/callumalpass/tasknotes) directly on your calendar.
 
 
 !!! tip "Power Up with Categories"
@@ -42,7 +42,7 @@ deadline-link: "[[2026-04-23]]"
 
 `due` is the task's due date and `deadline` is the task's deadline date. The `-link` properties are daily-note links for those dates. If a `due` or `deadline` value is different from the previous scheduled date, Full Calendar leaves it unchanged so intentional due/deadline metadata is preserved.
 
-These properties are part of TaskNotes task metadata. See the [TaskNotes documentation](https://github.com/YouFoundJK/obsidian-tasknotes) for the current TaskNotes field definitions.
+These properties are part of TaskNotes task metadata. See the [TaskNotes documentation](https://callumalpass.github.io/tasknotes/) for the current TaskNotes field definitions.
 
 ## NLP Endpoint Modes
 
@@ -57,7 +57,7 @@ This default is intentionally conservative and discoverable: Search + Create hel
 
 ## Setup
 
-1.  Ensure the **TaskNotes** plugin is installed and enabled in your vault.
+1.  Ensure the **[TaskNotes](https://community.obsidian.md/plugins/tasknotes)** plugin is installed and enabled in your vault.
 2.  Go to **[Full Calendar Settings](../settings/index.md) → [Calendar Sources](../settings/sources.md)**.
 3.  Click **Add Source** and select **TaskNotes**.
 4.  The provider will automatically attempt to link with the TaskNotes cache.

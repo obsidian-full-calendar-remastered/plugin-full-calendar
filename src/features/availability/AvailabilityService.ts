@@ -176,7 +176,7 @@ export class AvailabilityService {
       }
 
       // Generate Free and Busy slots for the day
-      let currentMarker = dayStart;
+      let currentMarker: DateTime = dayStart;
 
       for (const busy of mergedBusy) {
         if (currentMarker < busy.start) {
@@ -193,7 +193,7 @@ export class AvailabilityService {
           status: 'busy',
           title: busy.title
         });
-        currentMarker = busy.end > currentMarker ? (busy.end as DateTime<true>) : currentMarker;
+        currentMarker = busy.end > currentMarker ? busy.end : currentMarker;
       }
 
       if (currentMarker < dayEnd) {

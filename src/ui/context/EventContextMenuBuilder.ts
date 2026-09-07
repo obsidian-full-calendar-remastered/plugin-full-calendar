@@ -11,6 +11,19 @@ import {
 import { t } from '../../features/i18n/i18n';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
 import { OFCEvent } from '../../types';
+import { getEventInstanceDate } from '../../features/timezone/Timezone';
+
+/**
+ * Returns true when `str` is an absolute URL with an http or https scheme.
+ */
+function isValidUrl(str: string): boolean {
+  try {
+    const url = new URL(str);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 type ActionGroup = EventContextAction[];
 
@@ -75,38 +88,55 @@ export async function openEventContextMenu(
   }
 
   const { event, calendarId, location } = eventDetails;
+
+  // Location URL action: available for all events regardless of provider or editability.
+  const hasPriorItems = { value: false };
+  const locationStr = event.location;
+  if (locationStr && isValidUrl(locationStr)) {
+    addActionGroup(
+      menu,
+      [
+        {
+          id: 'location:open-url',
+          title: t('ui.view.contextMenu.openLocationUrl'),
+          icon: 'external-link',
+          run: async () => {
+            window.open(locationStr, '_blank');
+          }
+        }
+      ],
+      hasPriorItems
+    );
+  }
+
   const provider = PluginState.getProviderRegistry().getInstance(calendarId);
   const capabilities = PluginState.getProviderRegistry().getCapabilities(calendarId);
 
-  if (!provider || !capabilities) {
-    return;
-  }
+  if (provider && capabilities) {
+    const context: ProviderEventContext = {
+      eventId: eventApi.id,
+      event,
+      calendarId,
+      location,
+      display: eventApi.display,
+      title: eventApi.title,
+      start: eventApi.start,
+      plugin
+    };
 
-  const context: ProviderEventContext = {
-    eventId: eventApi.id,
-    event,
-    calendarId,
-    location,
-    display: eventApi.display,
-    title: eventApi.title,
-    start: eventApi.start,
-    plugin
-  };
+    if (PluginState.getCache().isEventEditable(eventApi.id)) {
+      const menuCapabilities = getContextMenuCapabilities(capabilities);
 
-  const hasPriorItems = { value: false };
-
-  if (PluginState.getCache().isEventEditable(eventApi.id)) {
-    const menuCapabilities = getContextMenuCapabilities(capabilities);
-
-    addActionGroup(menu, buildDisplayActions(plugin, eventApi, menuCapabilities), hasPriorItems);
-    addActionGroup(
-      menu,
-      await buildGenericTaskActions(plugin, context, menuCapabilities),
-      hasPriorItems
-    );
-    addActionGroup(menu, await buildProviderActions(provider, context), hasPriorItems);
-    addActionGroup(menu, await buildNavigationActions(plugin, context), hasPriorItems);
-    addActionGroup(menu, buildDeleteActions(plugin, context), hasPriorItems);
+      addActionGroup(menu, buildDisplayActions(plugin, eventApi, menuCapabilities), hasPriorItems);
+      addActionGroup(
+        menu,
+        await buildGenericTaskActions(plugin, context, menuCapabilities),
+        hasPriorItems
+      );
+      addActionGroup(menu, await buildProviderActions(provider, context), hasPriorItems);
+      addActionGroup(menu, await buildNavigationActions(plugin, context), hasPriorItems);
+      addActionGroup(menu, buildDeleteActions(plugin, context), hasPriorItems);
+    }
   }
 
   if (!hasPriorItems.value) {
@@ -188,6 +218,10 @@ async function buildProviderActions(
   return (await provider.getEventContextActions?.(context)) ?? [];
 }
 
+function getContextInstanceDate(context: ProviderEventContext): string | undefined {
+  return getEventInstanceDate(context.start, context.event.allDay, context.event.timezone);
+}
+
 async function buildNavigationActions(
   plugin: FullCalendarPlugin,
   context: ProviderEventContext
@@ -203,8 +237,7 @@ async function buildNavigationActions(
   };
   if (provider && typeof linkedNoteProvider.createLinkedNote === 'function') {
     // Derive the instanceDate for recurring events the same way buildDeleteActions does.
-    const instanceDate =
-      context.start instanceof Date ? context.start.toISOString().slice(0, 10) : undefined;
+    const instanceDate = getContextInstanceDate(context);
     actions.push({
       id: 'navigation:open-linked-note',
       title: t('ui.view.contextMenu.openLinkedNote'),
@@ -257,8 +290,7 @@ function buildDeleteActions(
           (context.event.type === 'recurring' || context.event.type === 'rrule') &&
           context.start
         ) {
-          const instanceDate =
-            context.start instanceof Date ? context.start.toISOString().slice(0, 10) : undefined;
+          const instanceDate = getContextInstanceDate(context);
           await PluginState.getCache().deleteEvent(context.eventId, { instanceDate });
         } else {
           await PluginState.getCache().deleteEvent(context.eventId);

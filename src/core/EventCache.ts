@@ -137,6 +137,7 @@ export default class EventCache {
     this.calendars.clear();
     this._store.clear();
     this.subscriptionManager.clearUpdateQueue();
+    this.populatePromise = null;
 
     infos.forEach(info => {
       const settingsId = info.id;

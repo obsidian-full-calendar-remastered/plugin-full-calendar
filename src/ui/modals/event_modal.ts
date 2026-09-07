@@ -284,6 +284,7 @@ export function launchEventDetailsModal(
         event,
         calendarName,
         location,
+        instanceDate,
         onClose: () => closeModal(),
         onOpenNote
       })

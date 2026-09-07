@@ -27,14 +27,16 @@ The pipeline for selecting, serializing, and writing calendar cache entries as `
 ## Key Components
 
 ### 1. Multi-Event Formatter (`src/providers/ics/formatter.ts`)
-We extend the existing iCal formatter (`formatter.ts`) by introducing and exporting `eventsToIcs(events: OFCEvent[]): string`:
+We extend the existing iCal formatter (`formatter.ts`) by introducing and exporting `eventsToIcs(events: OFCEvent[]): string`:  
+
 - Instantiates a single top-level `ical.Component('vcalendar')` envelope.
 - Loops through the compiled `OFCEvent` list.
 - Calls the internal `createVEventComponent` (for standard events) or `createVTodoComponent` (for tasks) to format each event.
 - Serializes the entire component tree into a single standard `.ics` string.
 
 ### 2. User Interface Modal (`src/features/export/IcsExportModal.ts`)
-The `IcsExportModal` orchestrates the user interaction:
+The `IcsExportModal` orchestrates the user interaction:  
+
 - **Calendar Registry Integration:** Retrieves all active calendars using `PluginState.getProviderRegistry().getAllSources()`.
 - **Toggle Settings:** Renders toggle items for each calendar so users can selectively export subsets of calendars.
 - **Export Paths:** Persists default export folder path configurations to the `icsExportPath` plugin settings.
@@ -49,7 +51,8 @@ The `IcsExportModal` orchestrates the user interaction:
 - **Direct Download Pipeline:** Uses standard HTML5 Blob ObjectURLs (`URL.createObjectURL`) to trigger local browser download prompts, working seamlessly across desktop and mobile.
 
 ### 3. Settings Rendering (`src/features/export/ui/renderExportSettings.ts`)
-Exposes settings for default export configuration:
+Exposes settings for default export configuration:  
+
 - Placed in the "Integrations" section of the main settings panel (`SettingsTab.tsx`).
 - Allows editing the default `icsExportPath` vault directory folder.
 

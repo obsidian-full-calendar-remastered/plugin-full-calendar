@@ -95,4 +95,27 @@ describe('TemplateEngine', () => {
     const expectedDate = DateTime.fromISO('2026-05-22').toLocaleString(DateTime.DATE_HUGE);
     expect(result).toBe(`Date: ${expectedDate}`);
   });
+
+  it('should correctly format {{date}} for morning events in positive UTC offset timezones (e.g. Brisbane UTC+10)', () => {
+    const brisbaneEvent: OFCEvent = {
+      title: 'Chiro',
+      type: 'rrule',
+      rrule: 'FREQ=WEEKLY',
+      startDate: '2026-08-01',
+      endDate: null,
+      skipDates: [],
+      startTime: '08:30',
+      endTime: '09:00',
+      timezone: 'Australia/Brisbane',
+      allDay: false
+    };
+    const template = '# {{title}}\n**Date**: {{date}}\n**Time**: {{timeString}}';
+    const result = TemplateEngine.render(template, brisbaneEvent, 'GCal Personal', '2026-08-22');
+
+    const expectedDate = DateTime.fromISO('2026-08-22').toLocaleString(DateTime.DATE_HUGE);
+    const expectedTime = `${DateTime.fromFormat('08:30', 'HH:mm').toLocaleString(DateTime.TIME_SIMPLE)} - ${DateTime.fromFormat('09:00', 'HH:mm').toLocaleString(DateTime.TIME_SIMPLE)}`;
+    expect(result).toContain('# Chiro');
+    expect(result).toContain(`**Date**: ${expectedDate}`);
+    expect(result).toContain(`**Time**: ${expectedTime}`);
+  });
 });

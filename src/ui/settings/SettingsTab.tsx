@@ -43,6 +43,7 @@ import { t } from '../../features/i18n/i18n';
 import { createDescWithDocs, createDocsLinksFragment } from './docsLinks';
 import { getMilestoneCards } from '../../features/milestones/milestones';
 import { canAddCalendarOfType } from './calendarSourceValidation';
+import { CredentialStore } from '../../features/credentials/CredentialStore';
 
 // Import the new React components
 import './changelogs/changelog.css';
@@ -113,7 +114,7 @@ function selectMilestoneIcon(id: string, unlocked: boolean): string {
 export function addCalendarButton(
   plugin: FullCalendarPlugin,
   containerEl: HTMLElement,
-  submitCallback: (setting: CalendarInfo) => void,
+  submitCallback: (setting: CalendarInfo | CalendarInfo[]) => void,
   listUsedDirectories?: () => string[]
 ) {
   let dropdown: DropdownComponent;
@@ -262,12 +263,19 @@ export function addCalendarButton(
                   .map(s => s.id);
                 const existingIds = Array.from(new Set([...settingsIds, ...registryIds]));
 
+                const finalSources: CalendarInfo[] = [];
+
                 for (const finalConfig of configs) {
-                  const newSettingsId = generateCalendarId(
-                    providerType as CalendarInfo['type'],
-                    existingIds
-                  );
-                  existingIds.push(newSettingsId);
+                  const candidateId =
+                    typeof finalConfig.id === 'string' &&
+                    finalConfig.id &&
+                    !existingIds.includes(finalConfig.id) &&
+                    providerType !== 'google' &&
+                    providerType !== 'googletasks' &&
+                    providerType !== 'outlook'
+                      ? finalConfig.id
+                      : generateCalendarId(providerType as CalendarInfo['type'], existingIds);
+                  existingIds.push(candidateId);
 
                   const partialSource = makeDefaultPartialCalendarSource(
                     providerType as CalendarInfo['type'],
@@ -282,11 +290,17 @@ export function addCalendarButton(
                         : t('settings.calendars.defaults.journals');
                   }
 
+                  const color =
+                    typeof finalConfig.color === 'string' && finalConfig.color
+                      ? finalConfig.color
+                      : partialSource.color;
+
                   // Create the full, valid CalendarInfo object first.
                   const finalSource = {
                     ...partialSource,
                     ...finalConfig,
-                    id: newSettingsId,
+                    id: candidateId,
+                    color,
                     ...(providerType === 'google' && accountId && { googleAccountId: accountId }),
                     ...(providerType === 'googletasks' &&
                       accountId && { googleAccountId: accountId }),
@@ -301,12 +315,23 @@ export function addCalendarButton(
                     })
                   } as CalendarInfo;
 
+                  if (
+                    (providerType === 'caldav' || providerType === 'caldavtasks') &&
+                    typeof finalConfig.password === 'string' &&
+                    finalConfig.password
+                  ) {
+                    CredentialStore.setCalDAVPassword(finalSource.id, finalConfig.password);
+                  }
+
                   // Add the provider instance to the registry BEFORE updating the UI.
                   await PluginState.getProviderRegistry().addInstance(finalSource);
 
-                  // Now, submit the complete source to the React component.
-                  submitCallback(finalSource);
+                  finalSources.push(finalSource);
                   existingCalendarColors.push(finalSource.color);
+                }
+
+                if (finalSources.length > 0) {
+                  submitCallback(finalSources.length === 1 ? finalSources[0] : finalSources);
                 }
                 modal.close();
               })();

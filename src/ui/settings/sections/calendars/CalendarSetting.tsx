@@ -65,9 +65,9 @@ interface CalendarSettingsProps {
   plugin: FullCalendarPlugin;
 }
 
-// ✅ Expose this type in `settings.tsx`
 export interface CalendarSettingsRef {
   addSource: (source: CalendarInfo) => void;
+  addSources: (sources: CalendarInfo[]) => void;
   getUsedDirectories: () => string[];
 }
 
@@ -150,8 +150,14 @@ export class CalendarSettings
   }
 
   addSource = (source: CalendarInfo) => {
-    const exists = this.state.sources.some(s => s.id === source.id);
-    const newSources = exists ? this.state.sources : [...this.state.sources, source];
+    this.addSources([source]);
+  };
+
+  addSources = (sources: CalendarInfo[]) => {
+    const existingIds = new Set(this.state.sources.map(s => s.id));
+    const toAdd = sources.filter(s => !existingIds.has(s.id));
+    if (toAdd.length === 0) return;
+    const newSources = [...this.state.sources, ...toAdd];
     this.setState({ sources: newSources }, () => this.saveImmediate(newSources));
   };
 

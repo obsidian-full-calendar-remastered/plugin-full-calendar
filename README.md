@@ -1,11 +1,18 @@
-<div align="right">
-  <img src="https://img.shields.io/github/downloads/obsidian-full-calendar-remastered/plugin-full-calendar/total?label=Downloads" alt="Downloads" />
-  <a href="#contributors-"><img src="https://img.shields.io/badge/all_contributors-17-orange.svg?style=flat-square" alt="All Contributors" /></a>
-  <a href="https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/"><img src="https://img.shields.io/badge/Version-v_0.13.5.7-blue" alt="Version" /></a>
-</div>
+<table style="width:100%">
+<tr>
+<td>
 
+<img src="https://img.shields.io/badge/dynamic/json?logo=obsidian&color=%23483699&label=downloads&query=%24%5B%22full-calendar-remastered%22%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json"/>
+<td align="right">
 
-<!-- ![Obsidian Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=%23483699&label=downloads&query=%24%5B%22obsidian-full-calendar%22%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json) -->
+<img src="https://img.shields.io/github/downloads/obsidian-full-calendar-remastered/plugin-full-calendar/total?label=Downloads" alt="Downloads" />
+<a href="#contributors-"><img src="https://img.shields.io/badge/all_contributors-17-orange.svg?style=flat-square" alt="All Contributors" /></a>
+<a href="https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/"><img src="https://img.shields.io/badge/Version-v_0.13.5.7-blue" alt="Version" /></a>
+
+</td>
+</tr>
+</table>
+
 
 # Full Calendar (Remastered) Plugin
 
@@ -68,9 +75,6 @@ If this project has helped you consider supporting:
 
 Thanks goes to these wonderful people ([✨](https://allcontributors.org/docs/en/emoji-key)):
 
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
 <table>
   <tbody>
     <tr>
@@ -82,10 +86,5 @@ Thanks goes to these wonderful people ([✨](https://allcontributors.org/docs/en
     </tr>
   </tbody>
 </table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

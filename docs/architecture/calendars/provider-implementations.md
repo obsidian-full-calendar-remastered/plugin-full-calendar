@@ -29,13 +29,20 @@ Creates one-note-per-event records, supports full CRUD, and uses robust filename
 
 **Frontmatter-first event identity**: The plugin treats frontmatter as the authoritative source for all event data. The note's filename is used only for file organisation and is never the basis for what is displayed on the calendar. Specifically:
 
-- `getEventsInFile()` reads the `title:` field from frontmatter. If absent or empty, it falls back to `extractCleanTitleFromBasename()` (`src/providers/utils/noteUtils.ts`), which strips known auto-generated prefixes before using the filename as a fallback title:
+- **Date Resolution**: `getEventsInFile()` checks `frontmatter.date`, falling back to `due`, `scheduled`, `start`, or `startDate` if `date` is absent.
+- **Task Inference**: Notes with `isTask: true`, `task: true`, `completed` (boolean or date), `due`, or `scheduled` are automatically inferred as calendar tasks (`isTask: true`).
+- **Title Extraction**: `getEventsInFile()` reads the `title:` field from frontmatter. If absent or empty, it falls back to `extractCleanTitleFromBasename()` (`src/providers/utils/noteUtils.ts`), which strips known auto-generated prefixes before using the filename as a fallback title:
     - ISO date prefix (e.g. `2026-09-05 Meeting` → `Meeting`)
     - Recurrence prefix (e.g. `(Every M,W) Standup` → `Standup`)
     - Unique suffix (e.g. `Meeting-_-_-1` → `Meeting`)
-- Event UID is always set to `file.path` after parsing (`event.uid = file.path`). This is the stable persistent identifier — not the title, not the filename stem.
+- **Event UID**: Always set to `file.path` after parsing (`event.uid = file.path`). This is the stable persistent identifier — not the title, not the filename stem.
+- **Recursive Scanning**: `getEvents()` recursively gathers all notes in subdirectories inside the configured calendar folder.
 
-**Vault rename handling**: `main.ts` listens for `vault.on('rename')` and calls both `handleFileDelete(oldPath)` and `handleFileUpdate(newFile)` in sequence. This immediately removes the old path from the cache and re-indexes the note under its new path. Without `handleFileUpdate`, the event would disappear from the calendar because `metadataCache.on('changed')` does not fire on renames — only on content edits. The existing `isBulkUpdating` guard in `CacheSyncHandler` prevents double-processing when the plugin itself renames files via `updateEvent()`.
+**Vault rename & cache handling**:
+- `main.ts` listens for `vault.on('rename')` and handles both `TFile` and `TFolder` renames. For folder renames, it recursively deletes old child paths and triggers updates for all nested files.
+- `metadataCache.on('resolve')` is registered in addition to `'changed'`, ensuring metadata updates triggered upon file renames are indexed immediately.
+- `ObsidianIO.read(file)` falls back to direct disk reads (`vault.read(file)`) if `vault.cachedRead(file)` throws or returns an empty string during rename propagation.
+- Existing `isBulkUpdating` guard in `CacheSyncHandler` prevents double-processing when the plugin itself renames files via `updateEvent()`.
 
 **`basenameFromEvent` / `filenameForEvent`**: These remain in use for *creating* new event notes and for deciding if a file should be renamed when a user edits title or date via the modal. They are intentionally **not** used for reading.
 

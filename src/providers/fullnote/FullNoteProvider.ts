@@ -199,8 +199,11 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
   }
 
   public isFileRelevant(file: TFile): boolean {
-    const directory = this.source.directory;
-    return !!directory && file.path.startsWith(`${directory}/`);
+    const directory = normalizePath(this.source.directory || '');
+    if (!directory || directory === '/' || directory === '.') {
+      return true;
+    }
+    return file.path.startsWith(`${directory}/`);
   }
 
   public async getEventsInFile(file: TFile): Promise<EditableEventResponse[]> {
@@ -208,14 +211,29 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
     let frontmatter: Record<string, unknown> | null =
       (metadata?.frontmatter as Record<string, unknown>) || null;
 
-    if (!frontmatter || !frontmatter.title) {
-      const page = await this.app.read(file);
-      const fallbackFm = parseFrontmatterWithFallback(page);
-      if (fallbackFm) {
-        frontmatter = {
-          ...(frontmatter || {}),
-          ...fallbackFm
-        };
+    if (
+      !frontmatter ||
+      !frontmatter.title ||
+      (!frontmatter.date &&
+        !frontmatter.due &&
+        !frontmatter.scheduled &&
+        !frontmatter.start &&
+        !frontmatter.startDate)
+    ) {
+      try {
+        const page = await this.app.read(file);
+        const fallbackFm = parseFrontmatterWithFallback(page);
+        if (fallbackFm) {
+          frontmatter = {
+            ...(frontmatter || {}),
+            ...fallbackFm
+          };
+        }
+      } catch (err) {
+        console.warn(
+          `Full Calendar: Failed to read page for fallback frontmatter: ${file.path}`,
+          err
+        );
       }
     }
 
@@ -233,10 +251,36 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
 
     const fallbackBasename = file.basename || (file.name ? file.name.replace(/\.[^/.]+$/, '') : '');
 
+    const dateValue =
+      frontmatter.date ??
+      frontmatter.due ??
+      frontmatter.scheduled ??
+      frontmatter.start ??
+      frontmatter.startDate;
+
+    const formatFrontmatterDate = (val: unknown): string => {
+      if (typeof val === 'string') return val.trim();
+      if (typeof val === 'number' || typeof val === 'boolean') return `${val}`.trim();
+      if (val instanceof Date) return val.toISOString();
+      return '';
+    };
+
+    const dateStr =
+      dateValue !== undefined && dateValue !== null ? formatFrontmatterDate(dateValue) : '';
+
+    const isTaskInferred =
+      Boolean(frontmatter.isTask) ||
+      Boolean(frontmatter.task) ||
+      frontmatter.completed !== undefined ||
+      frontmatter.due !== undefined ||
+      frontmatter.scheduled !== undefined;
+
     const rawEventData = {
       ...frontmatter,
       type: eventType,
-      title: frontmatterTitle ?? extractCleanTitleFromBasename(fallbackBasename)
+      title: frontmatterTitle ?? extractCleanTitleFromBasename(fallbackBasename),
+      ...(dateStr ? { date: dateStr } : {}),
+      ...(isTaskInferred ? { isTask: true } : {})
     } as Record<string, unknown>;
 
     const event = validateEvent(rawEventData);
@@ -255,11 +299,23 @@ export class FullNoteProvider implements CalendarProvider<FullNoteProviderConfig
     return LoadDebugProfiler.withContext('Full Note Sync', async () => {
       const eventFolder = this.app.getAbstractFileByPath(this.source.directory);
       if (!eventFolder || !(eventFolder instanceof TFolder)) {
-        throw new Error(`${this.source.directory} is not a valid directory.`);
+        return [];
       }
 
+      const collectFiles = (folder: TFolder): TFile[] => {
+        const result: TFile[] = [];
+        for (const child of folder.children) {
+          if (child instanceof TFile) {
+            result.push(child);
+          } else if (child instanceof TFolder) {
+            result.push(...collectFiles(child));
+          }
+        }
+        return result;
+      };
+
       const events: EditableEventResponse[] = [];
-      const files = eventFolder.children.filter((file): file is TFile => file instanceof TFile);
+      const files = collectFiles(eventFolder);
       const BATCH_SIZE = 15;
 
       for (let i = 0; i < files.length; i += BATCH_SIZE) {

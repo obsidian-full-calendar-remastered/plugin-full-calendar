@@ -30,7 +30,8 @@ const calendarOptionsSchema = z.discriminatedUnion('type', [
     id: z.string(),
     name: z.string(),
     directory: z.string(),
-    template: z.string().optional()
+    template: z.string().optional(),
+    taskCompletionStyle: z.enum(['datetime', 'boolean']).optional()
   }),
   z.object({
     type: z.literal('dailynote'),
@@ -49,7 +50,7 @@ const calendarOptionsSchema = z.discriminatedUnion('type', [
     format: z.enum(DAILY_NOTE_EVENT_FORMATS).default(DEFAULT_DAILY_NOTE_EVENT_FORMAT),
     journalId: z.string()
   }),
-  z.object({ type: z.literal('ical'), id: z.string(), name: z.string(), url: z.string().url() }),
+  z.object({ type: z.literal('ical'), id: z.string(), name: z.string(), url: z.string().min(1) }),
   z.object({
     type: z.literal('caldav'),
     id: z.string(),

@@ -1238,5 +1238,184 @@ text_property: "[[example]]"
       expect(events[0][0].title).toBe('Team Standup');
       expect(events[0][0].type).toBe('recurring');
     });
+
+    it('identifies event from frontmatter "due" date when "date" is not provided', async () => {
+      const filename = 'TaskDueOnly.md';
+      const app = MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder(dirName).file(
+            filename,
+            new FileBuilder()
+              .frontmatter({
+                title: 'Due Task',
+                due: '2026-09-10'
+              })
+              .text('Task text')
+          )
+        )
+        .done();
+
+      const obsidian = makeApp(app);
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const file = obsidian.getFileByPath(`${dirName}/${filename}`);
+      expect(file).not.toBeNull();
+      if (file) {
+        const events = await calendar.getEventsInFile(file);
+        expect(events).toHaveLength(1);
+        expect(events[0][0]).toMatchObject({
+          date: '2026-09-10',
+          title: 'Due Task',
+          isTask: true
+        });
+      }
+    });
+
+    it('identifies event from frontmatter "scheduled" date and infers task', async () => {
+      const filename = 'TaskScheduledOnly.md';
+      const app = MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder(dirName).file(
+            filename,
+            new FileBuilder()
+              .frontmatter({
+                title: 'Scheduled Task',
+                scheduled: '2026-09-12'
+              })
+              .text('Scheduled content')
+          )
+        )
+        .done();
+
+      const obsidian = makeApp(app);
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const file = obsidian.getFileByPath(`${dirName}/${filename}`);
+      expect(file).not.toBeNull();
+      if (file) {
+        const events = await calendar.getEventsInFile(file);
+        expect(events).toHaveLength(1);
+        expect(events[0][0]).toMatchObject({
+          date: '2026-09-12',
+          title: 'Scheduled Task',
+          isTask: true
+        });
+      }
+    });
+
+    it('identifies event from frontmatter "start" date', async () => {
+      const filename = 'MeetingStartOnly.md';
+      const app = MockAppBuilder.make()
+        .folder(
+          new MockAppBuilder(dirName).file(
+            filename,
+            new FileBuilder()
+              .frontmatter({
+                title: 'Team Sync',
+                start: '2026-09-15',
+                allDay: true
+              })
+              .text('Meeting notes')
+          )
+        )
+        .done();
+
+      const obsidian = makeApp(app);
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const file = obsidian.getFileByPath(`${dirName}/${filename}`);
+      expect(file).not.toBeNull();
+      if (file) {
+        const events = await calendar.getEventsInFile(file);
+        expect(events).toHaveLength(1);
+        expect(events[0][0]).toMatchObject({
+          date: '2026-09-15',
+          title: 'Team Sync'
+        });
+      }
+    });
+
+    it('falls back to reading file from disk when metadataCache returns null frontmatter', async () => {
+      const filename = 'UncachedFile.md';
+      const fileContent =
+        '---\ntitle: Direct Read Event\ndate: 2026-09-20\n---\nDirect read content';
+      const app = MockAppBuilder.make()
+        .folder(new MockAppBuilder(dirName).file(filename, new FileBuilder().text(fileContent)))
+        .done();
+
+      const obsidian = makeApp(app);
+      (obsidian.getMetadata as jest.Mock).mockReturnValue(null);
+
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const file = obsidian.getFileByPath(`${dirName}/${filename}`);
+      expect(file).not.toBeNull();
+      if (file) {
+        const events = await calendar.getEventsInFile(file);
+        expect(events).toHaveLength(1);
+        expect(events[0][0]).toMatchObject({
+          date: '2026-09-20',
+          title: 'Direct Read Event'
+        });
+      }
+    });
+
+    it('recursively discovers events in nested subdirectories', async () => {
+      const subFolder = new MockAppBuilder('subfolder').file(
+        'NestedEvent.md',
+        new FileBuilder().frontmatter({ title: 'Nested Note', date: '2026-09-25' })
+      );
+
+      const eventsFolder = new MockAppBuilder(dirName)
+        .file(
+          'TopEvent.md',
+          new FileBuilder().frontmatter({ title: 'Top Note', date: '2026-09-24' })
+        )
+        .folder(subFolder);
+
+      const app = MockAppBuilder.make().folder(eventsFolder).done();
+
+      const obsidian = makeApp(app);
+      const calendar = new FullNoteProvider(
+        { directory: dirName, id: 'local_1' },
+        makePlugin(),
+        obsidian
+      );
+
+      const events = await calendar.getEvents();
+      expect(events.length).toBeGreaterThanOrEqual(2);
+      const titles = events.map(e => e[0].title);
+      expect(titles).toContain('Top Note');
+      expect(titles).toContain('Nested Note');
+    });
+
+    it('recognizes files as relevant when calendar is at root directory', () => {
+      const app = MockAppBuilder.make().done();
+      const obsidian = makeApp(app);
+      const rootCalendar = new FullNoteProvider(
+        { directory: '', id: 'local_root' },
+        makePlugin(),
+        obsidian
+      );
+
+      const rootFile = Object.assign(new TFile(), { name: 'RootNote.md' });
+      expect(rootCalendar.isFileRelevant(rootFile)).toBe(true);
+    });
   });
 });

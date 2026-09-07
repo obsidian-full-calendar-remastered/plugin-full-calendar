@@ -4,7 +4,7 @@
  * @description Tests for ID generation and validation to prevent regressions
  */
 
-import { generateCalendarId } from './calendar_settings';
+import { generateCalendarId, parseCalendarInfo } from './calendar_settings';
 
 describe('calendar_settings', () => {
   describe('generateCalendarId', () => {
@@ -121,6 +121,71 @@ describe('calendar_settings', () => {
       // Should correctly identify local_2 as already in use
       expect(id).toBe('local_3');
       expect(allIds).toContain('local_2');
+    });
+  });
+
+  describe('parseCalendarInfo schema validation', () => {
+    it('should validate ical source with local vault file path', () => {
+      const parsed = parseCalendarInfo({
+        type: 'ical',
+        id: 'ical_1',
+        name: 'Local Vault ICS',
+        url: 'Calendars/my-calendar.ics',
+        color: '#ff0000'
+      });
+
+      expect(parsed.type).toBe('ical');
+      if (parsed.type === 'ical') {
+        expect(parsed.url).toBe('Calendars/my-calendar.ics');
+      }
+    });
+
+    it('should validate ical source with remote http/https/webcal URLs', () => {
+      const httpsParsed = parseCalendarInfo({
+        type: 'ical',
+        id: 'ical_1',
+        name: 'Remote ICS',
+        url: 'https://calendar.google.com/calendar/ical/basic.ics',
+        color: '#00ff00'
+      });
+      expect(httpsParsed.type).toBe('ical');
+
+      const webcalParsed = parseCalendarInfo({
+        type: 'ical',
+        id: 'ical_2',
+        name: 'Webcal ICS',
+        url: 'webcal://example.com/feed.ics',
+        color: '#0000ff'
+      });
+      expect(webcalParsed.type).toBe('ical');
+    });
+
+    it('should validate local source with taskCompletionStyle', () => {
+      const parsedDatetime = parseCalendarInfo({
+        type: 'local',
+        id: 'local_1',
+        name: 'My Notes',
+        directory: 'CalendarNotes',
+        taskCompletionStyle: 'datetime',
+        color: '#ff9900'
+      });
+      expect(parsedDatetime.type).toBe('local');
+      if (parsedDatetime.type === 'local') {
+        expect(parsedDatetime.taskCompletionStyle).toBe('datetime');
+      }
+
+      const parsedBoolean = parseCalendarInfo({
+        type: 'local',
+        id: 'local_2',
+        name: 'My Notes 2',
+        directory: 'CalendarNotes',
+        taskCompletionStyle: 'boolean',
+        color: '#ff9900'
+      });
+      expect(parsedBoolean.type).toBe('local');
+      if (parsedBoolean.type === 'local') {
+        expect(parsedBoolean.taskCompletionStyle).toBe('boolean');
+      }
     });
   });
 });

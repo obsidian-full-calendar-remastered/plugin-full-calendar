@@ -249,6 +249,9 @@ export class ProviderRegistry {
       }
     }
 
+    // Keep internal sources list synchronized with current settings sources
+    this.sources = [...sources];
+
     // Trigger workspace event to notify settings and other subscribers that instances are fully initialized
     this.plugin.app.workspace.trigger('full-calendar:instances-initialized');
   }

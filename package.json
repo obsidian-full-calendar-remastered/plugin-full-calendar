@@ -89,7 +89,7 @@
         "@types/deep-equal": "^1.0.4",
         "@types/ical": "^0.8.3",
         "color": "^4.2.3",
-        "date-holidays": "^3.36.0",
+        "date-holidays": "^3.36.1",
         "esbuild-css-modules-plugin": "^3.1.5",
         "flatpickr": "^4.6.13",
         "i18next": "^26.4.2",

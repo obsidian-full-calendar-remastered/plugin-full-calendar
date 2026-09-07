@@ -114,7 +114,8 @@ export const CommonSchema = z.object({
         action: z.enum(['DISPLAY', 'AUDIO', 'EMAIL']).default('DISPLAY')
       })
     )
-    .optional()
+    .optional(),
+  isTask: z.boolean().optional()
 });
 
 export const EventSchema = z
@@ -123,7 +124,8 @@ export const EventSchema = z
       type: z.literal('single'),
       date: ParsedDate,
       endDate: ParsedDate.nullable().default(null),
-      completed: ParsedDate.or(z.literal(true)).or(z.literal(false)).or(z.literal(null)).optional()
+      completed: ParsedDate.or(z.literal(true)).or(z.literal(false)).or(z.literal(null)).optional(),
+      isTask: z.boolean().optional()
     }),
     z.object({
       type: z.literal('recurring'),

@@ -85,6 +85,7 @@ import { PluginState } from '../../core/PluginState';
 import { ProviderRegistry } from '../../providers/ProviderRegistry';
 import FullCalendarPlugin from '../../main';
 import { CalendarInfo } from '../../types/calendar_settings';
+import { CredentialStore } from '../../features/credentials/CredentialStore';
 import ReactModal from '../ReactModal';
 
 // Access mock helpers via requireMock to avoid TS2305 (no exported member)
@@ -257,5 +258,87 @@ describe('SettingsTab Integration - Calendar Sources', () => {
       expect(savedSource.microsoftAccountId).toBe(microsoftAccountId);
       expect(savedSource.calendarId).toBe('outlook-calendar-abc');
     }
+  });
+
+  it('should atomically batch save multiple calendar sources and preserve server colors', async () => {
+    obsidianMock.__captured.dropdownValue = 'google';
+    const container = document.createElement('div');
+    const submitCallback = jest.fn();
+
+    addCalendarButton(mockPlugin, container, submitCallback);
+    if (obsidianMock.__captured.onClickCb) {
+      await obsidianMock.__captured.onClickCb();
+    }
+
+    const modalInstance = (ReactModal as jest.Mock).mock.instances[
+      (ReactModal as jest.Mock).mock.instances.length - 1
+    ] as { onOpenCallback: () => Promise<unknown> };
+    const elements = (await modalInstance.onOpenCallback()) as {
+      props: { onSave: (configs: unknown[], accountId: string) => void };
+    };
+
+    const selectedConfigs = [
+      { id: 'cal-1@gmail.com', name: 'Work Calendar', color: '#112233' },
+      { id: 'cal-2@gmail.com', name: 'Personal Calendar', color: '#445566' }
+    ];
+    const googleAccountId = 'gcal_multi';
+
+    elements.props.onSave(selectedConfigs, googleAccountId);
+    await new Promise(resolve => window.setTimeout(resolve, 10));
+
+    expect(submitCallback).toHaveBeenCalledTimes(1);
+    const savedSources = (submitCallback.mock.calls as unknown[][])[0][0] as CalendarInfo[];
+    expect(Array.isArray(savedSources)).toBe(true);
+    expect(savedSources).toHaveLength(2);
+
+    expect(savedSources[0].name).toBe('Work Calendar');
+    expect(savedSources[0].color).toBe('#112233');
+    expect(savedSources[1].name).toBe('Personal Calendar');
+    expect(savedSources[1].color).toBe('#445566');
+
+    expect(mockRegistry.addInstance).toHaveBeenCalledTimes(2);
+  });
+
+  it('should persist CalDAV password in CredentialStore when CalDAV calendar is saved', async () => {
+    obsidianMock.__captured.dropdownValue = 'caldav';
+    const container = document.createElement('div');
+    const submitCallback = jest.fn((source: CalendarInfo | CalendarInfo[]) => {
+      const sources = Array.isArray(source) ? source : [source];
+      PluginState.getSettings().calendarSources.push(...sources);
+    });
+
+    addCalendarButton(mockPlugin, container, submitCallback);
+    if (obsidianMock.__captured.onClickCb) {
+      await obsidianMock.__captured.onClickCb();
+    }
+
+    const modalInstance = (ReactModal as jest.Mock).mock.instances[
+      (ReactModal as jest.Mock).mock.instances.length - 1
+    ] as { onOpenCallback: () => Promise<unknown> };
+    const elements = (await modalInstance.onOpenCallback()) as {
+      props: { onSave: (configs: unknown[]) => void };
+    };
+
+    const caldavConfig = [
+      {
+        id: 'caldav_test_1',
+        name: 'My CalDAV',
+        url: 'https://caldav.example.com/',
+        homeUrl: 'https://caldav.example.com/user/cal/',
+        username: 'testuser',
+        password: 'superSecretPassword123',
+        color: '#aabbcc'
+      }
+    ];
+
+    elements.props.onSave(caldavConfig);
+    await new Promise(resolve => window.setTimeout(resolve, 10));
+
+    expect(submitCallback).toHaveBeenCalled();
+    const savedSource = (submitCallback.mock.calls as unknown[][])[0][0] as CalendarInfo;
+    expect(savedSource.type).toBe('caldav');
+
+    const storedPassword = CredentialStore.getCalDAVPassword(savedSource.id);
+    expect(storedPassword).toBe('superSecretPassword123');
   });
 });

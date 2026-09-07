@@ -51,6 +51,19 @@ When you create or edit an event note, the plugin manages its YAML frontmatter. 
 
 ---
 
+## Frontmatter-Pure Event & Task Identification
+
+The plugin looks directly at the YAML frontmatter to detect events and tasks without depending on note filenames:
+
+1. **Date Resolution**:
+   - `date:` *(authoritative)* — standard event date (`YYYY-MM-DD`).
+   - If `date:` is not present, the plugin seamlessly checks `due:`, `scheduled:`, `start:`, or `startDate:` as fallback date fields.
+2. **Task Detection**:
+   - Notes containing `isTask: true`, `task: true`, `completed: false` (or a completion date), `due:`, or `scheduled:` are automatically identified as calendar tasks.
+   - Task completion supports both boolean (`true`/`false`) and datetime ISO timestamp formats according to your calendar source's configured `taskCompletionStyle`.
+3. **Subfolder Discovery**:
+   - Full Note calendars recursively search all nested subdirectories inside your configured calendar folder.
+
 ## Event title priority
 
 The plugin resolves the displayed event title using the following priority order:
@@ -63,8 +76,8 @@ The plugin resolves the displayed event title using the following priority order
 
 This means you can freely rename note files without affecting what the calendar shows, as long as the `title:` frontmatter field is set.
 
-!!! tip "Rename-safe events"
-    Because the calendar identity is always derived from frontmatter — never the filename — renaming a note in the file explorer will not cause it to disappear from the calendar. The plugin detects renames immediately and re-indexes the note at its new path.
+!!! tip "Rename-Safe Events and Folders"
+    Because event identity and date information are derived directly from frontmatter, renaming a note or moving its enclosing folder in the file explorer will **never** cause it to disappear from the calendar. The plugin immediately listens to Obsidian's file rename and metadata resolve events, re-indexes the note at its new path, and keeps your schedule perfectly synchronized.
 
 ---
 

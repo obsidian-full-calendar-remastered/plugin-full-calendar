@@ -23,10 +23,11 @@ export function renderOnboarding(plugin: FullCalendarPlugin, el: HTMLElement) {
     'Thanks for downloading full calendar. Create a calendar below to begin.';
 
   const container = notice.createDiv();
-  addCalendarButton(plugin, container, (source: CalendarInfo) => {
+  addCalendarButton(plugin, container, (source: CalendarInfo | CalendarInfo[]) => {
     void (async () => {
       const { calendarSources } = PluginState.getSettings();
-      calendarSources.push(source);
+      const sources = Array.isArray(source) ? source : [source];
+      calendarSources.push(...sources);
       await PluginState.saveSettings();
       await PluginState.getInternalAPI().openCalendar();
     })();

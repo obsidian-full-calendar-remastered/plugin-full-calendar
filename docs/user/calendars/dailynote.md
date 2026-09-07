@@ -58,7 +58,7 @@ Note that only one daily note calendar can be active at a time.
 
 Daily Note calendars have a single-instance limitation: only one Daily Note calendar source can be active at a time in settings. This prevents conflicts when parsing and writing to daily notes.
 
-If you need multiple calendar sources from notes, consider using [Full Note calendars](local.md) instead, which support multiple instances with nested folder structures.
+If you need multiple date-note or note-based calendar sources, you can connect multiple Day journals using [Journals calendars](journals.md) (which allow multiple coexisting journal sources), or use [Full Note calendars](local.md) for folder-organized individual note events.
 
 ---
 

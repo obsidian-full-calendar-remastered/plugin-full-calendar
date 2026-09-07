@@ -6,13 +6,22 @@ In addition to clicking on events to edit them directly, you can click-and-drag 
 
 Move an event around on a day or between days. This works just as well with all-day events.
 
+- **Lossless Updates:** Dragging an event preserves all existing details—including multiline descriptions, locations, categories, and custom note frontmatter—without accidental overwrites.
+- **Recurring Instance Overrides:** Moving a single occurrence of a recurring series creates an isolated single-event override, keeping the parent recurrence rule and all future dates intact.
+
 ![Moving event by dragging and dropping on calendar view](../../assets/events/moving-event.gif)
 
 ## Drag to change duration
 
-Drag the endpoint of event to change ending time
+Drag the endpoint of an event to adjust its start or end time.
+
+- Like moving, resizing preserves all event descriptions, locations, and custom metadata.
+- Resizing a single occurrence of a recurring series safely isolates the change to that instance without altering the rest of the sequence.
 
 ![Changing event duration by dragging the bottom edge](../../assets/events/edit-event-drag.gif)
+
+!!! tip "Quick Context Menu Actions"
+    In addition to direct click-and-drag interactions, right-clicking an event opens the [Context Menu](hover_context.md#right-click-context-menu) to launch meeting/location URLs in your browser, open linked notes, or delete specific occurrences.
 
 ---
 

@@ -1,5 +1,40 @@
 [
   {
+    "version": "0.13.0",
+    "changes": [
+      {
+        "type": "new",
+        "title": "Natural language processing (NLP)",
+        "description": "Introducing [NLP](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/nlp/) for keyboard free orchestration."
+      },
+      {
+        "type": "new",
+        "title": "Outlook Integration",
+        "description": "Added Outlook integration with full recurrence support and improved frontmatter/metadata handling. ([#259](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/259))"
+      },
+      {
+        "type": "new",
+        "title": "Major Feature Expansions",
+        "description": "Introduced a new [Milestones](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/milestones/) system, [TaskNotes integration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/tasknotes/), and comprehensive Calendar [API](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/settings/api/) & Cache refactoring"
+      },
+      {
+        "type": "improvement",
+        "title": "i18n and Documentation",
+        "description": "Added Chinese (zh) localization and restructured the documentation suite for better navigation. ([#246](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/246))"
+      },
+      {
+        "type": "improvement",
+        "title": "Tasks Plugin Enhancements",
+        "description": "Added Day Planner format support, 24h time prefix serialization, deduplication for mirrored tasks, and fuzzy search in the tasks backlog."
+      },
+      {
+        "type": "fix",
+        "title": "CalDAV & Event fixes",
+        "description": "Hardened mobile CalDAV authentication, improved import UX diagnostics, and resolved DailyNote UID collisions on move. Converting all-day to timed events now defaults to 1-hour duration."
+      }
+    ]
+  },
+  {
     "version": "0.12.9",
     "changes": [
       {

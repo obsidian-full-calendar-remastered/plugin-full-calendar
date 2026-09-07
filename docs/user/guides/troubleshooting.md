@@ -49,6 +49,25 @@ Use this page as a first response checklist for common issues.
 
     See: [Timezone Support](../events/timezones.md)
 
+??? question "Why is my calendar view blank or failing to render?"
+    <a id="blank-calendar-view"></a>
+    Full Calendar includes an integrated **Blank View Diagnostic** that detects incomplete or unmounted calendar frames and triggers self-healing recovery automatically.
+    
+    If your calendar view still appears completely blank:
+    1. Run `Full Calendar: Revalidate remote calendars` from the command palette.
+    2. Try resetting the event cache using `Full Calendar: Reset event cache`.
+    3. Switch to another view (e.g. Month or List) and back to force a redraw.
+    4. Verify that custom CSS snippets or third-party themes are not hiding `.fc` elements with `display: none` or zero height.
+
+??? question "How do I diagnose slow calendar loading or startup freezes?"
+    <a id="slow-startup-profiling"></a>
+    Full Calendar contains a built-in, zero-overhead diagnostic profiler called **LoadDebugProfiler**:
+    
+    1. Go to **Settings** → **Full Calendar** → **Display & Behavior**.
+    2. Click **Run & View Load Debug Benchmark**.
+    3. An interactive modal will run a live benchmark measuring `onload()`, layout readiness, and each provider's fetch timing across Stage 1 and Stage 2 syncs.
+    4. Click **Copy Report** to share exact timing numbers when reporting performance issues on GitHub.
+
 ??? question "How do I force a 24-hour format and European (DD/MM/YYYY) date display while keeping English UI?"
     <a id="how-do-i-force-24-hour-format-and-european-dates"></a>
     If your system defaults override the calendar formatting, you can force Obsidian to display a 24-hour clock and European date order (while keeping Obsidian's interface in English) by launching it with the `LANG` environment variable set to `en_DK.UTF-8` on Linux or macOS:
@@ -95,6 +114,9 @@ Use this page as a first response checklist for common issues.
     4. Copy the URL, paste it manually into the browser of your choice, and authorize the integration.
     5. Copy the resulting code/token and paste it back into Obsidian to complete authentication.
 
+    !!! tip "Automatic iOS Popup Fallback"
+        On iOS mobile devices, if Safari or Obsidian's app sandbox blocks the authorization popup window, Full Calendar automatically detects this and presents the copy-paste authorization modal immediately so you do not need to manually toggle settings.
+
 ??? question "Outlook Calendar: Account connection fails or custom token fails"
     <a id="outlook-calendar"></a>
     If custom token creation and account connection fails:
@@ -124,7 +146,14 @@ Use this page as a first response checklist for common issues.
     
     For ongoing tracking and updates on native mobile OAuth, see [GitHub Issue #191](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/191).
 
-## Special Calendars (Bases & Holidays)
+## Special Calendars (Bases, Holidays & CalDAV Tasks)
+
+??? question "CalDAV Tasks: 401 Unauthorized, collection errors, or task conflicts"
+    <a id="caldav-tasks-troubleshooting"></a>
+    - **Use direct VTODO collection URL:** CalDAV Tasks requires the direct URL to the task/reminder collection itself (typically ending in `/tasks/` or a collection UUID), rather than an account principal root.
+    - **Apple Reminders app-specific password:** For iCloud Reminders via CalDAV, generate an [Apple app-specific password](https://support.apple.com/en-us/HT204397) from appleid.apple.com. Standard Apple Account passwords will be rejected with 401 Unauthorized.
+    - **ETag conflict errors (412 Precondition Failed):** The task was edited on another device since the last refresh. Run `Full Calendar: Revalidate remote calendars` to refresh task state and ETags before retrying your update.
+    - **Backlog vs Calendar placement:** Tasks without `DTSTART` or `DUE` dates automatically land in the [Task Backlog](../features/tasks-backlog.md) rather than the calendar grid. Drag them onto the calendar to schedule them.
 
 ??? question "Bases Calendar: Troubleshooting missing events, wrong notes, or category coloring"
     <a id="bases-calendar"></a>

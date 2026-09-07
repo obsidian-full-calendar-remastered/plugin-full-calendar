@@ -14,6 +14,53 @@ export interface Version {
 // Add new versions to the TOP of this array.
 export const changelogData: Version[] = [
   {
+    version: '0.13.6',
+    changes: [
+      {
+        type: 'new',
+        title: 'Journals Calendar Provider',
+        description:
+          'Connect multiple Day journals with official [Journals 3.2+ API](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/journals/) support, template heading discovery, and legacy 2.x fallback.'
+      },
+      {
+        type: 'new',
+        title: 'Dedicated CalDAV Tasks Provider',
+        description:
+          'Manage [CalDAV tasks (VTODO)](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/caldav-tasks/) with Apple Reminders compatibility, task backlog integration, and ETag conflict safety.'
+      },
+      {
+        type: 'new',
+        title: 'Workspace Default Calendar',
+        description:
+          'Designate a [default calendar per workspace](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/views/workspaces/#workspace-default-calendar) for targeted new event creation that respects visible calendar filters.'
+      },
+      {
+        type: 'new',
+        title: 'Open Location URLs & Linked Note Hover Preview',
+        description:
+          'Launch meeting or map URLs directly via the [context menu](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/hover_context/#right-click-context-menu) and preview linked notes with Obsidian Page Preview.'
+      },
+      {
+        type: 'improvement',
+        title: 'Lossless Drag & Resize & Rescheduling Isolation',
+        description:
+          'Preserve multiline descriptions, locations, and frontmatter during [drag and resize](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/manage/#moving-events), and isolate single-event recurring overrides without rule leakage.'
+      },
+      {
+        type: 'improvement',
+        title: 'Authoritative Timezones & Startup Performance',
+        description:
+          'Unified [authoritative timezone resolution](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/timezones/#how-timezones-are-handled) across all subsystems, non-blocking instant UI mounting, and built-in load profiling diagnostics.'
+      },
+      {
+        type: 'fix',
+        title: 'Mobile Google OAuth & Recurring Task Completion',
+        description:
+          'Automatic [copy-paste fallback](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/gcal/#feature-notes) when iOS popups are blocked, and fixed recurring task checkbox completion on the calendar view.'
+      }
+    ]
+  },
+  {
     version: '0.13.5',
     changes: [
       {
@@ -215,47 +262,6 @@ export const changelogData: Version[] = [
         title: 'TaskNotes Sync & Stability',
         description:
           'Stabilized provider-driven updates and drag/toggle sync. Improvements include: ignoring unclaimed file watcher updates, recovering missing provider-session mappings from cache, normalizing persistent IDs, coalescing burst updates, ignoring stale payloads, preferring canonical cache state, and ensuring scheduled changes remain authoritative even if time estimate persistence fails.'
-      }
-    ]
-  },
-  {
-    version: '0.13.0',
-    changes: [
-      {
-        type: 'new',
-        title: 'Natural language processing (NLP)',
-        description:
-          'RECOMMENDED: Introducing [NLP](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/nlp/) for keyboard free orchestration.'
-      },
-      {
-        type: 'new',
-        title: 'Outlook Integration',
-        description:
-          'Added Outlook integration with full recurrence support and improved frontmatter/metadata handling. ([#259](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/259))'
-      },
-      {
-        type: 'new',
-        title: 'Major Feature Expansions',
-        description:
-          'Introduced a new [Milestones](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/milestones/) system, [TaskNotes integration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/tasknotes/), and comprehensive Calendar [API](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/settings/api/) & Cache refactoring'
-      },
-      {
-        type: 'improvement',
-        title: 'i18n and Documentation',
-        description:
-          'Added Chinese (zh) localization and restructured the documentation suite for better navigation. ([#246](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/issues/246))'
-      },
-      {
-        type: 'improvement',
-        title: 'Tasks Plugin Enhancements',
-        description:
-          'Added Day Planner format support, 24h time prefix serialization, deduplication for mirrored tasks, and fuzzy search in the tasks backlog.'
-      },
-      {
-        type: 'fix',
-        title: 'CalDAV & Event fixes',
-        description:
-          'Hardened mobile CalDAV authentication, improved import UX diagnostics, and resolved DailyNote UID collisions on move. Converting all-day to timed events now defaults to 1-hour duration.'
       }
     ]
   }

@@ -60,11 +60,11 @@ If you prefer to maintain your own OAuth Client ID and Secret for privacy or dev
 - **Recurring Events**: Supports exceptions and cancellations. Deleting a single instance in a series creates a proper "cancelled" instance in the Google API.
 - **Timezone Management**: Events are normalized to your [Display Timezone](../settings/fc_config.md) while respecting the original source timezone for recurrence rules.
 - **Event Linked Notes**: Keep rich local meeting notes or agendas connected directly to remote Google Calendar events with automated template population. Name-based mode reuses the exact sanitized title file; deadline-based mode can keep recurring occurrences separate. See the [Event Linked Notes Guide](../features/event-linked-notes.md) for details.
-- **Mobile Support**: On iOS/Android, the login flow opens a blank tab first to bypass popup blockers. Ensure popups are allowed for Obsidian.
+- **Mobile Support**: On iOS/Android, the login flow opens a browser tab to perform OAuth. If iOS Safari or Obsidian's environment blocks the popup window, Full Calendar automatically detects this and presents an interactive copy-paste authorization modal so you can complete sign-in without getting stranded.
 
 ## Troubleshooting & Manual Authorization
 
-*   **Manual Authorization:** See the [Central Troubleshooting Guide](../guides/troubleshooting.md#google-calendar-authentication-manual-flow) for help with OAuth redirects and manual copy-paste login.
+*   **Manual Authorization:** See the [Central Troubleshooting Guide](../guides/troubleshooting.md#google-calendar-authentication-manual-flow) for help with OAuth redirects, popup blocking fallbacks, and manual copy-paste login.
 *   **Android and iOS Authentication Workaround:** For step-by-step instructions on authenticating Google Calendar/Tasks on mobile devices using vault synchronization, see [Mobile Authentication Workaround](../guides/troubleshooting.md#mobile-authentication-workaround).
 
 ---

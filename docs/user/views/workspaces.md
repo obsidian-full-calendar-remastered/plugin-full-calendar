@@ -6,7 +6,8 @@ Workspaces allow you to save and switch between customized calendar setups. A wo
 
 ## What is Saved in a Workspace
 
-- **Calendar Sources**: Selected calendars (e.g. [Local Folder](../calendars/local.md), [Daily Notes](../calendars/dailynote.md), CalDAV, [Google Calendar](../calendars/gcal.md)).
+- **Calendar Sources**: Selected calendars (e.g. [Local Folder](../calendars/local.md), [Daily Notes](../calendars/dailynote.md), [Journals](../calendars/journals.md), [CalDAV](../calendars/caldav.md), [Google Calendar](../calendars/gcal.md)).
+- **Default Calendar**: Which calendar is pre-selected when creating an event while using this workspace.
 - **Filters**: [Category overrides](../events/categories.md), tasks visibility, and all‑day event toggles.
 - **Display Options**: View type (Month, Week, Day, or [Timeline](timeline_view.md)), week start day, and time grid settings.
 - **Default Date**: The start date range loaded by default (e.g. `today`, `start-of-month`, etc.).
@@ -19,6 +20,14 @@ Workspaces allow you to save and switch between customized calendar setups. A wo
 2. Click the workspace switcher in the header and choose **Save as Workspace**.
 3. Provide a name (e.g., "Planning", "Deep Work").
 4. Select it from the workspace switcher dropdown in the header to load it instantly.
+
+### Workspace Default Calendar
+
+Each workspace can designate its own default calendar for new events:
+
+- **Targeted Creation:** When creating an event via slot-click or [FCR Command](../features/nlp.md) while inside the workspace, the creation modal pre-selects that calendar.
+- **Visibility Protection:** If the configured default calendar is excluded by the workspace's **Visible Calendars** list, Full Calendar safely skips it and falls back to the first visible writable source so new events never land in an invisible calendar.
+- **Global Inheritance:** Leaving this option set to *Use global default* inherits the [global default calendar](../settings/sources.md#global-source-settings).
 
 > [!TIP]
 > You can set a **Default Workspace** in the plugin settings to load your favorite configuration automatically on startup.

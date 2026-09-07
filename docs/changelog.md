@@ -7,11 +7,65 @@ Corresponds to
 -   **For Dev**: `git tags` of the `main` branch
 
 
-## Unreleased
+## v0.13.6
 
-### Fixed
+### New Features
 
--   Restored Journals calendar compatibility with Journals 3.2+ through its official plugin API while retaining legacy Journals 2.x support.
+-   **[Journals Calendar Provider](user/calendars/journals.md)** ([#362](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/362), [#387](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/387))
+    _Introduced first-class Journals calendar provider support with multi-journal coexistence, official Journals 3.2+ API integration, asynchronous note resolution, dynamic heading discovery, and legacy 2.x fallback._
+    - [Journals Calendar Guide](user/calendars/journals.md)
+    - [Provider Implementations & Architecture](architecture/calendars/provider-implementations.md#daily-note-provider)
+
+-   **[Dedicated CalDAV Tasks (VTODO) Provider](user/calendars/caldav-tasks.md)** ([#369](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/369))
+    _Added dedicated CalDAV Tasks calendar source supporting RFC 5545 VTODO semantics, Apple Reminders compatibility, undated task backlog caching, and ETag conditional conflict protection._
+    - [CalDAV Tasks Guide](user/calendars/caldav-tasks.md)
+    - [CalDAV Tasks Architecture](architecture/calendars/provider-implementations.md#caldav-tasks-provider)
+
+-   **[Workspace Default Calendar](user/views/workspaces.md#workspace-default-calendar)** ([#380](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/380))
+    _Configured default calendar for new events per workspace that automatically falls back when sources are excluded by workspace visible calendar filters._
+    - [Calendar Workspaces Guide](user/views/workspaces.md)
+    - [Workspace Settings](user/settings/workspaces.md)
+
+-   **[Location URLs & Context Menu Actions](user/events/hover_context.md#right-click-context-menu)** ([#373](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/373), [#396](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/396))
+    _Added context menu action to launch valid event location URLs directly in the default browser, alongside one-click linked-note creation and navigation._
+    - [Hover Preview & Context Menu Guide](user/events/hover_context.md)
+    - [Event Management](user/events/manage.md)
+
+-   **[Linked Note Page Preview Hover](user/events/hover_context.md#hover-for-event-details)** ([#373](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/373))
+    _Integrated core Page Preview hover for local and linked notes with sanitized name-based resolution and clean event boundary resets._
+    - [Hover Preview Guide](user/events/hover_context.md)
+    - [Event Linked Notes](user/features/event-linked-notes.md)
+
+-   **[Startup Benchmarking & Diagnostics](user/settings/fc_config.md#interaction--ui)** ([#364](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/364))
+    _Implemented zero-overhead LoadDebugProfiler with an on-demand reporting modal and integrated Blank View Diagnostic self-healing._
+    - [Performance & Staged Loading Architecture](architecture/system/performance.md#load-debug-profiler-loaddebugprofiler)
+    - [Troubleshooting Guide](user/guides/troubleshooting.md#why-is-my-calendar-view-blank-or-failing-to-render)
+
+### Improvements & Fixes
+
+-   **Lossless Drag & Resize Operations** ([#384](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/384), [#396](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/396))
+    _Preserved multiline descriptions, locations, categories, and custom note frontmatter across drag and resize operations._
+
+-   **Recurring Overrides Rule Isolation** ([#396](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/396))
+    _Created isolated single-event overrides when rescheduling recurring instances to prevent recurrence rule leakage._
+
+-   **Authoritative Timezone Resolution** ([#325](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/325), [#368](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/368), [#396](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/396))
+    _Unified authoritative timezone fallback across UI rendering, linked notes, notifications, and TimeEngine._
+
+-   **Mobile Google OAuth Popup Fallback** ([#386](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/386))
+    _Added automatic fallback to an interactive copy-paste authorization modal when mobile Safari or iOS blocks OAuth popup redirects._
+
+-   **Recurring Task Calendar Completion** ([#388](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/388), [#396](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/396))
+    _Fixed recurring task checkbox toggles failing on the calendar view to reliably mark targeted date instances as completed._
+
+-   **Instant UI Mounting & Non-Blocking Startup Sync** ([#364](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/364))
+    _Mounted calendar UI frame instantly (<50ms) with shimmer progress bar, spinning status indicator, and DailyNoteParseCache acceleration._
+
+-   **Provider Sync & Backlog Hardening** ([#341](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/341), [#353](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/353), [#372](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/372), [#382](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/382))
+    _Added Outlook calendar list pagination via `@odata.nextLink`, Google Tasks backlog caching, modular CalDAV architecture refactoring, and backlog date target scheduling._
+
+-   **Data Integrity, Rename & UI Fixes** ([#321](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/321), [#343](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/343), [#347](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/347), [#355](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/355), [#390](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/390), [#393](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/393))
+    _Escaped YAML frontmatter strings with colon parsing fallback, prioritized frontmatter for event titles on file rename, revealed/focused leaves when reopening calendar views, normalized Outlook GTB timezones, and honored recurring event deletions._
 
 
 ## v0.13.5
@@ -19,8 +73,6 @@ Corresponds to
 <video controls playsinline preload="metadata" width="100%" src="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/changlogs/v0.13.5.mp4">
     <a href="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/changlogs/v0.13.5.mp4">Open the v0.13.5 release video</a>
 </video>
-
-### New Features
 
 -   **[Availability Sharing](user/features/availability.md)** ([#330](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/330), [#337](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/337))
     _Added a local markdown export flow and a client-side GitHub Gist viewer for publishing secure free/busy schedules._
@@ -50,8 +102,6 @@ Corresponds to
     _Google Calendar and Google Tasks now preserve merged OAuth scopes when accounts are reauthorized, so the two providers continue to coexist on the same account._
     - [Google Calendar Guide](user/calendars/gcal.md)
     - [Google Tasks Guide](user/calendars/gtasks.md)
-
-### Improvements & Fixes
 
 -   **Linked Notes Stability Improvements** ([#333](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/333), [#337](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/337))
     _Kept preset frontmatter intact while still merging managed identity fields, and preserved the open-or-create tab reuse flow across popup, click, and context-menu entry points._

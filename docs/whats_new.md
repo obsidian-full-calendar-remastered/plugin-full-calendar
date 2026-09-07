@@ -4,6 +4,32 @@ This page highlights the latest **major features and improvements** to help you 
 For a detailed version-by-version breakdown, see the [Changelog](changelog.md).
 
 
+## 📔 First-Class Journals Calendar Provider
+
+Full Calendar now features dedicated, first-class support for the **Obsidian Journals** community plugin alongside core Daily Notes.
+
+*   **Multi-Journal Coexistence**: Connect multiple Day journals (e.g. Work, Personal, Research) as separate calendar sources, each with its own heading and color styling.
+*   **Official Journals 3.2+ API**: Built on the official asynchronous `obsidian-journals-api` with automatic rename listeners and heading discovery from existing notes.
+*   **Seamless Backward Compatibility**: Automatic settings migration from legacy configurations, with full fallback support for Journals 2.x runtimes.
+*   **Zero File Bloat**: Entries are created cleanly through Journals' own template and date configuration only when events exist.
+
+➡️ Learn more in **[Journals Calendar](user/calendars/journals.md)**.
+
+---
+
+## 🗓️ Dedicated CalDAV Tasks Provider & Apple Reminders Sync
+
+Manage tasks and to-dos stored as standard iCalendar `VTODO` resources independently from appointment calendars.
+
+*   **Isolated Task Collection**: Add dedicated CalDAV task collections that strictly enforce RFC 5545 task semantics and keep tasks separated from appointment schedules.
+*   **Apple Reminders Compatibility**: Tested with iCloud Reminders via CalDAV, preserving vendor-specific properties (`X-APPLE-*`) and handling complex alarm structures.
+*   **Task Backlog Integration**: Undated tasks automatically feed into the unified [Task Backlog](user/features/tasks-backlog.md) for drag-and-drop scheduling onto the calendar grid.
+*   **Conflict-Safe Synchronization**: Employs conditional HTTP headers (`If-Match` with quoted ETags and `If-None-Match: *`) to prevent overwriting edits made on other devices.
+
+➡️ Learn more in **[CalDAV Tasks](user/calendars/caldav-tasks.md)** and **[CalDAV Calendar](user/calendars/caldav.md)**.
+
+---
+
 ## 🌍 Availability Sharing and ICS Export Filters
 
 Share your free/busy schedule without exposing your personal calendars.

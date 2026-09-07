@@ -38,7 +38,7 @@ The plugin will automatically:
 
 When you drag or resize an event that belongs to a recurring sequence, Full Calendar asks whether you want to:
 
--   **Move only this instance:** create or update an override for the selected occurrence.
+-   **Move only this instance:** create or update an override for the selected occurrence. Full Calendar creates a clean single-event override and adds an exception to the parent series, preventing recurrence rule leakage and preserving all other occurrences.
 -   **Move the entire sequence:** update the recurring event itself so every occurrence follows the new schedule.
 
 Single, non-recurring events move immediately without this prompt.
@@ -47,14 +47,14 @@ Single, non-recurring events move immediately without this prompt.
 
 ## Recurring Tasks
 
-Tasks in recurring events are now much more useful. You can mark a single instance of a recurring task as complete.
+Tasks in recurring events are fully interactive directly on the calendar view. You can mark a single instance of a recurring task as complete from any view mode:
 
--   **Check the box:** The task for that specific day will be marked as done and crossed out.
--   **Future instances remain:** The task for the next week (or month) will appear as normal, ready to be completed.
--   **Un-check the box:** If you made a mistake, simply un-check the box. This will delete the "completed" override and the original recurring instance will reappear.
+-   **Check the box:** The task for that specific day will be marked as done and crossed out on the calendar.
+-   **Future instances remain:** The task for subsequent occurrences (e.g. next week or next month) appears as normal and ready to be completed.
+-   **Un-check the box:** If you made a mistake, un-check the box. This removes the completion record for that specific date and restores the active recurring instance.
 
 !!! info "Provider-Agnostic Task Completion"
-    Recurring instance completion is backed by provider adapters. For TaskNotes and local calendars, toggling a single occurrence persists a targeted instance completion record while preserving the future recurrence rule.
+    Recurring instance completion is backed by provider adapters. For TaskNotes, local note calendars, and remote task sources, toggling a single occurrence persists a targeted instance completion record while preserving the future recurrence rule.
 
 ---
 

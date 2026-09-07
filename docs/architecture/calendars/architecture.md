@@ -11,9 +11,10 @@
 
 | Family | Providers | Design note |
 |---|---|---|
-| Local | Full Note, Daily Note | Vault-backed parsing and write paths with file/location identity. |
-| Remote | Google, Outlook, CalDAV, ICS | Network-backed ingestion and protocol/auth handling. |
-| Integration | [Tasks](tasks-integration.md), [Task Backlog](task-backlog.md), [TaskNotes](provider-implementations.md#tasknotes-provider-provider-owned-nlp-endpoint), Bases | Plugin-integrated sources with custom semantics beyond plain calendar files. |
+| Local | [Full Note](../../user/calendars/local.md), [Daily Note](../../user/calendars/dailynote.md), [Journals](../../user/calendars/journals.md) | Vault-backed parsing and write paths with file/location identity. |
+| Remote | [Google](../../user/calendars/gcal.md), [Google Tasks](../../user/calendars/gtasks.md), [Outlook](outlook.md), [CalDAV](../../user/calendars/caldav.md), [CalDAV Tasks](../../user/calendars/caldav-tasks.md), [ICS](../../user/calendars/ics.md) | Network-backed ingestion and protocol/auth handling. |
+| Integration | [Tasks](tasks-integration.md), [Task Backlog](task-backlog.md), [TaskNotes](provider-implementations.md#tasknotes-provider-provider-owned-nlp-endpoint), [Bases](../../user/calendars/bases.md) | Plugin-integrated sources with custom semantics beyond plain calendar files. |
+| Virtual | [Holidays](../../user/calendars/holidays.md) | In-memory calculated bank/public holidays with zero disk or network overhead. |
 
 ## Runtime flow (provider perspective)
 
@@ -48,6 +49,7 @@ See: [Provider Blueprint](provider-blueprint.md)
 - `src/providers/ProviderRegistry.ts`
 - `src/providers/fullnote/`
 - `src/providers/dailynote/`
+- `src/providers/journals/`
 - `src/providers/google/`
 - `src/providers/outlook/`
 - `src/providers/caldav/`

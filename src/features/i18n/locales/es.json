@@ -740,7 +740,10 @@
           "description": "Select the Journals Day journal to use.",
           "select": "Select a Day journal",
           "unavailable": "Install and enable the Journals plugin to use this provider.",
-          "none": "Configure a Day journal in Journals before adding this calendar."
+          "none": "Configure a Day journal in Journals before adding this calendar.",
+          "loading": "Loading Day journals from Journals…",
+          "unsupported": "Journals is enabled, but this version does not expose a supported integration API.",
+          "error": "Journals is enabled, but Full Calendar could not load its Day journals. Check the developer console for details."
         }
       },
       "ics": {

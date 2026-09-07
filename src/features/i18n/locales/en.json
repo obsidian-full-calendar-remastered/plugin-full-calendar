@@ -793,6 +793,11 @@
         "description": "Configure settings for creating local Obsidian notes linked to remote calendar events.",
         "learnMore": "Linked Notes Guide"
       },
+      "defaultCalendar": {
+        "label": "Default calendar for new events",
+        "description": "Calendar pre-selected when you create an event. Workspaces can override this.",
+        "firstAvailable": "First available calendar"
+      },
       "defaults": {
         "iCloud": "iCloud Calendar",
         "new": "New {{type}} Calendar",
@@ -842,8 +847,11 @@
           "label": "Day journal",
           "description": "Select the Journals Day journal to use.",
           "select": "Select a Day journal",
+          "loading": "Loading Day journals from Journals…",
           "unavailable": "Install and enable the Journals plugin to use this provider.",
-          "none": "Configure a Day journal in Journals before adding this calendar."
+          "unsupported": "Journals is enabled, but this version does not expose a supported integration API.",
+          "error": "Journals is enabled, but Full Calendar could not load its Day journals. Check the developer console for details.",
+          "none": "Journals is enabled, but no Day journals are configured."
         },
         "heading": {
           "label": "Heading",
@@ -1477,6 +1485,13 @@
         "businessHoursEnd": {
           "label": "Business hours end time",
           "description": "When your working day ends (format: HH:mm)"
+        },
+        "defaultCalendar": {
+          "label": "Default calendar for new events",
+          "description": "Calendar pre-selected when creating an event in this workspace",
+          "options": {
+            "useDefault": "Use global default"
+          }
         },
         "timelineCategories": {
           "label": "Timeline categories",

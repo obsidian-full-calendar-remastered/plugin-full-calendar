@@ -14,7 +14,7 @@ To maintain a premium, state-of-the-art codebase, all contributions must strictl
 - **Don't Repeat Yourself (DRY)**: Re-use selectors, normalizers, and formatting helpers. Avoid copy-pasted layout rules or logic.
 
 ### 2. Internationalization (i18n)
-- **Zero Hardcoded UI Strings**: All user-facing strings, headers, placeholders, helper text, and tooltips **MUST** be defined in [en.json](file:///d:/Codes/plugin-full-calendar/src/features/i18n/locales/en.json) and rendered via `t('key.path')`. (Do not modify other locale JSONs directly; maintainers or localized workflows will sync them later).
+- **Zero Hardcoded UI Strings**: All user-facing strings, headers, placeholders, helper text, and tooltips **MUST** be defined in [`src/features/i18n/locales/en.json`](src/features/i18n/locales/en.json) and rendered via `t('key.path')`. (Do not modify other locale JSONs directly; maintainers or localized workflows will sync them later).
 
 ### 3. Documentation Sync & Formatting
 - **Technical & User Docs**: Synchronize architecture docs (under `docs/architecture/`) and user guides (under `docs/user/`) in the same PR. As the name suggests, one is the single source of implementation logic, while the other is for ease of access of users.
@@ -30,26 +30,12 @@ To maintain a premium, state-of-the-art codebase, all contributions must strictl
 
 ## 🚀 Getting Started
 
-### 1. Create the Obsidian Vault
+### 1. Build the Plugin
 
-To develop locally, set up your development vault and plugin directory:
+There is no manual directory setup. `esbuild.config.mjs` creates the development vault and the
+plugin folder inside it on the first build, then keeps them up to date on every rebuild.
 
-```bash
-mkdir -p .obsidian/.plugins/full-calendar-remastered/
-cp manifest.json .obsidian/.plugins/full-calendar-remastered/manifest.json
-````
-
-*Currently this folder already exists and will contain the minimified builds accordingly the latest tags (this is done to simplify the obsidian community plugin release process).
-
-> 💡 **Note:** Obsidian expects a CSS file named `styles.css`, but **esbuild** will output one named `main.css`.
-
----
-
-### 2. Build the Plugin
-
-You can build the plugin in two ways:
-
-* For development:
+* For development (watch mode, unminified, inline sourcemaps):
 
   ```bash
   pnpm run dev
@@ -61,15 +47,53 @@ You can build the plugin in two ways:
   pnpm run prod
   ```
 
-All build output will appear in the plugin directory created above.
+> ⚠️ **Use pnpm, not npm.** `preinstall` runs `npx only-allow pnpm`, so `npm install` fails.
+
+Each build writes to:
+
+```
+obsidian-dev-vault/.obsidian/plugins/full-calendar-remastered/
+├── main.js
+├── styles.css     # esbuild emits main.css; the build renames it for you
+└── manifest.json  # copied from manifest-beta.json
+```
+
+`obsidian-dev-vault/` is gitignored, so it will not exist until your first build. That is normal.
 
 ---
 
-### 3. Open the Vault in Obsidian
+### 2. Open the Vault in Obsidian
 
 1. Open **Obsidian**
 2. Go to **Vaults** → **Open Folder as Vault**
 3. Select the `obsidian-dev-vault` directory
+4. Turn off **Restricted Mode**, then enable **Full Calendar Remastered** in Community Plugins
+
+---
+
+### 3. Verify Your Changes
+
+While iterating (all read-only, none of them write to your tree):
+
+```bash
+pnpm run compile   # tsc --noEmit
+pnpm test          # jest
+pnpm run lint      # eslint, TypeScript pass + CSS pass
+```
+
+Before opening a PR, run the full gate. It must exit with **0 errors**:
+
+```bash
+pnpm run ra
+```
+
+> ⚠️ **`pnpm run ra` rewrites files.** It runs Prettier `--write` over `src/`, regenerates
+> `lint_report.txt` and `css_report.txt`, and syncs the non-English locale JSONs. Run it
+> deliberately just before committing, not while you are still investigating.
+
+> ⚠️ **Check snapshots locally.** CI runs `pnpm run test-update` (Jest with
+> `--updateSnapshot`), so snapshot drift cannot fail CI. Plain `pnpm test` is the only thing
+> that catches it.
 
 ---
 
@@ -77,7 +101,7 @@ All build output will appear in the plugin directory created above.
 
 > 💡 **Recommended:** Use the [Hot Reload plugin](https://github.com/pjeby/hot-reload) to make development smoother — it auto-reloads your plugin changes.
 
-> 📘 **Start Here:** To understand the architecture and get familiar with the codebase, read our [Architecture Guide](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/blob/main/src/README.md).
+> 📘 **Start Here:** To understand the architecture and get familiar with the codebase, read our [Architecture Docs](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/). (`src/README.md` is the older version of this and is marked deprecated.)
 
 > 📱 **Android Testing** For testing Android devices use `adb` together with `chrome://inspect/#devices` to see the console on the PC.
 

@@ -6,5 +6,6 @@ module.exports = {
 	moduleNameMapper: {
 		"\\.css$": "<rootDir>/__mocks__/styleMock.js",
 		"\\.md$": "<rootDir>/__mocks__/mdMock.js",
+		"^obsidian-journals-api$": "<rootDir>/__mocks__/obsidianJournalsApi.js",
 	},
 };

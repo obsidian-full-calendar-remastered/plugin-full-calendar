@@ -16,6 +16,7 @@ Each workspace can store its own set of display and filtering rules:
 
 *   **View Defaults**: Set a specific initial view (Desktop/Mobile) and default date (e.g., `Today`, `Start of Month`) for when this workspace is activated.
 *   **Visible Calendars**: Choose a subset of your [Calendar Sources](sources.md) to display.
+*   **Default Calendar**: Override which calendar is pre-selected when creating an event in this workspace. Defaults to *Use global default*, which falls back to the [global setting](sources.md#global-source-settings). A calendar hidden by **Visible Calendars** is skipped, so new events never land somewhere this workspace cannot show them.
 *   **Category Filtering**: 
     *   **Show Only**: Display only events matching the selected categories.
     *   **Hide**: Display all events *except* those matching the selected categories.

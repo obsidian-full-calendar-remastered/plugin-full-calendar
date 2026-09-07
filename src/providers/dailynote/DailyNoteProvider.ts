@@ -37,7 +37,6 @@ import {
 } from './typesDaily';
 import {
   DailyNoteSourceAdapter,
-  getJournalsTemplateHeadings,
   getObsidianDailyNoteTemplateHeadings,
   JournalsDailyNoteSourceAdapter,
   ObsidianDailyNoteSourceAdapter
@@ -46,12 +45,48 @@ import { DailyNoteConfigComponent } from './DailyNoteConfigComponent';
 import { DailyNoteDecorator } from './codemirror/DailyNoteDecorator';
 import { LivePreviewDecorator } from '../../features/livepreview/LivePreviewDecorator';
 import { HeadingInput } from '../../ui/components/forms/HeadingInput';
+import { PluginState } from '../../core/PluginState';
+import { resolveJournalsBridge } from '../journals/JournalsBridge';
+import { migrateJournalsSourceRename } from '../journals/JournalsSourceIdentity';
 
 type MomentFactory = typeof import('moment');
 const moment = obsidianMoment as unknown as MomentFactory;
 const METADATA_WAIT_TIMEOUT_MS = 1500;
 
 export type EditableEventResponse = [OFCEvent, EventLocation | null];
+
+const JournalsHeadingInput: React.FC<{
+  plugin: FullCalendarPlugin;
+  journalId: string;
+  value: string;
+  onChange: (heading: string) => void;
+}> = ({ plugin, journalId, value, onChange }) => {
+  const [headings, setHeadings] = React.useState<readonly string[]>([]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const resolution = resolveJournalsBridge(plugin.app);
+    if (resolution.state !== 'available') {
+      setHeadings([]);
+      return;
+    }
+    void Promise.resolve(resolution.bridge.getSuggestedHeadings(journalId)).then(
+      nextHeadings => {
+        if (!cancelled) setHeadings(nextHeadings);
+      },
+      error => {
+        if (cancelled) return;
+        console.warn('Full Calendar: Failed to load Journals heading suggestions.', error);
+        setHeadings([]);
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [journalId, plugin.app]);
+
+  return React.createElement(HeadingInput, { value, headings: [...headings], onChange });
+};
 
 const waitForMetadataWithTimeout = async (
   app: ObsidianInterface,
@@ -101,21 +136,25 @@ const DailyNoteHeadingSetting: React.FC<ProviderSettingsRowProps> = ({
     provider === 'journals'
       ? t('settings.calendars.dailyNote.heading.journalSummary')
       : t('settings.calendars.dailyNote.heading.summary');
-  const headings = plugin
-    ? provider === 'journals' && typeof journalId === 'string'
-      ? getJournalsTemplateHeadings(plugin.app, journalId)
-      : getObsidianDailyNoteTemplateHeadings(plugin.app)
-    : [];
+  const headingInput =
+    plugin && provider === 'journals' && typeof journalId === 'string'
+      ? React.createElement(JournalsHeadingInput, {
+          plugin,
+          journalId,
+          value: getHeading(),
+          onChange: heading => onSourceChange?.({ heading })
+        })
+      : React.createElement(HeadingInput, {
+          value: getHeading(),
+          headings: plugin ? getObsidianDailyNoteTemplateHeadings(plugin.app) : [],
+          onChange: heading => onSourceChange?.({ heading })
+        });
 
   return React.createElement(
     'div',
     { className: 'setting-item-control ofc-heading-setting-control' },
     React.createElement('span', {}, sourceLabel),
-    React.createElement(HeadingInput, {
-      value: getHeading(),
-      headings,
-      onChange: heading => onSourceChange?.({ heading })
-    }),
+    headingInput,
     React.createElement('span', { className: 'ofc-heading-setting-suffix' }, headingSummary)
   );
 };
@@ -233,6 +272,33 @@ export class DailyNoteProvider
     return this.noteSource.isFileRelevant(file);
   }
 
+  initialize(): void {
+    if (!(this.noteSource instanceof JournalsDailyNoteSourceAdapter)) return;
+    this.noteSource.initialize({
+      noteAdded: path => {
+        const file = this.plugin.app.vault.getFileByPath(path);
+        if (file instanceof TFile) {
+          void PluginState.getProviderRegistry().handleFileUpdate(file);
+        }
+      },
+      noteRemoved: path => {
+        void PluginState.getProviderRegistry().handleFileDelete(path);
+      },
+      journalRenamed: (from, to) => {
+        const settings = PluginState.getSettings();
+        if (migrateJournalsSourceRename(settings.calendarSources, from, to)) {
+          void PluginState.saveSettings();
+        }
+      }
+    });
+  }
+
+  teardown(): void {
+    if (this.noteSource instanceof JournalsDailyNoteSourceAdapter) {
+      this.noteSource.teardown();
+    }
+  }
+
   getCanonicalTitle(event: OFCEvent): string {
     return event.title;
   }
@@ -242,7 +308,7 @@ export class DailyNoteProvider
 
     const content = await this.app.read(file);
     const lines = content.split('\n');
-    const date = this.noteSource.getDateForFile(file);
+    const date = await this.noteSource.getDateForFile(file);
 
     const usedUids = new Set<number>();
 
@@ -269,7 +335,7 @@ export class DailyNoteProvider
   ): Promise<number> {
     const content = await this.app.read(file);
     const lines = content.split('\n');
-    const date = this.noteSource.getDateForFile(file);
+    const date = await this.noteSource.getDateForFile(file);
 
     // It's possible for a daily note file to not have a date in its title.
     // In that case, we cannot reliably parse events from it.
@@ -339,7 +405,7 @@ export class DailyNoteProvider
     }
 
     LoadDebugProfiler.recordDailyNotesStats({ readFromDisk: 1 });
-    const date = this.noteSource.getDateForFile(file) ?? undefined;
+    const date = (await this.noteSource.getDateForFile(file)) ?? undefined;
     const inlineEvents = await this.app.process(file, text =>
       getAllInlineEventsFromFile(text, listItems, { date })
     );
@@ -355,19 +421,24 @@ export class DailyNoteProvider
 
   async getEvents(range?: { start: Date; end: Date }): Promise<EditableEventResponse[]> {
     return LoadDebugProfiler.withContext('Daily Note Sync', async () => {
-      let files = this.noteSource.getAllFiles();
+      let files = await this.noteSource.getAllFiles(range);
 
       // OPTIMIZATION: If a range is provided, only process daily notes within that range.
       if (range) {
         const startMoment = moment(range.start);
         const endMoment = moment(range.end);
-        files = files.filter(file => {
-          const fileDate = this.noteSource.getDateForFile(file);
-          return fileDate
-            ? fileDate >= startMoment.format('YYYY-MM-DD') &&
-                fileDate <= endMoment.format('YYYY-MM-DD')
-            : false;
-        });
+        const filesInRange: TFile[] = [];
+        for (const file of files) {
+          const fileDate = await this.noteSource.getDateForFile(file);
+          if (
+            fileDate &&
+            fileDate >= startMoment.format('YYYY-MM-DD') &&
+            fileDate <= endMoment.format('YYYY-MM-DD')
+          ) {
+            filesInRange.push(file);
+          }
+        }
+        files = filesInRange;
       }
 
       LoadDebugProfiler.recordDailyNotesStats({ totalScanned: files.length });
@@ -395,7 +466,7 @@ export class DailyNoteProvider
     }
 
     const m = moment(event.date);
-    let file = this.noteSource.getExistingFileForDate(event.date, m);
+    let file = await this.noteSource.resolveExistingFileForDate(event.date, m);
     if (!file) {
       const createdFile = await this.noteSource.getFileForDate(event.date, m, true);
       if (!createdFile) {
@@ -443,12 +514,12 @@ export class DailyNoteProvider
       handle.location.lineNumber
     );
 
-    const oldDate = this.noteSource.getDateForFile(file);
+    const oldDate = await this.noteSource.getDateForFile(file);
     if (!oldDate) throw new Error(`Could not get date from file at path ${file.path}`);
 
     if (newEventData.date !== oldDate) {
       const m = moment(newEventData.date);
-      let newFile = this.noteSource.getExistingFileForDate(newEventData.date, m);
+      let newFile = await this.noteSource.resolveExistingFileForDate(newEventData.date, m);
       if (!newFile) {
         const createdFile = await this.noteSource.getFileForDate(newEventData.date, m, true);
         if (!createdFile) {

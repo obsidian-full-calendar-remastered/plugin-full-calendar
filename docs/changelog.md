@@ -7,6 +7,13 @@ Corresponds to
 -   **For Dev**: `git tags` of the `main` branch
 
 
+## Unreleased
+
+### Fixed
+
+-   Restored Journals calendar compatibility with Journals 3.2+ through its official plugin API while retaining legacy Journals 2.x support.
+
+
 ## v0.13.5
 
 <video controls playsinline preload="metadata" width="100%" src="https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/assets/changlogs/v0.13.5.mp4">

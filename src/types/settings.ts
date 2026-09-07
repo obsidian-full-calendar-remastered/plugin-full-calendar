@@ -100,6 +100,7 @@ export interface WorkspaceSettings {
 
   // Source & Content Filtering
   visibleCalendars?: string[]; // Calendar IDs to show (if empty, show all)
+  defaultCalendarId?: string; // Override the calendar pre-selected when creating an event
   categoryFilter?: {
     mode: 'show-only' | 'hide'; // Filter mode
     categories: string[]; // List of categories to show/hide
@@ -166,7 +167,11 @@ export interface FcrReminderCompanionSettings {
 
 export interface FullCalendarSettings {
   calendarSources: CalendarInfo[];
-  defaultCalendar: number;
+  /**
+   * ID of the calendar pre-selected when creating an event. Undefined or null
+   * means "use the first writable calendar in settings order".
+   */
+  defaultCalendarId?: string | null;
   firstDay: number;
   initialView: {
     desktop: string;
@@ -265,7 +270,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   availabilityDefaultTimeRange: { startTime: '09:00', endTime: '17:00' },
   useLegacyPlaintextCredentials: false,
   calendarSources: [],
-  defaultCalendar: 0,
+  defaultCalendarId: null,
   firstDay: 0,
   initialView: {
     desktop: 'timeGridWeek',

@@ -8,6 +8,8 @@ Use a **Journals** calendar to store Full Calendar events inside entries managed
 - Configure at least one **Day** journal in Journals.
 - Obsidian's core Daily Notes plugin is not required when you use this calendar source.
 
+Full Calendar supports Journals 3.2 and later through the official Journals API. Journals 2.x remains supported through a legacy compatibility adapter. Journals may label this cadence **DAILY** in its interface; its integration write type is still `day`.
+
 ## Add a Journals calendar
 
 1. Open **Full Calendar settings**.
@@ -17,7 +19,7 @@ Use a **Journals** calendar to store Full Calendar events inside entries managed
 5. Choose or enter the **Heading** where events should be written.
 6. Select the timed-event **Format**, then add the calendar.
 
-When the selected journal's templates contain headings, Full Calendar offers them in the Heading dropdown. You can also enter a heading manually and change it later from the configured calendar row.
+Full Calendar offers heading suggestions when it can discover them. With Journals 3.2+, suggestions come from existing notes in the selected journal because the public API does not expose template configuration. With Journals 2.x, suggestions come from the journal's configured templates. You can always enter a heading manually and change it later from the configured calendar row.
 
 ## How entries and events are stored
 
@@ -42,6 +44,7 @@ You can add multiple Journals calendars and connect each one to a different Day 
 - `Journals: PHD`
 
 Each calendar keeps its own selected journal, heading, color, and other calendar settings.
+Note lookup and creation are always scoped to that exact journal, so Full Calendar does not show Journals' generic journal picker or silently switch to another Day journal.
 
 ## Journals or Daily Note?
 
@@ -56,8 +59,10 @@ The two source types may coexist. Journals calendars do not count against the on
 
 - Journals must remain installed and enabled.
 - Only Journals **Day** journals can be selected.
-- If the selected Day journal is renamed or deleted, remove or reconfigure the affected Full Calendar source.
+- **Loading Day journals** is temporary; wait for Journals to finish responding.
+- **No Day journals configured** means Journals is enabled, but it has no selectable Day journal. Add one in Journals settings.
+- **Unsupported API** means Journals is enabled, but it is neither a compatible 2.x runtime nor Journals 3.2+ with the public API.
+- Full Calendar follows Journals 3.2+ rename notifications and updates saved source references. If a journal was renamed while Full Calendar was disabled, or if it was deleted, reselect the journal.
 - Recurring events and multi-day single events are not supported by date-note calendars; use a [Full Note calendar](local.md) for those events.
-- Duplicate event titles on the same date are not supported within one Journals calendar.
 
 [Daily Note Calendar](dailynote.md) · [Working with Events](../events/index.md) · [Troubleshooting](../guides/troubleshooting.md)

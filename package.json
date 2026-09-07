@@ -97,6 +97,7 @@
         "ical.js": "^2.2.1",
         "luxon": "^3.7.2",
         "obsidian-daily-notes-interface": "^0.9.5",
+        "obsidian-journals-api": "^1.0.0",
         "plotly.js": "^3.7.0",
         "preact": "^10.29.8",
         "rrule": "^2.8.1",

@@ -17,6 +17,7 @@ import { PluginState } from '../../core/PluginState';
 import type { OFCEvent } from '../../types';
 import type { NLPActionObject } from './types';
 import { resolveSmartCalendar } from './smartCalendar';
+import { listWritableCalendars, selectDefaultCalendar } from '../../utils/writableCalendars';
 import { t } from '../i18n/i18n';
 
 // Re-export for external consumers
@@ -104,29 +105,26 @@ function buildCreateEvent(action: NLPActionObject): OFCEvent {
 
 /**
  * Resolves a calendar keyword to a calendar source ID via case-insensitive
- * name matching. Falls back to the first writable calendar if no match.
+ * name matching. With no match, defers to the shared default-calendar ladder
+ * (workspace default, then global default, then first writable calendar).
  */
 function resolveCalendarId(keyword: string | null): string | null {
-  const sources = PluginState.getProviderRegistry()
-    .getAllSources()
-    .filter(s => {
-      const instance = PluginState.getProviderRegistry().getInstance(s.id);
-      return instance?.getCapabilities().canCreate;
-    });
+  const candidates = listWritableCalendars();
 
-  if (sources.length === 0) {
+  if (candidates.length === 0) {
     return null;
   }
 
+  // A calendar named in the command ("... in Work") is an explicit choice and
+  // outranks configuration. Without one, fall back to the same default-calendar
+  // ladder the create modal uses, so both entry points agree.
+  let matchedId: string | null = null;
   if (keyword) {
     const normalized = keyword.toLowerCase().trim();
-    const match = sources.find(s => s.name?.toLowerCase().trim() === normalized);
-    if (match) {
-      return match.id;
-    }
+    matchedId = candidates.find(c => c.name?.toLowerCase().trim() === normalized)?.id ?? null;
   }
 
-  return sources[0].id;
+  return selectDefaultCalendar(matchedId).id;
 }
 
 /**

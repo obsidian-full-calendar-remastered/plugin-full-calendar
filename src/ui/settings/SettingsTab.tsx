@@ -850,6 +850,9 @@ export class FullCalendarSettingTab extends PluginSettingTab {
         renderApiAccessSettings(containerEl, this.plugin, () => {
           this.renderSettings();
         });
+        if (this.plugin.agentManager) {
+          this.plugin.agentManager.renderSettings(containerEl);
+        }
         break;
       }
     }

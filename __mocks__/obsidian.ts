@@ -120,10 +120,13 @@ export function normalizePath(path: string): string {
     return toForwardSlashes(path).replace(/\/+/g, "/");
 }
 
-export async function requestUrl(_url: string): Promise<{ text: string }> {
-    await Promise.resolve();
-    return { text: "{}" };
-}
+export const requestUrl = jest.fn().mockImplementation(async (_url: unknown) => ({
+    text: "{}",
+    status: 200,
+    headers: {},
+    arrayBuffer: new ArrayBuffer(0),
+    json: {}
+}));
 
 export const getLanguage = jest.fn().mockReturnValue("en");
 

@@ -254,6 +254,18 @@ export interface FullCalendarSettings {
   breakTimer: BreakTimerSettings;
   availabilityDefaultTimeRange: { startTime: string; endTime: string };
   openDailyNoteOnDateClick: boolean;
+  agent: AgentSettings;
+}
+
+export interface AgentSettings {
+  enabled: boolean;
+  endpointUrl: string;
+  model: string;
+  apiKey?: string;
+  temperature: number;
+  specUrl: string;
+  maxRetries: number;
+  timeoutMs: number;
 }
 
 export interface BreakTimerSettings {
@@ -375,6 +387,17 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     intervalMins: 60,
     idleThresholdMins: 30,
     breakDurationSecs: 30
+  },
+  agent: {
+    enabled: true,
+    endpointUrl: 'https://api.openai.com/v1',
+    model: 'gpt-4o-mini',
+    apiKey: '',
+    temperature: 0.2,
+    specUrl:
+      'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/architecture/api/agent-spec.md',
+    maxRetries: 3,
+    timeoutMs: 60000
   }
 };
 

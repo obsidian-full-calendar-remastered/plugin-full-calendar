@@ -21,6 +21,7 @@ import { LazySettingsTab } from './ui/settings/LazySettingsTab';
 import { BreakTimerManager } from './features/break_timer/BreakTimerManager';
 import { migrateAndSanitizeSettings } from './ui/settings/utilsSettings';
 import { PLUGIN_SLUG } from './types';
+import { AgentManager } from './features/agent';
 import { DEPRECATED_PROVIDERS } from './ui/settings/deprecations';
 import EventCache from './core/EventCache';
 import { manageTimezone } from './features/timezone/Timezone';
@@ -60,10 +61,15 @@ export default class FullCalendarPlugin extends Plugin {
   #statusBarManager!: StatusBarManager;
   #fcrReminderManager!: FcrReminderManager;
   #breakTimerManager!: BreakTimerManager;
+  #agentManager!: AgentManager;
 
   #isMobile: boolean = false;
   #settingsTab?: LazySettingsTab;
   api!: PublicAPI;
+
+  get agentManager(): AgentManager {
+    return this.#agentManager;
+  }
 
   get fcrReminderManager(): FcrReminderManager {
     return this.#fcrReminderManager;
@@ -194,6 +200,8 @@ export default class FullCalendarPlugin extends Plugin {
       this.#fcrReminderManager.update(PluginState.getSettings());
       this.#breakTimerManager = new BreakTimerManager(this);
       this.#breakTimerManager.update(PluginState.getSettings());
+      this.#agentManager = new AgentManager(this);
+      void this.#agentManager.init();
 
       this.registerEvent(
         workspaceEvents.on('full-calendar:settings-updated', (settings: FullCalendarSettings) =>
@@ -213,6 +221,11 @@ export default class FullCalendarPlugin extends Plugin {
       this.registerEvent(
         workspaceEvents.on('full-calendar:settings-updated', (settings: FullCalendarSettings) =>
           this.#breakTimerManager?.update(settings)
+        )
+      );
+      this.registerEvent(
+        workspaceEvents.on('full-calendar:settings-updated', () =>
+          this.#agentManager?.updateSettings()
         )
       );
     };
@@ -339,10 +352,22 @@ export default class FullCalendarPlugin extends Plugin {
       openNLPCommandModal(this);
     });
 
+    // Register Agent Write Bar ribbon icon
+    this.addRibbonIcon('bot', 'Full calendar agent', (_: MouseEvent) => {
+      this.#agentManager.openCommandModal();
+    });
+
     this.#settingsTab = new LazySettingsTab(this.app, this, PluginState.getProviderRegistry());
     this.addSettingTab(this.#settingsTab);
 
     // Commands visible in the command palette
+    this.addCommand({
+      id: 'full-calendar-agent-bar',
+      name: 'Open agent write bar',
+      callback: () => {
+        this.#agentManager.openCommandModal();
+      }
+    });
     this.addCommand({
       id: 'full-calendar-new-event',
       name: t('commands.newEvent'),

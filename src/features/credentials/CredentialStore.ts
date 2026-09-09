@@ -27,7 +27,8 @@ const getSecretKey = {
     `fcr-ms-acc-${accountId.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
   caldavPassword: (sourceId: string) =>
     `fcr-caldav-pwd-${sourceId.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-  githubToken: () => `fcr-github-token`
+  githubToken: () => `fcr-github-token`,
+  agentApiKey: () => `fcr-agent-api-key`
 };
 
 export class CredentialStore {
@@ -326,5 +327,48 @@ export class CredentialStore {
 
   static hasGitHubToken(): boolean {
     return !!this.getGitHubToken();
+  }
+
+  // ==========================================================================
+  // AGENT API KEY (BYOK)
+  // ==========================================================================
+
+  static getAgentApiKey(): string | null {
+    if (this.useLegacy() || !this.isSecretStorageSupported()) {
+      try {
+        return PluginState.getSettings().agent?.apiKey ?? null;
+      } catch {
+        return null;
+      }
+    }
+    const secret = app.secretStorage?.getSecret(getSecretKey.agentApiKey());
+    return secret && secret !== '' ? secret : null;
+  }
+
+  static setAgentApiKey(apiKey: string | null): void {
+    if (this.useLegacy() || !this.isSecretStorageSupported()) {
+      try {
+        const settings = PluginState.getSettings();
+        if (settings.agent) {
+          settings.agent.apiKey = apiKey ?? '';
+        }
+      } catch {
+        /* ignore */
+      }
+    } else {
+      app.secretStorage?.setSecret(getSecretKey.agentApiKey(), apiKey ?? '');
+      try {
+        const settings = PluginState.getSettings();
+        if (settings.agent) {
+          settings.agent.apiKey = '';
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  static hasAgentApiKey(): boolean {
+    return !!this.getAgentApiKey();
   }
 }

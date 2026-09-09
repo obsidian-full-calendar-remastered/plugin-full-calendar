@@ -137,11 +137,13 @@ export default tseslint.config(
         rules: {
             'import/no-nodejs-modules': 'off'
         }
-    // },
-    // {
-    //     rules: {
-    //         'no-useless-assignment': 'warn',
-    //         'preserve-caught-error': 'warn'
-    //     }
+    },
+    {
+        files: ['src/ui/settings/SettingsTab.tsx', 'src/ui/settings/LazySettingsTab.ts'],
+        rules: {
+            // Full Calendar settings render a dynamic multi-tab React shell imperatively via display().
+            // getSettingDefinitions() is bypassed/unsuitable for this interactive architecture.
+            'obsidianmd/settings-tab/prefer-setting-definitions': 'off'
+        }
     }
 );

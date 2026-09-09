@@ -21,7 +21,6 @@ import {
   App,
   DropdownComponent,
   PluginSettingTab,
-  SettingDefinitionItem,
   setIcon,
   Setting,
   TFile,
@@ -386,10 +385,6 @@ export class FullCalendarSettingTab extends PluginSettingTab {
     void PluginState.flushDebouncedSave();
     this.unmountReactRoots();
     super.hide();
-  }
-
-  getSettingDefinitions(): SettingDefinitionItem[] {
-    return [];
   }
 
   display(): void {

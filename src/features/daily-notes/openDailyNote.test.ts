@@ -8,7 +8,7 @@ import {
   getAllDailyNotes,
   getDailyNote
 } from 'obsidian-daily-notes-interface';
-import { openDailyNoteForDate } from './openDailyNote';
+import { getDailyNoteForDate, openDailyNoteForDate } from './openDailyNote';
 
 jest.mock('obsidian', () => {
   const obsidianMock: typeof import('obsidian') = jest.requireActual('../../../__mocks__/obsidian');
@@ -76,5 +76,35 @@ describe('openDailyNoteForDate', () => {
 
     expect(getDailyNoteMock).not.toHaveBeenCalled();
     expect(openFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('getDailyNoteForDate', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    hasDailyNotes.mockReturnValue(true);
+    getAllDailyNotesMock.mockReturnValue({});
+  });
+
+  it('returns an existing note without creating one', () => {
+    const file = new TFile();
+    getDailyNoteMock.mockReturnValue(file);
+
+    expect(getDailyNoteForDate(new Date(2026, 2, 21))).toBe(file);
+    expect(createDailyNoteMock).not.toHaveBeenCalled();
+  });
+
+  it('returns null when the note does not exist', () => {
+    getDailyNoteMock.mockImplementation(() => null!);
+
+    expect(getDailyNoteForDate(new Date(2026, 2, 21))).toBeNull();
+    expect(createDailyNoteMock).not.toHaveBeenCalled();
+  });
+
+  it('returns null when Daily Notes is unavailable', () => {
+    hasDailyNotes.mockReturnValue(false);
+
+    expect(getDailyNoteForDate(new Date(2026, 2, 21))).toBeNull();
+    expect(getAllDailyNotesMock).not.toHaveBeenCalled();
   });
 });

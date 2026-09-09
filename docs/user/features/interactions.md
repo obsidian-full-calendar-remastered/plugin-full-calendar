@@ -5,7 +5,8 @@ This page documents direct interactions in the calendar UI.
 ## Mouse and Trackpad
 
 - Click empty date/time slot: create event.
-- Click a date label or day number: open or create that day's Obsidian daily note. (Can be toggled via the **Open daily note on date click** setting under General Settings; Month view uses the day number link, and Week/Day views use the column header).
+- With **Settings → General → Open daily note on date click** enabled, click a date label or day number to open that day's Obsidian daily note, creating it from your configured daily-note template when necessary.
+- With the same option enabled, hover a date label or day number to preview an existing daily note with Obsidian's Page Preview popover. Hovering never creates a missing note.
 - Drag event: move event to a new day or time.
 - Resize event edge: change event duration.
 - Right-click event: open context actions.
@@ -34,6 +35,30 @@ This page documents direct interactions in the calendar UI.
 - Ctrl/Cmd + click event: open the associated note directly. For remote events (Google, CalDAV, Outlook, ICS) this also **creates** the linked note when none exists yet, then opens it.
 - Ctrl/Cmd + hover event: trigger note preview (requires Obsidian Page Preview support).
 - Ctrl/Cmd + mouse wheel: zoom the time axis for supported views.
+
+## Date Links and Daily Notes
+
+Calendar date links use the same Daily Notes integration as Obsidian. The filename, folder,
+date format, and template therefore come from the active **Daily Notes** core plugin or the
+supported **Periodic Notes** configuration; Full Calendar does not guess a path of its own.
+
+| Calendar surface | Interactive target | Left click | Hover |
+| --- | --- | --- | --- |
+| Month | Day number, such as `9` | Open/create the daily note | Preview it when it exists |
+| Week | Column date, such as `Mon 7/9` | Open/create the daily note | Preview it when it exists |
+| Day | Date column header | Open/create the daily note | Preview it when it exists |
+| 3-day | Each date column header | Open/create the daily note | Preview it when it exists |
+| List | Either date in each day heading | Open/create the daily note | Preview it when it exists |
+
+Only the visible date label is a daily-note link. The rest of a Month-view day cell retains
+its normal event-creation or mobile-selection behavior. Right-click also retains Full
+Calendar's date navigation menu.
+
+First enable **Open daily note on date click** in Full Calendar's General settings. Page
+Preview must also be enabled in Obsidian for hover popovers to appear. If the note does not
+exist yet, there is no content to preview and hover deliberately does nothing. Click once to
+create the note; subsequent hovers can then preview its contents. Turning off **Open daily
+note on date click** disables both navigation and preview behavior on these date labels.
 
 ## Zoom Levels
 

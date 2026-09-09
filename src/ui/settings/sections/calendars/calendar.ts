@@ -31,13 +31,17 @@ import {
   type RRulePluginLike
 } from '../../../../features/timezone/Timezone';
 import { PluginState } from '../../../../core/PluginState';
+import { PLUGIN_SLUG } from '../../../../types';
 import {
   fetchWeatherForecast,
   type WeatherInfo,
   formatTempRange
 } from '../../../../features/weather/Weather';
 import { WeatherDetailModal } from '../../../../features/weather/WeatherDetailModal';
-import { openDailyNoteForDate } from '../../../../features/daily-notes/openDailyNote';
+import {
+  getDailyNoteForDate,
+  openDailyNoteForDate
+} from '../../../../features/daily-notes/openDailyNote';
 import { i18n } from '../../../../features/i18n/i18n';
 import { isLightColor } from '../../../calendar/utils';
 
@@ -833,7 +837,7 @@ export async function renderCalendar(
     });
   };
 
-  const bindDailyNoteClick = (el: HTMLElement, date: Date, selector: string): void => {
+  const bindDailyNoteLink = (el: HTMLElement, date: Date, selector: string): void => {
     if (!PluginState.getSettings().openDailyNoteOnDateClick) {
       return;
     }
@@ -848,6 +852,25 @@ export async function renderCalendar(
       event.preventDefault();
       event.stopPropagation();
       void openDailyNoteForDate(PluginState.getPlugin().app, date);
+    });
+    dateLabel.addEventListener('mouseover', event => {
+      const file = getDailyNoteForDate(date);
+      if (!file) {
+        return;
+      }
+
+      try {
+        PluginState.getPlugin().app.workspace.trigger('hover-link', {
+          event,
+          source: PLUGIN_SLUG,
+          hoverParent: containerEl,
+          targetEl: dateLabel,
+          linktext: file.path,
+          sourcePath: file.path
+        });
+      } catch {
+        // Page Preview is optional; a preview failure must not affect date navigation.
+      }
     });
   };
 
@@ -915,7 +938,11 @@ export async function renderCalendar(
   cal = new CalendarCtor(containerEl, {
     dayHeaderDidMount: arg => {
       if (arg.view.type.startsWith('timeGrid')) {
-        bindDailyNoteClick(arg.el, arg.date, '.fc-col-header-cell-cushion');
+        bindDailyNoteLink(arg.el, arg.date, '.fc-col-header-cell-cushion');
+      } else if (arg.view.type.startsWith('list')) {
+        // List headers render the weekday and full date as separate anchors for the same day.
+        bindDailyNoteLink(arg.el, arg.date, '.fc-list-day-text');
+        bindDailyNoteLink(arg.el, arg.date, '.fc-list-day-side-text');
       }
       const pluginSettings = PluginState.getSettings();
       if (settings?.weatherHide || pluginSettings.weatherHide) {
@@ -937,7 +964,7 @@ export async function renderCalendar(
       }
     },
     dayCellDidMount: arg => {
-      bindDailyNoteClick(arg.el, arg.date, '.fc-daygrid-day-number');
+      bindDailyNoteLink(arg.el, arg.date, '.fc-daygrid-day-number');
       const pluginSettings = PluginState.getSettings();
       if (
         settings?.weatherHide ||

@@ -1,0 +1,20 @@
+.md-sidebar .md-nav__item--nested > label.md-nav__link {
+  cursor: pointer;
+}
+
+.md-sidebar .md-nav--primary .md-nav__item--nested > nav.md-nav > ul.md-nav__list > li.md-nav__item.fc-nav-index-entry {
+  display: none;
+}
+
+.md-sidebar .md-nav__item--nested > label.md-nav__link .md-nav__icon {
+  cursor: pointer;
+}
+
+.md-sidebar .md-nav__item--nested > label.md-nav__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.md-sidebar .md-nav__item--nested > label.md-nav__link .md-nav__icon:hover {
+  text-decoration: none;
+}

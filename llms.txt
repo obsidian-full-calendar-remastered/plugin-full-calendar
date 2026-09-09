@@ -1,0 +1,131 @@
+# Full Calendar Remastered for Obsidian
+
+Professional calendar orchestration for Obsidian. Keep your schedule, events, and plans directly inside your local offline-first vault, and sync with Google Calendar, Outlook, CalDAV, and ICS providers.
+
+## Key Documentation Pages
+
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/): Introduction to the plugin, core features, and quick index.
+- [What's New](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/whats_new/): What's new in the latest release, including key features and updates.
+- [Changelog](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/changelog/): Complete changelog with version history and detailed fixes.
+- [Future & Sustainability](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/SustainabilityEthics/): Documentation page for Future & Sustainability.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/): Documentation page for Index.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/guides/): Documentation page for Index.
+- [Getting Started](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/getting_started/): Onboarding guide: installation, creating your first calendar, and basic commands.
+- [Commands and Shortcuts](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/guides/commands-and-shortcuts/): Documentation page for Commands and Shortcuts.
+- [Quick Workflows](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/guides/quick-workflows/): Documentation page for Quick Workflows.
+- [Troubleshooting](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/guides/troubleshooting/): Documentation page for Troubleshooting.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/): Overview of all supported calendar types (local & remote).
+- [Full Note Calendar](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/local/): Full Note Calendars: store events in dedicated markdown notes.
+- [Daily Note Calendar](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/dailynote/): Daily Note Calendars: track events directly inside your daily notes.
+- [Journals Calendar](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/journals/): Documentation page for Journals Calendar.
+- [ICS (Remote and Local)](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/ics/): ICS Integration: subscribe to read-only remote and local iCalendar feeds.
+- [CalDAV](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/caldav/): CalDAV Integration: two-way sync with iCloud, Fastmail, and nextcloud.
+- [CalDAV Tasks](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/caldav-tasks/): Documentation page for CalDAV Tasks.
+- [Google Calendar](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/gcal/): Google Calendar: full two-way synchronization setup and usage.
+- [Google Tasks](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/gtasks/): Documentation page for Google Tasks.
+- [Outlook Calendar](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/outlook/): Documentation page for Outlook Calendar.
+- [Tasks Plugin Integration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/tasks-plugin-integration/): Tasks Plugin: display tasks as interactive calendar events.
+- [TaskNotes Integration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/tasknotes/): Documentation page for TaskNotes Integration.
+- [ActivityWatch Integration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/activitywatch/): Documentation page for ActivityWatch Integration.
+- [Obsidian Bases Calendar](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/bases/): Documentation page for Obsidian Bases Calendar.
+- [Holidays Calendar](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/calendars/holidays/): Documentation page for Holidays Calendar.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/): Documentation page for Index.
+- [Event Management](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/manage/): Event creation, editing, drag-and-drop, and deletion guide.
+- [Recurring Events](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/recurring/): Recurring events and setting up exceptions or overrides.
+- [Tasks](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/tasks/): Documentation page for Tasks.
+- [Category Coloring](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/categories/): Documentation page for Category Coloring.
+- [Timezone Support](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/timezones/): Timezone support: local vs. calendar-specific timezones.
+- [Hover and Context Menu](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/events/hover_context/): Documentation page for Hover and Context Menu.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/views/): Documentation page for Index.
+- [Workspaces](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/views/workspaces/): Setting up custom workspaces and calendar views.
+- [Timeline View Usage](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/views/timeline_view/): Documentation page for Timeline View Usage.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/): Documentation page for Index.
+- [FCR Command (NLP)](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/nlp/): Natural Language Processing (NLP) for quick event creation.
+- [Task Backlog Panel](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/tasks-backlog/): Unified task backlog panel and sidebar details.
+- [Interactions and Gestures](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/interactions/): Documentation page for Interactions and Gestures.
+- [Milestones and Progress](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/milestones/): Documentation page for Milestones and Progress.
+- [Reminders and Notifications](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/reminders/): Documentation page for Reminders and Notifications.
+- [FCR Reminder Companion](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/fcr-reminder/): Documentation page for FCR Reminder Companion.
+- [Wellness Break Timer](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/break-timer/): Documentation page for Wellness Break Timer.
+- [Export Event Cache (ICS)](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/ics-export/): Documentation page for Export Event Cache (ICS).
+- [Weather Forecasts](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/weather/): Documentation page for Weather Forecasts.
+- [Status Bar Integration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/statusbar/): Documentation page for Status Bar Integration.
+- [Internationalization](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/i18n/): Documentation page for Internationalization.
+- [Link Notes to Remote Events](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/event-linked-notes/): Documentation page for Link Notes to Remote Events.
+- [Note Templating System](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/templates/): Documentation page for Note Templating System.
+- [Live Preview Decorators](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/live-preview/): Documentation page for Live Preview Decorators.
+- [Developer API & CLI](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/api/): Developer API and CLI command specifications.
+- [Share Availability](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/features/availability/): Documentation page for Share Availability.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/embeds/): Embedded calendars: render calendars inside any markdown note.
+- [Deep Dive Specs](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/embeds/deep_dive/): Documentation page for Deep Dive Specs.
+- [Dashboard Showcases](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/embeds/showcase/): Documentation page for Dashboard Showcases.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/chrono_analyser/): Chrono Analyser: time tracking, charts, and productivity analytics.
+- [Introduction](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/chrono_analyser/introduction/): Documentation page for Introduction.
+- [Embedded Charts](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/chrono_analyser/embedded_charts/): Documentation page for Embedded Charts.
+- [Use Cases](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/chrono_analyser/usecases/): Documentation page for Use Cases.
+- [Configuration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/chrono_analyser/settings/): Documentation page for Configuration.
+- [FAQ](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/chrono_analyser/faq/): Documentation page for FAQ.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/settings/): Documentation page for Index.
+- [Calendar Sources](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/settings/sources/): Documentation page for Calendar Sources.
+- [Display and Behavior](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/settings/fc_config/): Documentation page for Display and Behavior.
+- [Categories and Colors](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/settings/categories/): Documentation page for Categories and Colors.
+- [Workspaces](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/settings/workspaces/): Documentation page for Workspaces.
+- [Reminders](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/settings/reminders/): Documentation page for Reminders.
+- [API and Security](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/settings/api/): Documentation page for API and Security.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/): Documentation page for Index.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/api/): Documentation page for Index.
+- [Overview](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/api/overview/): Documentation page for Overview.
+- [Public JS API](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/api/public-api/): Documentation page for Public JS API.
+- [REST Server](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/api/rest-server/): Documentation page for REST Server.
+- [Scopes & Authorization](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/api/scopes-permissions/): Documentation page for Scopes & Authorization.
+- [Internal API Engine](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/api/internal-api/): Documentation page for Internal API Engine.
+- [Recipes & Integration Blueprints](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/api/recipes-blueprints/): Documentation page for Recipes & Integration Blueprints.
+- [Overview](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/overview/): System design overview of the cache, sync, and interop layers.
+- [Event Cache](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/eventcache/): Deep dive into event cache state machine and performance.
+- [Event Filtering & Sorting](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/event-filtering-sorting/): Documentation page for Event Filtering & Sorting.
+- [Performance and Staged Loading](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/performance/): Documentation page for Performance and Staged Loading.
+- [Event Storage and Identifiers](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/event-storage/): Documentation page for Event Storage and Identifiers.
+- [FullCalendar Interop](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/interop/): Documentation page for FullCalendar Interop.
+- [API Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/api-architecture/): Documentation page for API Architecture.
+- [API Integration Blueprint](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/api-integration-blueprint/): Documentation page for API Integration Blueprint.
+- [Data Flow](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/data-flow/): Documentation page for Data Flow.
+- [Core Systems](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/core-systems/): Documentation page for Core Systems.
+- [Extending the Plugin](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/extending/): Documentation page for Extending the Plugin.
+- [Testing and Validation](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/testing/): Documentation page for Testing and Validation.
+- [Backward Compatibility](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/backward-compatibility/): Documentation page for Backward Compatibility.
+- [Live Preview System](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/live-preview/): Documentation page for Live Preview System.
+- [Styling & CSS Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/styling/): Documentation page for Styling & CSS Architecture.
+- [Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/calendars/architecture/): Documentation page for Architecture.
+- [Outlook Provider](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/calendars/outlook/): Documentation page for Outlook Provider.
+- [Tasks Integration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/calendars/tasks-integration/): Documentation page for Tasks Integration.
+- [Task Backlog Integration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/calendars/task-backlog/): Documentation page for Task Backlog Integration.
+- [Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/events/architecture/): Documentation page for Architecture.
+- [Provider-Implementations](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/calendars/provider-implementations/): Documentation page for Provider-Implementations.
+- [New Provider Blueprint](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/calendars/provider-blueprint/): Documentation page for New Provider Blueprint.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/): Documentation page for Index.
+- [Settings Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/settings/architecture/): Documentation page for Settings Architecture.
+- [Timezone Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/timezone-architecture/): Documentation page for Timezone Architecture.
+- [Reminders Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/reminders-architecture/): Documentation page for Reminders Architecture.
+- [NLP Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/nlp-architecture/): Documentation page for NLP Architecture.
+- [Milestones Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/milestones-architecture/): Documentation page for Milestones Architecture.
+- [ActivityWatch Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/activitywatch/): Documentation page for ActivityWatch Architecture.
+- [ActivityWatch Implementation](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/activitywatch/implementation/): Documentation page for ActivityWatch Implementation.
+- [Linked Notes to Remote Events](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/event-linked-notes/): Documentation page for Linked Notes to Remote Events.
+- [Note Templating Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/templates/): Documentation page for Note Templating Architecture.
+- [FCR Reminder Companion App](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/fcr-reminder-architecture/): Documentation page for FCR Reminder Companion App.
+- [Break Timer Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/break-timer-architecture/): Documentation page for Break Timer Architecture.
+- [ICS Export Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/ics-export-architecture/): Documentation page for ICS Export Architecture.
+- [Availability Sharing Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/system/features/availability-architecture/): Documentation page for Availability Sharing Architecture.
+- [Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/views/architecture/): Documentation page for Architecture.
+- [Unified Embedded Widgets Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/views/embedded_widgets/): Documentation page for Unified Embedded Widgets Architecture.
+- [Architecture](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/chrono_analyser/architecture/): Documentation page for Architecture.
+- [Analysis Types Implementation](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/chrono_analyser/analysis-types/): Documentation page for Analysis Types Implementation.
+- [Insights Engine Implementation](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/chrono_analyser/insights-architecture/): Documentation page for Insights Engine Implementation.
+- [Index](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/dev-logs/): Documentation page for Index.
+- [Calendar Load Profiling Audit](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/dev-logs/devlog_calendar_load_profiling_2026-04-11/): Documentation page for Calendar Load Profiling Audit.
+- [RRULE Timezone Date-Shift Fix](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/dev-logs/devlog_rrule_timezone_patch/): Documentation page for RRULE Timezone Date-Shift Fix.
+- [Weather Forecast Integration](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/architecture/dev-logs/devlog_weather_integration/): Documentation page for Weather Forecast Integration.
+- [Data Integrity and File Modifications](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/reference/data_integrity/): Documentation page for Data Integrity and File Modifications.
+- [Outbound Network Requests](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/reference/network_requests/): Documentation page for Outbound Network Requests.
+- [Privacy Policy](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/legal/privacy-policy/): Documentation page for Privacy Policy.
+- [Terms of Service](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/user/legal/terms-of-service/): Documentation page for Terms of Service.

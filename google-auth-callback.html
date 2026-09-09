@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian Full Calendar Authentication</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+        .container {
+            padding: 2rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #555;
+        }
+        .redirect-link {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: #7d1be8; /* Obsidian Purple */
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Authentication Successful!</h1>
+        <p>Please return to Obsidian to complete the process.</p>
+        <p>If you are not redirected automatically, please click the link below.</p>
+        <a id="redirect-link" class="redirect-link" href="#">Open Obsidian</a>
+    </div>
+
+    <script>
+        // This script runs as soon as the page loads.
+        (function() {
+            // 1. Get the URL parameters from the page's query string.
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const state = params.get('state');
+
+            if (code && state) {
+                // 2. Construct the Obsidian custom protocol URL.
+                const obsidianUrl = `obsidian://full-calendar-google-auth?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
+
+                // 3. Update the link on the page for manual clicks.
+                const link = document.getElementById('redirect-link');
+                if (link) {
+                    link.setAttribute('href', obsidianUrl);
+                }
+
+                // 4. Automatically attempt to redirect to the Obsidian URL.
+                window.location.href = obsidianUrl;
+            } else {
+                // Handle the case where the code or state is missing.
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.innerHTML = '<h1>Authentication Failed</h1><p>The required "code" or "state" was not found in the URL. Please try again from within Obsidian.</p>';
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

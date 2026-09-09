@@ -75,6 +75,43 @@ In both modes, events are rendered in the Display Timezone you choose for the ca
 
 ## Navigation to Daily Notes
 
-If the **Open daily note on date click** option is enabled in **Settings → General**, you can left-click directly on date headers in Week/Day views and the day number cushion in Month view to open (or create) the corresponding daily note file.
+Enable **Open daily note on date click** in **Settings → General** to make Full Calendar's
+visible date labels act as daily-note links. This remains opt-in for compatibility with
+existing click and selection workflows.
+
+### Click behavior
+
+- In **Month** view, click the day number in the corner of a day cell.
+- In **Week**, **Day**, and **3-day** views, click the formatted column header (for example,
+  `Mon 7/9`).
+- In **List** view, click either part of a day's heading; both represent the same daily note.
+- If the daily note already exists, Full Calendar opens it in the current Obsidian leaf.
+- If it does not exist, Full Calendar asks the active Daily Notes integration to create it,
+  including the configured folder, date format, and template, and then opens the new file.
+- The date is resolved in local calendar time, so the label you click is the date that opens.
+
+This navigation uses Obsidian's **Daily Notes** core plugin or the supported **Periodic
+Notes** plugin. Enable and configure one of those prerequisites first. A Daily Note calendar
+source is not required merely to navigate from a date, although it is required if you want
+Full Calendar events stored inside the notes.
+
+### Hover preview
+
+Hovering over the same date label displays Obsidian's standard Page Preview popover when the
+daily note already exists. The popover renders the note's current contents just like links in
+Markdown and linked calendar-event notes.
+
+Hover is read-only: it never creates a file, runs a template, or modifies the vault. A date
+whose note does not exist has nothing to preview. Click it to create the note, then hover the
+date again to preview it. Obsidian's **Page Preview** core plugin must be enabled for the
+popover to appear.
+
+### Interaction boundaries
 
 Left-clicking on the main day cell body in Month view will continue to open the "Create Event" modal.
+Right-clicking a date continues to open Full Calendar's date navigation context menu. On
+mobile Month view, tapping outside the day number continues to select the day and update the
+agenda. Disabling **Open daily note on date click** removes both the click and hover behavior
+from date labels without changing those other interactions.
+
+For a complete input reference, see [Interactions and Gestures](../features/interactions.md#date-links-and-daily-notes).

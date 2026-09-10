@@ -15,6 +15,7 @@ import { OFCEvent } from '../../../types/schema';
 import { constructTitle } from '../../../features/category/categoryParser';
 import { rrulestr } from 'rrule';
 import { injectMeetingUrl } from '../../../utils/meetingUrl';
+import { GOOGLE_DISPLAY_PROPERTY, isDisplayValue } from '../../utils/displayProperty';
 
 /**
  * Transforms a single event object from the Google Calendar API into the OFCEvent format.
@@ -67,6 +68,9 @@ export interface GoogleEventLike {
     conferenceSolution?: {
       name?: string;
     };
+  };
+  extendedProperties?: {
+    private?: Record<string, string>;
   };
 }
 
@@ -127,6 +131,11 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
   );
   if (popupReminder) {
     eventData.alarms = [{ minutesBefore: popupReminder.minutes, action: 'DISPLAY' }];
+  }
+
+  const storedDisplay = gEvent.extendedProperties?.private?.[GOOGLE_DISPLAY_PROPERTY];
+  if (isDisplayValue(storedDisplay)) {
+    eventData.display = storedDisplay;
   }
 
   // All-Day vs. Timed Events
@@ -257,15 +266,21 @@ export function toGoogleEvent(event: OFCEvent): object {
     gEvent.recurrence = recurrence;
   }
 
-  if (event.alarms && event.alarms.length > 0) {
-    gEvent.reminders = {
-      useDefault: false,
-      overrides: event.alarms.map(alarm => ({
-        method: 'popup',
-        minutes: alarm.minutesBefore
-      }))
-    };
-  }
+  // Always send an explicit reminder state. Omitting `reminders` makes Google fall back to
+  // the calendar's default reminders, which would silently undo an intentionally empty value.
+  gEvent.reminders = {
+    useDefault: false,
+    overrides: (event.alarms ?? []).map(alarm => ({
+      method: 'popup',
+      minutes: alarm.minutesBefore
+    }))
+  };
+
+  // Send the key explicitly either way: an empty string clears any previously stored value,
+  // so resetting the display mode is not shadowed by a stale property on Google's copy.
+  gEvent.extendedProperties = {
+    private: { [GOOGLE_DISPLAY_PROPERTY]: event.display ?? '' }
+  };
 
   // Handle Overrides (Exceptions)
   if (event.recurringEventId && event.type === 'single') {

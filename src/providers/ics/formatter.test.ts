@@ -1,4 +1,5 @@
 import { eventToIcs, createOverrideVEvent, eventsToIcs } from './formatter';
+import { getEventsFromICS } from './ics';
 import { OFCEvent } from '../../types';
 
 describe('ICS Formatter timezone serialization', () => {
@@ -252,6 +253,53 @@ describe('ICS Formatter timezone serialization', () => {
     expect(ics).toContain('TRIGGER:-PT15M');
     expect(ics).toContain('DESCRIPTION:Alarmed Event');
     expect(ics).toContain('END:VALARM');
+  });
+
+  it('should serialize the display mode as an X-OFC-DISPLAY property', () => {
+    const event = {
+      type: 'single',
+      title: 'Background Event',
+      date: '2026-05-20',
+      startTime: '10:00',
+      endTime: '11:00',
+      allDay: false,
+      endDate: null,
+      display: 'background'
+    } as OFCEvent;
+
+    expect(eventToIcs(event)).toContain('X-OFC-DISPLAY:background');
+  });
+
+  it('should omit X-OFC-DISPLAY when the event has no display mode', () => {
+    const event = {
+      type: 'single',
+      title: 'Ordinary Event',
+      date: '2026-05-20',
+      startTime: '10:00',
+      endTime: '11:00',
+      allDay: false,
+      endDate: null
+    } as OFCEvent;
+
+    expect(eventToIcs(event)).not.toContain('X-OFC-DISPLAY');
+  });
+
+  it('should preserve the display mode across a serialize/parse round-trip', () => {
+    const event = {
+      type: 'single',
+      title: 'Background Event',
+      uid: 'roundtrip-display',
+      date: '2026-05-20',
+      startTime: '10:00',
+      endTime: '11:00',
+      allDay: false,
+      endDate: null,
+      display: 'background'
+    } as OFCEvent;
+
+    const parsed = getEventsFromICS(eventToIcs(event));
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].display).toBe('background');
   });
 
   describe('eventsToIcs', () => {

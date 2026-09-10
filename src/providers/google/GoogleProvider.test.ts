@@ -379,6 +379,110 @@ describe('GoogleProvider reminder mapping', () => {
       }
     });
   });
+
+  it('serializes an absent alarm as an explicit empty reminder override', () => {
+    const event = {
+      title: 'No Reminder',
+      type: 'single',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00'
+    } as OFCEvent;
+
+    expect(toGoogleEvent(event)).toMatchObject({
+      reminders: {
+        useDefault: false,
+        overrides: []
+      }
+    });
+  });
+
+  it('serializes a zero-minute alarm as a reminder at event start', () => {
+    const event = {
+      title: 'Reminder At Start',
+      type: 'single',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00',
+      alarms: [{ minutesBefore: 0, action: 'DISPLAY' }]
+    } as OFCEvent;
+
+    expect(toGoogleEvent(event)).toMatchObject({
+      reminders: {
+        useDefault: false,
+        overrides: [{ method: 'popup', minutes: 0 }]
+      }
+    });
+  });
+});
+
+describe('GoogleProvider display mapping', () => {
+  const baseEvent = {
+    title: 'Background Event',
+    type: 'single',
+    date: '2026-06-15',
+    endDate: null,
+    allDay: false,
+    startTime: '10:00',
+    endTime: '11:00'
+  };
+
+  it('serializes the display mode into private extended properties', () => {
+    const event = { ...baseEvent, display: 'background' } as OFCEvent;
+
+    expect(toGoogleEvent(event)).toMatchObject({
+      extendedProperties: { private: { ofcDisplay: 'background' } }
+    });
+  });
+
+  it('clears a stored display mode when the event no longer sets one', () => {
+    expect(toGoogleEvent(baseEvent as OFCEvent)).toMatchObject({
+      extendedProperties: { private: { ofcDisplay: '' } }
+    });
+  });
+
+  it('restores the display mode from private extended properties', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Background Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      extendedProperties: { private: { ofcDisplay: 'background' } }
+    });
+
+    expect(event?.display).toBe('background');
+  });
+
+  it('survives a full round-trip through the Google representation', () => {
+    const event = { ...baseEvent, display: 'background' } as OFCEvent;
+    const gEvent = toGoogleEvent(event) as Record<string, unknown>;
+
+    const parsed = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Background Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      extendedProperties: gEvent.extendedProperties as { private?: Record<string, string> }
+    });
+
+    expect(parsed?.display).toBe('background');
+  });
+
+  it('ignores an unrecognized stored display value', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Bogus Display',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      extendedProperties: { private: { ofcDisplay: 'not-a-real-mode' } }
+    });
+
+    expect(event?.display).toBeUndefined();
+  });
 });
 
 describe('GoogleProvider declined events', () => {

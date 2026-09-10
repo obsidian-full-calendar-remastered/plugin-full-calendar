@@ -38,6 +38,70 @@ type LegacySettings = Partial<FullCalendarSettings> & {
   googleAuth?: LegacyGoogleAuth;
 };
 
+/**
+ * Merges raw settings with DEFAULT_SETTINGS adhering to DRY and Open/Closed principles.
+ * Primitives fall back to defaults, nested configuration objects are safely merged,
+ * and arrays are initialized safely.
+ */
+function mergeWithDefaults(
+  defaults: FullCalendarSettings,
+  raw: LegacySettings
+): FullCalendarSettings & { calendarSources: (CalendarInfo | GoogleSourceWithAuth)[] } & {
+  googleAuth?: LegacyGoogleAuth;
+} {
+  const result: Record<string, unknown> = { ...defaults };
+  const rawRecord = raw as Record<string, unknown>;
+
+  for (const [key, defaultVal] of Object.entries(defaults)) {
+    const rawVal = rawRecord[key];
+    if (rawVal === undefined || rawVal === null) {
+      result[key] = defaultVal;
+    } else if (
+      typeof defaultVal === 'object' &&
+      defaultVal !== null &&
+      !Array.isArray(defaultVal)
+    ) {
+      result[key] = {
+        ...(defaultVal as Record<string, unknown>),
+        ...(typeof rawVal === 'object' && rawVal !== null && !Array.isArray(rawVal) ? rawVal : {})
+      };
+    } else {
+      result[key] = rawVal;
+    }
+  }
+
+  // Ensure safe arrays
+  result.calendarSources = raw.calendarSources || [];
+  result.googleAccounts = raw.googleAccounts || [];
+  result.microsoftAccounts = raw.microsoftAccounts || [];
+  result.workspaces = raw.workspaces || [];
+  result.categorySettings = raw.categorySettings || [];
+
+  // Milestone sub-maps safety
+  if (raw.milestones) {
+    result.milestones = {
+      counters: raw.milestones.counters || {},
+      unlockedAt: raw.milestones.unlockedAt || {},
+      shown: raw.milestones.shown || {}
+    };
+  } else {
+    result.milestones = { counters: {}, unlockedAt: {}, shown: {} };
+  }
+
+  // Legacy task backlog fallback
+  if (raw.caldavTaskInboxLastCalendarId && !raw.taskBacklogLastProviderId) {
+    result.taskBacklogLastProviderId = raw.caldavTaskInboxLastCalendarId;
+  }
+
+  if (raw.googleAuth) {
+    (result as { googleAuth?: LegacyGoogleAuth }).googleAuth = raw.googleAuth;
+  }
+
+  return result as unknown as FullCalendarSettings & {
+    calendarSources: (CalendarInfo | GoogleSourceWithAuth)[];
+  } & { googleAuth?: LegacyGoogleAuth };
+}
+
 // Accept unknown to force validation of shape when accessing.
 export function migrateAndSanitizeSettings(settings: unknown): {
   settings: FullCalendarSettings;
@@ -45,117 +109,7 @@ export function migrateAndSanitizeSettings(settings: unknown): {
 } {
   let needsSave = false;
   const raw = (settings as LegacySettings) || {};
-  // Start from raw, ensure required arrays/objects
-  let newSettings = {
-    calendarSources: raw.calendarSources || [],
-    defaultCalendarId: typeof raw.defaultCalendarId === 'string' ? raw.defaultCalendarId : null,
-    firstDay: raw.firstDay ?? 0,
-    initialView: raw.initialView ?? { desktop: 'timeGridWeek', mobile: 'timeGrid3Days' },
-    timeFormat24h: raw.timeFormat24h ?? false,
-    clickToCreateEventFromMonthView: raw.clickToCreateEventFromMonthView ?? true,
-    displayTimezone: raw.displayTimezone ?? null,
-    lastSystemTimezone: raw.lastSystemTimezone ?? null,
-    enableAdvancedCategorization: raw.enableAdvancedCategorization ?? false,
-    chrono_analyser_config: raw.chrono_analyser_config ?? null,
-    categorySettings: raw.categorySettings || [],
-    useCustomGoogleClient: raw.useCustomGoogleClient ?? false,
-    googleClientId: raw.googleClientId ?? '',
-    googleClientSecret: raw.googleClientSecret ?? '',
-    googleUseCopyPasteAuth: raw.googleUseCopyPasteAuth ?? false,
-    googleAccounts: raw.googleAccounts || [],
-    useCustomMicrosoftClient: raw.useCustomMicrosoftClient ?? false,
-    microsoftClientId: raw.microsoftClientId ?? '',
-    microsoftProxyBaseUrl: raw.microsoftProxyBaseUrl ?? '',
-    microsoftAccounts: raw.microsoftAccounts || [],
-    enableLocalServer: raw.enableLocalServer ?? false,
-    localServerPort: raw.localServerPort ?? 8540,
-    useLegacyPlaintextCredentials: raw.useLegacyPlaintextCredentials ?? false,
-    businessHours: raw.businessHours || {
-      enabled: false,
-      daysOfWeek: [1, 2, 3, 4, 5],
-      startTime: '09:00',
-      endTime: '17:00'
-    },
-    enableBackgroundEvents: raw.enableBackgroundEvents ?? true,
-    enableReminders: raw.enableReminders ?? true,
-    enableDefaultReminder: raw.enableDefaultReminder ?? true,
-    defaultReminderMinutes: raw.defaultReminderMinutes ?? 10,
-    workspaces: raw.workspaces || [],
-    activeWorkspace: raw.activeWorkspace ?? null,
-    showEventInStatusBar: (raw as Partial<FullCalendarSettings>).showEventInStatusBar ?? false,
-    highlightCurrentOrNextEvent:
-      (raw as Partial<FullCalendarSettings>).highlightCurrentOrNextEvent ?? true,
-    enableLivePreview: (raw as Partial<FullCalendarSettings>).enableLivePreview ?? true,
-
-    // New granular view configuration properties with sensible defaults
-    slotMinTime: raw.slotMinTime ?? '00:00',
-    slotMaxTime: raw.slotMaxTime ?? '24:00',
-    allDaySlot: raw.allDaySlot ?? true,
-    timeGridDayHeaderFormat: raw.timeGridDayHeaderFormat ?? 'day-mmdd',
-    weekends: raw.weekends ?? true,
-    hiddenDays: raw.hiddenDays ?? [],
-    dayMaxEvents: raw.dayMaxEvents ?? false,
-    activityWatch: {
-      ...DEFAULT_SETTINGS.activityWatch,
-      ...((raw as Partial<FullCalendarSettings>).activityWatch || {})
-    },
-    tasksIntegration: {
-      ...DEFAULT_SETTINGS.tasksIntegration,
-      ...((raw as Partial<FullCalendarSettings>).tasksIntegration || {})
-    },
-    fcrReminderCompanion: {
-      ...DEFAULT_SETTINGS.fcrReminderCompanion,
-      ...((raw as Partial<FullCalendarSettings>).fcrReminderCompanion || {})
-    },
-    apiTokens: (raw as Partial<FullCalendarSettings>).apiTokens || {},
-    authorizedTokens: (raw as Partial<FullCalendarSettings>).authorizedTokens || {},
-    dev: raw.dev,
-    milestones: raw.milestones
-      ? {
-          counters: raw.milestones.counters || {},
-          unlockedAt: raw.milestones.unlockedAt || {},
-          shown: raw.milestones.shown || {}
-        }
-      : { counters: {}, unlockedAt: {}, shown: {} },
-    enableMonthlyStatsReport:
-      raw.enableMonthlyStatsReport ?? DEFAULT_SETTINGS.enableMonthlyStatsReport,
-    lastMonthlyMilestonesGeneratedMonth:
-      raw.lastMonthlyMilestonesGeneratedMonth ??
-      DEFAULT_SETTINGS.lastMonthlyMilestonesGeneratedMonth,
-    lastMonthlyMilestonesCheckDate:
-      raw.lastMonthlyMilestonesCheckDate ?? DEFAULT_SETTINGS.lastMonthlyMilestonesCheckDate,
-    milestoneNotifierDuration:
-      raw.milestoneNotifierDuration ?? DEFAULT_SETTINGS.milestoneNotifierDuration,
-    currentVersion: raw.currentVersion ?? null,
-    linkedNotesDirectory: raw.linkedNotesDirectory ?? DEFAULT_SETTINGS.linkedNotesDirectory,
-    linkedNoteLinkStrategy: raw.linkedNoteLinkStrategy ?? DEFAULT_SETTINGS.linkedNoteLinkStrategy,
-    taskBacklogLastProviderId:
-      raw.taskBacklogLastProviderId ??
-      raw.caldavTaskInboxLastCalendarId ??
-      DEFAULT_SETTINGS.taskBacklogLastProviderId,
-    caldavTaskInboxLastCalendarId:
-      raw.caldavTaskInboxLastCalendarId ?? DEFAULT_SETTINGS.caldavTaskInboxLastCalendarId,
-    linkedNoteTemplate: raw.linkedNoteTemplate ?? DEFAULT_SETTINGS.linkedNoteTemplate,
-    enableLinkedNoteTemplatesPreset:
-      raw.enableLinkedNoteTemplatesPreset ?? DEFAULT_SETTINGS.enableLinkedNoteTemplatesPreset,
-    linkedNoteTemplatesPresets: Array.isArray(raw.linkedNoteTemplatesPresets)
-      ? raw.linkedNoteTemplatesPresets
-      : DEFAULT_SETTINGS.linkedNoteTemplatesPresets,
-    weatherCity: raw.weatherCity ?? DEFAULT_SETTINGS.weatherCity,
-    weatherLatitude: raw.weatherLatitude ?? DEFAULT_SETTINGS.weatherLatitude,
-    weatherLongitude: raw.weatherLongitude ?? DEFAULT_SETTINGS.weatherLongitude,
-    weatherHide: raw.weatherHide ?? DEFAULT_SETTINGS.weatherHide,
-    weatherInputMode: raw.weatherInputMode ?? DEFAULT_SETTINGS.weatherInputMode,
-    weatherUnit: raw.weatherUnit ?? DEFAULT_SETTINGS.weatherUnit,
-    openDailyNoteOnDateClick:
-      raw.openDailyNoteOnDateClick ?? DEFAULT_SETTINGS.openDailyNoteOnDateClick,
-    breakTimer: {
-      ...DEFAULT_SETTINGS.breakTimer,
-      ...((raw as Partial<FullCalendarSettings>).breakTimer || {})
-    }
-  } as FullCalendarSettings & { calendarSources: (CalendarInfo | GoogleSourceWithAuth)[] } & {
-    googleAuth?: LegacyGoogleAuth;
-  };
+  let newSettings = mergeWithDefaults(DEFAULT_SETTINGS, raw);
 
   // Migrate the initial Journals integration, which used a Daily Note source
   // discriminator plus a provider flag, to the first-class Journals source type.
@@ -277,7 +231,9 @@ export function migrateAndSanitizeSettings(settings: unknown): {
       microsoftAccessToken: (id: string) =>
         `fcr-ms-acc-${id.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
       caldavPassword: (id: string) =>
-        `fcr-caldav-pwd-${id.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
+        `fcr-caldav-pwd-${id.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      githubToken: () => `fcr-github-token`,
+      agentApiKey: () => `fcr-agent-api-key`
     };
 
     if (!newSettings.useLegacyPlaintextCredentials) {
@@ -333,6 +289,20 @@ export function migrateAndSanitizeSettings(settings: unknown): {
             }
           }
         });
+      }
+
+      // GitHub Token
+      if (newSettings.githubToken) {
+        secretStorage.setSecret(getSecretKey.githubToken(), newSettings.githubToken);
+        newSettings.githubToken = null;
+        needsSave = true;
+      }
+
+      // Agent API Key
+      if (newSettings.agent?.apiKey) {
+        secretStorage.setSecret(getSecretKey.agentApiKey(), newSettings.agent.apiKey);
+        newSettings.agent.apiKey = '';
+        needsSave = true;
       }
     } else {
       // --- Case B: Legacy mode (migrate keychain -> settings) ---
@@ -393,6 +363,25 @@ export function migrateAndSanitizeSettings(settings: unknown): {
             }
           }
         });
+      }
+
+      // GitHub Token
+      const storedGithubToken = secretStorage.getSecret(getSecretKey.githubToken());
+      if (storedGithubToken && storedGithubToken !== '') {
+        newSettings.githubToken = storedGithubToken;
+        secretStorage.setSecret(getSecretKey.githubToken(), '');
+        needsSave = true;
+      }
+
+      // Agent API Key
+      const storedAgentApiKey = secretStorage.getSecret(getSecretKey.agentApiKey());
+      if (storedAgentApiKey && storedAgentApiKey !== '') {
+        if (!newSettings.agent) {
+          newSettings.agent = { ...DEFAULT_SETTINGS.agent };
+        }
+        newSettings.agent.apiKey = storedAgentApiKey;
+        secretStorage.setSecret(getSecretKey.agentApiKey(), '');
+        needsSave = true;
       }
     }
   }

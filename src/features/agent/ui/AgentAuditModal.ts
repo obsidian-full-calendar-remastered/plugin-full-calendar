@@ -8,6 +8,7 @@
 import { App, Modal, Setting } from 'obsidian';
 import type { AgentAuditLogger } from '../core/AgentAuditLogger';
 import { showNotice } from '../../../utils/showNotice';
+import { t } from '../../i18n/i18n';
 
 export class AgentAuditModal extends Modal {
   private logger: AgentAuditLogger;
@@ -19,36 +20,36 @@ export class AgentAuditModal extends Modal {
 
   async onOpen() {
     const { contentEl, titleEl } = this;
-    titleEl.setText('Full calendar agent: Audit trail & diagnostics');
+    titleEl.setText(t('agent.audit.title'));
     contentEl.empty();
     contentEl.addClass('ofc-audit-modal-content');
 
     contentEl.createEl('p', {
-      text: 'Detailed record of all agent interactions, tool calls, proposals, retries, and errors.',
+      text: t('agent.audit.description'),
       cls: 'ofc-audit-modal-desc'
     });
 
     // Action buttons bar
     const btnBar = new Setting(contentEl);
     btnBar.addButton(btn => {
-      btn.setButtonText('Export audit log');
+      btn.setButtonText(t('agent.audit.exportBtn'));
       btn.onClick(async () => {
         const raw = await this.logger.exportLogs();
         if (!raw) {
-          showNotice('No audit logs available to export.');
+          showNotice(t('agent.audit.noLogsNotice'));
           return;
         }
         await navigator.clipboard.writeText(raw);
-        showNotice('Audit log copied to clipboard!');
+        showNotice(t('agent.audit.copiedNotice'));
       });
     });
 
     btnBar.addButton(btn => {
-      btn.setButtonText('Clear logs');
+      btn.setButtonText(t('agent.audit.clearBtn'));
       btn.setClass('mod-warning');
       btn.onClick(async () => {
         await this.logger.clearLogs();
-        showNotice('Audit logs cleared.');
+        showNotice(t('agent.audit.clearedNotice'));
         void this.onOpen();
       });
     });
@@ -58,7 +59,7 @@ export class AgentAuditModal extends Modal {
 
     if (entries.length === 0) {
       listContainer.createDiv({
-        text: 'No audit entries recorded yet.',
+        text: t('agent.audit.noEntries'),
         cls: 'ofc-audit-empty'
       });
       return;
@@ -90,7 +91,7 @@ export class AgentAuditModal extends Modal {
 
       if (entry.details) {
         const detailsEl = row.createEl('details');
-        detailsEl.createEl('summary', { text: 'Payload / details' });
+        detailsEl.createEl('summary', { text: t('agent.audit.payloadDetails') });
         const pre = detailsEl.createEl('pre');
         pre.setText(JSON.stringify(entry.details, null, 2));
       }

@@ -45,7 +45,6 @@ export class LazySettingsTab extends PluginSettingTab {
     })();
   }
 
-
   display(): void {
     this.renderSettings();
   }

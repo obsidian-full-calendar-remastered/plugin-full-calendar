@@ -14,7 +14,8 @@
  * @license See LICENSE.md
  */
 
-import type { ChatMessage, ToolDefinition, ChatCompletionChunk, ChatToolCall } from '../types';
+import { requestUrl } from 'obsidian';
+import type { ChatMessage, ToolDefinition, ChatToolCall } from '../types';
 import type { AgentAuditLogger } from './AgentAuditLogger';
 
 export class AgentApiError extends Error {
@@ -86,11 +87,20 @@ export class AgentClient {
     return clean;
   }
 
-  private parseRetryAfter(response: Response): number | null {
-    const header = response.headers.get('Retry-After');
+  private parseRetryAfter(
+    headers?: Headers | { get?: (k: string) => string | null } | Record<string, string>
+  ): number | null {
+    if (!headers) return null;
+    let header: string | null;
+    if (typeof (headers as Headers).get === 'function') {
+      header = (headers as Headers).get('Retry-After') ?? (headers as Headers).get('retry-after');
+    } else {
+      const rec = headers as Record<string, string>;
+      header = rec['retry-after'] || rec['Retry-After'] || null;
+    }
     if (!header) return null;
     const seconds = parseInt(header, 10);
-    if (!isNaN(seconds) && seconds > 0) {
+    if (!isNaN(seconds) && seconds >= 0) {
       return seconds * 1000;
     }
     const date = Date.parse(header);
@@ -102,7 +112,7 @@ export class AgentClient {
   }
 
   private calculateBackoff(attempt: number, retryAfterMs: number | null): number {
-    if (retryAfterMs !== null && retryAfterMs > 0 && retryAfterMs <= 60000) {
+    if (retryAfterMs !== null && retryAfterMs >= 0 && retryAfterMs <= 60000) {
       return retryAfterMs;
     }
     const base = 1000;
@@ -131,21 +141,210 @@ export class AgentClient {
     });
   }
 
+  private buildHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (this.options.apiKey && this.options.apiKey.trim().length > 0) {
+      headers['Authorization'] = `Bearer ${this.options.apiKey.trim()}`;
+    }
+    return headers;
+  }
+
+  private buildPayload(
+    messages: ChatMessage[],
+    tools: ToolDefinition[],
+    maxTokens?: number
+  ): Record<string, unknown> {
+    const payload: Record<string, unknown> = {
+      model: this.options.model,
+      messages: messages.map(m => {
+        const base: Record<string, unknown> = {
+          role: m.role,
+          content: m.content
+        };
+        if (m.name) base.name = m.name;
+        if (m.tool_call_id) base.tool_call_id = m.tool_call_id;
+        if (m.tool_calls) base.tool_calls = m.tool_calls;
+        return base;
+      }),
+      temperature: this.options.temperature
+    };
+
+    if (tools && tools.length > 0) {
+      payload.tools = tools;
+      payload.tool_choice = 'auto';
+    }
+    if (maxTokens) {
+      payload.max_tokens = maxTokens;
+    }
+    return payload;
+  }
+
+  private extractErrorMessage(status: number, text?: string, json?: unknown): string {
+    if (json && typeof json === 'object') {
+      const obj = json as Record<string, unknown>;
+      if (obj.error && typeof obj.error === 'object') {
+        const errObj = obj.error as Record<string, unknown>;
+        if (errObj.message && typeof errObj.message === 'string') {
+          return errObj.message;
+        }
+      }
+      if (obj.message && typeof obj.message === 'string') {
+        return obj.message;
+      }
+    }
+    if (text && text.trim().length > 0) {
+      try {
+        const parsed = JSON.parse(text) as Record<string, unknown>;
+        if (parsed.error && typeof parsed.error === 'object') {
+          const errObj = parsed.error as Record<string, unknown>;
+          if (errObj.message && typeof errObj.message === 'string') {
+            return errObj.message;
+          }
+        }
+        if (parsed.message && typeof parsed.message === 'string') {
+          return parsed.message;
+        }
+      } catch {
+        // Not JSON text
+      }
+      return text.slice(0, 300);
+    }
+    return `status ${status}`;
+  }
+
+  private handleHttpError(
+    status: number,
+    url: string,
+    bodyText: string,
+    errorDetail: string
+  ): never {
+    if (status === 401 || status === 403) {
+      throw new AgentApiError(
+        status,
+        url,
+        `Authentication failed (${status}): ${errorDetail}. Please verify your API key in settings.`,
+        bodyText
+      );
+    }
+    if (status === 400 || status === 404) {
+      throw new AgentApiError(
+        status,
+        url,
+        `API request rejected (${status}): ${errorDetail}`,
+        bodyText
+      );
+    }
+    throw new AgentApiError(
+      status,
+      url,
+      `API call failed with status ${status}: ${errorDetail}`,
+      bodyText
+    );
+  }
+
+  private async executeHttp(
+    url: string,
+    headers: Record<string, string>,
+    payload: Record<string, unknown>,
+    signal?: AbortSignal
+  ): Promise<{ status: number; text: string; json?: unknown; headers?: Record<string, string> }> {
+    if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+      try {
+        const response = await window.fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          signal
+        });
+        if (response) {
+          let text = '';
+          let json: unknown = null;
+          if (typeof response.text === 'function') {
+            text = await response.text().catch(() => '');
+            if (text) {
+              try {
+                json = JSON.parse(text);
+              } catch {
+                /* ignore non-json text */
+              }
+            }
+          }
+          if (!json && typeof response.json === 'function') {
+            try {
+              json = await response.json();
+              if (!text && json) {
+                text = typeof json === 'string' ? json : JSON.stringify(json);
+              }
+            } catch {
+              /* ignore json parse failure */
+            }
+          }
+          const respHeaders: Record<string, string> = {};
+          if (response.headers && typeof response.headers.forEach === 'function') {
+            response.headers.forEach((val, key) => {
+              respHeaders[key.toLowerCase()] = val;
+              respHeaders[key] = val;
+            });
+          }
+          const status =
+            typeof response.status === 'number' ? response.status : response.ok ? 200 : 500;
+          return { status, text, json, headers: respHeaders };
+        }
+      } catch (err) {
+        if (signal?.aborted) throw err;
+        this.logger?.warn('Fetch encountered CORS or network error, falling back to requestUrl', {
+          url
+        });
+      }
+    }
+
+    const res = await requestUrl({
+      url,
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      throw: false
+    });
+    return {
+      status: res?.status ?? 200,
+      text: res?.text ?? '',
+      json: res?.json ?? null,
+      headers: res?.headers ?? {}
+    };
+  }
+
   /**
-   * Tests the connection and credentials with a minimal prompt.
+   * Tests the connection with a minimal prompt using requestUrl to bypass CORS in Obsidian desktop.
    */
   public async testConnection(): Promise<{ success: boolean; message: string; model?: string }> {
-    const testMessages: ChatMessage[] = [{ role: 'user', content: 'Respond with OK.' }];
     try {
-      await this.chatCompletion(testMessages, [], {
-        maxTokens: 5,
-        stream: false
+      const url = this.normalizeUrl(this.options.endpointUrl);
+      const headers = this.buildHeaders();
+      const payload = this.buildPayload([{ role: 'user', content: 'Respond with OK.' }], [], 5);
+
+      const res = await requestUrl({
+        url,
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        throw: false
       });
-      return {
-        success: true,
-        message: 'Connection successful!',
-        model: this.options.model
-      };
+
+      if (res && res.status === 200) {
+        return {
+          success: true,
+          message: 'Connection successful!',
+          model: this.options.model
+        };
+      }
+
+      const status = res?.status ?? 500;
+      const text = res?.text ?? '';
+      const json: unknown = res?.json;
+      const errorDetail = this.extractErrorMessage(status, text, json);
+      this.handleHttpError(status, url, text, errorDetail);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return {
@@ -170,137 +369,61 @@ export class AgentClient {
   ): Promise<CompletionResult> {
     const url = this.normalizeUrl(this.options.endpointUrl);
     const maxRetries = this.options.maxRetries ?? 3;
-    const stream = config.stream ?? true;
-    let attempt = 0;
+    const payload = this.buildPayload(messages, tools, config.maxTokens);
+    const headers = this.buildHeaders();
     const startTime = Date.now();
+    let attempt = 0;
 
     while (attempt <= maxRetries) {
-      // Create a combined timeout and user abort controller
-      const timeoutController = new AbortController();
-      const timeoutId = window.setTimeout(() => {
-        timeoutController.abort(new Error(`Request timed out after ${this.options.timeoutMs}ms`));
-      }, this.options.timeoutMs ?? 60000);
-
-      const onUserAbort = () => {
-        timeoutController.abort(new Error('Request aborted by user'));
-      };
-      if (config.signal) {
-        config.signal.addEventListener('abort', onUserAbort, { once: true });
+      if (config.signal?.aborted) {
+        throw new Error('Agent request was cancelled by user.');
       }
 
       try {
-        const payload: Record<string, unknown> = {
-          model: this.options.model,
-          messages: messages.map(m => {
-            const base: Record<string, unknown> = {
-              role: m.role,
-              content: m.content
-            };
-            if (m.name) base.name = m.name;
-            if (m.tool_call_id) base.tool_call_id = m.tool_call_id;
-            if (m.tool_calls) base.tool_calls = m.tool_calls;
-            return base;
-          }),
-          temperature: this.options.temperature,
-          stream
-        };
+        const res = await this.executeHttp(url, headers, payload, config.signal);
 
-        if (tools && tools.length > 0) {
-          payload.tools = tools;
-          payload.tool_choice = 'auto';
-        }
-        if (config.maxTokens) {
-          payload.max_tokens = config.maxTokens;
-        }
-
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
-        };
-        if (this.options.apiKey && this.options.apiKey.trim().length > 0) {
-          headers['Authorization'] = `Bearer ${this.options.apiKey.trim()}`;
-        }
-
-        const response = await window.fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          signal: timeoutController.signal
-        });
-
-        window.clearTimeout(timeoutId);
-        if (config.signal) {
-          config.signal.removeEventListener('abort', onUserAbort);
-        }
-
-        // ====================================================================
-        // HANDLE HTTP STATUS CODES & RETRIES
-        // ====================================================================
-        if (!response.ok) {
-          const status = response.status;
-          const bodyText = await response.text().catch(() => '');
-
-          // Non-retryable errors: Auth failure or Bad Request (client error)
-          if (status === 401 || status === 403) {
-            throw new AgentApiError(
-              status,
-              url,
-              `Authentication failed (${status}). Please verify your API key in settings.`,
-              bodyText
-            );
+        // 1. Success (200)
+        if (res.status === 200) {
+          const json = (res.json ?? (res.text ? JSON.parse(res.text) : {})) as Record<
+            string,
+            unknown
+          >;
+          const durationMs = Date.now() - startTime;
+          const result = this.parseStandardResponse(json, durationMs);
+          if (config.callbacks?.onChunk && result.content) {
+            config.callbacks.onChunk(result.content);
           }
-          if (status === 400 || status === 404) {
-            throw new AgentApiError(
-              status,
-              url,
-              `API Request rejected (${status}): ${bodyText.slice(0, 300)}`,
-              bodyText
-            );
+          if (config.callbacks?.onToolCallDelta && result.toolCalls.length > 0) {
+            config.callbacks.onToolCallDelta(result.toolCalls);
           }
-
-          // Retryable errors: 429 (Rate Limit) or 5xx (Server Error)
-          const isRetryable = status === 429 || (status >= 500 && status <= 599);
-          if (isRetryable && attempt < maxRetries) {
-            const retryAfterMs = this.parseRetryAfter(response);
-            const backoffMs = this.calculateBackoff(attempt, retryAfterMs);
-            const reason = status === 429 ? 'Rate limited (429)' : `Server error (${status})`;
-
-            this.logger?.warn(`API retry ${attempt + 1}/${maxRetries}: ${reason}`, {
-              status,
-              backoffMs,
-              url
-            });
-
-            config.callbacks?.onRetry?.(attempt + 1, maxRetries, backoffMs, reason);
-            attempt++;
-            await this.delay(backoffMs, config.signal);
-            continue; // Retry loop
-          }
-
-          throw new AgentApiError(
-            status,
-            url,
-            `API call failed with status ${status}: ${bodyText.slice(0, 300)}`,
-            bodyText
-          );
+          return result;
         }
 
-        // ====================================================================
-        // PARSE RESPONSE BODY (STREAMING OR JSON)
-        // ====================================================================
-        if (stream && response.body) {
-          return await this.parseStreamResponse(response.body, config.callbacks, startTime);
+        // 2. Retryable errors: 429 (Rate Limit) or 5xx (Server Error)
+        const isRetryable = res.status === 429 || (res.status >= 500 && res.status <= 599);
+        if (isRetryable && attempt < maxRetries) {
+          const retryAfterMs = this.parseRetryAfter(res.headers);
+          const backoffMs = this.calculateBackoff(attempt, retryAfterMs);
+          const reason = res.status === 429 ? 'Rate limited (429)' : `Server error (${res.status})`;
+
+          this.logger?.warn(`API retry ${attempt + 1}/${maxRetries}: ${reason}`, {
+            status: res.status,
+            backoffMs,
+            url
+          });
+
+          config.callbacks?.onRetry?.(attempt + 1, maxRetries, backoffMs, reason);
+          attempt++;
+          await this.delay(backoffMs, config.signal);
+          continue;
         }
-        const json = (await response.json()) as Record<string, unknown>;
-        const durationMs = Date.now() - startTime;
-        return this.parseStandardResponse(json, durationMs);
+
+        // 3. Non-retryable error
+        const errorDetail = this.extractErrorMessage(res.status, res.text, res.json);
+        this.handleHttpError(res.status, url, res.text, errorDetail);
       } catch (err) {
-        window.clearTimeout(timeoutId);
-        if (config.signal) {
-          config.signal.removeEventListener('abort', onUserAbort);
-        }
-
-        if (config.signal?.aborted) {
-          throw new Error('Agent request was cancelled by user.', { cause: err });
+        if (config.signal?.aborted || err instanceof AgentApiError) {
+          throw err;
         }
 
         const isNetworkOrTimeout =
@@ -332,103 +455,6 @@ export class AgentClient {
     }
 
     throw new Error(`Request failed after ${maxRetries} retry attempts.`);
-  }
-
-  /**
-   * Decodes and parses Server-Sent Events (SSE) stream.
-   */
-  private async parseStreamResponse(
-    body: ReadableStream<Uint8Array>,
-    callbacks?: StreamCallbacks,
-    startTime = Date.now()
-  ): Promise<CompletionResult> {
-    const reader = body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let buffer = '';
-    let fullContent = '';
-    const toolCallAccumulators: Map<number, { id: string; name: string; arguments: string }> =
-      new Map();
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        // Keep the last incomplete fragment in buffer
-        buffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed.startsWith(':')) continue; // Skip empty lines and SSE comments
-
-          if (trimmed.startsWith('data:')) {
-            const dataStr = trimmed.slice(5).trim();
-            if (dataStr === '[DONE]') {
-              continue;
-            }
-
-            try {
-              const chunk = JSON.parse(dataStr) as ChatCompletionChunk;
-              const choice = chunk.choices?.[0];
-              if (!choice) continue;
-
-              const delta = choice.delta;
-              if (delta.content) {
-                fullContent += delta.content;
-                callbacks?.onChunk?.(delta.content);
-              }
-
-              if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
-                for (const tc of delta.tool_calls) {
-                  const idx = tc.index ?? 0;
-                  const existing = toolCallAccumulators.get(idx) || {
-                    id: tc.id || `call_${idx}_${Date.now()}`,
-                    name: tc.function?.name || '',
-                    arguments: ''
-                  };
-                  if (tc.id) existing.id = tc.id;
-                  if (tc.function?.name) existing.name = tc.function.name;
-                  if (tc.function?.arguments) existing.arguments += tc.function.arguments;
-                  toolCallAccumulators.set(idx, existing);
-                }
-
-                // Notify callback of current accumulated tool calls
-                const currentToolCalls = Array.from(toolCallAccumulators.values()).map(a => ({
-                  id: a.id,
-                  type: 'function' as const,
-                  function: {
-                    name: a.name,
-                    arguments: a.arguments
-                  }
-                }));
-                callbacks?.onToolCallDelta?.(currentToolCalls);
-              }
-            } catch {
-              // Ignore partial JSON parsing glitches in stream
-            }
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
-    }
-
-    const toolCalls: ChatToolCall[] = Array.from(toolCallAccumulators.values()).map(a => ({
-      id: a.id,
-      type: 'function',
-      function: {
-        name: a.name,
-        arguments: a.arguments
-      }
-    }));
-
-    return {
-      content: fullContent,
-      toolCalls,
-      durationMs: Date.now() - startTime
-    };
   }
 
   private parseStandardResponse(

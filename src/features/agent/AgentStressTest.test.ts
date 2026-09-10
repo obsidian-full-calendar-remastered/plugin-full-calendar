@@ -668,4 +668,176 @@ describe('Agentic Write Bar: Comprehensive Stress Tests', () => {
       expect(entries.map(e => e.id)).toEqual(['2', '1']); // Reverse order (newest first)
     });
   });
+
+  // ==========================================================================
+  // 7. SETTINGS DYNAMICS & LIVE PRESET RECONFIGURATION STRESS TESTS
+  // ==========================================================================
+  describe('Settings Dynamics & Live Preset Reconfiguration', () => {
+    const mockedRequestUrl = requestUrl as jest.MockedFunction<typeof requestUrl>;
+
+    it('should dynamically update AgentClient options in-memory and propagate to requests', async () => {
+      const liveClient = new AgentClient(
+        {
+          endpointUrl: 'https://api.openai.com/v1',
+          apiKey: 'initial-key',
+          model: 'gpt-4o-mini',
+          temperature: 0.2
+        },
+        logger
+      );
+
+      // Reconfigure options dynamically
+      liveClient.updateOptions({
+        endpointUrl: 'https://api.groq.com/openai/v1',
+        apiKey: 'groq-gsk-new-key',
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.8
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [
+            {
+              message: {
+                content: 'Groq response',
+                tool_calls: []
+              }
+            }
+          ]
+        })
+      });
+
+      await liveClient.chatCompletion([{ role: 'user', content: 'Hello' }], [], { stream: false });
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [calledUrl, calledInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(calledUrl).toBe('https://api.groq.com/openai/v1/chat/completions');
+      const reqHeaders = calledInit.headers as Record<string, string>;
+      expect(reqHeaders['Authorization']).toBe('Bearer groq-gsk-new-key');
+      expect(
+        typeof calledInit.body === 'string' &&
+          calledInit.body.includes('"model":"llama-3.3-70b-versatile"')
+      ).toBe(true);
+    });
+
+    it('should successfully test connection via requestUrl and return model info', async () => {
+      const liveClient = new AgentClient(
+        {
+          endpointUrl: 'https://openrouter.ai/api/v1',
+          apiKey: 'sk-or-v1-test',
+          model: 'anthropic/claude-3.5-sonnet'
+        },
+        logger
+      );
+
+      mockedRequestUrl.mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        text: '{"id":"test","choices":[{"message":{"content":"OK"}}]}',
+        arrayBuffer: new ArrayBuffer(0),
+        json: { choices: [{ message: { content: 'OK' } }] }
+      });
+
+      const res = await liveClient.testConnection();
+      expect(res.success).toBe(true);
+      expect(res.model).toBe('anthropic/claude-3.5-sonnet');
+      expect(mockedRequestUrl).toHaveBeenCalledTimes(1);
+      const reqParam = mockedRequestUrl.mock.calls[0][0] as {
+        url: string;
+        headers: Record<string, string>;
+      };
+      expect(reqParam.url).toBe('https://openrouter.ai/api/v1/chat/completions');
+      expect(reqParam.headers['Authorization']).toBe('Bearer sk-or-v1-test');
+    });
+
+    it('should handle test connection 401 authentication rejection gracefully', async () => {
+      const liveClient = new AgentClient(
+        {
+          endpointUrl: 'https://api.openai.com/v1',
+          apiKey: 'invalid-expired-key',
+          model: 'gpt-4o-mini'
+        },
+        logger
+      );
+
+      mockedRequestUrl.mockResolvedValueOnce({
+        status: 401,
+        headers: {},
+        text: '{"error":{"message":"Incorrect API key provided"}}',
+        arrayBuffer: new ArrayBuffer(0),
+        json: { error: { message: 'Incorrect API key provided' } }
+      });
+
+      const res = await liveClient.testConnection();
+      expect(res.success).toBe(false);
+      expect(res.message).toContain('Authentication failed (401)');
+    });
+
+    it('should handle test connection network or timeout errors safely without unhandled rejection', async () => {
+      const liveClient = new AgentClient(
+        {
+          endpointUrl: 'https://unreachable-gateway.internal',
+          apiKey: 'any-key',
+          model: 'gpt-4o-mini'
+        },
+        logger
+      );
+
+      mockedRequestUrl.mockRejectedValueOnce(
+        new Error('getaddrinfo ENOTFOUND unreachable-gateway.internal')
+      );
+
+      const res = await liveClient.testConnection();
+      expect(res.success).toBe(false);
+      expect(res.message).toContain('ENOTFOUND');
+    });
+
+    it('should cycle through all standard endpoint presets without error', async () => {
+      const presets = [
+        { name: 'OpenAI', endpoint: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+        {
+          name: 'OpenRouter',
+          endpoint: 'https://openrouter.ai/api/v1',
+          model: 'openai/gpt-4o-mini'
+        },
+        {
+          name: 'Groq',
+          endpoint: 'https://api.groq.com/openai/v1',
+          model: 'llama-3.3-70b-versatile'
+        },
+        { name: 'DeepSeek', endpoint: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+        { name: 'Ollama (Local)', endpoint: 'http://localhost:11434/v1', model: 'llama3.1' },
+        { name: 'LM Studio (Local)', endpoint: 'http://localhost:1234/v1', model: 'default' }
+      ];
+
+      const liveClient = new AgentClient(
+        {
+          endpointUrl: presets[0].endpoint,
+          apiKey: 'test-key',
+          model: presets[0].model
+        },
+        logger
+      );
+
+      for (const preset of presets) {
+        liveClient.updateOptions({
+          endpointUrl: preset.endpoint,
+          model: preset.model
+        });
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            choices: [{ message: { content: `Response from ${preset.name}`, tool_calls: [] } }]
+          })
+        });
+
+        const res = await liveClient.chatCompletion([{ role: 'user', content: 'Ping' }], [], {
+          stream: false
+        });
+        expect(res.content).toBe(`Response from ${preset.name}`);
+      }
+    });
+  });
 });

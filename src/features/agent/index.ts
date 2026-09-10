@@ -16,7 +16,9 @@ import { AgentClient } from './core/AgentClient';
 import { AgentEngine } from './core/AgentEngine';
 import { AgentWriteBar } from './ui/AgentWriteBar';
 import { AgentCommandModal } from './ui/AgentCommandModal';
+import { AgentSidebarView, FULL_CALENDAR_AGENT_VIEW } from './ui/AgentSidebarView';
 import { renderAgentSettings } from './ui/renderAgentSettings';
+import { t } from '../i18n/i18n';
 import './ui/styles/agent.css';
 
 export class AgentManager {
@@ -62,6 +64,43 @@ export class AgentManager {
   public async init(): Promise<void> {
     await this.storage.ensureDir();
     await this.engine.init();
+    this.registerViewsAndCommands();
+  }
+
+  private registerViewsAndCommands(): void {
+    // 1. Encapsulate Sidebar View registration
+    this.plugin.registerView(
+      FULL_CALENDAR_AGENT_VIEW,
+      leaf => new AgentSidebarView(leaf, this.plugin, this.engine, this.logger, this.bridge)
+    );
+
+    // 2. Encapsulate Ribbon Icon
+    this.plugin.addRibbonIcon('bot', t('commands.openCalendarAgent'), async () => {
+      await this.openSidebarView();
+    });
+
+    // 3. Encapsulate Command Palette action
+    this.plugin.addCommand({
+      id: 'full-calendar-agent-bar',
+      name: t('commands.openCalendarAgent'),
+      callback: async () => {
+        await this.openSidebarView();
+      }
+    });
+
+    // 4. Encapsulate Settings Update subscription
+    const workspaceEvents = this.plugin.app.workspace as unknown as {
+      on: (name: string, cb: () => void) => import('obsidian').EventRef;
+    };
+    this.plugin.registerEvent(
+      workspaceEvents.on('full-calendar:settings-updated', () => {
+        this.updateSettings();
+      })
+    );
+  }
+
+  public unload(): void {
+    // Safe cleanup hook
   }
 
   public updateSettings(): void {
@@ -89,14 +128,27 @@ export class AgentManager {
     );
   }
 
+  public async openSidebarView(): Promise<void> {
+    const workspace = this.plugin.app.workspace;
+    const existing = workspace.getLeavesOfType(FULL_CALENDAR_AGENT_VIEW)[0];
+    if (existing) {
+      void workspace.revealLeaf(existing);
+      return;
+    }
+
+    const leaf = workspace.getRightLeaf(false);
+    if (!leaf) return;
+
+    await leaf.setViewState({
+      type: FULL_CALENDAR_AGENT_VIEW,
+      active: true
+    });
+
+    void workspace.revealLeaf(leaf);
+  }
+
   public openCommandModal(onEventMutated?: () => void): void {
-    new AgentCommandModal(
-      this.plugin.app,
-      this.engine,
-      this.logger,
-      this.bridge,
-      onEventMutated
-    ).open();
+    void this.openSidebarView();
   }
 
   public renderSettings(containerEl: HTMLElement): void {
@@ -111,6 +163,14 @@ export {
   AgentClient,
   AgentEngine,
   AgentWriteBar,
-  AgentCommandModal
+  AgentCommandModal,
+  AgentSidebarView,
+  FULL_CALENDAR_AGENT_VIEW
 };
-export type { ChatMessage, EventProposal, AuditEntry } from './types';
+export type {
+  ChatMessage,
+  EventProposal,
+  AuditEntry,
+  AgentSession,
+  AgentSessionSummary
+} from './types';

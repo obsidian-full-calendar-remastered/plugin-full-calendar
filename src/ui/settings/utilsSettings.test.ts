@@ -1,5 +1,5 @@
 import { migrateAndSanitizeSettings } from './utilsSettings';
-import { DEFAULT_SETTINGS } from '../../types/settings';
+import { DEFAULT_SETTINGS, type FullCalendarSettings } from '../../types/settings';
 
 // Mock Obsidian modules that may be imported transitively
 jest.mock('obsidian', () => ({
@@ -130,7 +130,12 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
             homeUrl: 'https://caldav.example.com',
             url: 'https://caldav.example.com'
           }
-        ]
+        ],
+        githubToken: 'ghp_secret_token_123',
+        agent: {
+          ...DEFAULT_SETTINGS.agent,
+          apiKey: 'sk-agent-secret-key-xyz'
+        }
       };
 
       const { settings, needsSave } = migrateAndSanitizeSettings(rawSettings);
@@ -144,6 +149,8 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
       expect(settings.microsoftAccounts[0].refreshToken).toBeNull();
       expect(settings.microsoftAccounts[0].accessToken).toBeNull();
       expect((settings.calendarSources[0] as { password?: string }).password).toBe('');
+      expect(settings.githubToken).toBeNull();
+      expect(settings.agent.apiKey).toBe('');
 
       // Verify they are moved to SecretStorage
       expect(mockSecretStorage['fcr-gcal-custom-secret']).toBe('my-super-secret-client');
@@ -152,6 +159,8 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
       expect(mockSecretStorage['fcr-ms-ref-ms1']).toBe('m-refresh-token');
       expect(mockSecretStorage['fcr-ms-acc-ms1']).toBe('m-access-token');
       expect(mockSecretStorage['fcr-caldav-pwd-cal1']).toBe('cal-password');
+      expect(mockSecretStorage['fcr-github-token']).toBe('ghp_secret_token_123');
+      expect(mockSecretStorage['fcr-agent-api-key']).toBe('sk-agent-secret-key-xyz');
     });
 
     it('should restore credentials from SecretStorage to settings when legacy mode is enabled', () => {
@@ -162,6 +171,8 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
       mockSecretStorage['fcr-ms-ref-ms2'] = 'restored-m-refresh';
       mockSecretStorage['fcr-ms-acc-ms2'] = 'restored-m-access';
       mockSecretStorage['fcr-caldav-pwd-cal2'] = 'restored-caldav-password';
+      mockSecretStorage['fcr-github-token'] = 'restored-gh-token';
+      mockSecretStorage['fcr-agent-api-key'] = 'restored-agent-api-key';
 
       const rawSettings = {
         ...DEFAULT_SETTINGS,
@@ -195,7 +206,12 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
             homeUrl: 'https://caldav.example.com',
             url: 'https://caldav.example.com'
           }
-        ]
+        ],
+        githubToken: null,
+        agent: {
+          ...DEFAULT_SETTINGS.agent,
+          apiKey: ''
+        }
       };
 
       const { settings, needsSave } = migrateAndSanitizeSettings(rawSettings);
@@ -211,6 +227,8 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
       expect((settings.calendarSources[0] as { password?: string }).password).toBe(
         'restored-caldav-password'
       );
+      expect(settings.githubToken).toBe('restored-gh-token');
+      expect(settings.agent.apiKey).toBe('restored-agent-api-key');
 
       // Verify they are cleared from SecretStorage
       expect(mockSecretStorage['fcr-gcal-custom-secret']).toBe('');
@@ -219,6 +237,125 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
       expect(mockSecretStorage['fcr-ms-ref-ms2']).toBe('');
       expect(mockSecretStorage['fcr-ms-acc-ms2']).toBe('');
       expect(mockSecretStorage['fcr-caldav-pwd-cal2']).toBe('');
+      expect(mockSecretStorage['fcr-github-token']).toBe('');
+      expect(mockSecretStorage['fcr-agent-api-key']).toBe('');
+    });
+  });
+
+  describe('agent settings persistence and migration', () => {
+    it('should preserve custom endpointUrl, model, specUrl, and execution parameters', () => {
+      const customAgentSettings = {
+        enabled: true,
+        endpointUrl: 'https://api.groq.com/openai/v1',
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.7,
+        specUrl: 'https://example.com/custom-spec.md',
+        maxRetries: 5,
+        timeoutMs: 45000
+      };
+
+      const rawSettings = {
+        ...DEFAULT_SETTINGS,
+        agent: customAgentSettings
+      };
+
+      const { settings } = migrateAndSanitizeSettings(rawSettings);
+
+      expect(settings.agent.endpointUrl).toBe('https://api.groq.com/openai/v1');
+      expect(settings.agent.model).toBe('llama-3.3-70b-versatile');
+      expect(settings.agent.temperature).toBe(0.7);
+      expect(settings.agent.specUrl).toBe('https://example.com/custom-spec.md');
+      expect(settings.agent.maxRetries).toBe(5);
+      expect(settings.agent.timeoutMs).toBe(45000);
+      expect(settings.agent.enabled).toBe(true);
+    });
+
+    it('should cleanly fallback to default agent settings when missing from raw settings', () => {
+      const rawSettings = { ...DEFAULT_SETTINGS } as Record<string, unknown>;
+      delete rawSettings.agent;
+
+      const { settings } = migrateAndSanitizeSettings(rawSettings);
+
+      expect(settings.agent).toBeDefined();
+      expect(settings.agent.endpointUrl).toBe(DEFAULT_SETTINGS.agent.endpointUrl);
+      expect(settings.agent.model).toBe(DEFAULT_SETTINGS.agent.model);
+      expect(settings.agent.temperature).toBe(DEFAULT_SETTINGS.agent.temperature);
+      expect(settings.agent.maxRetries).toBe(DEFAULT_SETTINGS.agent.maxRetries);
+      expect(settings.agent.timeoutMs).toBe(DEFAULT_SETTINGS.agent.timeoutMs);
+    });
+
+    it('should merge partial agent settings with defaults without dropping custom fields', () => {
+      const rawSettings = {
+        ...DEFAULT_SETTINGS,
+        agent: {
+          endpointUrl: 'http://localhost:11434/v1',
+          model: 'mistral-nemo'
+        } as unknown as typeof DEFAULT_SETTINGS.agent
+      };
+
+      const { settings } = migrateAndSanitizeSettings(rawSettings);
+
+      expect(settings.agent.endpointUrl).toBe('http://localhost:11434/v1');
+      expect(settings.agent.model).toBe('mistral-nemo');
+      expect(settings.agent.temperature).toBe(DEFAULT_SETTINGS.agent.temperature);
+      expect(settings.agent.specUrl).toBe(DEFAULT_SETTINGS.agent.specUrl);
+      expect(settings.agent.maxRetries).toBe(DEFAULT_SETTINGS.agent.maxRetries);
+      expect(settings.agent.timeoutMs).toBe(DEFAULT_SETTINGS.agent.timeoutMs);
+    });
+
+    it('should withstand 50 consecutive save, serialization, and reload cycles without data loss', () => {
+      let currentSettings: FullCalendarSettings = {
+        ...DEFAULT_SETTINGS,
+        agent: {
+          enabled: true,
+          endpointUrl: 'https://initial-endpoint.ai/v1',
+          model: 'test-model-0',
+          temperature: 0.1,
+          specUrl: 'https://spec.com/initial.md',
+          maxRetries: 2,
+          timeoutMs: 30000
+        }
+      };
+
+      const testEndpoints = [
+        'https://api.openai.com/v1',
+        'https://openrouter.ai/api/v1',
+        'https://api.groq.com/openai/v1',
+        'https://api.deepseek.com/v1',
+        'http://localhost:11434/v1',
+        'http://localhost:1234/v1',
+        'https://custom-gateway.internal.net/v1'
+      ];
+
+      for (let i = 0; i < 50; i++) {
+        const expectedEndpoint = testEndpoints[i % testEndpoints.length];
+        const expectedModel = `model-variant-${i}`;
+        const expectedTemp = Math.round((0.1 + (i % 9) * 0.1) * 10) / 10;
+        const expectedRetries = (i % 5) + 1;
+
+        currentSettings.agent.endpointUrl = expectedEndpoint;
+        currentSettings.agent.model = expectedModel;
+        currentSettings.agent.temperature = expectedTemp;
+        currentSettings.agent.maxRetries = expectedRetries;
+
+        // 1. Simulate saving (which runs migrateAndSanitizeSettings)
+        const { settings: migratedOnSave } = migrateAndSanitizeSettings(currentSettings);
+
+        // 2. Simulate disk serialization (JSON.stringify -> data.json)
+        const serialized = JSON.stringify(migratedOnSave);
+
+        // 3. Simulate reload from disk (JSON.parse(data.json) -> migrateAndSanitizeSettings)
+        const loadedFromDisk = JSON.parse(serialized) as unknown;
+        const { settings: reloadedSettings } = migrateAndSanitizeSettings(loadedFromDisk);
+
+        // Verify exact persistence round-trip
+        expect(reloadedSettings.agent.endpointUrl).toBe(expectedEndpoint);
+        expect(reloadedSettings.agent.model).toBe(expectedModel);
+        expect(reloadedSettings.agent.temperature).toBe(expectedTemp);
+        expect(reloadedSettings.agent.maxRetries).toBe(expectedRetries);
+
+        currentSettings = reloadedSettings;
+      }
     });
   });
 

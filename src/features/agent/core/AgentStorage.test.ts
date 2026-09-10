@@ -43,16 +43,41 @@ describe('AgentStorage', () => {
     const storage = new AgentStorage(mockPlugin as unknown as FullCalendarPlugin);
     const messages = [{ role: 'user' as const, content: 'Test message' }];
 
-    mockAdapter.read.mockResolvedValueOnce(JSON.stringify(messages));
-
     await storage.saveHistory(messages);
     expect(mockAdapter.write).toHaveBeenCalledWith(
       'custom-config/plugins/full-calendar-remastered/agent/history.json',
       expect.stringContaining('Test message')
     );
+    expect(mockAdapter.write).toHaveBeenCalledWith(
+      'custom-config/plugins/full-calendar-remastered/agent/sessions.json',
+      expect.stringContaining('Test message')
+    );
 
     const loaded = await storage.loadHistory();
     expect(loaded).toEqual(messages);
+  });
+
+  it('should create, switch, and delete sessions with persistence', async () => {
+    const storage = new AgentStorage(mockPlugin as unknown as FullCalendarPlugin);
+    const s1 = await storage.getActiveSession();
+    expect(s1.title).toBe('Default session');
+
+    const s2 = await storage.createSession('Meeting Prep');
+    expect(s2.title).toBe('Meeting Prep');
+
+    const active = await storage.getActiveSession();
+    expect(active.id).toBe(s2.id);
+
+    // Switch back to s1
+    await storage.setActiveSessionId(s1.id);
+    expect((await storage.getActiveSession()).id).toBe(s1.id);
+
+    // Delete s2
+    const remaining = await storage.deleteSession(s2.id);
+    expect(remaining.id).toBe(s1.id);
+    const all = await storage.loadAllSessions();
+    expect(all.sessions.length).toBe(1);
+    expect(all.sessions[0].id).toBe(s1.id);
   });
 
   it('should append audit log entries as JSONL', async () => {

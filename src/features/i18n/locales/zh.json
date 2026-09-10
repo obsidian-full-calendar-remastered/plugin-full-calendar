@@ -162,7 +162,8 @@
     "syncFcrReminder": "同步 FCR Reminder Companion",
     "shareAvailability": "Share Availability",
     "exportIcs": "Export Event Cache as ICS file",
-    "showLoadDebugLog": "Show load debug timing log"
+    "showLoadDebugLog": "Show load debug timing log",
+    "openCalendarAgent": "Open calendar agent"
   },
   "notices": {
     "settingsUpdated": "日历已将您的日历设置更新为新格式。",
@@ -2007,5 +2008,107 @@
     "dailyTimeRange": "Daily Hours",
     "dailyTimeRangeDesc": "Select the daily time window.",
     "categoriesTitle": "Categories to Include"
+  },
+  "agent": {
+    "sidebar": {
+      "viewTitle": "Calendar agent",
+      "emptyTitle": "Calendar agent ready",
+      "emptyDesc": "Ask questions about your calendar, find free slots, draft new events, or import schedules from the web.",
+      "inputPlaceholder": "Ask agent or automate schedule...",
+      "stop": "Stop",
+      "sendAria": "Send prompt",
+      "newSession": "New session",
+      "deleteSession": "Delete current session",
+      "viewAuditLogs": "View audit logs",
+      "thinking": "Thinking...",
+      "toolExecuted": "Calendar tool executed",
+      "msgsCount": "msgs",
+      "errorTitle": "Request failed"
+    },
+    "suggestions": {
+      "today": "What's my schedule today?",
+      "todayPrompt": "What events do I have scheduled for today?",
+      "thisWeek": "Events this week",
+      "thisWeekPrompt": "Summarize my events for the next 7 days.",
+      "addEvent": "Add event...",
+      "addEventPrompt": "Add a meeting ",
+      "importUrl": "Import from URL...",
+      "importUrlPrompt": "Browse the schedule at this URL and extract the events: "
+    },
+    "proposals": {
+      "createTitle": "Proposal: create event",
+      "updateTitle": "Proposal: update event",
+      "deleteTitle": "Proposal: delete event",
+      "batchTitle": "Proposal: batch import ({{count}})",
+      "allDay": "All Day",
+      "approveApply": "Approve & apply",
+      "approveSelected": "Approve selected ({{count}})",
+      "applying": "Applying...",
+      "retryApply": "Retry apply",
+      "reject": "Reject",
+      "editInModal": "Edit in modal",
+      "changes": "Changes:",
+      "notes": "Notes: {{notes}}",
+      "deleteWarning": "⚠️ This will permanently remove the event from your calendar.",
+      "foundBatch": "Found {{count}} events for calendar: {{calendar}}"
+    },
+    "audit": {
+      "title": "Full calendar agent: Audit trail & diagnostics",
+      "description": "Detailed record of all agent interactions, tool calls, proposals, retries, and errors.",
+      "exportBtn": "Export audit log",
+      "clearBtn": "Clear logs",
+      "noLogsNotice": "No audit logs available to export.",
+      "copiedNotice": "Audit log copied to clipboard!",
+      "clearedNotice": "Audit logs cleared.",
+      "noEntries": "No audit entries recorded yet.",
+      "payloadDetails": "Payload / details"
+    },
+    "settings": {
+      "title": "Agentic automations (byok)",
+      "description": "Configure your bring-your-own-key (byok) agent for calendar automations. Works with any OpenAI-compatible api endpoint. All write access is strictly gated behind user approval.",
+      "enableName": "Enable agent write bar",
+      "enableDesc": "Show the agent automation write bar in the calendar view and enable agent commands.",
+      "presetName": "Api endpoint preset",
+      "presetDesc": "Select a provider preset to populate standard endpoint and model defaults.",
+      "customEndpoint": "Custom endpoint",
+      "endpointName": "Endpoint url",
+      "endpointDesc": "OpenAI-compatible base url (e.g. Https://api.OpenAI.com/v1 or http://localhost:11434/v1).",
+      "endpointPlaceholder": "Enter endpoint url...",
+      "modelName": "Model name",
+      "modelDesc": "Name of the model to query (e.g. GPT-4o-mini, llama3.1, deepseek-chat).",
+      "modelPlaceholder": "Enter model name...",
+      "apiKeyName": "Api key",
+      "apiKeySecretDesc": "Stored securely in Obsidian SecretStorage (OS Keychain). Leave blank for local offline LLMs.",
+      "apiKeyPlainDesc": "API Key for the provider. Leave blank for local offline LLMs.",
+      "apiKeyPlaceholder": "Enter api key...",
+      "testBtn": "Test connection",
+      "testingBtn": "Testing...",
+      "testDesc": "Verify your endpoint and api key with a test ping.",
+      "testSuccess": "Connection successful with model: {{model}}!",
+      "testFail": "Connection failed: {{message}}",
+      "specName": "Agent specification url",
+      "specDesc": "Raw GitHub Markdown url for the agent prompt and tool schemas.",
+      "specPlaceholder": "Enter specification url...",
+      "refreshSpecBtn": "Refresh spec",
+      "refreshingSpecBtn": "Refreshing...",
+      "refreshSpecTooltip": "Re-download the latest agent specification from GitHub docs",
+      "refreshSpecSuccess": "Agent specification refreshed and cached!",
+      "refreshSpecFail": "Failed to refresh spec: {{error}}",
+      "diagnosticsName": "Diagnostics & privacy",
+      "diagnosticsDesc": "Inspect the structured audit trail of all agent interactions, or clear stored chat history.",
+      "viewAuditTrailBtn": "View audit trail",
+      "clearHistoryBtn": "Clear history",
+      "historyClearedNotice": "Agent chat history cleared."
+    },
+    "writeBar": {
+      "toggleHistory": "Toggle Agent Chat History",
+      "clearHistory": "Clear chat history",
+      "send": "Send"
+    },
+    "notices": {
+      "eventApplied": "Event applied to calendar successfully.",
+      "failedToApply": "Failed to apply proposal: {{error}}",
+      "proposalRejected": "Event proposal rejected."
+    }
   }
 }

@@ -172,6 +172,24 @@ export interface AuditEntry {
   error?: string;
 }
 
+export interface AgentSession {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: ChatMessage[];
+  proposals: EventProposal[];
+}
+
+export interface AgentSessionSummary {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messageCount: number;
+  proposalCount: number;
+}
+
 export interface AgentSessionState {
   conversationId: string;
   createdAt: number;

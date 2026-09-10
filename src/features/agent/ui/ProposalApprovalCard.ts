@@ -17,6 +17,7 @@ import type {
   DeleteEventProposal,
   BatchCreateProposal
 } from '../types';
+import { t } from '../../i18n/i18n';
 
 export class ProposalApprovalCard {
   private containerEl: HTMLElement;
@@ -52,16 +53,16 @@ export class ProposalApprovalCard {
     const badge = header.createSpan({ cls: 'ofc-proposal-badge' });
 
     if (this.proposal.type === 'CREATE') {
-      badge.setText('Proposal: create event');
+      badge.setText(t('agent.proposals.createTitle'));
     } else if (this.proposal.type === 'UPDATE') {
       badge.addClass('ofc-proposal-badge-update');
-      badge.setText('Proposal: update event');
+      badge.setText(t('agent.proposals.updateTitle'));
     } else if (this.proposal.type === 'DELETE') {
       badge.addClass('ofc-proposal-badge-delete');
-      badge.setText('Proposal: delete event');
+      badge.setText(t('agent.proposals.deleteTitle'));
     } else if (this.proposal.type === 'BATCH_CREATE') {
       badge.addClass('ofc-proposal-badge-batch');
-      badge.setText(`Proposal: batch import (${this.proposal.items.length})`);
+      badge.setText(t('agent.proposals.batchTitle', { count: this.proposal.items.length }));
     }
 
     // 2. Body
@@ -98,7 +99,7 @@ export class ProposalApprovalCard {
     chips.createSpan({
       cls: 'ofc-proposal-chip',
       text: proposal.eventData.allDay
-        ? `📅 ${dateStr} (All Day)`
+        ? `📅 ${dateStr} (${t('agent.proposals.allDay')})`
         : `📅 ${dateStr} ⏰ ${proposal.eventData.startTime || ''} - ${proposal.eventData.endTime || ''}`
     });
 
@@ -110,7 +111,7 @@ export class ProposalApprovalCard {
     if (proposal.eventData.description) {
       body.createDiv({
         cls: 'ofc-proposal-desc',
-        text: `Notes: ${proposal.eventData.description}`
+        text: t('agent.proposals.notes', { notes: proposal.eventData.description })
       });
     }
   }
@@ -119,7 +120,7 @@ export class ProposalApprovalCard {
     body.createDiv({ cls: 'ofc-proposal-title', text: proposal.updatedEvent.title });
 
     const diffContainer = body.createDiv({ cls: 'ofc-proposal-diff' });
-    diffContainer.createEl('strong', { text: 'Changes:' });
+    diffContainer.createEl('strong', { text: t('agent.proposals.changes') });
     const list = diffContainer.createEl('ul');
 
     for (const [field, delta] of Object.entries(proposal.changedFields)) {
@@ -150,14 +151,17 @@ export class ProposalApprovalCard {
     }
     body.createDiv({
       cls: 'ofc-proposal-warning',
-      text: '⚠️ This will permanently remove the event from your calendar.'
+      text: t('agent.proposals.deleteWarning')
     });
   }
 
   private renderBatchBody(body: HTMLElement, proposal: BatchCreateProposal): void {
     body.createDiv({
       cls: 'ofc-proposal-title',
-      text: `Found ${proposal.items.length} events for calendar: ${proposal.calendarName}`
+      text: t('agent.proposals.foundBatch', {
+        count: proposal.items.length,
+        calendar: proposal.calendarName
+      })
     });
 
     const batchList = body.createDiv({ cls: 'ofc-proposal-batch-list' });
@@ -173,7 +177,7 @@ export class ProposalApprovalCard {
 
       const dateStr = item.eventData.type === 'single' ? item.eventData.date : '';
       const timeStr = item.eventData.allDay
-        ? 'All Day'
+        ? t('agent.proposals.allDay')
         : `${item.eventData.startTime || ''} - ${item.eventData.endTime || ''}`;
 
       row.createSpan({
@@ -196,7 +200,7 @@ export class ProposalApprovalCard {
     if (this.proposal.type === 'BATCH_CREATE' && this.approveBtn) {
       const batch = this.proposal;
       const count = batch.items.filter(i => i.selected).length;
-      this.approveBtn.setText(`Approve selected (${count})`);
+      this.approveBtn.setText(t('agent.proposals.approveSelected', { count }));
       this.approveBtn.disabled = count === 0;
     }
   }
@@ -207,7 +211,7 @@ export class ProposalApprovalCard {
     // Reject button
     const rejectBtn = footer.createEl('button', {
       cls: 'ofc-agent-btn ofc-agent-btn-danger',
-      text: 'Reject'
+      text: t('agent.proposals.reject')
     });
     rejectBtn.addEventListener('click', () => {
       this.onReject(this.proposal.id);
@@ -218,7 +222,7 @@ export class ProposalApprovalCard {
     if (this.proposal.type === 'CREATE' && this.onEditInModal) {
       const editBtn = footer.createEl('button', {
         cls: 'ofc-agent-btn',
-        text: 'Edit in modal'
+        text: t('agent.proposals.editInModal')
       });
       editBtn.addEventListener('click', () => {
         this.onEditInModal?.(this.proposal);
@@ -230,15 +234,15 @@ export class ProposalApprovalCard {
       cls: 'ofc-agent-btn ofc-agent-btn-primary',
       text:
         this.proposal.type === 'BATCH_CREATE'
-          ? `Approve selected (${this.proposal.items.length})`
-          : 'Approve & Apply'
+          ? t('agent.proposals.approveSelected', { count: this.proposal.items.length })
+          : t('agent.proposals.approveApply')
     });
 
     this.approveBtn.addEventListener('click', () => {
       void (async () => {
         if (this.approveBtn) {
           this.approveBtn.disabled = true;
-          this.approveBtn.setText('Applying...');
+          this.approveBtn.setText(t('agent.proposals.applying'));
         }
         try {
           await this.onApprove(this.proposal.id);
@@ -246,7 +250,7 @@ export class ProposalApprovalCard {
         } catch {
           if (this.approveBtn) {
             this.approveBtn.disabled = false;
-            this.approveBtn.setText('Retry apply');
+            this.approveBtn.setText(t('agent.proposals.retryApply'));
           }
         }
       })();

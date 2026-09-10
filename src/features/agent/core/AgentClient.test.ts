@@ -3,6 +3,7 @@
  * @brief Unit tests for AgentClient resilience, retry logic, rate limit handling, and streaming.
  */
 
+import { requestUrl } from 'obsidian';
 import { AgentClient, AgentApiError } from './AgentClient';
 
 describe('AgentClient', () => {
@@ -12,6 +13,7 @@ describe('AgentClient', () => {
   beforeEach(() => {
     window.fetch = mockFetch;
     mockFetch.mockReset();
+    (requestUrl as unknown as jest.Mock).mockReset();
   });
 
   afterAll(() => {
@@ -126,5 +128,50 @@ describe('AgentClient', () => {
     ).rejects.toThrow();
 
     expect(mockFetch).toHaveBeenCalledTimes(2); // Initial + 1 retry
+  });
+
+  it('should fall back to requestUrl when fetch throws TypeError (CORS error in Obsidian desktop)', async () => {
+    mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    (requestUrl as unknown as jest.Mock).mockResolvedValueOnce({
+      status: 200,
+      text: JSON.stringify({
+        choices: [{ message: { content: 'Response via requestUrl CORS fallback' } }]
+      }),
+      json: {
+        choices: [{ message: { content: 'Response via requestUrl CORS fallback' } }]
+      }
+    });
+
+    const client = new AgentClient({
+      endpointUrl: 'https://api.openai.com/v1',
+      apiKey: 'test-key',
+      model: 'gpt-4o-mini'
+    });
+
+    const res = await client.chatCompletion([{ role: 'user', content: 'Hi' }], []);
+    expect(res.content).toBe('Response via requestUrl CORS fallback');
+    expect(requestUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it('testConnection should use requestUrl and extract 401 error message', async () => {
+    (requestUrl as unknown as jest.Mock).mockResolvedValueOnce({
+      status: 401,
+      text: JSON.stringify({
+        error: { message: 'Incorrect API key provided' }
+      }),
+      json: {
+        error: { message: 'Incorrect API key provided' }
+      }
+    });
+
+    const client = new AgentClient({
+      endpointUrl: 'https://api.openai.com/v1',
+      apiKey: 'bad-key',
+      model: 'gpt-4o-mini'
+    });
+
+    const status = await client.testConnection();
+    expect(status.success).toBe(false);
+    expect(status.message).toContain('Incorrect API key provided');
   });
 });

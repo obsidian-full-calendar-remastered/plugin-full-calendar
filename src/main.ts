@@ -223,11 +223,6 @@ export default class FullCalendarPlugin extends Plugin {
           this.#breakTimerManager?.update(settings)
         )
       );
-      this.registerEvent(
-        workspaceEvents.on('full-calendar:settings-updated', () =>
-          this.#agentManager?.updateSettings()
-        )
-      );
     };
 
     if (typeof requestIdleCallback !== 'undefined') {
@@ -352,22 +347,10 @@ export default class FullCalendarPlugin extends Plugin {
       openNLPCommandModal(this);
     });
 
-    // Register Agent Write Bar ribbon icon
-    this.addRibbonIcon('bot', 'Full calendar agent', (_: MouseEvent) => {
-      this.#agentManager.openCommandModal();
-    });
-
     this.#settingsTab = new LazySettingsTab(this.app, this, PluginState.getProviderRegistry());
     this.addSettingTab(this.#settingsTab);
 
     // Commands visible in the command palette
-    this.addCommand({
-      id: 'full-calendar-agent-bar',
-      name: 'Open agent write bar',
-      callback: () => {
-        this.#agentManager.openCommandModal();
-      }
-    });
     this.addCommand({
       id: 'full-calendar-new-event',
       name: t('commands.newEvent'),
@@ -565,6 +548,9 @@ export default class FullCalendarPlugin extends Plugin {
     }
     if (this.#breakTimerManager) {
       this.#breakTimerManager.unload();
+    }
+    if (this.#agentManager) {
+      this.#agentManager.unload();
     }
     PluginState.getProviderRegistry().stopListening();
     PluginState.getCache().stopListening();

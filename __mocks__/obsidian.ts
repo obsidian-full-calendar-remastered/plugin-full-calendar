@@ -200,4 +200,24 @@ export class Setting {
 export function setIcon(el: HTMLElement, iconId: string): void {}
 export const activeDocument = typeof document !== 'undefined' ? document : null;
 
+export class MarkdownRenderer {
+    static async render(
+        _app: unknown,
+        markdown: string,
+        el: HTMLElement,
+        _sourcePath?: string,
+        _component?: unknown
+    ): Promise<void> {
+        el.textContent = markdown;
+    }
+    static async renderMarkdown(
+        markdown: string,
+        el: HTMLElement,
+        _sourcePath?: string,
+        _component?: unknown
+    ): Promise<void> {
+        el.textContent = markdown;
+    }
+}
+
 

@@ -18,6 +18,7 @@ import type { EventProposal } from '../types';
 import { ProposalApprovalCard } from './ProposalApprovalCard';
 import { AgentAuditModal } from './AgentAuditModal';
 import { showNotice } from '../../../utils/showNotice';
+import { t } from '../../i18n/i18n';
 
 export class AgentWriteBar {
   private app: App;
@@ -87,12 +88,12 @@ export class AgentWriteBar {
     // 2. Suggestion pills
     const pillsRow = this.wrapperEl.createDiv({ cls: 'ofc-agent-pills-row' });
     const suggestions = [
-      { text: "What's my schedule today?", prompt: 'What events do I have scheduled for today?' },
-      { text: 'Events this week', prompt: 'Summarize my events for the next 7 days.' },
-      { text: 'Add event...', prompt: 'Add a meeting ' },
+      { text: t('agent.suggestions.today'), prompt: t('agent.suggestions.todayPrompt') },
+      { text: t('agent.suggestions.thisWeek'), prompt: t('agent.suggestions.thisWeekPrompt') },
+      { text: t('agent.suggestions.addEvent'), prompt: t('agent.suggestions.addEventPrompt') },
       {
-        text: 'Import from URL...',
-        prompt: 'Browse the schedule at this URL and extract the events: '
+        text: t('agent.suggestions.importUrl'),
+        prompt: t('agent.suggestions.importUrlPrompt')
       }
     ];
 
@@ -110,7 +111,7 @@ export class AgentWriteBar {
     // Icon toggle
     const iconBtn = barRow.createDiv({
       cls: 'ofc-agent-icon-badge',
-      attr: { title: 'Toggle Agent Chat History' }
+      attr: { title: t('agent.writeBar.toggleHistory') }
     });
     setIcon(iconBtn, 'bot');
     iconBtn.addEventListener('click', () => this.toggleDrawer());
@@ -119,7 +120,7 @@ export class AgentWriteBar {
     this.inputEl = barRow.createEl('textarea', {
       cls: 'ofc-agent-input',
       attr: {
-        placeholder: 'Ask agent or automate schedule...',
+        placeholder: t('agent.sidebar.inputPlaceholder'),
         rows: '1'
       }
     });
@@ -137,7 +138,7 @@ export class AgentWriteBar {
     // Audit log button
     const auditBtn = actions.createEl('button', {
       cls: 'ofc-agent-btn',
-      attr: { title: 'View agent audit trail & logs' }
+      attr: { title: t('agent.sidebar.viewAuditLogs') }
     });
     setIcon(auditBtn, 'scroll-text');
     auditBtn.addEventListener('click', () => {
@@ -147,21 +148,21 @@ export class AgentWriteBar {
     // Clear history button
     const clearBtn = actions.createEl('button', {
       cls: 'ofc-agent-btn',
-      attr: { title: 'Clear chat history' }
+      attr: { title: t('agent.writeBar.clearHistory') }
     });
     setIcon(clearBtn, 'trash-2');
     clearBtn.addEventListener('click', () => {
       void (async () => {
         await this.engine.clearHistory();
         this.messagesContainer.empty();
-        showNotice('Agent history cleared.');
+        showNotice(t('agent.settings.historyClearedNotice'));
       })();
     });
 
     // Send / Stop button
     this.submitBtn = actions.createEl('button', {
       cls: 'ofc-agent-btn ofc-agent-btn-primary',
-      text: 'Send'
+      text: t('agent.writeBar.send')
     });
     this.submitBtn.addEventListener('click', () => void this.handleSubmit());
   }
@@ -214,7 +215,7 @@ export class AgentWriteBar {
     });
 
     this.abortController = new AbortController();
-    this.submitBtn.setText('Stop');
+    this.submitBtn.setText(t('agent.sidebar.stop'));
     this.submitBtn.addClass('ofc-agent-btn-danger');
 
     try {
@@ -246,7 +247,7 @@ export class AgentWriteBar {
       // Error handled in engine callback
     } finally {
       this.abortController = null;
-      this.submitBtn.setText('Send');
+      this.submitBtn.setText(t('agent.writeBar.send'));
       this.submitBtn.removeClass('ofc-agent-btn-danger');
       this.scrollDrawerToBottom();
     }
@@ -266,7 +267,7 @@ export class AgentWriteBar {
       },
       onReject: id => {
         this.bridge.rejectProposal(id);
-        showNotice('Proposal rejected.');
+        showNotice(t('agent.notices.proposalRejected'));
       }
     });
     this.scrollDrawerToBottom();

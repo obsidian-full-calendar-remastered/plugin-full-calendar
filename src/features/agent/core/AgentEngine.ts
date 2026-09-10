@@ -15,7 +15,13 @@
 
 import { AGENT_TOOLS } from '../tools/toolDefinitions';
 import { browseScheduleOnline } from '../tools/webBrowseTool';
-import type { ChatMessage, ChatToolCall, EventProposal } from '../types';
+import type {
+  ChatMessage,
+  ChatToolCall,
+  EventProposal,
+  AgentSession,
+  AgentSessionSummary
+} from '../types';
 import type { AgentClient, StreamCallbacks, CompletionResult } from './AgentClient';
 import type { AgentStorage } from './AgentStorage';
 import type { AgentAuditLogger } from './AgentAuditLogger';
@@ -29,6 +35,7 @@ export interface EngineCallbacks extends StreamCallbacks {
   onProposal?: (proposal: EventProposal) => void;
   onError?: (error: string) => void;
   onDone?: () => void;
+  onSessionChanged?: (session: AgentSession) => void;
 }
 
 export class AgentEngine {
@@ -37,6 +44,7 @@ export class AgentEngine {
   private logger: AgentAuditLogger;
   private bridge: AgentCalendarBridge;
   private specLoader: SpecLoader;
+  private currentSession: AgentSession | null = null;
   private messages: ChatMessage[] = [];
   private isProcessing = false;
 
@@ -58,13 +66,69 @@ export class AgentEngine {
     return [...this.messages];
   }
 
+  public getProposals(): EventProposal[] {
+    return this.currentSession?.proposals ? [...this.currentSession.proposals] : [];
+  }
+
   public async init(): Promise<void> {
-    this.messages = await this.storage.loadHistory();
+    this.currentSession = await this.storage.getActiveSession();
+    this.messages = this.currentSession.messages;
+  }
+
+  public async listSessions(): Promise<AgentSessionSummary[]> {
+    const data = await this.storage.loadAllSessions();
+    return data.sessions.map(s => ({
+      id: s.id,
+      title: s.title,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      messageCount: s.messages.length,
+      proposalCount: s.proposals?.length || 0
+    }));
+  }
+
+  public async getActiveSession(): Promise<AgentSession> {
+    if (!this.currentSession) {
+      await this.init();
+    }
+    return this.currentSession as AgentSession;
+  }
+
+  public async createNewSession(title?: string): Promise<AgentSession> {
+    const session = await this.storage.createSession(title);
+    this.currentSession = session;
+    this.messages = session.messages;
+    this.logger.info(`Created new session: ${session.id} (${session.title})`);
+    return session;
+  }
+
+  public async switchSession(sessionId: string): Promise<AgentSession | null> {
+    const session = await this.storage.setActiveSessionId(sessionId);
+    if (session) {
+      this.currentSession = session;
+      this.messages = session.messages;
+      this.logger.info(`Switched to session: ${session.id} (${session.title})`);
+    }
+    return session;
+  }
+
+  public async deleteSession(sessionId: string): Promise<AgentSession> {
+    const newActive = await this.storage.deleteSession(sessionId);
+    this.currentSession = newActive;
+    this.messages = newActive.messages;
+    this.logger.info(`Deleted session: ${sessionId}, now on: ${newActive.id}`);
+    return newActive;
   }
 
   public async clearHistory(): Promise<void> {
     this.messages = [];
-    await this.storage.clearHistory();
+    if (this.currentSession) {
+      this.currentSession.messages = [];
+      this.currentSession.proposals = [];
+      await this.storage.saveSession(this.currentSession);
+    } else {
+      await this.storage.clearHistory();
+    }
     this.logger.info('Conversation history cleared by user');
   }
 
@@ -345,6 +409,9 @@ export class AgentEngine {
           throw callErr;
         }
 
+        // Response received: immediately clear status indicator
+        callbacks?.onStatus?.('');
+
         // 4. Append assistant response
         const assistantMsg: ChatMessage = {
           role: 'assistant',
@@ -362,7 +429,13 @@ export class AgentEngine {
         // 6. Execute tool calls
         for (const tc of completion.toolCalls) {
           const { result, proposal } = await this.executeTool(tc, callbacks);
-          if (proposal) stagedAnyProposal = true;
+          if (proposal) {
+            stagedAnyProposal = true;
+            if (this.currentSession) {
+              if (!this.currentSession.proposals) this.currentSession.proposals = [];
+              this.currentSession.proposals.push(proposal);
+            }
+          }
 
           const toolMsg: ChatMessage = {
             role: 'tool',
@@ -379,8 +452,19 @@ export class AgentEngine {
         }
       }
 
-      // Persist conversation history
-      await this.storage.saveHistory(this.messages);
+      // Persist conversation history to active session
+      if (this.currentSession) {
+        this.currentSession.messages = this.messages;
+        if (
+          this.currentSession.title.startsWith('Session ') ||
+          this.currentSession.title === 'Default session'
+        ) {
+          this.currentSession.title = trimmedInput.slice(0, 32).trim();
+        }
+        await this.storage.saveSession(this.currentSession);
+      } else {
+        await this.storage.saveHistory(this.messages);
+      }
       callbacks?.onDone?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

@@ -171,6 +171,7 @@ nav:
                 - Live Preview Decorators: user/features/live-preview.md
                 - Developer API & CLI: user/features/api.md
                 - Share Availability: user/features/availability.md
+                - Calendar Agent (BYOK): user/features/agent.md
           - Embedded Calendars:
                   - user/embeds/index.md
                   - Deep Dive Specs: user/embeds/deep_dive.md
@@ -241,6 +242,7 @@ nav:
                 - Break Timer Architecture: architecture/system/features/break-timer-architecture.md
                 - ICS Export Architecture: architecture/system/features/ics-export-architecture.md
                 - Availability Sharing Architecture: architecture/system/features/availability-architecture.md
+                - Calendar Agent Architecture: architecture/system/features/agent-architecture.md
           - Views Architecture:
                 - architecture/views/architecture.md
                 - Unified Embedded Widgets Architecture: architecture/views/embedded_widgets.md

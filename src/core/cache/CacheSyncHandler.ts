@@ -11,7 +11,7 @@ export interface CacheContext {
   store: EventStore;
   enhancer: EventEnhancer;
   timeEngine: TimeEngine;
-  isBulkUpdating: boolean;
+  isBulkUpdating: () => boolean;
   setBulkUpdating: (val: boolean) => void;
   flushUpdateQueue: (toRemove: string[], toAdd: CacheEntry[], affectedCalendars?: string[]) => void;
   generateId: () => string;
@@ -27,7 +27,7 @@ export class CacheSyncHandler {
     calendarId: string,
     newRawEvents: [OFCEvent, EventLocation | null][]
   ): Promise<void> {
-    if (this.ctx.isBulkUpdating) {
+    if (this.ctx.isBulkUpdating()) {
       return;
     }
     LoadDebugProfiler.startPhase('Cache Delta Sync & Indexing');
@@ -253,7 +253,7 @@ export class CacheSyncHandler {
     file: { path: string },
     newEventsWithDetails: { event: OFCEvent; location: EventLocation | null; calendarId: string }[]
   ): Promise<void> {
-    if (this.ctx.isBulkUpdating) {
+    if (this.ctx.isBulkUpdating()) {
       return Promise.resolve();
     }
 

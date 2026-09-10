@@ -73,7 +73,7 @@ export default class EventCache {
       store: this._store,
       enhancer: this.enhancer,
       timeEngine: this.timeEngine,
-      isBulkUpdating: this.isBulkUpdating,
+      isBulkUpdating: () => this.isBulkUpdating,
       setBulkUpdating: (val: boolean) => (this.isBulkUpdating = val),
       flushUpdateQueue: this.flushUpdateQueue.bind(this),
       generateId: this.generateId.bind(this),

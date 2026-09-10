@@ -26,7 +26,10 @@ export class ConfirmModal extends Modal {
     app: App,
     private titleText: string,
     private bodyText: string,
-    private onConfirm: () => void
+    private onConfirm: () => void,
+    private confirmButtonText = 'Yes, open parent',
+    private cancelButtonText = 'Cancel',
+    private isDestructive = false
   ) {
     super(app);
   }
@@ -38,16 +41,21 @@ export class ConfirmModal extends Modal {
     contentEl.createEl('p', { text: this.bodyText });
 
     new Setting(contentEl)
+      .addButton((btn: ButtonComponent) => {
+        btn.setButtonText(this.confirmButtonText);
+        if (this.isDestructive) {
+          btn.setDestructive();
+        } else {
+          btn.setCta();
+        }
+        btn.onClick(() => {
+          this.close();
+          this.onConfirm();
+        });
+      })
       .addButton((btn: ButtonComponent) =>
-        btn
-          .setButtonText('Yes, open parent')
-          .setCta()
-          .onClick(() => {
-            this.close();
-            this.onConfirm();
-          })
-      )
-      .addButton((btn: ButtonComponent) => btn.setButtonText('Cancel').onClick(() => this.close()));
+        btn.setButtonText(this.cancelButtonText).onClick(() => this.close())
+      );
   }
 
   onClose() {

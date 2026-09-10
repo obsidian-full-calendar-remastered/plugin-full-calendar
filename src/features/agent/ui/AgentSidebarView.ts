@@ -21,6 +21,7 @@ import type { AgentAuditLogger } from '../core/AgentAuditLogger';
 import type { AgentCalendarBridge } from '../tools/AgentCalendarBridge';
 import { ProposalApprovalCard } from './ProposalApprovalCard';
 import { AgentAuditModal } from './AgentAuditModal';
+import { ConfirmModal } from '../../../ui/modals/ConfirmModal';
 import { showNotice } from '../../../utils/showNotice';
 import { t } from '../../i18n/i18n';
 
@@ -222,9 +223,21 @@ export class AgentSidebarView extends ItemView {
     deleteSessionBtn.addEventListener('click', () => {
       void (async () => {
         const active = await this.engine.getActiveSession();
-        await this.engine.deleteSession(active.id);
-        this.updateSessionDropdown();
-        this.renderMessages();
+        new ConfirmModal(
+          this.app,
+          t('agent.sidebar.confirmDeleteTitle'),
+          t('agent.sidebar.confirmDeleteBody'),
+          () => {
+            void (async () => {
+              await this.engine.deleteSession(active.id);
+              this.updateSessionDropdown();
+              this.renderMessages();
+            })();
+          },
+          t('agent.sidebar.confirmDeleteBtn'),
+          'Cancel',
+          true
+        ).open();
       })();
     });
 
@@ -300,34 +313,40 @@ export class AgentSidebarView extends ItemView {
 
     // Render proposals attached to this session
     for (const proposal of proposals) {
-      new ProposalApprovalCard(this.messagesContainer, proposal, {
-        onApprove: async (proposalId, overrideCalendarId) => {
-          try {
-            const res = await this.bridge.commitProposal(proposalId, overrideCalendarId);
-            if (res.success) {
-              showNotice(t('agent.notices.eventApplied'));
-              this.onEventMutated?.();
-              this.renderMessages();
-            } else {
-              showNotice(res.message);
-            }
-          } catch (err) {
-            showNotice(
-              t('agent.notices.failedToApply', {
-                error: err instanceof Error ? err.message : String(err)
-              })
-            );
-          }
-        },
-        onReject: proposalId => {
-          this.bridge.rejectProposal(proposalId);
-          showNotice(t('agent.notices.proposalRejected'));
-          this.renderMessages();
-        }
-      });
+      new ProposalApprovalCard(this.messagesContainer, proposal, this.getProposalCardCallbacks());
     }
 
     this.scrollToBottom();
+  }
+
+  private getProposalCardCallbacks() {
+    return {
+      onApprove: async (proposalId: string, overrideCalendarId?: string) => {
+        try {
+          const res = await this.bridge.commitProposal(proposalId, overrideCalendarId);
+          if (res.success) {
+            showNotice(t('agent.notices.eventApplied'));
+            await this.engine.saveCurrentSession();
+            this.onEventMutated?.();
+            this.renderMessages();
+          } else {
+            showNotice(res.message);
+          }
+        } catch (err) {
+          showNotice(
+            t('agent.notices.failedToApply', {
+              error: err instanceof Error ? err.message : String(err)
+            })
+          );
+        }
+      },
+      onReject: async (proposalId: string) => {
+        this.bridge.rejectProposal(proposalId);
+        showNotice(t('agent.notices.proposalRejected'));
+        await this.engine.saveCurrentSession();
+        this.renderMessages();
+      }
+    };
   }
 
   private scrollToBottom(): void {
@@ -408,31 +427,11 @@ export class AgentSidebarView extends ItemView {
             }
           },
           onProposal: proposal => {
-            new ProposalApprovalCard(this.messagesContainer, proposal, {
-              onApprove: async (proposalId, overrideCalendarId) => {
-                try {
-                  const res = await this.bridge.commitProposal(proposalId, overrideCalendarId);
-                  if (res.success) {
-                    showNotice(t('agent.notices.eventApplied'));
-                    this.onEventMutated?.();
-                    this.renderMessages();
-                  } else {
-                    showNotice(res.message);
-                  }
-                } catch (err) {
-                  showNotice(
-                    t('agent.notices.failedToApply', {
-                      error: err instanceof Error ? err.message : String(err)
-                    })
-                  );
-                }
-              },
-              onReject: proposalId => {
-                this.bridge.rejectProposal(proposalId);
-                showNotice(t('agent.notices.proposalRejected'));
-                this.renderMessages();
-              }
-            });
+            new ProposalApprovalCard(
+              this.messagesContainer,
+              proposal,
+              this.getProposalCardCallbacks()
+            );
             this.scrollToBottom();
           },
           onError: err => {

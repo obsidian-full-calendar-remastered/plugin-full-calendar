@@ -270,13 +270,10 @@ export class AgentClient {
                 /* ignore non-json text */
               }
             }
-          }
-          if (!json && typeof response.json === 'function') {
+          } else if (typeof response.json === 'function') {
             try {
               json = await response.json();
-              if (!text && json) {
-                text = typeof json === 'string' ? json : JSON.stringify(json);
-              }
+              text = JSON.stringify(json);
             } catch {
               /* ignore json parse failure */
             }

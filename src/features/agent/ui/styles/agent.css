@@ -303,6 +303,27 @@
   border-top: 1px solid var(--background-modifier-border);
 }
 
+.ofc-proposal-status-tag {
+  font-size: 0.8em;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ofc-proposal-status-approved {
+  background-color: rgba(103, 194, 58, 0.15);
+  color: #67c23a;
+  border: 1px solid rgba(103, 194, 58, 0.3);
+}
+
+.ofc-proposal-status-rejected {
+  background-color: rgba(245, 108, 108, 0.15);
+  color: var(--text-error);
+  border: 1px solid rgba(245, 108, 108, 0.3);
+}
+
 /* ==========================================================================
    AUDIT MODAL
    ========================================================================== */

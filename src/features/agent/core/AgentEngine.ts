@@ -120,6 +120,12 @@ export class AgentEngine {
     return newActive;
   }
 
+  public async saveCurrentSession(): Promise<void> {
+    if (this.currentSession) {
+      await this.storage.saveSession(this.currentSession);
+    }
+  }
+
   public async clearHistory(): Promise<void> {
     this.messages = [];
     if (this.currentSession) {

@@ -208,12 +208,29 @@ export class ProposalApprovalCard {
   private renderFooter(): void {
     const footer = this.cardEl.createDiv({ cls: 'ofc-proposal-footer' });
 
+    if (this.proposal.status === 'APPROVED') {
+      footer.createSpan({
+        cls: 'ofc-proposal-status-tag ofc-proposal-status-approved',
+        text: `✓ ${t('agent.proposals.applied')}`
+      });
+      return;
+    }
+
+    if (this.proposal.status === 'REJECTED') {
+      footer.createSpan({
+        cls: 'ofc-proposal-status-tag ofc-proposal-status-rejected',
+        text: `✕ ${t('agent.proposals.rejected')}`
+      });
+      return;
+    }
+
     // Reject button
     const rejectBtn = footer.createEl('button', {
       cls: 'ofc-agent-btn ofc-agent-btn-danger',
       text: t('agent.proposals.reject')
     });
     rejectBtn.addEventListener('click', () => {
+      this.proposal.status = 'REJECTED';
       this.onReject(this.proposal.id);
       this.cardEl.remove();
     });
@@ -246,6 +263,7 @@ export class ProposalApprovalCard {
         }
         try {
           await this.onApprove(this.proposal.id);
+          this.proposal.status = 'APPROVED';
           this.cardEl.remove();
         } catch {
           if (this.approveBtn) {

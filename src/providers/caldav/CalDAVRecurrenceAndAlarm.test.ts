@@ -239,7 +239,7 @@ END:VCALENDAR`;
     });
     expect(override).toMatchObject({
       caldavHref: '/caldav/user/calendar/events/server-series.ics',
-      recurrenceId: '2026-09-15T12:00',
+      recurrenceId: '2026-09-15T12:00:00+02:00',
       etag: 'series-etag'
     });
     if (override.type !== 'single' || override.allDay) {

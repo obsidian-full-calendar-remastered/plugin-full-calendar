@@ -1545,6 +1545,69 @@ END:VCALENDAR`;
     expect(request?.body).not.toEqual(expect.stringContaining('BEGIN:VEVENT'));
   });
 
+  it('persists an all-day VEVENT converted to a task across a CalDAV refresh', async () => {
+    const oldEvent = {
+      type: 'single',
+      uid: 'convert-me',
+      caldavHref: '/caldav/user/calendar/events/server-object.ics',
+      etag: 'event-etag',
+      title: 'Convert me',
+      date: '2026-09-14',
+      endDate: null,
+      allDay: true
+    } as OFCEvent;
+    const taskEvent = { ...oldEvent, completed: false } as OFCEvent;
+    jest.spyOn(provider.linkedNoteIndex, 'getFileForEventAfterHydration').mockResolvedValue(null);
+    mockObsidianFetch.mockResolvedValueOnce({
+      status: 204,
+      statusText: 'No Content',
+      headers: new Headers({ etag: 'task-etag' })
+    } as Response);
+
+    await provider.updateEvent(provider.getEventHandle(oldEvent)!, oldEvent, taskEvent);
+
+    const persisted = mockObsidianFetch.mock.calls[0][1]?.body;
+    if (typeof persisted !== 'string') {
+      throw new Error('Expected the converted CalDAV task body to be text');
+    }
+    expect(persisted).toEqual(expect.stringContaining('BEGIN:VTODO'));
+    expect(persisted).not.toEqual(expect.stringContaining('BEGIN:VEVENT'));
+    expect(persisted).toEqual(expect.stringContaining('DUE;VALUE=DATE:20260914'));
+
+    const collectionInfo = `<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+      <d:response><d:href>/caldav/user/calendar/events/</d:href><d:propstat><d:prop>
+        <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
+      </d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>
+    </d:multistatus>`;
+    const emptyReport =
+      '<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"></d:multistatus>';
+    const taskReport = `<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+      <d:response><d:href>/caldav/user/calendar/events/server-object.ics</d:href>
+      <d:propstat><d:prop><d:getetag>"task-etag"</d:getetag>
+      <c:calendar-data>${persisted}</c:calendar-data></d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>
+    </d:multistatus>`;
+    mockObsidianFetch.mockReset();
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 207,
+        text: () => Promise.resolve(collectionInfo)
+      } as Response)
+      .mockResolvedValueOnce({ status: 207, text: () => Promise.resolve(emptyReport) } as Response)
+      .mockResolvedValueOnce({ status: 207, text: () => Promise.resolve(taskReport) } as Response);
+
+    const [[refreshed]] = await provider.getEvents();
+    expect(refreshed).toMatchObject({
+      type: 'single',
+      uid: 'convert-me',
+      allDay: true,
+      date: '2026-09-14',
+      completed: false,
+      caldavHref: '/caldav/user/calendar/events/server-object.ics',
+      etag: 'task-etag'
+    });
+  });
+
   describe('createLinkedNote', () => {
     interface MockCalDAVVault {
       getAbstractFileByPath: jest.Mock;

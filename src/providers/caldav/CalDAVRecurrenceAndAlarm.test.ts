@@ -173,6 +173,96 @@ END:VCALENDAR`)
     expect(body).toEqual(expect.stringContaining('TRIGGER:-PT10M'));
   });
 
+  it('retains the shared CalDAV href when moving a newly created override again', async () => {
+    const masterEvent = {
+      type: 'rrule',
+      uid: 'lunch-series',
+      caldavHref: '/caldav/user/calendar/events/server-series.ics',
+      etag: 'series-etag',
+      title: 'Lunch',
+      startDate: '2026-09-14',
+      endDate: null,
+      rrule: 'FREQ=DAILY',
+      skipDates: [],
+      allDay: false,
+      startTime: '12:00',
+      endTime: '13:00',
+      timezone: 'Europe/Amsterdam'
+    } as OFCEvent;
+    const calendarWithMaster = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:lunch-series
+SUMMARY:Lunch
+DTSTART;TZID=Europe/Amsterdam:20260914T120000
+DTEND;TZID=Europe/Amsterdam:20260914T130000
+RRULE:FREQ=DAILY
+END:VEVENT
+END:VCALENDAR`;
+    const calendarWithOverride = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:lunch-series
+SUMMARY:Lunch
+DTSTART;TZID=Europe/Amsterdam:20260914T120000
+DTEND;TZID=Europe/Amsterdam:20260914T130000
+RRULE:FREQ=DAILY
+END:VEVENT
+BEGIN:VEVENT
+UID:lunch-series
+RECURRENCE-ID;TZID=Europe/Amsterdam:20260915T120000
+SUMMARY:Lunch
+DTSTART;TZID=Europe/Amsterdam:20260915T123000
+DTEND;TZID=Europe/Amsterdam:20260915T133000
+END:VEVENT
+END:VCALENDAR`;
+    mockObsidianFetch
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () => Promise.resolve(calendarWithMaster)
+      } as Response)
+      .mockResolvedValueOnce({ status: 204, statusText: 'No Content' } as Response)
+      .mockResolvedValueOnce({
+        status: 200,
+        text: () => Promise.resolve(calendarWithOverride)
+      } as Response)
+      .mockResolvedValueOnce({ status: 204, statusText: 'No Content' } as Response);
+
+    const [override] = await provider.createInstanceOverride(masterEvent, '2026-09-15', {
+      type: 'single',
+      title: 'Lunch',
+      date: '2026-09-15',
+      endDate: null,
+      allDay: false,
+      startTime: '12:30',
+      endTime: '13:30'
+    });
+    expect(override).toMatchObject({
+      caldavHref: '/caldav/user/calendar/events/server-series.ics',
+      recurrenceId: '2026-09-15T12:00',
+      etag: 'series-etag'
+    });
+    if (override.type !== 'single' || override.allDay) {
+      throw new Error('Expected a timed single-event override');
+    }
+
+    await provider.updateEvent(provider.getEventHandle(override)!, override, {
+      ...override,
+      startTime: '13:00',
+      endTime: '14:00'
+    });
+
+    expect(mockObsidianFetch.mock.calls[2][0]).toBe(
+      'https://example.com/caldav/user/calendar/events/server-series.ics'
+    );
+    expect(mockObsidianFetch.mock.calls[3][0]).toBe(
+      'https://example.com/caldav/user/calendar/events/server-series.ics'
+    );
+    expect(mockObsidianFetch.mock.calls[3][1]?.body).toEqual(
+      expect.stringContaining('DTSTART;TZID=Europe/Amsterdam:20260915T130000')
+    );
+  });
+
   it('creates Obsidian recurring events as real CalDAV recurrence series', async () => {
     const event = {
       type: 'recurring',

@@ -72,6 +72,8 @@ export function buildOverrideEventData(
   const overrideEventData: OFCEvent = {
     ...newEventData,
     uid: masterEvent.uid,
+    ...(masterEvent.caldavHref ? { caldavHref: masterEvent.caldavHref } : {}),
+    ...(masterEvent.etag ? { etag: masterEvent.etag } : {}),
     timezone: newEventData.timezone || masterEvent.timezone,
     recurrenceId: originalInstanceStart,
     notify: newEventData.notify !== undefined ? newEventData.notify : masterEvent.notify,

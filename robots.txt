@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/sitemap.xml

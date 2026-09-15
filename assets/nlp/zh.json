@@ -1,0 +1,332 @@
+{
+  "version": 3,
+  "locale": "zh",
+  "categoryParsing": {
+    "spokenDelimiterRegex": "\\s+(?:dash|hyphen)\\s+",
+    "spokenDelimiterFlags": "gi",
+    "explicitCategoryRegex": "\\bcategory\\s+(.+)$",
+    "explicitCategoryFlags": "i"
+  },
+  "rules": [
+    {
+      "name": "navigate_week",
+      "regex": "^(?:open|view|show)\\s+(?:the\\s+)?(?:weekly|week)\\s+view\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(NAVIGATE_WEEK)"
+      ]
+    },
+    {
+      "name": "navigate_month",
+      "regex": "^(?:open|view|show)\\s+(?:the\\s+)?(?:monthly|month)\\s+view\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(NAVIGATE_MONTH)"
+      ]
+    },
+    {
+      "name": "navigate_day",
+      "regex": "^(?:open|view|show)\\s+(?:the\\s+)?(?:daily|day)\\s+view\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(NAVIGATE_DAY)"
+      ]
+    },
+    {
+      "name": "navigate_calendar",
+      "regex": "^(?:open|show)\\s+(?:the\\s+)?calendars?\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(OPEN_CALENDAR)"
+      ]
+    },
+    {
+      "name": "navigate_sidebar",
+      "regex": "^(?:open|show)\\s+(?:the\\s+)?sidebars?\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(OPEN_SIDEBAR)"
+      ]
+    },
+    {
+      "name": "open_settings",
+      "regex": "^(?:open|show)\\s+(?:the\\s+)?settings?\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(OPEN_SETTINGS)"
+      ]
+    },
+    {
+      "name": "open_chrono",
+      "regex": "^(?:open|show|launch)\\s+(?:the\\s+)?(?:chrono|analyser|analyzer|analysis|insights)\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(OPEN_CHRONO)"
+      ]
+    },
+    {
+      "name": "show_changelog",
+      "regex": "^(?:show|open|view)\\s+(?:the\\s+)?(?:changelog|what'?s\\s+new|release\\s+notes)\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(SHOW_CHANGELOG)"
+      ]
+    },
+    {
+      "name": "show_milestones",
+      "regex": "^(?:show|open|view)\\s+(?:the\\s+)?(?:milestones?|achievements?)\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(SHOW_MILESTONES)"
+      ]
+    },
+    {
+      "name": "reset_cache",
+      "regex": "^(?:reset|clear|flush)\\s+(?:the\\s+)?(?:event\\s+)?cache\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(RESET_CACHE)"
+      ]
+    },
+    {
+      "name": "revalidate_remote",
+      "regex": "^(?:revalidate|refresh|reload|re-sync)\\s+(?:the\\s+)?(?:remote\\s+)?calendars?\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(REVALIDATE_REMOTE)"
+      ]
+    },
+    {
+      "name": "sync_activitywatch",
+      "regex": "^(?:sync|run)\\s+(?:activitywatch|activity\\s+watch|aw)\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(SYNC_ACTIVITYWATCH)"
+      ]
+    },
+    {
+      "name": "sync_fcr_reminder",
+      "regex": "^(?:sync|run|update)\\s+(?:fcr\\s+)?(?:reminder\\s+)?companion\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(SYNC_FCR_REMINDER)"
+      ]
+    },
+    {
+      "name": "goto_date",
+      "regex": "^(?:go\\s+to|goto|jump\\s+to|navigate\\s+to)\\b",
+      "flags": "i",
+      "actions": [
+        "SET_INTENT(GOTO_DATE)"
+      ]
+    },
+    {
+      "name": "new_event",
+      "regex": "^(?:new|create|add)\\s+(?:an?\\s+)?event\\b",
+      "flags": "i",
+      "actions": []
+    },
+    {
+      "name": "next_weekday",
+      "regex": "\\bnext\\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\b",
+      "flags": "i",
+      "actions": [
+        "NEXT_WEEKDAY($1)"
+      ]
+    },
+    {
+      "name": "next_occurring_day",
+      "regex": "\\bon\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b",
+      "flags": "i",
+      "actions": [
+        "SET_NEXT_OCCURRING_DAY($1)"
+      ]
+    },
+    {
+      "name": "duration_last_hrs",
+      "regex": "\\bfor\\s+(?:the\\s+)?last\\s+(\\d+)\\s+(?:hours?|hrs?)\\b",
+      "flags": "i",
+      "actions": [
+        "SUBTRACT_HOURS($1)",
+        "ADD_DURATION($1,0)"
+      ]
+    },
+    {
+      "name": "duration_last_mins",
+      "regex": "\\bfor\\s+(?:the\\s+)?last\\s+(\\d+)\\s+(?:minutes?|mins?)\\b",
+      "flags": "i",
+      "actions": [
+        "SUBTRACT_MINUTES($1)",
+        "ADD_DURATION(0,$1)"
+      ]
+    },
+    {
+      "name": "duration_next_hrs",
+      "regex": "\\bfor\\s+(?:the\\s+)?next\\s+(\\d+)\\s+(?:hours?|hrs?)\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DURATION($1,0)"
+      ]
+    },
+    {
+      "name": "duration_next_mins",
+      "regex": "\\bfor\\s+(?:the\\s+)?next\\s+(\\d+)\\s+(?:minutes?|mins?)\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DURATION(0,$1)"
+      ]
+    },
+    {
+      "name": "duration_hrs",
+      "regex": "\\bfor\\s+(\\d+)\\s+(?:hrs?|hours?)\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DURATION($1,0)"
+      ]
+    },
+    {
+      "name": "duration_mins",
+      "regex": "\\bfor\\s+(\\d+)\\s+(?:minutes?|mins?)\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DURATION(0,$1)"
+      ]
+    },
+    {
+      "name": "time_noon",
+      "regex": "\\bat\\s+noon\\b",
+      "flags": "i",
+      "actions": [
+        "SET_TIME(12,0,\"\")"
+      ]
+    },
+    {
+      "name": "time_midnight",
+      "regex": "\\bat\\s+midnight\\b",
+      "flags": "i",
+      "actions": [
+        "SET_TIME(0,0,\"\")"
+      ]
+    },
+    {
+      "name": "in_minutes",
+      "regex": "\\bin\\s+(\\d+)\\s+(?:minutes?|mins?)\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_MINUTES($1)"
+      ]
+    },
+    {
+      "name": "in_hours",
+      "regex": "\\bin\\s+(\\d+)\\s+(?:hours?|hrs?)\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_HOURS($1)"
+      ]
+    },
+    {
+      "name": "in_days",
+      "regex": "\\bin\\s+(\\d+)\\s+days?\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DAYS($1)"
+      ]
+    },
+    {
+      "name": "in_weeks",
+      "regex": "\\bin\\s+(\\d+)\\s+weeks?\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_WEEKS($1)"
+      ]
+    },
+    {
+      "name": "time_range_ampm",
+      "regex": "\\bfrom\\s+(\\d{1,2}(?::\\d{2})?|\\d{3,4})\\s*(am|pm)\\s+to\\s+(\\d{1,2}(?::\\d{2})?|\\d{3,4})\\s*(am|pm)\\b",
+      "flags": "i",
+      "actions": [
+        "SET_TIME_RANGE($1,$2,$3,$4)"
+      ]
+    },
+    {
+      "name": "time_exact_ampm",
+      "regex": "\\b(?:at|from)\\s+(\\d{1,2}(?::\\d{2})?|\\d{3,4})\\s*(am|pm)\\b",
+      "flags": "i",
+      "actions": [
+        "SET_TIME_TOKEN($1,$2)"
+      ]
+    },
+    {
+      "name": "next_week",
+      "regex": "\\bnext\\s+week\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DAYS(7)"
+      ]
+    },
+    {
+      "name": "next_month",
+      "regex": "\\bnext\\s+month\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DAYS(30)"
+      ]
+    },
+    {
+      "name": "day_after_tomorrow",
+      "regex": "\\bday\\s+after\\s+tomorrow\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DAYS(2)"
+      ]
+    },
+    {
+      "name": "tomorrow",
+      "regex": "\\b(tomorrow)\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DAYS(1)"
+      ]
+    },
+    {
+      "name": "today",
+      "regex": "\\b(today)\\b",
+      "flags": "i",
+      "actions": [
+        "ADD_DAYS(0)"
+      ]
+    },
+    {
+      "name": "yesterday",
+      "regex": "\\b(yesterday)\\b",
+      "flags": "i",
+      "actions": [
+        "SUBTRACT_DAYS(1)"
+      ]
+    },
+    {
+      "name": "target_calendar",
+      "regex": "\\bin\\s+([\\w\\-\\/ ]{2,50})\\s+calendar\\b",
+      "flags": "i",
+      "actions": [
+        "SET_TARGET($1)"
+      ]
+    },
+    {
+      "name": "recur_daily",
+      "regex": "\\b(?:every\\s+day|daily)\\b",
+      "flags": "i",
+      "actions": [
+        "SET_RECURRENCE(DAILY,1)"
+      ]
+    },
+    {
+      "name": "recur_weekly_weekday",
+      "regex": "\\bevery\\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\b",
+      "flags": "i",
+      "actions": [
+        "SET_RECURRENCE(WEEKLY,1,$1)"
+      ]
+    }
+  ]
+}

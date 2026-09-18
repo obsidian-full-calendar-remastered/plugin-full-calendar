@@ -39,7 +39,7 @@ export class GoogleApiError extends Error {
 export async function makeAuthenticatedRequest<T = unknown>(
   token: string,
   url: string,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
   body?: object
 ): Promise<T> {
   try {

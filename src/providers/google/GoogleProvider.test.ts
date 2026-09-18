@@ -379,6 +379,186 @@ describe('GoogleProvider reminder mapping', () => {
       }
     });
   });
+
+  it('omits reminders entirely when the event has no alarm data, to avoid disabling default reminders', () => {
+    const event = {
+      title: 'No Reminder',
+      type: 'single',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00'
+    } as OFCEvent;
+
+    expect(toGoogleEvent(event)).not.toHaveProperty('reminders');
+  });
+
+  it('serializes an explicitly emptied alarm list as an explicit empty reminder override', () => {
+    const event = {
+      title: 'No Reminder',
+      type: 'single',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00',
+      alarms: []
+    } as OFCEvent;
+
+    expect(toGoogleEvent(event)).toMatchObject({
+      reminders: {
+        useDefault: false,
+        overrides: []
+      }
+    });
+  });
+
+  it('parses multiple Google reminder overrides, including email reminders', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Multi Reminder',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: 'popup', minutes: 10 },
+          { method: 'email', minutes: 1440 }
+        ]
+      }
+    });
+
+    expect(event?.alarms).toEqual([
+      { minutesBefore: 10, action: 'DISPLAY' },
+      { minutesBefore: 1440, action: 'EMAIL' }
+    ]);
+  });
+
+  it('serializes multiple provider alarms as separate popup/email overrides', () => {
+    const event = {
+      title: 'Multi Reminder',
+      type: 'single',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00',
+      alarms: [
+        { minutesBefore: 10, action: 'DISPLAY' },
+        { minutesBefore: 1440, action: 'EMAIL' }
+      ]
+    } as OFCEvent;
+
+    expect(toGoogleEvent(event)).toMatchObject({
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: 'popup', minutes: 10 },
+          { method: 'email', minutes: 1440 }
+        ]
+      }
+    });
+  });
+
+  it('leaves alarms unset when the event relies on the calendar default (useDefault: true)', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Default Reminder',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      reminders: {
+        useDefault: true
+      }
+    });
+
+    expect(event?.alarms).toBeUndefined();
+  });
+
+  it('serializes a zero-minute alarm as a reminder at event start', () => {
+    const event = {
+      title: 'Reminder At Start',
+      type: 'single',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00',
+      alarms: [{ minutesBefore: 0, action: 'DISPLAY' }]
+    } as OFCEvent;
+
+    expect(toGoogleEvent(event)).toMatchObject({
+      reminders: {
+        useDefault: false,
+        overrides: [{ method: 'popup', minutes: 0 }]
+      }
+    });
+  });
+});
+
+describe('GoogleProvider display mapping', () => {
+  const baseEvent = {
+    title: 'Background Event',
+    type: 'single',
+    date: '2026-06-15',
+    endDate: null,
+    allDay: false,
+    startTime: '10:00',
+    endTime: '11:00'
+  };
+
+  it('serializes the display mode into private extended properties', () => {
+    const event = { ...baseEvent, display: 'background' } as OFCEvent;
+
+    expect(toGoogleEvent(event)).toMatchObject({
+      extendedProperties: { private: { ofcDisplay: 'background' } }
+    });
+  });
+
+  it('clears a stored display mode when the event no longer sets one', () => {
+    expect(toGoogleEvent(baseEvent as OFCEvent)).toMatchObject({
+      extendedProperties: { private: { ofcDisplay: '' } }
+    });
+  });
+
+  it('restores the display mode from private extended properties', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Background Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      extendedProperties: { private: { ofcDisplay: 'background' } }
+    });
+
+    expect(event?.display).toBe('background');
+  });
+
+  it('survives a full round-trip through the Google representation', () => {
+    const event = { ...baseEvent, display: 'background' } as OFCEvent;
+    const gEvent = toGoogleEvent(event) as Record<string, unknown>;
+
+    const parsed = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Background Event',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      extendedProperties: gEvent.extendedProperties as { private?: Record<string, string> }
+    });
+
+    expect(parsed?.display).toBe('background');
+  });
+
+  it('ignores an unrecognized stored display value', () => {
+    const event = fromGoogleEvent({
+      id: 'google-event-1',
+      summary: 'Bogus Display',
+      start: { dateTime: '2026-06-15T10:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      end: { dateTime: '2026-06-15T11:00:00+02:00', timeZone: 'Europe/Amsterdam' },
+      extendedProperties: { private: { ofcDisplay: 'not-a-real-mode' } }
+    });
+
+    expect(event?.display).toBeUndefined();
+  });
 });
 
 describe('GoogleProvider declined events', () => {
@@ -509,5 +689,97 @@ describe('GoogleProvider deleted recurring instances', () => {
     const requestUrl = requestMock.mock.calls[0]?.[1];
     expect(requestUrl).toBeDefined();
     expect(new URL(requestUrl || '').searchParams.get('showDeleted')).toBe('true');
+  });
+});
+
+describe('GoogleProvider updateEvent', () => {
+  function makeProvider() {
+    const plugin = {
+      app: {
+        vault: { getAbstractFileByPath: jest.fn() },
+        metadataCache: { getFileCache: jest.fn(), on: jest.fn(), offref: jest.fn() }
+      }
+    } as unknown as FullCalendarPlugin;
+    const provider = new GoogleProvider(
+      { id: 'google_1', name: 'Google Calendar', calendarId: 'primary' },
+      plugin
+    );
+    jest.spyOn(provider['authManager'], 'getTokenForSource').mockResolvedValue('token');
+    return provider;
+  }
+
+  const baseEvent = {
+    title: 'Event',
+    type: 'single',
+    date: '2026-06-15',
+    endDate: null,
+    allDay: false,
+    startTime: '10:00',
+    endTime: '11:00'
+  } as OFCEvent;
+
+  const requestMock = jest.mocked(makeAuthenticatedRequest);
+
+  beforeEach(() => {
+    requestMock.mockReset();
+  });
+
+  it('PATCHes instead of PUTting, so fields we do not model are left alone', async () => {
+    const provider = makeProvider();
+    requestMock.mockResolvedValue(true);
+
+    await provider.updateEvent({ persistentId: 'event-1' }, baseEvent, {
+      ...baseEvent,
+      title: 'Renamed'
+    });
+
+    expect(requestMock).toHaveBeenCalledTimes(1);
+    const [, , method] = requestMock.mock.calls[0];
+    expect(method).toBe('PATCH');
+  });
+
+  it('omits extendedProperties from the PATCH body when the display mode is unchanged', async () => {
+    const provider = makeProvider();
+    requestMock.mockResolvedValue(true);
+
+    await provider.updateEvent(
+      { persistentId: 'event-1' },
+      { ...baseEvent, display: 'background' },
+      { ...baseEvent, display: 'background', title: 'Renamed' }
+    );
+
+    // No GET should be needed either, since we have nothing to merge.
+    expect(requestMock).toHaveBeenCalledTimes(1);
+    const [, , method, body] = requestMock.mock.calls[0];
+    expect(method).toBe('PATCH');
+    expect(body).not.toHaveProperty('extendedProperties');
+  });
+
+  it('merges its own key into the current private map instead of overwriting it, when the display mode changes', async () => {
+    const provider = makeProvider();
+    requestMock.mockResolvedValueOnce({
+      extendedProperties: {
+        private: { someOtherIntegrationsKey: 'do-not-touch-me', ofcDisplay: 'background' }
+      }
+    });
+    requestMock.mockResolvedValueOnce(true);
+
+    await provider.updateEvent(
+      { persistentId: 'event-1' },
+      { ...baseEvent, display: 'background' },
+      { ...baseEvent, display: 'block' }
+    );
+
+    expect(requestMock).toHaveBeenCalledTimes(2);
+    const [, , getMethod] = requestMock.mock.calls[0];
+    expect(getMethod).toBe('GET');
+
+    const [, , patchMethod, body] = requestMock.mock.calls[1];
+    expect(patchMethod).toBe('PATCH');
+    expect(body).toMatchObject({
+      extendedProperties: {
+        private: { someOtherIntegrationsKey: 'do-not-touch-me', ofcDisplay: 'block' }
+      }
+    });
   });
 });

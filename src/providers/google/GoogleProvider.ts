@@ -4,6 +4,7 @@ import { OFCEvent, EventLocation, validateEvent } from '../../types';
 import FullCalendarPlugin from '../../main';
 import { fromGoogleEvent, toGoogleEvent, GoogleEventLike } from './parser/parser_gcal';
 import { makeAuthenticatedRequest, GoogleApiError } from './auth/request';
+import { GOOGLE_DISPLAY_PROPERTY } from '../utils/displayProperty';
 
 import { CalendarProvider, CalendarProviderCapabilities, SyncKeyProvider } from '../Provider';
 import { EventHandle, FCReactComponent, ProviderConfigContext } from '../typesProvider';
@@ -300,8 +301,25 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
       const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
         this.source.calendarId
       )}/events/${encodeURIComponent(eventId)}`;
-      const body = toGoogleEvent(newEventData);
-      await makeAuthenticatedRequest(token, url, 'PUT', body);
+      const body = toGoogleEvent(newEventData) as Record<string, unknown>;
+
+      // PUT replaces the whole event resource (attendees, conferencing, colorId, other
+      // integrations' extended properties). Use PATCH and only send fields we mean to change.
+      if (oldEventData.display === newEventData.display) {
+        delete body.extendedProperties;
+      } else {
+        // Key-level merge semantics for a patched map field are undocumented, so don't assume
+        // other keys survive - read the current map and send the full merged result.
+        const current = await makeAuthenticatedRequest<GoogleEventLike>(token, url, 'GET');
+        body.extendedProperties = {
+          private: {
+            ...current.extendedProperties?.private,
+            [GOOGLE_DISPLAY_PROPERTY]: newEventData.display ?? ''
+          }
+        };
+      }
+
+      await makeAuthenticatedRequest(token, url, 'PATCH', body);
     }
     return null;
   }

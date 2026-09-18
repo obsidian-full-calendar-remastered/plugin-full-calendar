@@ -117,6 +117,27 @@ export function getEventCalendarOptions(
   }));
 }
 
+/**
+ * Untouched -> pass `initialAlarms` through as-is (may hold more reminders than this single
+ * field can show, e.g. popup + email - don't collapse them). Touched + empty but had a prior
+ * alarm -> `[]` (explicit clear). Touched + empty, nothing prior -> `undefined` (no-op, not
+ * "delete all reminders").
+ */
+export function computeSubmittedAlarms(
+  supportsProviderNotifications: boolean,
+  providerNotifyTouched: boolean,
+  providerNotifyValue: number | string,
+  initialAlarms: OFCEvent['alarms']
+): OFCEvent['alarms'] {
+  if (!supportsProviderNotifications || !providerNotifyTouched) {
+    return initialAlarms;
+  }
+  if (providerNotifyValue !== '') {
+    return [{ minutesBefore: Number(providerNotifyValue), action: 'DISPLAY' }];
+  }
+  return initialAlarms && initialAlarms.length > 0 ? [] : undefined;
+}
+
 function getInitialRecurrenceType(event?: Partial<OFCEvent>): RecurrenceType {
   if (event?.type !== 'recurring') {
     return 'none';
@@ -217,6 +238,8 @@ export const EditEvent = ({
         ? initialEvent.notify.value
         : ''
   );
+  // Value alone can't tell "untouched, pre-filled" from "touched, re-entered same number".
+  const [providerNotifyTouched, setProviderNotifyTouched] = useState(false);
   // END ADDITION
   type MonthlyMode = 'dayOfMonth' | 'onThe';
   const getInitialMonthlyMode = (): MonthlyMode =>
@@ -352,10 +375,12 @@ export const EditEvent = ({
       description: description || undefined,
 
       notify: notifyValue !== '' ? { value: Number(notifyValue) } : undefined,
-      alarms:
-        supportsProviderNotifications && providerNotifyValue !== ''
-          ? [{ minutesBefore: Number(providerNotifyValue), action: 'DISPLAY' }]
-          : undefined,
+      alarms: computeSubmittedAlarms(
+        supportsProviderNotifications,
+        providerNotifyTouched,
+        providerNotifyValue,
+        initialEvent?.alarms
+      ),
       ...timeInfo,
       ...eventData
     } as OFCEvent;
@@ -580,7 +605,10 @@ export const EditEvent = ({
                     max="10080"
                     placeholder="Minutes before start"
                     value={providerNotifyValue}
-                    onChange={e => setProviderNotifyValue(e.target.value)}
+                    onChange={e => {
+                      setProviderNotifyValue(e.target.value);
+                      setProviderNotifyTouched(true);
+                    }}
                     title="Minutes before the event starts"
                   />
                 </label>
@@ -592,6 +620,7 @@ export const EditEvent = ({
                     setNotifyValue(val);
                     if (supportsProviderNotifications) {
                       setProviderNotifyValue(val);
+                      setProviderNotifyTouched(true);
                     }
                   }
                 }}

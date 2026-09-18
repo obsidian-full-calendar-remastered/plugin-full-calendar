@@ -18,6 +18,7 @@ import { rrulestr } from 'rrule';
 import ical from 'ical.js';
 import { OFCEvent, validateEvent } from '../../types';
 import { injectMeetingUrl } from '../../utils/meetingUrl';
+import { ICAL_DISPLAY_PROPERTY, isDisplayValue } from '../utils/displayProperty';
 
 import { parseTimezoneAwareString } from '../../features/timezone/Timezone';
 import { yieldToMainThread, yieldIfFrameBudgetExceeded } from '../../utils/async';
@@ -110,6 +111,11 @@ function extractProviderAlarms(component: ical.Component): ProviderAlarm[] | und
   return alarms.length > 0 ? alarms : undefined;
 }
 
+function extractDisplayMode(component: ical.Component): OFCEvent['display'] | undefined {
+  const stored = component.getFirstPropertyValue(ICAL_DISPLAY_PROPERTY);
+  return isDisplayValue(stored) ? stored : undefined;
+}
+
 function recurrenceIdToString(recurrenceId: ical.Time | null): string | undefined {
   if (!recurrenceId) return undefined;
 
@@ -180,6 +186,7 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
   // Use extractEventUrl helper or input.component.getFirstProperty('url')
   const url = extractEventUrl(input);
   const alarms = extractProviderAlarms(input.component);
+  const display = extractDisplayMode(input.component);
 
   const startDate = parseTimezoneAwareString(input.startDate);
 
@@ -263,6 +270,7 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
       description,
       location: location || undefined,
       ...(alarms ? { alarms } : {}),
+      ...(display ? { display } : {}),
       url:
         url ||
         (location && typeof location === 'string' && location.startsWith('http')
@@ -319,6 +327,7 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
     description,
     location: location || undefined,
     ...(alarms ? { alarms } : {}),
+    ...(display ? { display } : {}),
     url:
       url ||
       (location && typeof location === 'string' && location.startsWith('http')

@@ -2,6 +2,7 @@ import { OFCEvent } from '../../types';
 import ical from 'ical.js';
 import { DateTime } from 'luxon';
 import { constructTitle } from '../../features/category/categoryParser';
+import { ICAL_DISPLAY_PROPERTY } from '../utils/displayProperty';
 
 /**
  * Formats a Luxon DateTime into an iCal DATE-TIME string (YYYYMMDDTHHMMSSZ or local).
@@ -250,6 +251,13 @@ function createVEventComponent(event: OFCEvent, isOverride = false): ical.Compon
   }
 
   addProviderAlarms(vevent, event);
+
+  // iCalendar has no standard property for FullCalendar's display mode, so it travels as
+  // an X- extension. The component is rewritten in full on every write, so an unset mode
+  // simply omits the property.
+  if (event.display) {
+    vevent.addPropertyWithValue(ICAL_DISPLAY_PROPERTY, event.display);
+  }
 
   // Recurrence (RRULE) - Only for master events, not overrides usually
   if (!isOverride && event.type === 'rrule' && event.rrule) {

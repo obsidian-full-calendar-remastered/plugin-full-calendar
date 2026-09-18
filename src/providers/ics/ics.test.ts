@@ -65,6 +65,40 @@ END:VCALENDAR`;
     expect(events[0].alarms).toEqual([{ minutesBefore: 15, action: 'DISPLAY' }]);
   });
 
+  it('parses X-OFC-DISPLAY into the event display mode', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:display-event
+SUMMARY:Background Event
+DTSTART:20260615T100000Z
+DTEND:20260615T110000Z
+X-OFC-DISPLAY:background
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    expect(events[0].display).toBe('background');
+  });
+
+  it('ignores an unrecognized X-OFC-DISPLAY value', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:bogus-display-event
+SUMMARY:Bogus Display
+DTSTART:20260615T100000Z
+DTEND:20260615T110000Z
+X-OFC-DISPLAY:not-a-real-mode
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    expect(events[0].display).toBeUndefined();
+  });
+
   it('parses gcal ics file and categories', () => {
     const ics = `BEGIN:VCALENDAR
 PRODID:-//Google Inc//Google Calendar 70.9054//EN

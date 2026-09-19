@@ -11,6 +11,7 @@ import 'obsidian';
 declare module 'obsidian' {
   export let activeDocument: Document;
   export let activeWindow: Window;
+  export let moment: typeof import('moment').default;
 
   /**
    * Minimal subset of the Moment.js interface used by DailyNoteProvider

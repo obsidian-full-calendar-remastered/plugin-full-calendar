@@ -48,10 +48,11 @@ Write-Host "Pruning non-English translations from the holiday database..."
 node -e "const fs = require('fs'); const file = 'src/data.js'; let content = fs.readFileSync(file, 'utf8'); const jsonStr = content.substring(content.indexOf('{')); const data = JSON.parse(jsonStr); function strip(obj) { if (!obj || typeof obj !== 'object') return; if (obj.names) { const en = obj.names.en || Object.values(obj.names)[0]; obj.names = { en }; } Object.values(obj).forEach(v => strip(v)); } strip(data.holidays); fs.writeFileSync(file, 'export const data = ' + JSON.stringify(data), 'utf8');"
 Pop-Location
 
-Write-Host "Bundling and minifying date-holidays using esbuild (excluding moment and moment-timezone)..."
+Write-Host "Bundling and minifying date-holidays using esbuild (inlining moment-timezone shim, excluding obsidian)..."
 $DateHolidaysInput = Join-Path $DateHolidaysDir "src\index.js"
 $DateHolidaysOutput = Join-Path $VendorDir "date-holidays-custom.min.js"
-npx esbuild $DateHolidaysInput --bundle --minify --format=cjs --platform=node --external:moment --external:moment-timezone --outfile=$DateHolidaysOutput
+$MomentTzShim = Join-Path $RootDir "src\stubs\moment-timezone-shim.ts"
+npx esbuild $DateHolidaysInput --bundle --minify --format=cjs --platform=node --alias:moment-timezone=$MomentTzShim --external:obsidian --outfile=$DateHolidaysOutput
 
 # --- 2. Custom Compile plotly.js ---
 Write-Host "`n--- BUILDING plotly.js ---"

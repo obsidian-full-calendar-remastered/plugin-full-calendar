@@ -1,2 +1,4 @@
 import { moment } from 'obsidian';
-export default moment;
+
+const momentShim: typeof moment = moment;
+export default momentShim;

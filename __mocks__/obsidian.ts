@@ -1,4 +1,8 @@
 import { StateField } from '@codemirror/state';
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports
+import moment from 'moment';
+
+export { moment };
 
 const toForwardSlashes = (value: string): string => value.replace(/\\/g, "/");
 const joinPath = (...parts: string[]): string => {

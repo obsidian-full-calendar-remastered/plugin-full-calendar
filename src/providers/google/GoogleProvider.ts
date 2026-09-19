@@ -137,103 +137,131 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
       calendarId: this.source.calendarId,
       googleAccountId: this.source.googleAccountId,
       color: ''
-    }); // Provide exact subtype
-    if (!token) return [];
+    });
+    if (!token) {
+      // Not authenticated — do not wipe existing cache, propagate to caller.
+      throw new GoogleApiError(`Google Calendar "${this.source.name}": no access token available.`);
+    }
 
     const displayTimezone = PluginState.getSettings().displayTimezone;
-    if (!displayTimezone) return [];
+    if (!displayTimezone) {
+      throw new GoogleApiError(
+        `Google Calendar "${this.source.name}": displayTimezone is not configured.`
+      );
+    }
 
-    try {
-      let timeMin: Date;
-      let timeMax: Date;
+    // Collect all pages of items.
+    const allItems: GoogleEventLike[] = [];
+    const MAX_PAGES = 10;
+    let pageToken: string | undefined;
 
-      if (range && range.start && range.end) {
-        timeMin = new Date(range.start);
-        timeMax = new Date(range.end);
-      } else {
-        timeMin = new Date();
-        timeMin.setFullYear(timeMin.getFullYear() - 1);
-        timeMax = new Date();
-        timeMax.setFullYear(timeMax.getFullYear() + 1);
-      }
-
+    for (let page = 0; page < MAX_PAGES; page++) {
       const url = new URL(
         `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(this.source.calendarId)}/events`
       );
-      url.searchParams.set('timeMin', timeMin.toISOString());
-      url.searchParams.set('timeMax', timeMax.toISOString());
+
+      if (range && range.start && range.end) {
+        // Stage 1 scoped fetch: use a time window to get a quick response.
+        // NOTE: When singleEvents=false, Google filters on the master event's start
+        // date. Only include timeMin/timeMax here since we are fetching expanded
+        // instances anyway (singleEvents=true would be appropriate for a range
+        // query but we process recurrences ourselves).
+        url.searchParams.set('timeMin', range.start.toISOString());
+        url.searchParams.set('timeMax', range.end.toISOString());
+      }
+      // For the full (Stage 2) fetch: DO NOT set timeMin/timeMax.
+      // The Google Calendar API, when singleEvents=false, filters timeMin against the
+      // master event's own start date (first occurrence). Any recurring series whose
+      // first occurrence precedes timeMin is omitted, causing those events to be wiped
+      // from the cache on the next syncCalendar() call.
+
       url.searchParams.set('singleEvents', 'false');
       url.searchParams.set('showDeleted', 'true');
       url.searchParams.set('maxResults', '2500');
       url.searchParams.set('conferenceDataVersion', '1');
 
-      const data = await makeAuthenticatedRequest<{ items?: GoogleEventLike[] }>(
-        token,
-        url.toString()
-      );
-      if (!Array.isArray(data.items)) return [];
+      if (pageToken) {
+        url.searchParams.set('pageToken', pageToken);
+      }
 
-      const skipDatesMap = new Map<string, Set<string>>();
-      for (const gEvent of data.items) {
-        if (
-          gEvent.recurringEventId &&
-          gEvent.originalStartTime &&
-          (gEvent.originalStartTime.dateTime || gEvent.originalStartTime.date)
-        ) {
-          const parentId = gEvent.recurringEventId;
-          if (!skipDatesMap.has(parentId)) {
-            skipDatesMap.set(parentId, new Set());
-          }
-          let skipDate: string | null = null;
-          if (gEvent.originalStartTime.dateTime) {
-            skipDate = DateTime.fromISO(gEvent.originalStartTime.dateTime, {
-              zone: gEvent.originalStartTime.timeZone || 'utc'
-            }).toISODate();
-          } else if (gEvent.originalStartTime.date) {
-            skipDate = gEvent.originalStartTime.date;
-          }
-          if (skipDate) {
-            const parentSkipDates = skipDatesMap.get(parentId);
-            if (parentSkipDates) {
-              parentSkipDates.add(skipDate);
-            }
+      const data = await makeAuthenticatedRequest<{
+        items?: GoogleEventLike[];
+        nextPageToken?: string;
+      }>(token, url.toString());
+
+      if (!Array.isArray(data.items)) {
+        // Unexpected response shape — treat as an error so existing cache is not wiped.
+        throw new GoogleApiError(
+          `Google Calendar "${this.source.name}": API returned unexpected response (no items array).`
+        );
+      }
+
+      allItems.push(...data.items);
+
+      if (data.nextPageToken) {
+        pageToken = data.nextPageToken;
+      } else {
+        break;
+      }
+    }
+
+    const skipDatesMap = new Map<string, Set<string>>();
+    for (const gEvent of allItems) {
+      if (
+        gEvent.recurringEventId &&
+        gEvent.originalStartTime &&
+        (gEvent.originalStartTime.dateTime || gEvent.originalStartTime.date)
+      ) {
+        const parentId = gEvent.recurringEventId;
+        if (!skipDatesMap.has(parentId)) {
+          skipDatesMap.set(parentId, new Set());
+        }
+        let skipDate: string | null = null;
+        if (gEvent.originalStartTime.dateTime) {
+          skipDate = DateTime.fromISO(gEvent.originalStartTime.dateTime, {
+            zone: gEvent.originalStartTime.timeZone || 'utc'
+          }).toISODate();
+        } else if (gEvent.originalStartTime.date) {
+          skipDate = gEvent.originalStartTime.date;
+        }
+        if (skipDate) {
+          const parentSkipDates = skipDatesMap.get(parentId);
+          if (parentSkipDates) {
+            parentSkipDates.add(skipDate);
           }
         }
       }
-
-      // Remove convertEvent logic; just validate and return events
-      const tuples: ([OFCEvent, EventLocation | null] | null)[] = data.items.map(
-        (gEvent: GoogleEventLike) => {
-          const rawEvent = fromGoogleEvent(gEvent);
-          if (!rawEvent) return null;
-
-          if (
-            (rawEvent.type === 'rrule' || rawEvent.type === 'recurring') &&
-            rawEvent.uid &&
-            skipDatesMap.has(rawEvent.uid)
-          ) {
-            const datesToSkip = skipDatesMap.get(rawEvent.uid);
-            if (!datesToSkip) {
-              return null;
-            }
-            rawEvent.skipDates = [...new Set([...(rawEvent.skipDates || []), ...datesToSkip])];
-          }
-
-          const validated = validateEvent(rawEvent);
-          if (!validated) return null;
-
-          const linkedFile = this.linkedNoteIndex.getFileForEvent(validated.uid || '');
-          const location = linkedFile
-            ? { file: { path: linkedFile.path }, lineNumber: undefined }
-            : null;
-          return [validated, location];
-        }
-      );
-      return tuples.filter((e): e is [OFCEvent, EventLocation | null] => e !== null);
-    } catch (e) {
-      console.error(`Error fetching events for Google Calendar "${this.source.name}":`, e);
-      return [];
     }
+
+    // Remove convertEvent logic; just validate and return events
+    const tuples: ([OFCEvent, EventLocation | null] | null)[] = allItems.map(
+      (gEvent: GoogleEventLike) => {
+        const rawEvent = fromGoogleEvent(gEvent);
+        if (!rawEvent) return null;
+
+        if (
+          (rawEvent.type === 'rrule' || rawEvent.type === 'recurring') &&
+          rawEvent.uid &&
+          skipDatesMap.has(rawEvent.uid)
+        ) {
+          const datesToSkip = skipDatesMap.get(rawEvent.uid);
+          if (!datesToSkip) {
+            return null;
+          }
+          rawEvent.skipDates = [...new Set([...(rawEvent.skipDates || []), ...datesToSkip])];
+        }
+
+        const validated = validateEvent(rawEvent);
+        if (!validated) return null;
+
+        const linkedFile = this.linkedNoteIndex.getFileForEvent(validated.uid || '');
+        const location = linkedFile
+          ? { file: { path: linkedFile.path }, lineNumber: undefined }
+          : null;
+        return [validated, location];
+      }
+    );
+    return tuples.filter((e): e is [OFCEvent, EventLocation | null] => e !== null);
   }
 
   async createEvent(event: OFCEvent): Promise<[OFCEvent, EventLocation | null]> {

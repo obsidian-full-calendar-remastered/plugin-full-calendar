@@ -477,9 +477,16 @@ export class ProviderRegistry {
         const name = getProviderName(settingsId, instance);
         LoadDebugProfiler.startProvider(stage2RemoteName, settingsId, name);
         try {
-          // Optimization: For ICS calendars, getEvents(range) already downloaded the file and returned all events.
-          // Skip redundant 2nd network request.
-          if (instance.type === 'ical') {
+          // Optimization: For providers whose Stage 1 getEvents(range) already retrieves the
+          // complete event set (ICS fetches the whole file regardless of range; Google and
+          // Outlook without timeMin/timeMax return all events in the full fetch), skip the
+          // redundant second network request. This also avoids the ~2-second race where a
+          // Stage 2 empty-or-partial result wipes the Stage 1 populated cache via syncCalendar().
+          if (
+            instance.type === 'ical' ||
+            instance.type === 'google' ||
+            instance.type === 'outlook'
+          ) {
             const prevEvents = stage1RemoteEvents.get(settingsId) || [];
             LoadDebugProfiler.endProvider(stage2RemoteName, settingsId, prevEvents.length, true);
             await this.refreshProviderAuxiliaryData(settingsId, instance);

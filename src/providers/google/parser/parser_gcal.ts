@@ -89,7 +89,7 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
     return null;
   }
 
-  if (!gEvent.id || !gEvent.summary || (!gEvent.start && !gEvent.end)) {
+  if (!gEvent.id || (!gEvent.start && !gEvent.end)) {
     // Not a valid event.
 
     return null;
@@ -103,7 +103,10 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
   const eventData: Record<string, unknown> = { uid, recurringEventId };
 
   // Title and Category Parsing
-  eventData.title = gEvent.summary;
+  eventData.title =
+    gEvent.summary !== undefined && gEvent.summary !== null && gEvent.summary.trim() !== ''
+      ? gEvent.summary
+      : '(No title)';
 
   let location = gEvent.location || '';
   let description = gEvent.description || '';
@@ -160,7 +163,7 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
     } else {
       eventData.endDate = null;
     }
-  } else if (gEvent.start && gEvent.start.dateTime && gEvent.end && gEvent.end.dateTime) {
+  } else if (gEvent.start && gEvent.start.dateTime) {
     // Timed event
     eventData.allDay = false;
 
@@ -171,9 +174,12 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
 
     // Parse the absolute time and convert to the event's timezone
     const start = DateTime.fromISO(gEvent.start.dateTime, { setZone: true }).setZone(eventTimezone);
-    const end = DateTime.fromISO(gEvent.end.dateTime, { setZone: true }).setZone(
-      gEvent.end.timeZone || eventTimezone
-    );
+    const end =
+      gEvent.end && gEvent.end.dateTime
+        ? DateTime.fromISO(gEvent.end.dateTime, { setZone: true }).setZone(
+            gEvent.end.timeZone || eventTimezone
+          )
+        : start.plus({ hours: 1 });
 
     eventData.date = start.toISODate();
     eventData.startTime = start.toFormat('HH:mm');
@@ -344,6 +350,14 @@ export function toGoogleEvent(event: OFCEvent): object {
       const endDateTime = DateTime.fromISO(`${endDate || startDate}T${event.endTime}`);
       gEvent.end = {
         dateTime: endDateTime.toISO(),
+        timeZone: timeZone
+      };
+    } else {
+      // Google Calendar API strictly requires an end time for timed events.
+      // Default to 1 hour after start if endTime is omitted.
+      const defaultEndDateTime = startDateTime.plus({ hours: 1 });
+      gEvent.end = {
+        dateTime: defaultEndDateTime.toISO(),
         timeZone: timeZone
       };
     }

@@ -122,25 +122,36 @@ export class GoogleAuthManager {
         return data.access_token;
       }
 
-      // If we get here, it's an error status from Google
+      // If we get here, it's an error status from the token endpoint.
       console.error(
         `Failed to refresh Google access token. Status: ${response.status} Body: ${response.text}`
       );
 
-      // Only wipe credentials if it's a permanent auth error (400 Bad Request, 401 Unauthorized)
-      // This protects against 500s or other temporary issues where we shouldn't lose the user's login.
-      if (response.status === 400 || response.status === 401) {
-        if (!isLegacy && accountId) {
-          const account = PluginState.getSettings().googleAccounts.find(a => a.id === accountId);
-          if (account) {
-            CredentialStore.setGoogleAccessToken(accountId, null);
-            CredentialStore.setGoogleRefreshToken(accountId, null);
-            account.expiryDate = null;
-          }
+      // Only permanently wipe credentials if the response body contains an explicit OAuth
+      // revocation error code. Generic 400/401 responses can be caused by transient proxy
+      // failures (e.g. cold-start timeouts on gcal-proxy-server.vercel.app), captive portals,
+      // or temporary Google service disruptions — none of which should log the user out.
+      const isPermanentRevocation = (() => {
+        try {
+          const body = response.json as { error?: string };
+          const errorCode = body?.error;
+          return errorCode === 'invalid_grant' || errorCode === 'invalid_client';
+        } catch {
+          return false;
         }
-        await PluginState.saveSettings();
-        showNotice(t('google.auth.expired'));
+      })();
+
+      if (isPermanentRevocation && !isLegacy && accountId) {
+        const account = PluginState.getSettings().googleAccounts.find(a => a.id === accountId);
+        if (account) {
+          CredentialStore.setGoogleAccessToken(accountId, null);
+          CredentialStore.setGoogleRefreshToken(accountId, null);
+          account.expiryDate = null;
+          await PluginState.saveSettings();
+          showNotice(t('google.auth.expired'));
+        }
       }
+
       return null;
     } catch (e) {
       // This catch block will now mostly catch network errors (offline),

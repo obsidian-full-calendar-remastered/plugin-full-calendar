@@ -166,42 +166,41 @@ export class OutlookProvider implements CalendarProvider<OutlookProviderConfig>,
     start: Date;
     end: Date;
   }): Promise<[OFCEvent, EventLocation | null][]> {
-    const token = await this.getAccessToken().catch(() => null);
-    if (!token) return [];
+    // Throws OutlookApiError if not authenticated — caller (ProviderRegistry) handles errors
+    // via scheduleProviderReload and does NOT sync empty results to cache.
+    const token = await this.getAccessToken();
 
-    try {
-      const url = new URL(
-        `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(this.source.calendarId)}/events`
+    const url = new URL(
+      `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(this.source.calendarId)}/events`
+    );
+    url.searchParams.set('$top', '1000');
+
+    const response = await makeAuthenticatedRequest<{ value?: OutlookEventLike[] }>(
+      token,
+      url.toString()
+    );
+
+    if (!Array.isArray(response.value)) {
+      throw new OutlookApiError(
+        `Outlook Calendar "${this.source.name}": API returned unexpected response (no value array).`
       );
-      url.searchParams.set('$top', '1000');
-
-      const response = await makeAuthenticatedRequest<{ value?: OutlookEventLike[] }>(
-        token,
-        url.toString()
-      );
-
-      if (!Array.isArray(response.value)) {
-        return [];
-      }
-
-      const tuples = response.value
-        .map(raw => {
-          const parsed = fromOutlookEvent(raw);
-          if (!parsed) return null;
-          const validated = validateEvent(parsed);
-          if (!validated) return null;
-          const linkedFile = this.linkedNoteIndex.getFileForEvent(validated.uid || '');
-          const location = linkedFile
-            ? { file: { path: linkedFile.path }, lineNumber: undefined }
-            : null;
-          return [validated, location] as [OFCEvent, EventLocation | null];
-        })
-        .filter((item): item is [OFCEvent, EventLocation | null] => item !== null);
-
-      return tuples;
-    } catch {
-      return [];
     }
+
+    const tuples = response.value
+      .map(raw => {
+        const parsed = fromOutlookEvent(raw);
+        if (!parsed) return null;
+        const validated = validateEvent(parsed);
+        if (!validated) return null;
+        const linkedFile = this.linkedNoteIndex.getFileForEvent(validated.uid || '');
+        const location = linkedFile
+          ? { file: { path: linkedFile.path }, lineNumber: undefined }
+          : null;
+        return [validated, location] as [OFCEvent, EventLocation | null];
+      })
+      .filter((item): item is [OFCEvent, EventLocation | null] => item !== null);
+
+    return tuples;
   }
 
   async createEvent(event: OFCEvent): Promise<[OFCEvent, EventLocation | null]> {

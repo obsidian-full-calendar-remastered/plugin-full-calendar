@@ -27,6 +27,7 @@ Note: `webcal://` links are automatically converted to `https://` when added.
 - **Video Conferencing & Links**: Extracts meeting URLs from RFC 7986 `CONFERENCE` attributes or Microsoft Teams specific fields, merging them directly into the parsed location or description. Injected URLs and description links are fully clickable inside the [Event Details modal](../events/manage.md#video-conference--linkification-support). For details, see [Video Conference & Linkification Support](../events/manage.md#video-conference--linkification-support).
 - Events are parsed with their source timezone (including TZID/UTC) and converted to your Display Timezone for viewing.
 - Cancellations/exceptions present in the feed are respected.
+- Recurring events and tasks respect every date in an `EXDATE` property, including multiple canceled occurrences listed together by Outlook.
 
 
 ## Troubleshooting

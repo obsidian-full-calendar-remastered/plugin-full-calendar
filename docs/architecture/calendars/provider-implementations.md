@@ -88,6 +88,8 @@ This split allows forward writes to follow the selected provider format while pr
 
 Single provider supports both remote URLs (`http`, `https`, `webcal`) and local vault `.ics` files. It is intentionally read-only and normalizes remote/local acquisition into one contract surface.
 
+The [ICS parser](../../../src/providers/ics/ics.ts) flattens all values from every `EXDATE` property into `skipDates` for both `VEVENT` and `VTODO`, including comma-separated exclusions in a single property. Each value retains the existing timezone conversion and invalid-date filtering.
+
 Timezone and recurrence edge handling rationale is documented in [RRULE Timezone Date-Shift Fix](../dev-logs/devlog_rrule_timezone_patch.md).
 
 ### CalDAV Provider (protocol patch behavior)

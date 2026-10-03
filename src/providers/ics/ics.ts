@@ -218,8 +218,8 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
     const rrule = rrulestr(rruleStr);
     const exdates = input.component
       .getAllProperties('exdate')
-      .map(exdateProp => {
-        const exdate = ((t: unknown) => t as ical.Time)(exdateProp.getFirstValue());
+      .flatMap(exdateProp => exdateProp.getValues<ical.Time>())
+      .map(exdate => {
         const exdateLuxon = parseTimezoneAwareString(exdate);
         if (!exdateLuxon.isValid) {
           console.warn(`Full Calendar ICS Parser: Skipping invalid EXDATE for event "${summary}"`);
@@ -419,8 +419,8 @@ function todoToOFC(todo: ical.Component): OFCEvent | null {
     const rrule = rrulestr(rruleStr);
     const exdates = todo
       .getAllProperties('exdate')
-      .map(exdateProp => {
-        const exdate: ical.Time = exdateProp.getFirstValue();
+      .flatMap(exdateProp => exdateProp.getValues<ical.Time>())
+      .map(exdate => {
         const exdateLuxon = parseTimezoneAwareString(exdate);
         if (!exdateLuxon.isValid) {
           console.warn(`Full Calendar ICS Parser: Skipping invalid EXDATE for task "${summary}"`);

@@ -26,7 +26,7 @@ This behavior exists to prevent day/weekday drift around DST and timezone bounda
 
 ## ICS and timezone normalization
 
-Timezone handling includes normalization of IANA, UTC, and common Windows timezone identifiers during ICS ingestion. Parsing and fallback logic are intentionally defensive to avoid malformed payload breakage.
+Timezone handling includes normalization of IANA, UTC, and Windows timezone identifiers during ICS ingestion (Windows IDs are mapped with the CLDR `windowsZones.xml` table, territory "001"). Parsing and fallback logic are intentionally defensive to avoid malformed payload breakage.
 
 ## ICS timezone serialization on write paths
 

@@ -121,6 +121,8 @@ export async function manageTimezone(_plugin: FullCalendarPlugin): Promise<void>
  * instead of IANA identifiers, which Luxon requires.
  */
 function mapWindowsTimezoneToIANA(windowsTz: string): string | null {
+  // Generated from CLDR common/supplemental/windowsZones.xml (territory "001", the
+  // default zone for each Windows ID), with renamed IANA zones written by their current name.
   const windowsToIANA: Record<string, string> = {
     // Dateline / UTC Offsets
     'Dateline Standard Time': 'Etc/GMT+12',
@@ -128,7 +130,7 @@ function mapWindowsTimezoneToIANA(windowsTz: string): string | null {
     'UTC-09': 'Etc/GMT+9',
     'UTC-08': 'Etc/GMT+8',
     'UTC-02': 'Etc/GMT+2',
-    UTC: 'Etc/UTC',
+    'UTC': 'Etc/UTC',
     'UTC+12': 'Etc/GMT-12',
     'UTC+13': 'Etc/GMT-13',
 
@@ -145,6 +147,7 @@ function mapWindowsTimezoneToIANA(windowsTz: string): string | null {
     'Central Standard Time': 'America/Chicago',
     'Central Standard Time (Mexico)': 'America/Mexico_City',
     'Canada Central Standard Time': 'America/Regina',
+    'Mexico Standard Time': 'America/Mexico_City',
     'Eastern Standard Time': 'America/New_York',
     'Eastern Standard Time (Mexico)': 'America/Cancun',
     'US Eastern Standard Time': 'America/Indianapolis',

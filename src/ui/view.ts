@@ -91,6 +91,9 @@ export class CalendarView extends ItemView implements ViewContext {
   private agentWriteBar: import('../features/agent').AgentWriteBar | null = null;
 
   private renderConfig: ResolvedCalendarProps | null = null;
+  private pendingSourceUpdateRaf: number | null = null;
+  private pendingAffectedCalendars = new Set<string>();
+  private updateAllSources = false;
 
   constructor(leaf: WorkspaceLeaf, plugin: FullCalendarPlugin, inSidebar = false) {
     super(leaf);
@@ -415,64 +418,83 @@ export class CalendarView extends ItemView implements ViewContext {
         }
 
         if (info.type === 'resync') {
+          if (this.pendingSourceUpdateRaf !== null) {
+            window.cancelAnimationFrame(this.pendingSourceUpdateRaf);
+            this.pendingSourceUpdateRaf = null;
+          }
+          this.pendingAffectedCalendars.clear();
+          this.updateAllSources = false;
           this.refreshEventSourcesFromCache();
           return;
         }
 
-        this.viewEnhancer.updateSettings(PluginState.getSettings());
-        const allCachedSources = PluginState.getCache().getAllEvents();
-        const { sources } = this.viewEnhancer.getEnhancedData(allCachedSources);
-
-        if (this.fullCalendarView) {
-          window.requestAnimationFrame(() => {
-            if (this.fullCalendarView) {
-              const fullCalendarView = this.fullCalendarView;
-              const updateStartTime = performance.now();
-              LoadDebugProfiler.pushContext('FullCalendar DOM Event Source Update');
-              try {
-                if (
-                  info.type === 'events' &&
-                  info.affectedCalendars &&
-                  info.affectedCalendars.length > 0
-                ) {
-                  info.affectedCalendars.forEach(calendarId => {
-                    const oldSource = fullCalendarView.getEventSourceById(calendarId);
-                    if (oldSource) {
-                      oldSource.remove();
-                    }
-                    const newSource = sources.find(
-                      s => typeof s === 'object' && s !== null && 'id' in s && s.id === calendarId
-                    );
-                    if (newSource) {
-                      fullCalendarView.addEventSource(newSource);
-                    }
-                  });
-                } else {
-                  fullCalendarView.removeAllEventSources();
-                  sources.forEach(source => fullCalendarView.addEventSource(source));
-                }
-
-                this.searchHandler.clearCaches();
-                this.searchHandler.scheduleApplyFilter();
-              } finally {
-                LoadDebugProfiler.popContext();
-              }
-
-              const updateDuration = performance.now() - updateStartTime;
-              if (updateDuration >= 50) {
-                LoadDebugProfiler.recordFreeze(
-                  'FullCalendar DOM Event Source Update',
-                  updateDuration,
-                  `Affected calendars: ${info.type === 'events' ? info.affectedCalendars?.join(', ') : 'All'}`
-                );
-              }
-            }
-          });
+        if (info.type === 'events') {
+          if (info.affectedCalendars && info.affectedCalendars.length > 0) {
+            info.affectedCalendars.forEach(id => this.pendingAffectedCalendars.add(id));
+          } else {
+            this.updateAllSources = true;
+          }
         }
 
-        const viewType = this.fullCalendarView.view?.type;
-        if (viewType && viewType.includes('resourceTimeline')) {
-          this.timelineHandler.addShadowEventsToView();
+        if (this.fullCalendarView && this.pendingSourceUpdateRaf === null) {
+          this.pendingSourceUpdateRaf = window.requestAnimationFrame(() => {
+            this.pendingSourceUpdateRaf = null;
+            if (!this.fullCalendarView || !this.viewEnhancer) {
+              return;
+            }
+
+            this.viewEnhancer.updateSettings(PluginState.getSettings());
+            const allCachedSources = PluginState.getCache().getAllEvents();
+            const { sources } = this.viewEnhancer.getEnhancedData(allCachedSources);
+
+            const fullCalendarView = this.fullCalendarView;
+            const updateStartTime = performance.now();
+            LoadDebugProfiler.pushContext('FullCalendar DOM Event Source Update');
+            const affectedList = Array.from(this.pendingAffectedCalendars);
+            const isFullReset = this.updateAllSources || affectedList.length === 0;
+
+            try {
+              if (!isFullReset) {
+                affectedList.forEach(calendarId => {
+                  const oldSource = fullCalendarView.getEventSourceById(calendarId);
+                  if (oldSource) {
+                    oldSource.remove();
+                  }
+                  const newSource = sources.find(
+                    s => typeof s === 'object' && s !== null && 'id' in s && s.id === calendarId
+                  );
+                  if (newSource) {
+                    fullCalendarView.addEventSource(newSource);
+                  }
+                });
+              } else {
+                fullCalendarView.removeAllEventSources();
+                sources.forEach(source => fullCalendarView.addEventSource(source));
+              }
+
+              this.pendingAffectedCalendars.clear();
+              this.updateAllSources = false;
+
+              this.searchHandler.clearCaches();
+              this.searchHandler.scheduleApplyFilter();
+            } finally {
+              LoadDebugProfiler.popContext();
+            }
+
+            const updateDuration = performance.now() - updateStartTime;
+            if (updateDuration >= 50) {
+              LoadDebugProfiler.recordFreeze(
+                'FullCalendar DOM Event Source Update',
+                updateDuration,
+                `Affected calendars: ${isFullReset ? 'All' : affectedList.join(', ')}`
+              );
+            }
+
+            const viewType = fullCalendarView.view?.type;
+            if (viewType && viewType.includes('resourceTimeline')) {
+              this.timelineHandler.addShadowEventsToView();
+            }
+          });
         }
       });
 
@@ -487,7 +509,6 @@ export class CalendarView extends ItemView implements ViewContext {
           }
           if (!cache.initialized) {
             await cache.populate();
-            this.refreshEventSourcesFromCache();
           }
         } catch (e) {
           console.warn('Full Calendar: Non-blocking cache populate exception', e);
@@ -515,6 +536,10 @@ export class CalendarView extends ItemView implements ViewContext {
   }
 
   onunload(): void {
+    if (this.pendingSourceUpdateRaf !== null) {
+      window.cancelAnimationFrame(this.pendingSourceUpdateRaf);
+      this.pendingSourceUpdateRaf = null;
+    }
     PluginState.getInternalAPI().unregisterView(this);
     this.searchHandler.onunload();
     if (this.agentWriteBar) {

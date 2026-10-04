@@ -149,4 +149,48 @@ describe('LoadDebugProfiler', () => {
     expect(formatted).toContain('Detailed Sub-Phase Timing Breakdown:');
     expect(formatted).toContain('Parent Stage > Child SubPhase');
   });
+
+  test('preserves cold-boot timings and retains coldBootReport across subsequent populate runs', () => {
+    LoadDebugProfiler.setEnabled(true);
+
+    // Simulate Obsidian app startup
+    LoadDebugProfiler.markPluginOnloadStart();
+    LoadDebugProfiler.markPluginOnloadEnd();
+    LoadDebugProfiler.markLayoutReady();
+
+    // Cold boot populate
+    LoadDebugProfiler.startPopulate();
+    LoadDebugProfiler.startStage('Stage 1 (Local - Range)');
+    LoadDebugProfiler.startProvider('Stage 1 (Local - Range)', 'dailynote', 'Daily Notes');
+    LoadDebugProfiler.endProvider('Stage 1 (Local - Range)', 'dailynote', 10, true);
+    LoadDebugProfiler.endStage('Stage 1 (Local - Range)');
+    LoadDebugProfiler.endPopulate();
+
+    const coldReport = LoadDebugProfiler.getColdBootReport();
+    expect(coldReport).not.toBeNull();
+    expect(coldReport?.isColdBoot).toBe(true);
+    expect(coldReport?.onloadDurationMs).not.toBeNull();
+    expect(coldReport?.timeToLayoutReadyMs).not.toBeNull();
+    expect(coldReport?.layoutReadyToPopulateMs).not.toBeNull();
+    expect(coldReport?.stages[0].stageName).toBe('Stage 1 (Local - Range)');
+
+    const coldFormatted = LoadDebugProfiler.getColdBootFormattedReport();
+    expect(coldFormatted).toContain('Cold Boot Startup');
+    expect(coldFormatted).toContain('Plugin onload():');
+
+    // Simulate subsequent on-demand re-benchmark
+    LoadDebugProfiler.startPopulate();
+    LoadDebugProfiler.startStage('Manual Stage');
+    LoadDebugProfiler.endStage('Manual Stage');
+    LoadDebugProfiler.endPopulate();
+
+    const lastReport = LoadDebugProfiler.getLastReport();
+    expect(lastReport?.isColdBoot).toBe(false);
+    expect(lastReport?.stages[0].stageName).toBe('Manual Stage');
+
+    // Verify cold boot report was NOT overwritten
+    const persistentColdReport = LoadDebugProfiler.getColdBootReport();
+    expect(persistentColdReport).toBe(coldReport);
+    expect(persistentColdReport?.stages[0].stageName).toBe('Stage 1 (Local - Range)');
+  });
 });

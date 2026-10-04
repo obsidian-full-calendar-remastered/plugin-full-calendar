@@ -78,6 +78,7 @@ describe('ProviderRegistry Unit Tests', () => {
     syncCalendar: jest.Mock;
     syncFile: jest.Mock;
     processProviderUpdates: jest.Mock;
+    resync: jest.Mock;
   };
   let registry: ProviderRegistry;
 
@@ -111,7 +112,8 @@ describe('ProviderRegistry Unit Tests', () => {
       },
       syncCalendar: jest.fn(),
       syncFile: jest.fn(),
-      processProviderUpdates: jest.fn()
+      processProviderUpdates: jest.fn(),
+      resync: jest.fn()
     };
 
     PluginState.getSettings = () => mockSettings as unknown as FullCalendarSettings;
@@ -312,6 +314,80 @@ describe('ProviderRegistry Unit Tests', () => {
           })
         ])
       );
+    });
+
+    describe('fetchAllByPriority second stage loading', () => {
+      it('skips calling getEvents in Stage 2 for providers where supportsSecondStage is false', async () => {
+        const mockInstance = {
+          type: 'custom_plugin_provider',
+          displayName: 'Custom Provider',
+          isRemote: false,
+          loadPriority: 10,
+          supportsSecondStage: false,
+          getEvents: jest.fn().mockResolvedValue([]),
+          getCapabilities: jest.fn().mockReturnValue({})
+        };
+
+        (registry as unknown as { instances: Map<string, unknown> }).instances.set(
+          'custom_1',
+          mockInstance
+        );
+        const testSource: CalendarInfo = {
+          type: 'FOR_TEST_ONLY',
+          id: 'custom_1',
+          color: ''
+        } satisfies TestSource & { color: string };
+        registry.updateSources([testSource]);
+
+        const processResults = jest.fn();
+        await registry.fetchAllByPriority(processResults);
+
+        // Stage 1 called getEvents with a range
+        expect(mockInstance.getEvents).toHaveBeenCalledTimes(1);
+        expect(mockInstance.getEvents).toHaveBeenCalledWith(
+          expect.objectContaining({
+            start: expect.any(Date),
+            end: expect.any(Date)
+          })
+        );
+      });
+
+      it('calls getEvents in Stage 2 for providers where supportsSecondStage is true', async () => {
+        const mockInstance = {
+          type: 'two_stage_provider',
+          displayName: 'Two Stage Provider',
+          isRemote: false,
+          loadPriority: 10,
+          supportsSecondStage: true,
+          getEvents: jest.fn().mockResolvedValue([]),
+          getCapabilities: jest.fn().mockReturnValue({})
+        };
+
+        (registry as unknown as { instances: Map<string, unknown> }).instances.set(
+          'two_stage_1',
+          mockInstance
+        );
+        const testSource: CalendarInfo = {
+          type: 'FOR_TEST_ONLY',
+          id: 'two_stage_1',
+          color: ''
+        } satisfies TestSource & { color: string };
+        registry.updateSources([testSource]);
+
+        const processResults = jest.fn();
+        await registry.fetchAllByPriority(processResults);
+
+        // Stage 1 called with range, Stage 2 called without range
+        expect(mockInstance.getEvents).toHaveBeenCalledTimes(2);
+        expect(mockInstance.getEvents).toHaveBeenNthCalledWith(
+          1,
+          expect.objectContaining({
+            start: expect.any(Date),
+            end: expect.any(Date)
+          })
+        );
+        expect(mockInstance.getEvents).toHaveBeenNthCalledWith(2);
+      });
     });
   });
 });

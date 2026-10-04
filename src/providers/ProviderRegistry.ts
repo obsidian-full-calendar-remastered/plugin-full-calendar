@@ -389,11 +389,14 @@ export class ProviderRegistry {
     const stage1LocalName = 'Stage 1 (Local - Range)';
     LoadDebugProfiler.startStage(stage1LocalName);
 
+    const stage1LocalCounts = new Map<string, number>();
+
     for (const [settingsId, instance] of localProviders) {
       const name = getProviderName(settingsId, instance);
       LoadDebugProfiler.startProvider(stage1LocalName, settingsId, name);
       try {
         const rawEvents = await instance.getEvents(stage1Range);
+        stage1LocalCounts.set(settingsId, rawEvents.length);
         await processResults(settingsId, rawEvents);
         LoadDebugProfiler.endProvider(stage1LocalName, settingsId, rawEvents.length, true);
       } catch (e) {
@@ -424,6 +427,14 @@ export class ProviderRegistry {
         const name = getProviderName(settingsId, instance);
         LoadDebugProfiler.startProvider(stage2LocalName, settingsId, name);
         try {
+          // If the provider does not support two-stage loading, Stage 1 already scanned
+          // 100% of its notes/tasks. Skip the redundant second full scan.
+          if (!instance.supportsSecondStage) {
+            const prevEventsCount = stage1LocalCounts.get(settingsId) ?? 0;
+            LoadDebugProfiler.endProvider(stage2LocalName, settingsId, prevEventsCount, true);
+            continue;
+          }
+
           const rawEvents = await instance.getEvents();
           await processResults(settingsId, rawEvents);
           LoadDebugProfiler.endProvider(stage2LocalName, settingsId, rawEvents.length, true);
@@ -477,16 +488,11 @@ export class ProviderRegistry {
         const name = getProviderName(settingsId, instance);
         LoadDebugProfiler.startProvider(stage2RemoteName, settingsId, name);
         try {
-          // Optimization: For providers whose Stage 1 getEvents(range) already retrieves the
-          // complete event set (ICS fetches the whole file regardless of range; Google and
-          // Outlook without timeMin/timeMax return all events in the full fetch), skip the
-          // redundant second network request. This also avoids the ~2-second race where a
-          // Stage 2 empty-or-partial result wipes the Stage 1 populated cache via syncCalendar().
-          if (
-            instance.type === 'ical' ||
-            instance.type === 'google' ||
-            instance.type === 'outlook'
-          ) {
+          // Optimization: If the provider does not support two-stage loading (its Stage 1
+          // getEvents(range) already retrieved the complete event set), skip the redundant
+          // second network request. This also avoids the race where a Stage 2 partial result
+          // wipes the Stage 1 populated cache via syncCalendar().
+          if (!instance.supportsSecondStage) {
             const prevEvents = stage1RemoteEvents.get(settingsId) || [];
             LoadDebugProfiler.endProvider(stage2RemoteName, settingsId, prevEvents.length, true);
             await this.refreshProviderAuxiliaryData(settingsId, instance);

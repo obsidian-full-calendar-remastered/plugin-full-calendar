@@ -79,6 +79,7 @@ export interface FreezeStats {
 }
 
 export interface LoadReport {
+  isColdBoot?: boolean;
   onloadDurationMs: number | null;
   timeToLayoutReadyMs: number | null;
   layoutReadyToPopulateMs: number | null;
@@ -110,6 +111,10 @@ class LoadDebugProfilerImpl {
   private layoutReadyTime: number | null = null;
   private populateStartTime: number | null = null;
   private populateEndTime: number | null = null;
+
+  private coldBootReport: LoadReport | null = null;
+  private coldBootFormattedReport: string | null = null;
+  private isColdBoot = true;
 
   private totalYieldDurationMs = 0;
 
@@ -223,6 +228,28 @@ class LoadDebugProfilerImpl {
     };
     this.lastReport = null;
     this.lastFormattedReport = null;
+    this.coldBootReport = null;
+    this.coldBootFormattedReport = null;
+    this.isColdBoot = true;
+  }
+
+  public resetPopulateState(): void {
+    this.populateStartTime = null;
+    this.populateEndTime = null;
+    this.totalYieldDurationMs = 0;
+    this.currentStages.clear();
+    this.currentPhases.clear();
+    this.contextStack = [];
+    this.completedStages = [];
+    this.completedPhases = [];
+    this.completedSubPhases = [];
+    this.detectedFreezes = [];
+    this.dailyNotesStats = {
+      totalScanned: 0,
+      preFiltered: 0,
+      cacheHits: 0,
+      readFromDisk: 0
+    };
   }
 
   private getRelativeMs(): number {
@@ -363,7 +390,7 @@ class LoadDebugProfilerImpl {
 
   public startPopulate(): void {
     if (!this.enabled) return;
-    this.clearState();
+    this.resetPopulateState();
     this.populateStartTime = performance.now();
     this.startLagMonitor();
     this.addLogEntry('info', 'Event Cache Populate Started');
@@ -511,7 +538,9 @@ class LoadDebugProfilerImpl {
       )
     };
 
+    const isColdBootRun = this.isColdBoot && this.onloadStartTime !== null;
     const report: LoadReport = {
+      isColdBoot: isColdBootRun,
       onloadDurationMs,
       timeToLayoutReadyMs,
       layoutReadyToPopulateMs,
@@ -530,11 +559,21 @@ class LoadDebugProfilerImpl {
 
     this.lastReport = report;
     this.lastFormattedReport = this.formatReportToString(report);
+
+    if (isColdBootRun && !this.coldBootReport) {
+      this.coldBootReport = report;
+      this.coldBootFormattedReport = this.lastFormattedReport;
+      this.isColdBoot = false;
+    }
+
     return report;
   }
 
   public formatReportToString(report: LoadReport): string {
-    const lines: string[] = ['[FullCalendar Load Debug & UI Freeze Diagnostic Report]'];
+    const title = report.isColdBoot
+      ? '[FullCalendar Load Debug & UI Freeze Diagnostic Report (Cold Boot Startup)]'
+      : '[FullCalendar Load Debug & UI Freeze Diagnostic Report]';
+    const lines: string[] = [title];
     if (report.onloadDurationMs !== null) {
       lines.push(`Plugin onload(): ${report.onloadDurationMs} ms`);
     }
@@ -645,6 +684,14 @@ class LoadDebugProfilerImpl {
 
   public getFormattedReport(): string | null {
     return this.lastFormattedReport;
+  }
+
+  public getColdBootReport(): LoadReport | null {
+    return this.coldBootReport;
+  }
+
+  public getColdBootFormattedReport(): string | null {
+    return this.coldBootFormattedReport;
   }
 }
 

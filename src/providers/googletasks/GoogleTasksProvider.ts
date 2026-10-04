@@ -107,6 +107,7 @@ export class GoogleTasksProvider
   readonly displayName = 'Google Tasks';
   readonly isRemote = true;
   readonly loadPriority = 125;
+  readonly supportsSecondStage = false;
 
   constructor(
     source: GoogleTasksProviderConfig,

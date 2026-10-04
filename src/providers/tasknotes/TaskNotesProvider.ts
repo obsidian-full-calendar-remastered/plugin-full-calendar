@@ -122,6 +122,7 @@ export class TaskNotesProvider
   readonly displayName = 'TaskNotes';
   readonly isRemote = false;
   readonly loadPriority = 40;
+  readonly supportsSecondStage = false;
 
   constructor(
     source: TaskNotesProviderConfig,

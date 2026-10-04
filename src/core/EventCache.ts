@@ -402,6 +402,10 @@ export default class EventCache {
     toAdd: CacheEntry[],
     affectedCalendars: string[] = []
   ): void {
+    if (!this.initialized) {
+      this.isBulkUpdating = false;
+      return;
+    }
     this.subscriptionManager.flushUpdateQueue(toRemove, toAdd, affectedCalendars, () => {
       this.isBulkUpdating = false;
     });

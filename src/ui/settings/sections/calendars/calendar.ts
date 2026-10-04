@@ -679,6 +679,10 @@ export async function renderCalendar(
 
       const startMs = event.start.getTime();
       const rawEndMs = event.end?.getTime() ?? startMs;
+      // Fast skip: event already ended before now, so it can never be current or next
+      if (rawEndMs < nowMs) {
+        continue;
+      }
       // Treat zero-duration events as a 1ms window so equality checks stay deterministic.
       const endMs = rawEndMs <= startMs ? startMs + 1 : rawEndMs;
 
@@ -703,8 +707,9 @@ export async function renderCalendar(
     return result;
   };
 
-  const updateCurrentOrNextEventHighlight = () => {
-    const nextUpcomingEventIds = findCurrentOrNextEventIds(cal?.getEvents() || []);
+  const updateCurrentOrNextEventHighlight = (providedEvents?: EventApi[]) => {
+    const events = providedEvents ?? cal?.getEvents() ?? [];
+    const nextUpcomingEventIds = findCurrentOrNextEventIds(events);
 
     for (const oldId of currentUpcomingEventIds) {
       if (!nextUpcomingEventIds.has(oldId)) {
@@ -1249,8 +1254,8 @@ export async function renderCalendar(
       window.requestAnimationFrame(() => ensureToolbarSearchControl());
     },
 
-    eventsSet: () => {
-      updateCurrentOrNextEventHighlight();
+    eventsSet: (events?: EventApi[]) => {
+      updateCurrentOrNextEventHighlight(events);
       onEventsSet?.();
 
       if (blankViewTimer !== null) {
@@ -1261,7 +1266,8 @@ export async function renderCalendar(
       // Fire blank-view diagnostic if the caller registered a handler and the
       // rendered event list (excluding shadow events) remains empty after settling.
       if (onBlankView && cal) {
-        const nonShadowCount = cal.getEvents().filter(e => !e.extendedProps?.isShadow).length;
+        const currentEvents = events ?? cal.getEvents() ?? [];
+        const nonShadowCount = currentEvents.filter(e => !e.extendedProps?.isShadow).length;
         if (nonShadowCount === 0) {
           blankViewTimer = window.setTimeout(() => {
             blankViewTimer = null;

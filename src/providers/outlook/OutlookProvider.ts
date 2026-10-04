@@ -94,6 +94,7 @@ export class OutlookProvider implements CalendarProvider<OutlookProviderConfig>,
   readonly displayName = 'Outlook Calendar';
   readonly isRemote = true;
   readonly loadPriority = 125;
+  readonly supportsSecondStage = false;
 
   constructor(source: OutlookProviderConfig, plugin: FullCalendarPlugin, _app?: ObsidianInterface) {
     this.plugin = plugin;

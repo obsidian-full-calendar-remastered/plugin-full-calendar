@@ -103,6 +103,17 @@ export interface CalendarProvider<TConfig> {
   readonly loadPriority: number;
 
   /**
+   * Whether this provider supports two-stage loading (range-limited first stage,
+   * followed by a full background fetch in the second stage).
+   *
+   * Providers that do not filter by date range (e.g. local notes, tasks, bases, ICS)
+   * return all their events in stage 1, so running stage 2 is redundant and should be skipped.
+   *
+   * Defaults to `false`. Set to `true` on range-aware providers (e.g. DailyNoteProvider, CalDAVProvider).
+   */
+  readonly supportsSecondStage?: boolean;
+
+  /**
    * Optional initialization hook called after provider instance is created.
    * Use this to subscribe to external events or set up live watchers.
    */

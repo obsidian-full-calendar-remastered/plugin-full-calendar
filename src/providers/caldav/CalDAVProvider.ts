@@ -78,6 +78,7 @@ export class CalDAVProvider
   readonly displayName: string = 'CalDAV';
   readonly isRemote = true;
   readonly loadPriority: number = 110;
+  readonly supportsSecondStage: boolean = true;
 
   constructor(source: CalDAVProviderConfig, plugin: FullCalendarPlugin) {
     this.plugin = plugin;

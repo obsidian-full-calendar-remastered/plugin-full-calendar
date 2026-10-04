@@ -199,6 +199,7 @@ export class DailyNoteProvider
   readonly displayName: string = 'Daily Note';
   readonly isRemote = false;
   readonly loadPriority = 20;
+  readonly supportsSecondStage: boolean = true;
 
   constructor(
     source: DailyNoteProviderConfig,

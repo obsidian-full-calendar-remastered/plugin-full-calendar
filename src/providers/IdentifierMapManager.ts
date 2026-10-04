@@ -89,6 +89,17 @@ export class IdentifierMapManager {
       console.warn(`Could not find provider instance for calendar ID ${calendarId}`);
       return null;
     }
+
+    if (
+      'computeSyncKey' in instance &&
+      typeof (instance as SyncKeyProvider).computeSyncKey === 'function'
+    ) {
+      const key = (instance as SyncKeyProvider).computeSyncKey(event);
+      if (key) {
+        return `${calendarId}::${key}`;
+      }
+    }
+
     const handle = instance.getEventHandle(event);
     if (!handle) {
       return null;
@@ -97,17 +108,6 @@ export class IdentifierMapManager {
   }
 
   public computeSyncKeyForEvent(event: OFCEvent, calendarId: string): string | null {
-    const instance = this.getInstance(calendarId);
-    if (!instance) return null;
-
-    if (
-      'computeSyncKey' in instance &&
-      typeof (instance as SyncKeyProvider).computeSyncKey === 'function'
-    ) {
-      const key = (instance as SyncKeyProvider).computeSyncKey(event);
-      return `${calendarId}::${key}`;
-    }
-
     return this.getGlobalIdentifier(event, calendarId);
   }
 

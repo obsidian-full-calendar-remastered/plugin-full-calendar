@@ -32,6 +32,10 @@ export class ViewSearchHandler {
     }
 
     const trimmedQuery = this.eventSearchQuery.trim();
+    if (!trimmedQuery && this.eventDisplayById.size === 0) {
+      return;
+    }
+
     const events = fullCalendarView.getEvents();
     if (events.length === 0) {
       return;

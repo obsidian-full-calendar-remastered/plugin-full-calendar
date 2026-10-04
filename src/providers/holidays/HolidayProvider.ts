@@ -90,7 +90,8 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
   readonly type = 'holidays';
   readonly displayName = 'Holidays';
   readonly isRemote = false;
-  readonly loadPriority = 5;
+  readonly loadPriority = 50;
+  readonly supportsSecondStage = false;
 
   // Static session-lifetime in-memory cache to guarantee instant offline retrieves
   private static memoryCache: Record<string, OFCEvent[]> = {};

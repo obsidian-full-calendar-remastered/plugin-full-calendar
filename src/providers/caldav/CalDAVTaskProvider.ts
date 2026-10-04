@@ -54,6 +54,7 @@ export class CalDAVTaskProvider extends CalDAVProvider {
   readonly type: string = 'caldavtasks';
   readonly displayName: string = t('settings.calendars.caldavTasks.title');
   readonly loadPriority = 115;
+  override readonly supportsSecondStage = false;
 
   getCapabilities(): CalendarProviderCapabilities {
     return {

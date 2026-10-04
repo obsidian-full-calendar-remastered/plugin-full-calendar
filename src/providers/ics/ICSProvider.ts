@@ -72,6 +72,7 @@ export class ICSProvider implements CalendarProvider<ICSProviderConfig>, SyncKey
 
   readonly type = 'ical';
   readonly loadPriority = 100;
+  readonly supportsSecondStage = false;
 
   /** Dynamic: returns true for remote URLs, false for local file paths */
   get isRemote(): boolean {

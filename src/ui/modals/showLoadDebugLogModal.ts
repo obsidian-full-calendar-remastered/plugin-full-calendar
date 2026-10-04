@@ -17,7 +17,6 @@ async function runBenchmarkAndGetReport(noticeMsg: string) {
   if (cache) {
     await cache.populate();
   }
-  LoadDebugProfiler.setEnabled(false);
   return {
     report: LoadDebugProfiler.getLastReport(),
     text: LoadDebugProfiler.getFormattedReport() || 'No log data available.'
@@ -25,24 +24,36 @@ async function runBenchmarkAndGetReport(noticeMsg: string) {
 }
 
 export async function showLoadDebugLogModal(app: App): Promise<void> {
-  let report = LoadDebugProfiler.getLastReport();
-  let text = LoadDebugProfiler.getFormattedReport();
+  const coldBootReport = LoadDebugProfiler.getColdBootReport();
+  const coldBootText = LoadDebugProfiler.getColdBootFormattedReport();
+  let lastReport = LoadDebugProfiler.getLastReport();
+  let lastText = LoadDebugProfiler.getFormattedReport();
 
-  if (!report || !text) {
+  if (!lastReport || !lastText) {
     const result = await runBenchmarkAndGetReport('Running Full Calendar load timing benchmark...');
-    report = result.report;
-    text = result.text;
+    lastReport = result.report;
+    lastText = result.text;
   }
 
-  const timestampStr = report ? new Date(report.timestamp).toLocaleString() : '';
-  const freezeDesc = report?.freezeStats
-    ? ` | UI Freezes: ${report.freezeStats.totalCount} (Max spike: ${report.freezeStats.maxDurationMs} ms)`
+  let text = '';
+  if (coldBootText && lastText && coldBootText !== lastText) {
+    text = `${coldBootText}\n\n${'='.repeat(70)}\n\n${lastText}`;
+  } else {
+    text = coldBootText || lastText || 'No log data available.';
+  }
+
+  const primaryReport = coldBootReport || lastReport;
+  const isCold = !!coldBootReport && (!lastReport || primaryReport === lastReport);
+  const typeStr = isCold ? 'Cold Boot Startup' : 'On-Demand Benchmark';
+  const timestampStr = primaryReport ? new Date(primaryReport.timestamp).toLocaleString() : '';
+  const freezeDesc = primaryReport?.freezeStats
+    ? ` | UI Freezes: ${primaryReport.freezeStats.totalCount} (Max spike: ${primaryReport.freezeStats.maxDurationMs} ms)`
     : '';
 
   new CopyTextModal(app, {
-    titleText: '⏱️ Full Calendar Load Debug & UI Freeze Diagnostic Log',
-    descriptionText: report
-      ? `Last run: ${timestampStr} | Total population: ${report.totalPopulateDurationMs ?? 0} ms | Stages: ${report.stages.length}${freezeDesc}`
+    titleText: `⏱️ Full Calendar Load Debug (${typeStr})`,
+    descriptionText: primaryReport
+      ? `Captured: ${timestampStr} | Total population: ${primaryReport.totalPopulateDurationMs ?? 0} ms | Stages: ${primaryReport.stages.length}${freezeDesc}`
       : 'No timing benchmark recorded yet.',
     valueToCopy: text,
     multiline: true,

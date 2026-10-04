@@ -38,6 +38,7 @@ export class BasesProvider implements CalendarProvider<BasesProviderConfig>, Syn
   displayName = 'Obsidian Bases';
   isRemote = false;
   loadPriority = 10; // Local priority
+  supportsSecondStage = false;
 
   config: BasesProviderConfig;
   plugin: FullCalendarPlugin;

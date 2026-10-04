@@ -130,7 +130,7 @@ function mapWindowsTimezoneToIANA(windowsTz: string): string | null {
     'UTC-09': 'Etc/GMT+9',
     'UTC-08': 'Etc/GMT+8',
     'UTC-02': 'Etc/GMT+2',
-    'UTC': 'Etc/UTC',
+    UTC: 'Etc/UTC',
     'UTC+12': 'Etc/GMT-12',
     'UTC+13': 'Etc/GMT-13',
 

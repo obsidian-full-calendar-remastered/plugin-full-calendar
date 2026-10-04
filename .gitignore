@@ -31,6 +31,8 @@ exported*
 css_report.txt
 lint_report.txt
 site/
+scratch
+tmp
 
 # Local vault configuration (private)
 .vault-config.json

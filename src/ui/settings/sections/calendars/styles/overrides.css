@@ -11,6 +11,37 @@
     width: 100%;
 }
 
+/* Prevent Obsidian's .markdown-rendered table styles from leaking into FullCalendar */
+.ofc-calendar-shell table,
+.ofc-embedded-calendar-container table,
+.markdown-rendered .ofc-calendar-shell table,
+.markdown-rendered .ofc-embedded-calendar-container table {
+    border-collapse: separate;
+    line-height: normal;
+}
+
+.ofc-calendar-shell tr,
+.ofc-embedded-calendar-container tr,
+.markdown-rendered .ofc-calendar-shell tr,
+.markdown-rendered .ofc-embedded-calendar-container tr {
+    height: auto;
+}
+
+.ofc-calendar-shell td,
+.ofc-calendar-shell th,
+.ofc-embedded-calendar-container td,
+.ofc-embedded-calendar-container th,
+.markdown-rendered .ofc-calendar-shell td,
+.markdown-rendered .ofc-calendar-shell th,
+.markdown-rendered .ofc-embedded-calendar-container td,
+.markdown-rendered .ofc-embedded-calendar-container th {
+    padding: 0;
+    height: auto;
+    max-width: none;
+    min-width: 0;
+    white-space: normal;
+}
+
 .ofc-calendar-loading-bar {
     position: absolute;
     top: 0;

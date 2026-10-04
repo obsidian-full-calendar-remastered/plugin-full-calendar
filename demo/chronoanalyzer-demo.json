@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "generatedFor": "chrono-analyser-demo",
+  "dateMode": "relative",
+  "calendarSource": {
+    "id": "demo::chrono-analyser",
+    "displayName": "ChronoAnalyser Demo",
+    "type": "demo"
+  },
+  "insightsConfig": {
+    "version": 1,
+    "lastUpdated": "2026-05-17T00:00:00.000Z",
+    "insightGroups": {
+      "Focused Work": {
+        "persona": "productivity",
+        "rules": {
+          "hierarchies": ["Work"],
+          "projects": ["ChronoAnalyzer", "Plugin Architecture", "Documentation"],
+          "subprojectKeywords": ["planning", "implementation", "review", "release"],
+          "mutedSubprojectKeywords": ["standup"],
+          "mutedProjects": ["Admin"]
+        }
+      },
+      "Learning": {
+        "persona": "productivity",
+        "rules": {
+          "hierarchies": ["Learning"],
+          "projects": ["Research", "Skill Practice"],
+          "subprojectKeywords": ["reading", "experiment", "notes"],
+          "mutedSubprojectKeywords": [],
+          "mutedProjects": []
+        }
+      },
+      "Wellness": {
+        "persona": "wellness",
+        "rules": {
+          "hierarchies": ["Wellness"],
+          "projects": ["Exercise", "Sleep", "Planning"],
+          "subprojectKeywords": ["walk", "sleep", "reflection", "meal"],
+          "mutedSubprojectKeywords": [],
+          "mutedProjects": []
+        }
+      }
+    }
+  },
+  "events": [
+    { "id": "demo-001", "path": "Demo/Work/chrono-analyzer.md", "dayOffset": 0, "title": "Dashboard polish", "category": "Work/Product", "subCategory": "ChronoAnalyzer", "startTime": "09:00", "endTime": "11:30" },
+    { "id": "demo-002", "path": "Demo/Work/chrono-analyzer.md", "dayOffset": 0, "title": "Insight review", "category": "Work/Product", "subCategory": "ChronoAnalyzer", "startTime": "14:00", "endTime": "15:15" },
+    { "id": "demo-003", "path": "Demo/Wellness/exercise.md", "dayOffset": 0, "title": "Evening walk", "category": "Wellness/Body", "subCategory": "Exercise", "startTime": "18:30", "endTime": "19:20" },
+    { "id": "demo-004", "path": "Demo/Work/plugin-architecture.md", "dayOffset": -1, "title": "Data source refactor", "category": "Work/Engineering", "subCategory": "Plugin Architecture", "startTime": "10:00", "endTime": "12:45" },
+    { "id": "demo-005", "path": "Demo/Learning/research.md", "dayOffset": -1, "title": "Analytics privacy notes", "category": "Learning/Research", "subCategory": "Research", "startTime": "16:00", "endTime": "17:15" },
+    { "id": "demo-006", "path": "Demo/Wellness/sleep.md", "dayOffset": -1, "title": "Sleep routine", "category": "Wellness/Rest", "subCategory": "Sleep", "startTime": "22:30", "endTime": "23:30" },
+    { "id": "demo-007", "path": "Demo/Work/documentation.md", "dayOffset": -2, "title": "Demo docs draft", "category": "Work/Docs", "subCategory": "Documentation", "startTime": "09:30", "endTime": "11:00" },
+    { "id": "demo-008", "path": "Demo/Work/admin.md", "dayOffset": -2, "title": "Weekly standup", "category": "Work/Ops", "subCategory": "Admin", "startTime": "11:30", "endTime": "12:00" },
+    { "id": "demo-009", "path": "Demo/Wellness/planning.md", "dayOffset": -2, "title": "Weekly reflection", "category": "Wellness/Mind", "subCategory": "Planning", "startTime": "20:00", "endTime": "20:45" },
+    { "id": "demo-010", "path": "Demo/Work/chrono-analyzer.md", "dayOffset": -3, "title": "Sunburst interactions", "category": "Work/Product", "subCategory": "ChronoAnalyzer", "startTime": "08:45", "endTime": "10:45" },
+    { "id": "demo-011", "path": "Demo/Learning/skill-practice.md", "dayOffset": -3, "title": "Plotly experiment", "category": "Learning/Practice", "subCategory": "Skill Practice", "startTime": "15:15", "endTime": "16:45" },
+    { "id": "demo-012", "path": "Demo/Wellness/exercise.md", "dayOffset": -3, "title": "Strength session", "category": "Wellness/Body", "subCategory": "Exercise", "startTime": "18:00", "endTime": "19:00" },
+    { "id": "demo-013", "path": "Demo/Work/plugin-architecture.md", "dayOffset": -4, "title": "Cache boundary audit", "category": "Work/Engineering", "subCategory": "Plugin Architecture", "startTime": "09:00", "endTime": "12:00" },
+    { "id": "demo-014", "path": "Demo/Work/documentation.md", "dayOffset": -4, "title": "Configuration guide", "category": "Work/Docs", "subCategory": "Documentation", "startTime": "13:30", "endTime": "15:00" },
+    { "id": "demo-015", "path": "Demo/Wellness/meal.md", "dayOffset": -4, "title": "Meal prep", "category": "Wellness/Home", "subCategory": "Planning", "startTime": "19:00", "endTime": "20:00" },
+    { "id": "demo-016", "path": "Demo/Work/chrono-analyzer.md", "dayOffset": -5, "title": "Insight groups implementation", "category": "Work/Product", "subCategory": "ChronoAnalyzer", "startTime": "10:00", "endTime": "13:15" },
+    { "id": "demo-017", "path": "Demo/Learning/research.md", "dayOffset": -5, "title": "Reading session", "category": "Learning/Research", "subCategory": "Research", "startTime": "17:00", "endTime": "18:00" },
+    { "id": "demo-018", "path": "Demo/Wellness/sleep.md", "dayOffset": -5, "title": "Sleep routine", "category": "Wellness/Rest", "subCategory": "Sleep", "startTime": "22:15", "endTime": "23:15" },
+    { "id": "demo-019", "path": "Demo/Work/plugin-architecture.md", "dayOffset": -6, "title": "API boundary notes", "category": "Work/Engineering", "subCategory": "Plugin Architecture", "startTime": "09:30", "endTime": "11:30" },
+    { "id": "demo-020", "path": "Demo/Wellness/exercise.md", "dayOffset": -6, "title": "Morning walk", "category": "Wellness/Body", "subCategory": "Exercise", "startTime": "07:30", "endTime": "08:10" },
+    { "id": "demo-021", "path": "Demo/Work/chrono-analyzer.md", "dayOffset": -7, "title": "Release checklist", "category": "Work/Product", "subCategory": "ChronoAnalyzer", "startTime": "09:00", "endTime": "10:30" },
+    { "id": "demo-022", "path": "Demo/Work/admin.md", "dayOffset": -7, "title": "Inbox cleanup", "category": "Work/Ops", "subCategory": "Admin", "startTime": "16:00", "endTime": "16:30" },
+    { "id": "demo-023", "path": "Demo/Wellness/planning.md", "dayOffset": -7, "title": "Weekly reflection", "category": "Wellness/Mind", "subCategory": "Planning", "startTime": "20:00", "endTime": "20:45" },
+    { "id": "demo-024", "path": "Demo/Work/documentation.md", "dayOffset": -9, "title": "FAQ rewrite", "category": "Work/Docs", "subCategory": "Documentation", "startTime": "11:00", "endTime": "12:30" },
+    { "id": "demo-025", "path": "Demo/Learning/skill-practice.md", "dayOffset": -10, "title": "Experiment notes", "category": "Learning/Practice", "subCategory": "Skill Practice", "startTime": "15:30", "endTime": "17:00" },
+    { "id": "demo-026", "path": "Demo/Wellness/exercise.md", "dayOffset": -11, "title": "Strength session", "category": "Wellness/Body", "subCategory": "Exercise", "startTime": "18:00", "endTime": "19:00" },
+    { "id": "demo-027", "path": "Demo/Work/plugin-architecture.md", "dayOffset": -12, "title": "Event cache review", "category": "Work/Engineering", "subCategory": "Plugin Architecture", "startTime": "09:15", "endTime": "11:45" },
+    { "id": "demo-028", "path": "Demo/Work/chrono-analyzer.md", "dayOffset": -13, "title": "Activity chart QA", "category": "Work/Product", "subCategory": "ChronoAnalyzer", "startTime": "13:00", "endTime": "15:15" },
+    { "id": "demo-029", "path": "Demo/Wellness/sleep.md", "dayOffset": -14, "title": "Sleep routine", "category": "Wellness/Rest", "subCategory": "Sleep", "startTime": "22:30", "endTime": "23:30" },
+    { "id": "demo-030", "path": "Demo/Work/documentation.md", "dayOffset": -15, "title": "Screenshot pass", "category": "Work/Docs", "subCategory": "Documentation", "startTime": "10:00", "endTime": "11:20" },
+    { "id": "demo-031", "path": "Demo/Learning/research.md", "dayOffset": -16, "title": "Reading session", "category": "Learning/Research", "subCategory": "Research", "startTime": "19:00", "endTime": "20:15" },
+    { "id": "demo-032", "path": "Demo/Wellness/exercise.md", "dayOffset": -18, "title": "Long walk", "category": "Wellness/Body", "subCategory": "Exercise", "startTime": "08:00", "endTime": "09:20" },
+    { "id": "demo-033", "path": "Demo/Work/plugin-architecture.md", "dayOffset": -20, "title": "Design review", "category": "Work/Engineering", "subCategory": "Plugin Architecture", "startTime": "14:00", "endTime": "16:00" },
+    { "id": "demo-034", "path": "Demo/Learning/skill-practice.md", "dayOffset": -22, "title": "Prototype lab", "category": "Learning/Practice", "subCategory": "Skill Practice", "startTime": "15:00", "endTime": "17:30" },
+    { "id": "demo-035", "path": "Demo/Wellness/planning.md", "dayOffset": -24, "title": "Monthly reflection", "category": "Wellness/Mind", "subCategory": "Planning", "startTime": "20:00", "endTime": "21:00" },
+    { "id": "demo-036", "path": "Demo/Work/chrono-analyzer.md", "dayOffset": -26, "title": "Filter ergonomics", "category": "Work/Product", "subCategory": "ChronoAnalyzer", "startTime": "09:00", "endTime": "12:00" },
+    { "id": "demo-037", "path": "Demo/Work/documentation.md", "dayOffset": -28, "title": "Use case examples", "category": "Work/Docs", "subCategory": "Documentation", "startTime": "13:00", "endTime": "14:30" },
+    { "id": "demo-038", "path": "Demo/Wellness/exercise.md", "dayOffset": -31, "title": "Strength session", "category": "Wellness/Body", "subCategory": "Exercise", "startTime": "18:00", "endTime": "19:00" },
+    { "id": "demo-039", "path": "Demo/Learning/research.md", "dayOffset": -33, "title": "Research synthesis", "category": "Learning/Research", "subCategory": "Research", "startTime": "16:00", "endTime": "17:30" },
+    { "id": "demo-040", "path": "Demo/Work/plugin-architecture.md", "dayOffset": -35, "title": "Legacy mode comparison", "category": "Work/Engineering", "subCategory": "Plugin Architecture", "startTime": "10:00", "endTime": "11:45" },
+    { "id": "demo-041", "path": "Demo/Recurring/standup.md", "title": "Team standup", "category": "Work/Ops", "subCategory": "Admin", "type": "recurring", "startRecurOffset": -30, "endRecurOffset": 15, "daysOfWeek": ["M", "W", "F"], "startTime": "09:15", "endTime": "09:35" },
+    { "id": "demo-042", "path": "Demo/Recurring/focus-review.md", "title": "Friday review", "category": "Work/Product", "subCategory": "ChronoAnalyzer", "type": "recurring", "startRecurOffset": -45, "endRecurOffset": 30, "daysOfWeek": ["F"], "startTime": "15:30", "endTime": "16:15" }
+  ]
+}

@@ -16,7 +16,7 @@
 .ofc-embedded-calendar-container table,
 .markdown-rendered .ofc-calendar-shell table,
 .markdown-rendered .ofc-embedded-calendar-container table {
-    border-collapse: separate;
+    border-collapse: collapse;
     line-height: normal;
 }
 
@@ -36,6 +36,7 @@
 .markdown-rendered .ofc-embedded-calendar-container td,
 .markdown-rendered .ofc-embedded-calendar-container th {
     padding: 0;
+    border: none;
     height: auto;
     max-width: none;
     min-width: 0;

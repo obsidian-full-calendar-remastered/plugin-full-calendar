@@ -126,3 +126,18 @@ export const TaskNotesConfigComponent: React.FC<TaskNotesConfigComponentProps> =
     </div>
   );
 };
+
+export const TaskNotesSettingsRow: React.FC<{
+  source: Partial<import('../../types').CalendarInfo>;
+}> = ({ source }) => {
+  const name = source.name ?? t('settings.calendars.types.tasknotes');
+  return React.createElement(
+    'div',
+    { className: 'setting-item-control ofc-settings-row-tasknotes-provider' },
+    React.createElement('input', {
+      className: 'ofc-settings-row-text',
+      disabled: true,
+      value: name
+    })
+  );
+};

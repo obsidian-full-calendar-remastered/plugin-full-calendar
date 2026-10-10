@@ -12,12 +12,37 @@
 }
 
 /* Prevent Obsidian's .markdown-rendered table styles from leaking into FullCalendar */
+.ofc-calendar-shell,
+.ofc-embedded-calendar-container {
+    --table-row-even-background: transparent;
+    --table-row-odd-background: transparent;
+    --table-row-background-hover: transparent;
+    --table-border-color: transparent;
+    --table-border-width: 0px;
+    --table-header-border-color: transparent;
+    --table-header-border-width: 0px;
+    --table-column-first-border-width: 0px;
+    --table-column-last-border-width: 0px;
+    --table-cell-padding: 0;
+}
+
 .ofc-calendar-shell table,
 .ofc-embedded-calendar-container table,
 .markdown-rendered .ofc-calendar-shell table,
 .markdown-rendered .ofc-embedded-calendar-container table {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     line-height: normal;
+    margin: 0;
+    border: none;
+}
+
+.markdown-rendered .ofc-calendar-shell thead,
+.markdown-rendered .ofc-embedded-calendar-container thead,
+.markdown-rendered .ofc-calendar-shell tbody,
+.markdown-rendered .ofc-embedded-calendar-container tbody {
+    border: none;
+    border-bottom: none;
 }
 
 .ofc-calendar-shell tr,
@@ -25,6 +50,23 @@
 .markdown-rendered .ofc-calendar-shell tr,
 .markdown-rendered .ofc-embedded-calendar-container tr {
     height: auto;
+}
+
+.markdown-rendered .ofc-calendar-shell tbody tr,
+.markdown-rendered .ofc-calendar-shell tbody tr:nth-child(even),
+.markdown-rendered .ofc-calendar-shell tbody tr:nth-child(odd),
+.markdown-rendered .ofc-calendar-shell tbody tr:hover,
+.markdown-rendered .ofc-calendar-shell tbody tr:nth-child(even):hover,
+.markdown-rendered .ofc-calendar-shell tbody tr:nth-child(odd):hover,
+.markdown-rendered .ofc-embedded-calendar-container tbody tr,
+.markdown-rendered .ofc-embedded-calendar-container tbody tr:nth-child(even),
+.markdown-rendered .ofc-embedded-calendar-container tbody tr:nth-child(odd),
+.markdown-rendered .ofc-embedded-calendar-container tbody tr:hover,
+.markdown-rendered .ofc-embedded-calendar-container tbody tr:nth-child(even):hover,
+.markdown-rendered .ofc-embedded-calendar-container tbody tr:nth-child(odd):hover {
+    background: transparent;
+    background-color: transparent;
+    border: none;
 }
 
 .ofc-calendar-shell td,
@@ -36,11 +78,43 @@
 .markdown-rendered .ofc-embedded-calendar-container td,
 .markdown-rendered .ofc-embedded-calendar-container th {
     padding: 0;
-    border: none;
     height: auto;
     max-width: none;
     min-width: 0;
     white-space: normal;
+}
+
+.markdown-rendered .ofc-calendar-shell td,
+.markdown-rendered .ofc-calendar-shell th,
+.markdown-rendered .ofc-embedded-calendar-container td,
+.markdown-rendered .ofc-embedded-calendar-container th {
+    background: transparent;
+    background-color: transparent;
+}
+
+.markdown-rendered .ofc-calendar-shell .fc-timegrid-slot-label-frame,
+.markdown-rendered .ofc-calendar-shell .fc-timegrid-slot-label-cushion,
+.markdown-rendered .ofc-embedded-calendar-container .fc-timegrid-slot-label-frame,
+.markdown-rendered .ofc-embedded-calendar-container .fc-timegrid-slot-label-cushion {
+    background: transparent;
+    background-color: transparent;
+}
+
+.markdown-rendered .ofc-calendar-shell .fc .fc-timegrid-slot,
+.markdown-rendered .ofc-embedded-calendar-container .fc .fc-timegrid-slot {
+    border-bottom: 0;
+}
+
+.markdown-rendered .ofc-calendar-shell .fc-theme-standard td,
+.markdown-rendered .ofc-calendar-shell .fc-theme-standard th,
+.markdown-rendered .ofc-embedded-calendar-container .fc-theme-standard td,
+.markdown-rendered .ofc-embedded-calendar-container .fc-theme-standard th {
+    border-color: var(--fc-border-color);
+}
+
+.markdown-rendered .ofc-calendar-shell .fc-theme-standard .fc-timegrid-slot-minor,
+.markdown-rendered .ofc-embedded-calendar-container .fc-theme-standard .fc-timegrid-slot-minor {
+    border-top-style: dotted;
 }
 
 .ofc-calendar-loading-bar {

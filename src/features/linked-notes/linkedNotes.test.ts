@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian';
+import { App, TFile, TFolder } from 'obsidian';
 import { OFCEvent } from '../../types';
 import { PluginState } from '../../core/PluginState';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
@@ -13,6 +13,18 @@ describe('linkedNotes: single event identity and rescheduling', () => {
   >;
   let mockLinkedNoteIndex: LinkedNoteIndex;
   const calendarId = 'google_1';
+
+  const buildMockFolder = (folderPath: string): TFolder => {
+    const parts = folderPath.split('/').filter(Boolean);
+    let current: TFolder | null = null;
+    for (const part of parts) {
+      const folder = new TFolder();
+      folder.name = part;
+      folder.parent = current;
+      current = folder;
+    }
+    return current || new TFolder();
+  };
 
   beforeEach(() => {
     vaultFiles = new Map();
@@ -52,7 +64,7 @@ describe('linkedNotes: single event identity and rescheduling', () => {
         const file = new TFile();
         const parts = path.split('/');
         file.name = parts.pop() || '';
-        file.parent = { path: parts.join('/') } as any;
+        file.parent = buildMockFolder(parts.join('/'));
 
         const fm: Record<string, unknown> = {};
         const matchUid = content.match(/fc-event-uid:\s*"([^"]+)"/);
@@ -228,7 +240,7 @@ describe('linkedNotes: single event identity and rescheduling', () => {
     const legacyPath = 'Calendar/Notes/Legacy Event 2026-09-19.md';
     const legacyFile = new TFile();
     legacyFile.name = 'Legacy Event 2026-09-19.md';
-    legacyFile.parent = { path: 'Calendar/Notes' } as any;
+    legacyFile.parent = buildMockFolder('Calendar/Notes');
 
     const legacyContent = `---
 fc-event-uid: "legacy-uid-999"
@@ -326,7 +338,7 @@ fc-event-recurrence-id: "2026-09-19"
 # Legacy Fail`;
     const legacyFile = new TFile();
     legacyFile.name = 'Legacy Fail Event.md';
-    legacyFile.parent = { path: 'Calendar/Notes' } as any;
+    legacyFile.parent = buildMockFolder('Calendar/Notes');
     vaultFiles.set(legacyPath, {
       file: legacyFile,
       content: legacyContent,

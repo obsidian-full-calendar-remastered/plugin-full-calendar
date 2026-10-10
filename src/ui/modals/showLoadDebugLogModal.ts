@@ -35,12 +35,10 @@ export async function showLoadDebugLogModal(app: App): Promise<void> {
     lastText = result.text;
   }
 
-  let text = '';
-  if (coldBootText && lastText && coldBootText !== lastText) {
-    text = `${coldBootText}\n\n${'='.repeat(70)}\n\n${lastText}`;
-  } else {
-    text = coldBootText || lastText || 'No log data available.';
-  }
+  const text =
+    coldBootText && lastText && coldBootText !== lastText
+      ? `${coldBootText}\n\n${'='.repeat(70)}\n\n${lastText}`
+      : coldBootText || lastText || 'No log data available.';
 
   const primaryReport = coldBootReport || lastReport;
   const isCold = !!coldBootReport && (!lastReport || primaryReport === lastReport);

@@ -158,6 +158,7 @@ export async function renderCalendar(
   const COMPACT_DESKTOP_BREAKPOINT = 910;
   const SWIPE_MIN_DISTANCE = 60;
   const SWIPE_DIRECTION_RATIO = 1.2;
+  const SWIPE_EDGE_MARGIN = 30;
 
   const getResponsiveWidth = (): number => {
     const measuredWidth = containerEl.getBoundingClientRect().width || containerEl.clientWidth;
@@ -634,9 +635,33 @@ export async function renderCalendar(
 
   let currentUpcomingEventIds = new Set<string>();
 
+  let touchStartX: number | null = null;
+  let touchStartY: number | null = null;
+  let swipeEnabled = false;
+
+  const cancelSwipeGesture = () => {
+    touchStartX = null;
+    touchStartY = null;
+    swipeEnabled = false;
+  };
+
   const isEditableTarget = (target: EventTarget | null): boolean => {
-    const element = target instanceof Node && target.instanceOf(Element) ? target : null;
-    if (!element) {
+    let element: Element | null = null;
+    if (target instanceof Element) {
+      element = target;
+    } else if (target instanceof Node && target.nodeType === Node.ELEMENT_NODE) {
+      element = target as Element;
+    } else if (
+      target &&
+      typeof (target as unknown as { instanceOf?: (cls: unknown) => boolean }).instanceOf ===
+        'function'
+    ) {
+      element = (target as unknown as { instanceOf: (cls: unknown) => boolean }).instanceOf(Element)
+        ? (target as Element)
+        : null;
+    }
+
+    if (!element || typeof element.closest !== 'function') {
       return false;
     }
 
@@ -1126,6 +1151,7 @@ export async function renderCalendar(
     select:
       select &&
       ((info): void => {
+        cancelSwipeGesture();
         void (async () => {
           await select(info.start, info.end, info.allDay, info.view.type);
           info.view.calendar.unselect();
@@ -1154,11 +1180,21 @@ export async function renderCalendar(
     editable: modifyEvent && true,
     // Keep drag mirror anchored to the viewport, not transformed Obsidian panes.
     fixedMirrorParent: mirrorParent,
-    eventDragStop:
-      eventDragStop &&
-      (info => {
+    eventDragStart: () => {
+      cancelSwipeGesture();
+    },
+    eventDragStop: info => {
+      cancelSwipeGesture();
+      if (eventDragStop) {
         eventDragStop(info.event, info.jsEvent);
-      }),
+      }
+    },
+    eventResizeStart: () => {
+      cancelSwipeGesture();
+    },
+    eventResizeStop: () => {
+      cancelSwipeGesture();
+    },
     eventDrop: modifyEventCallback,
     eventResize: modifyEventCallback,
 
@@ -1506,17 +1542,24 @@ export async function renderCalendar(
     cal.next();
   };
 
-  let touchStartX: number | null = null;
-  let touchStartY: number | null = null;
-  let swipeEnabled = false;
-
   const onTouchStartNavigate = (event: TouchEvent) => {
     if (event.touches.length !== 1 || isEditableTarget(event.target)) {
-      swipeEnabled = false;
+      cancelSwipeGesture();
       return;
     }
 
     const touch = event.touches[0];
+    const screenWidth = interactionDocument.defaultView?.innerWidth ?? window.innerWidth;
+    // Suppress swipe navigation when touch begins near screen edges to prevent
+    // conflict with Obsidian mobile drawer/sidebar swipe gestures.
+    if (
+      touch.clientX <= SWIPE_EDGE_MARGIN ||
+      (screenWidth > 0 && touch.clientX >= screenWidth - SWIPE_EDGE_MARGIN)
+    ) {
+      cancelSwipeGesture();
+      return;
+    }
+
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
     swipeEnabled = true;
@@ -1524,6 +1567,7 @@ export async function renderCalendar(
 
   const onTouchEndNavigate = (event: TouchEvent) => {
     if (!swipeEnabled || touchStartX === null || touchStartY === null || !event.changedTouches[0]) {
+      cancelSwipeGesture();
       return;
     }
 
@@ -1531,9 +1575,7 @@ export async function renderCalendar(
     const deltaX = touch.clientX - touchStartX;
     const deltaY = touch.clientY - touchStartY;
 
-    touchStartX = null;
-    touchStartY = null;
-    swipeEnabled = false;
+    cancelSwipeGesture();
 
     if (Math.abs(deltaX) < SWIPE_MIN_DISTANCE) {
       return;
@@ -1551,10 +1593,15 @@ export async function renderCalendar(
     cal.prev();
   };
 
+  const onTouchCancelNavigate = () => {
+    cancelSwipeGesture();
+  };
+
   containerEl.addEventListener('pointerdown', onPointerDownFocus);
   containerEl.addEventListener('keydown', onKeyDownNavigate);
   containerEl.addEventListener('touchstart', onTouchStartNavigate, { passive: true });
   containerEl.addEventListener('touchend', onTouchEndNavigate, { passive: true });
+  containerEl.addEventListener('touchcancel', onTouchCancelNavigate, { passive: true });
 
   updateCurrentOrNextEventHighlight();
   const activeHighlightInterval = window.setInterval(updateCurrentOrNextEventHighlight, 60_000);
@@ -1576,6 +1623,7 @@ export async function renderCalendar(
     containerEl.removeEventListener('keydown', onKeyDownNavigate);
     containerEl.removeEventListener('touchstart', onTouchStartNavigate);
     containerEl.removeEventListener('touchend', onTouchEndNavigate);
+    containerEl.removeEventListener('touchcancel', onTouchCancelNavigate);
     window.clearInterval(activeHighlightInterval);
     interactionDocument.removeEventListener('visibilitychange', onVisibilityChange);
     if (agendaEl) {

@@ -344,12 +344,11 @@ describe('ProviderRegistry Unit Tests', () => {
 
         // Stage 1 called getEvents with a range
         expect(mockInstance.getEvents).toHaveBeenCalledTimes(1);
-        expect(mockInstance.getEvents).toHaveBeenCalledWith(
-          expect.objectContaining({
-            start: expect.any(Date),
-            end: expect.any(Date)
-          })
-        );
+        const [stage1Arg] = mockInstance.getEvents.mock.calls[0] as [
+          { start?: unknown; end?: unknown }
+        ];
+        expect(stage1Arg?.start).toBeInstanceOf(Date);
+        expect(stage1Arg?.end).toBeInstanceOf(Date);
       });
 
       it('calls getEvents in Stage 2 for providers where supportsSecondStage is true', async () => {
@@ -379,13 +378,11 @@ describe('ProviderRegistry Unit Tests', () => {
 
         // Stage 1 called with range, Stage 2 called without range
         expect(mockInstance.getEvents).toHaveBeenCalledTimes(2);
-        expect(mockInstance.getEvents).toHaveBeenNthCalledWith(
-          1,
-          expect.objectContaining({
-            start: expect.any(Date),
-            end: expect.any(Date)
-          })
-        );
+        const [stage1CallArg] = mockInstance.getEvents.mock.calls[0] as [
+          { start?: unknown; end?: unknown }
+        ];
+        expect(stage1CallArg?.start).toBeInstanceOf(Date);
+        expect(stage1CallArg?.end).toBeInstanceOf(Date);
         expect(mockInstance.getEvents).toHaveBeenNthCalledWith(2);
       });
     });

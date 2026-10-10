@@ -112,7 +112,7 @@ export async function createLinkedNoteForProvider({
     }
   }
 
-  let existingFile = await linkedNoteIndex.resolveLinkedFileAfterHydration(
+  const existingFile = await linkedNoteIndex.resolveLinkedFileAfterHydration(
     event,
     identityInstanceDate
   );

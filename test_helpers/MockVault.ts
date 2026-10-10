@@ -148,7 +148,8 @@ export class MockVault implements Vault {
         const file = new TFile();
         file.name = baseName(path);
         this.setParent(path, file);
-        this.contents.set(path, data);
+        const p = joinPath('/', path);
+        this.contents.set(p, data);
         return Promise.resolve(file);
     }
     createFolder(path: string): Promise<TFolder> {

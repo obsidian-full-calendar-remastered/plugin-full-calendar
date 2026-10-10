@@ -147,26 +147,7 @@ export const waitForMetadataWithTimeout = async (
   }
 };
 
-type PrintableAtom =
-  Record<string, unknown> | (number | string)[] | number | string | boolean | null;
-
-function escapeYamlString(value: string): string {
-  if (
-    (value.startsWith('"') && value.endsWith('"') && value.length >= 2) ||
-    (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
-  ) {
-    return value;
-  }
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-}
-
-function stringifyYamlLine(k: string, v: PrintableAtom): string {
-  if (v === null) return `${k}:`;
-  if (Array.isArray(v)) return `${k}: [${v.join(',')}]`;
-  if (typeof v === 'object') return `${k}: ${JSON.stringify(v)}`;
-  if (typeof v === 'string') return `${k}: ${escapeYamlString(v)}`;
-  return `${k}: ${v}`;
-}
+import { stringifyYamlLine, PrintableAtom } from '../fullnote/frontmatter';
 
 export function serializeFrontmatter(fields: Record<string, unknown>): string {
   return Object.entries(fields)

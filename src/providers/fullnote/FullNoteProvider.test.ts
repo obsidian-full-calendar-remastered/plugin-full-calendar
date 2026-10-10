@@ -903,6 +903,100 @@ text_property: "[[example]]"
     expect(newContent).toContain('endTime: "12:00"');
   });
 
+  it('end-to-end: creates, reads, and updates event with multiline description containing colons and blank lines', async () => {
+    const multilineDesc = `Test Property 1: Test Value 1
+Test Property 2: Test Value 2
+
+Test Property 3: Test Value 3`;
+
+    const app = MockAppBuilder.make().folder(new MockAppBuilder(dirName)).done();
+    const obsidian = makeApp(app);
+
+    (obsidian.create as jest.Mock).mockImplementation((path: string, data: string) => {
+      const file = app.vault.create(path, data);
+      return file;
+    });
+
+    const calendar = new FullNoteProvider(
+      { directory: dirName, id: 'local_1' },
+      makePlugin(),
+      obsidian
+    );
+
+    // 1. Create event with multiline description
+    const initialEvent = parseEvent({
+      title: 'Multiline Event',
+      date: '2026-10-09',
+      allDay: true,
+      description: multilineDesc
+    });
+
+    const [createdEvent] = await calendar.createEvent(initialEvent);
+    expect(createdEvent.uid).toBeDefined();
+
+    const mockCreate = (obsidian.create as jest.Mock).mock;
+    expect(mockCreate.calls.length).toBe(1);
+    const [, writtenContent] = mockCreate.calls[0] as [string, string];
+
+    // Verify written note frontmatter contains block scalar
+    expect(writtenContent).toContain('description: |-');
+    expect(writtenContent).toContain('  Test Property 1: Test Value 1');
+    expect(writtenContent).toContain('  Test Property 2: Test Value 2');
+    expect(writtenContent).toContain('  Test Property 3: Test Value 3');
+
+    // 2. Read event back through getEventsInFile / getEvents
+    const createdFile = obsidian.getFileByPath(createdEvent.uid!);
+    expect(createdFile).not.toBeNull();
+    const readResults = await calendar.getEventsInFile(createdFile!);
+    expect(readResults.length).toBe(1);
+    const [retrievedEvent] = readResults[0];
+    expect(retrievedEvent.title).toBe('Multiline Event');
+    expect(retrievedEvent.description).toBe(multilineDesc);
+
+    // 3. Update another field (allDay -> false, add times) and verify description is preserved
+    const updatedEvent: OFCEvent = {
+      ...retrievedEvent,
+      allDay: false,
+      startTime: '14:00',
+      endTime: '15:00'
+    };
+
+    const handle = calendar.getEventHandle(retrievedEvent);
+    expect(handle).not.toBeNull();
+    await calendar.updateEvent(handle!, retrievedEvent, updatedEvent);
+
+    const mockRewrite = (obsidian.rewrite as jest.Mock).mock;
+    expect(mockRewrite.calls.length).toBe(1);
+    const [, rewriteCallback] = mockRewrite.calls[0] as [TFile, (content: string) => string];
+    const rewrittenContent = rewriteCallback(writtenContent);
+
+    expect(rewrittenContent).toContain('startTime: "14:00"');
+    expect(rewrittenContent).toContain('endTime: "15:00"');
+    expect(rewrittenContent).toContain('description: |-');
+    expect(rewrittenContent).toContain('  Test Property 1: Test Value 1');
+    expect(rewrittenContent).toContain('  Test Property 2: Test Value 2');
+    expect(rewrittenContent).toContain('  Test Property 3: Test Value 3');
+
+    // 4. Update the multiline description itself with a new multiline value
+    const newMultilineDesc = `Updated Property 1: New Value 1\nUpdated Property 2: New Value 2`;
+    const eventWithNewDesc: OFCEvent = {
+      ...updatedEvent,
+      description: newMultilineDesc
+    };
+
+    await calendar.updateEvent(handle!, updatedEvent, eventWithNewDesc);
+    expect(mockRewrite.calls.length).toBe(2);
+    const [, secondRewriteCallback] = mockRewrite.calls[1] as [TFile, (content: string) => string];
+    const finalContent = secondRewriteCallback(rewrittenContent);
+
+    expect(finalContent).toContain('description: |-');
+    expect(finalContent).toContain('  Updated Property 1: New Value 1');
+    expect(finalContent).toContain('  Updated Property 2: New Value 2');
+    expect(finalContent).not.toContain('Test Property 1: Test Value 1');
+    expect(finalContent).not.toContain('Test Property 2: Test Value 2');
+    expect(finalContent).not.toContain('Test Property 3: Test Value 3');
+  });
+
   it('downstream: modifies time in display TZ but provider receives preconvertd source TZ', async () => {
     // 1. Initial Local Provider Event in 'Europe/Berlin' Source TZ
     const sourceZone = 'Europe/Berlin';

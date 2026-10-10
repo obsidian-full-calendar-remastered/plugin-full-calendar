@@ -62,10 +62,10 @@ export function replaceFrontmatter(page: string, newFrontmatter: string): string
   return `---\n${newFrontmatter.trim()}\n---\n${contents}`;
 }
 
-type PrintableAtom =
+export type PrintableAtom =
   Record<string, unknown> | (number | string)[] | number | string | boolean | null;
 
-function escapeYamlString(value: string): string {
+export function escapeYamlString(value: string): string {
   if (
     (value.startsWith('"') && value.endsWith('"') && value.length >= 2) ||
     (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
@@ -75,14 +75,24 @@ function escapeYamlString(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
-function stringifyYamlLine(k: string, v: PrintableAtom): string {
+export function stringifyYamlLine(k: string, v: PrintableAtom): string {
   if (v === null) return `${k}:`;
   if (Array.isArray(v)) {
     const formatted = v.map(item => (typeof item === 'string' ? escapeYamlString(item) : item));
     return `${k}: [${formatted.join(', ')}]`;
   }
+  if (typeof v === 'string') {
+    const normalized = v.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    if (normalized.includes('\n')) {
+      const indented = normalized
+        .split('\n')
+        .map(line => (line.length > 0 ? `  ${line}` : ''))
+        .join('\n');
+      return `${k}: |-\n${indented}`;
+    }
+    return `${k}: ${escapeYamlString(v)}`;
+  }
   if (typeof v === 'object') return `${k}: ${JSON.stringify(v)}`;
-  if (typeof v === 'string') return `${k}: ${escapeYamlString(v)}`;
   return `${k}: ${v}`;
 }
 
@@ -93,13 +103,7 @@ export function parseFrontmatterWithFallback(page: string): Record<string, unkno
   try {
     const parsed: unknown = parseYaml(raw);
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const record = parsed as Record<string, unknown>;
-      const hasMultilineScalar = Object.values(record).some(
-        v => typeof v === 'string' && v.includes('\n')
-      );
-      if (!hasMultilineScalar) {
-        return record;
-      }
+      return parsed as Record<string, unknown>;
     }
   } catch {
     // YAML parse error, fall back to tolerant line-by-line scalar parsing
@@ -108,17 +112,58 @@ export function parseFrontmatterWithFallback(page: string): Record<string, unkno
   const result: Record<string, unknown> = {};
   const lines = raw.split('\n');
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
 
-    const colonIndex = trimmed.indexOf(':');
+    const colonIndex = line.indexOf(':');
     if (colonIndex <= 0) continue;
 
-    const key = trimmed.slice(0, colonIndex).trim();
-    let rawVal = trimmed.slice(colonIndex + 1).trim();
+    const key = line.slice(0, colonIndex).trim();
+    let rawVal = line.slice(colonIndex + 1).trim();
 
     if (!key) continue;
+
+    if (/^[|>][-+]?$/.test(rawVal)) {
+      const blockRawLines: string[] = [];
+      let j = i + 1;
+      let baseIndent = -1;
+
+      while (j < lines.length) {
+        const nextLine = lines[j];
+        if (nextLine.trim() === '') {
+          let peek = j + 1;
+          while (peek < lines.length && lines[peek].trim() === '') peek++;
+          if (peek < lines.length && /^\s+/.test(lines[peek])) {
+            blockRawLines.push('');
+            j++;
+          } else {
+            break;
+          }
+        } else if (/^\s+/.test(nextLine)) {
+          if (baseIndent === -1) {
+            const match = nextLine.match(/^(\s+)/);
+            baseIndent = match ? match[1].length : 2;
+          }
+          blockRawLines.push(nextLine);
+          j++;
+        } else {
+          break;
+        }
+      }
+
+      const indentToStrip = baseIndent > 0 ? baseIndent : 2;
+      const blockLines = blockRawLines.map(l => {
+        if (!l) return '';
+        const regex = new RegExp(`^\\s{1,${indentToStrip}}`);
+        return l.replace(regex, '');
+      });
+
+      result[key] = blockLines.join('\n');
+      i = j - 1;
+      continue;
+    }
 
     if (rawVal.startsWith('[') && rawVal.endsWith(']')) {
       const inner = rawVal.slice(1, -1).trim();
@@ -196,12 +241,15 @@ export function modifyFrontmatterString(
       let end = i + 1;
       while (end < lines.length) {
         const candidate = lines[end];
-        if (
-          topLevelKeyPattern.test(candidate) ||
-          candidate.trim() === '' ||
-          candidate.startsWith('#')
-        ) {
+        if (topLevelKeyPattern.test(candidate) || candidate.startsWith('#')) {
           break;
+        }
+        if (candidate.trim() === '') {
+          let peek = end + 1;
+          while (peek < lines.length && lines[peek].trim() === '') peek++;
+          if (peek >= lines.length || !/^\s+/.test(lines[peek])) {
+            break;
+          }
         }
         end++;
       }
@@ -224,10 +272,11 @@ export function modifyFrontmatterString(
     }
 
     const replacement = stringifyYamlLine(key, value);
+    const replacementLines = replacement.split('\n');
     if (range) {
-      lines.splice(range.start, range.end - range.start, replacement);
+      lines.splice(range.start, range.end - range.start, ...replacementLines);
     } else {
-      lines.push(replacement);
+      lines.push(...replacementLines);
     }
   }
 

@@ -74,12 +74,18 @@ export class TFolder extends TAbstractFile {
     }
 }
 
-export function parseYaml(yaml: string): Record<string, string> | null {
-    const [k, ...v] = yaml.split(":");
-    if (!k || !v) {
+import { parse as yamlParse } from 'yaml';
+
+export function parseYaml(yaml: string): Record<string, unknown> | null {
+    try {
+        const parsed: unknown = yamlParse(yaml);
+        if (parsed && typeof parsed === 'object') {
+            return parsed as Record<string, unknown>;
+        }
+        return null;
+    } catch {
         return null;
     }
-    return Object.fromEntries([[k.trim(), v.join(":").trim()]]);
 }
 
 export function getAllTags(cache: { tags?: { tag: string }[]; frontmatter?: { tags?: string | string[]; tag?: string | string[] } }): string[] | null {

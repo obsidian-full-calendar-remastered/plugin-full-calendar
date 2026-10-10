@@ -13,7 +13,7 @@ export interface BaseFilter {
 }
 
 export interface BaseFile {
-  filters?: BaseFilter;
+  filters?: BaseFilter | (BaseFilter | string)[];
   views?: unknown[];
   properties?: unknown;
 }
@@ -76,11 +76,15 @@ export function getTagsFromCache(cache: {
  * @param context Optional event context for extended checks.
  */
 export function evaluateBaseFilter(
-  filter: BaseFilter | string,
+  filter: BaseFilter | string | (BaseFilter | string)[],
   file: TFile,
   metadataCache: MetadataCache,
   context?: FilterContext
 ): boolean {
+  if (Array.isArray(filter)) {
+    return filter.every(f => evaluateBaseFilter(f, file, metadataCache, context));
+  }
+
   if (typeof filter === 'string') {
     return evaluateBaseFilterString(filter, file, metadataCache, context);
   }

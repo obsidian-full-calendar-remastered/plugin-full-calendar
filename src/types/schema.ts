@@ -250,3 +250,15 @@ type Json = { [key: string]: Json } | Json[] | string | number | true | false | 
 export function serializeEvent(obj: OFCEvent): Json {
   return { ...obj };
 }
+
+/**
+ * Returns true if an event is a recurring series or an instance/override of a recurring event.
+ * Standalone single events return false.
+ */
+export function isRecurringEvent(event: OFCEvent): boolean {
+  return (
+    event.type === 'recurring' ||
+    event.type === 'rrule' ||
+    Boolean(event.recurringEventId || event.recurrenceId)
+  );
+}

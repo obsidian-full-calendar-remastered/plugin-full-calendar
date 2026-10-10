@@ -255,7 +255,7 @@ export class GoogleProvider implements CalendarProvider<GoogleProviderConfig>, S
         const validated = validateEvent(rawEvent);
         if (!validated) return null;
 
-        const linkedFile = this.linkedNoteIndex.getFileForEvent(validated.uid || '');
+        const linkedFile = this.linkedNoteIndex.resolveLinkedFile(validated);
         const location = linkedFile
           ? { file: { path: linkedFile.path }, lineNumber: undefined }
           : null;

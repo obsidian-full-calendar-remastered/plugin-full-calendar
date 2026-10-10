@@ -1,5 +1,5 @@
 import { App, TFile } from 'obsidian';
-import { OFCEvent } from '../../types';
+import { OFCEvent, isRecurringEvent } from '../../types';
 import { PluginState } from '../../core/PluginState';
 import { TemplateEngine } from './TemplateEngine';
 import { ObsidianIO } from '../../ObsidianAdapter';
@@ -15,7 +15,13 @@ import { getNameBasedLinkedNoteFile, titleBasedLinkedNotePath } from './linkedNo
 
 const linkedNoteCreationPromises = new Map<string, Promise<TFile | null>>();
 
-function linkedNoteIdentityInstanceDate(instanceDate?: string): string | undefined {
+function linkedNoteIdentityInstanceDate(
+  event: OFCEvent,
+  instanceDate?: string
+): string | undefined {
+  if (!isRecurringEvent(event)) {
+    return undefined;
+  }
   return PluginState.getSettings().linkedNoteLinkStrategy === 'name' ? undefined : instanceDate;
 }
 
@@ -50,6 +56,26 @@ async function linkExistingTitleFile(
   return file;
 }
 
+async function scrubLegacyRecurrenceIdIfPresent(app: App, file: TFile): Promise<void> {
+  try {
+    const cache = app.metadataCache.getFileCache(file);
+    if (cache?.frontmatter && 'fc-event-recurrence-id' in cache.frontmatter) {
+      const contents = await app.vault.read(file);
+      const updatedContents = modifyFrontmatterString(contents, {
+        'fc-event-recurrence-id': null
+      });
+      if (updatedContents !== contents) {
+        await app.vault.modify(file, updatedContents);
+      }
+    }
+  } catch (err) {
+    console.warn(
+      `[LinkedNotes] Failed to self-heal legacy recurrence ID for file "${file.path}":`,
+      err
+    );
+  }
+}
+
 function linkedNoteCreationKey(calendarId: string, event: OFCEvent, instanceDate?: string): string {
   if (isNameBasedLinkedNotes()) {
     return `${calendarId}::name::${sanitizeTitleForFilename(event.title || t('linkedNotes.untitledNote'))}`;
@@ -77,7 +103,7 @@ export async function createLinkedNoteForProvider({
   instanceDate?: string;
   templateContentOverride?: string;
 }): Promise<TFile | null> {
-  const identityInstanceDate = linkedNoteIdentityInstanceDate(instanceDate);
+  const identityInstanceDate = linkedNoteIdentityInstanceDate(event, instanceDate);
   const directory = PluginState.getSettings().linkedNotesDirectory;
   if (isNameBasedLinkedNotes() && directory) {
     const titleFile = await linkExistingTitleFile(app, event, calendarId);
@@ -86,11 +112,14 @@ export async function createLinkedNoteForProvider({
     }
   }
 
-  const existingFile = await linkedNoteIndex.getFileForEventAfterHydration(
-    event.uid || event.id || '',
+  let existingFile = await linkedNoteIndex.resolveLinkedFileAfterHydration(
+    event,
     identityInstanceDate
   );
   if (existingFile) {
+    if (!isRecurringEvent(event)) {
+      await scrubLegacyRecurrenceIdIfPresent(app, existingFile);
+    }
     return existingFile;
   }
 
@@ -209,12 +238,15 @@ export async function openOrCreateLinkedNote(
   }
 
   if (linkedNoteProvider.linkedNoteIndex) {
-    const identityInstanceDate = linkedNoteIdentityInstanceDate(instanceDate);
-    const existingFile = await linkedNoteProvider.linkedNoteIndex.getFileForEventAfterHydration(
-      event.uid || event.id || '',
+    const identityInstanceDate = linkedNoteIdentityInstanceDate(event, instanceDate);
+    const existingFile = await linkedNoteProvider.linkedNoteIndex.resolveLinkedFileAfterHydration(
+      event,
       identityInstanceDate
     );
     if (existingFile) {
+      if (!isRecurringEvent(event)) {
+        await scrubLegacyRecurrenceIdIfPresent(plugin.app, existingFile);
+      }
       await openLinkedFileInExistingLeafOrNew(plugin.app, existingFile);
       return;
     }

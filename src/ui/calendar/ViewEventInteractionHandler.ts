@@ -12,7 +12,7 @@ import { t } from '../../features/i18n/i18n';
 import { dateEndpointsToFrontmatter, fromEventApi } from '../../core/interop';
 import { ViewContext } from './ViewContext';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
-import { OFCEvent } from '../../types';
+import { OFCEvent, isRecurringEvent } from '../../types';
 import { openLinkedFileInExistingLeafOrNew } from '../../utils/leafUtils';
 import { getEventInstanceDate, resolveEffectiveTimezone } from '../../features/timezone/Timezone';
 
@@ -115,15 +115,18 @@ export class ViewEventInteractionHandler {
   public async handleEventClick(info: EventClickArg): Promise<void> {
     try {
       const eventDetails = PluginState.getCache().store.getEventDetails(info.event.id);
-      const instanceDate = getEventDate(info.event, eventDetails?.event?.timezone) || undefined;
+      const isRecurring = eventDetails?.event ? isRecurringEvent(eventDetails.event) : false;
+      const instanceDate =
+        (isRecurring ? getEventDate(info.event, eventDetails?.event?.timezone) : undefined) ||
+        undefined;
 
       if (info.jsEvent.getModifierState('Control') || info.jsEvent.getModifierState('Meta')) {
         if (eventDetails) {
           const { calendarId, event } = eventDetails;
           const provider = PluginState.getProviderRegistry().getInstance(calendarId);
           if (provider && 'linkedNoteIndex' in provider && provider.linkedNoteIndex) {
-            const linkedFile = (provider.linkedNoteIndex as LinkedNoteIndex).getFileForEvent(
-              event.uid || '',
+            const linkedFile = (provider.linkedNoteIndex as LinkedNoteIndex).resolveLinkedFile(
+              event,
               instanceDate
             );
             if (linkedFile) {

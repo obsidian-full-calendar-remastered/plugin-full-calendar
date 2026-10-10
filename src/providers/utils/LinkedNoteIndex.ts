@@ -1,10 +1,12 @@
 import { App, TFile, EventRef } from 'obsidian';
 import { PluginState } from '../../core/PluginState';
+import { OFCEvent, isRecurringEvent } from '../../types';
 
 export class LinkedNoteIndex {
   private app: App;
   private calendarId: string;
-  private index = new Map<string, TFile>(); // uid -> TFile
+  private index = new Map<string, TFile>(); // compoundKey -> TFile
+  private filesByUid = new Map<string, Map<string, TFile>>(); // eventUid -> (recurrenceKey -> TFile)
   private eventRefs: EventRef[] = [];
   private hydrationWaiters: (() => void)[] = [];
   private revision = 0;
@@ -83,14 +85,153 @@ export class LinkedNoteIndex {
   }
 
   public getFileForEvent(eventUid: string, recurrenceId?: string): TFile | null {
-    if (recurrenceId) {
-      const instanceKey = `${eventUid}::${recurrenceId.trim()}`;
+    if (!eventUid || !eventUid.trim()) {
+      return null;
+    }
+    const cleanUid = eventUid.trim();
+    if (recurrenceId && recurrenceId.trim()) {
+      const instanceKey = `${cleanUid}::${recurrenceId.trim()}`;
       const instanceFile = this.index.get(instanceKey);
       if (instanceFile) {
         return instanceFile;
       }
     }
-    return this.index.get(eventUid) || null;
+    return this.index.get(cleanUid) || null;
+  }
+
+  /**
+   * Recovers any file associated with this event UID (master note or legacy instance note) in O(1).
+   * Useful for single events where a legacy note was erroneously indexed with a recurrence ID.
+   */
+  public getAnyFileForEvent(eventUid: string): TFile | null {
+    if (!eventUid || !eventUid.trim()) {
+      return null;
+    }
+    const cleanUid = eventUid.trim();
+    const mapForUid = this.filesByUid.get(cleanUid);
+    if (!mapForUid || mapForUid.size === 0) {
+      return null;
+    }
+    const master = mapForUid.get('');
+    if (master) {
+      return master;
+    }
+    return mapForUid.values().next().value ?? null;
+  }
+
+  private isNameStrategy(): boolean {
+    try {
+      return PluginState.getSettings()?.linkedNoteLinkStrategy === 'name';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Encapsulated, unified resolution of linked note files for any OFCEvent.
+   * Adheres to SRP & DRY so individual calendar providers and UI callers do not
+   * need to duplicate recurrence/fallback heuristics.
+   */
+  public resolveLinkedFile(event: OFCEvent, instanceDate?: string): TFile | null {
+    const uid = (event.uid || event.id || '').trim();
+    if (!uid) {
+      return null;
+    }
+
+    const isRecurring = isRecurringEvent(event);
+    const effectiveRecurrenceId = this.isNameStrategy()
+      ? undefined
+      : instanceDate || event.recurrenceId;
+
+    // 1. If an explicit recurrence ID or instance date is present, check instance-specific key
+    if (effectiveRecurrenceId) {
+      const instanceFile = this.getFileForEvent(uid, effectiveRecurrenceId);
+      if (instanceFile) {
+        return instanceFile;
+      }
+    }
+
+    // 2. Direct lookup for UID (master series note or standard single event)
+    const directFile = this.getFileForEvent(uid);
+    if (directFile) {
+      return directFile;
+    }
+
+    // 3. For recurrence exceptions with a parent series (e.g. Google Calendar recurringEventId)
+    if (event.recurringEventId && event.recurringEventId.trim() && event.recurringEventId !== uid) {
+      const parentUid = event.recurringEventId.trim();
+      if (effectiveRecurrenceId) {
+        const parentInstanceFile = this.getFileForEvent(parentUid, effectiveRecurrenceId);
+        if (parentInstanceFile) {
+          return parentInstanceFile;
+        }
+      }
+      const parentMasterFile = this.getFileForEvent(parentUid);
+      if (parentMasterFile) {
+        return parentMasterFile;
+      }
+    }
+
+    // 4. For non-recurring single events, fallback to any file indexed under this UID (self-heals legacy notes)
+    if (!isRecurring) {
+      return this.getAnyFileForEvent(uid);
+    }
+
+    return null;
+  }
+
+  public async resolveLinkedFileAfterHydration(
+    event: OFCEvent,
+    instanceDate?: string
+  ): Promise<TFile | null> {
+    const uid = (event.uid || event.id || '').trim();
+    if (!uid) {
+      return null;
+    }
+
+    const isRecurring = isRecurringEvent(event);
+    const effectiveRecurrenceId = this.isNameStrategy()
+      ? undefined
+      : instanceDate || event.recurrenceId;
+
+    // 1. If an explicit recurrence ID or instance date is present, check instance-specific key
+    if (effectiveRecurrenceId) {
+      const instanceFile = await this.getFileForEventAfterHydration(uid, effectiveRecurrenceId);
+      if (instanceFile) {
+        return instanceFile;
+      }
+    }
+
+    // 2. Direct lookup for UID (master series note or standard single event)
+    const directFile = await this.getFileForEventAfterHydration(uid, undefined);
+    if (directFile) {
+      return directFile;
+    }
+
+    // 3. For recurrence exceptions with a parent series (e.g. Google Calendar recurringEventId)
+    if (event.recurringEventId && event.recurringEventId.trim() && event.recurringEventId !== uid) {
+      const parentUid = event.recurringEventId.trim();
+      if (effectiveRecurrenceId) {
+        const parentInstanceFile = await this.getFileForEventAfterHydration(
+          parentUid,
+          effectiveRecurrenceId
+        );
+        if (parentInstanceFile) {
+          return parentInstanceFile;
+        }
+      }
+      const parentMasterFile = await this.getFileForEventAfterHydration(parentUid);
+      if (parentMasterFile) {
+        return parentMasterFile;
+      }
+    }
+
+    // 4. For non-recurring single events, fallback to any file indexed under this UID (self-heals legacy notes)
+    if (!isRecurring) {
+      return this.getAnyFileForEvent(uid);
+    }
+
+    return null;
   }
 
   public async getFileForEventAfterHydration(
@@ -132,7 +273,11 @@ export class LinkedNoteIndex {
   }
 
   private getDirectory(): string {
-    return PluginState.getSettings().linkedNotesDirectory || '';
+    try {
+      return PluginState.getSettings()?.linkedNotesDirectory || '';
+    } catch {
+      return '';
+    }
   }
 
   private frontmatterString(value: unknown): string | null {
@@ -230,6 +375,16 @@ export class LinkedNoteIndex {
       for (const [k, indexedFile] of this.index.entries()) {
         if (indexedFile.path === file.path && k !== key) {
           this.index.delete(k);
+          const sep = k.indexOf('::');
+          const oldUid = sep === -1 ? k : k.slice(0, sep);
+          const oldRecId = sep === -1 ? '' : k.slice(sep + 2);
+          const oldMap = this.filesByUid.get(oldUid);
+          if (oldMap) {
+            oldMap.delete(oldRecId);
+            if (oldMap.size === 0) {
+              this.filesByUid.delete(oldUid);
+            }
+          }
           removedOld = true;
         }
       }
@@ -237,6 +392,13 @@ export class LinkedNoteIndex {
       const prevFile = this.index.get(key);
       if (prevFile?.path !== file.path || removedOld) {
         this.index.set(key, file);
+        let mapForUid = this.filesByUid.get(eventUid);
+        if (!mapForUid) {
+          mapForUid = new Map<string, TFile>();
+          this.filesByUid.set(eventUid, mapForUid);
+        }
+        mapForUid.set(recurrenceId || '', file);
+
         if (triggerReload) {
           this.triggerReload();
         }
@@ -254,6 +416,16 @@ export class LinkedNoteIndex {
     for (const [key, indexedFile] of this.index.entries()) {
       if (indexedFile.path === path) {
         this.index.delete(key);
+        const sep = key.indexOf('::');
+        const uid = sep === -1 ? key : key.slice(0, sep);
+        const recId = sep === -1 ? '' : key.slice(sep + 2);
+        const mapForUid = this.filesByUid.get(uid);
+        if (mapForUid) {
+          mapForUid.delete(recId);
+          if (mapForUid.size === 0) {
+            this.filesByUid.delete(uid);
+          }
+        }
         removed = true;
       }
     }
@@ -328,6 +500,7 @@ export class LinkedNoteIndex {
     }
     this.eventRefs = [];
     this.index.clear();
+    this.filesByUid.clear();
   }
 
   private resolveHydrationWaiters(): void {

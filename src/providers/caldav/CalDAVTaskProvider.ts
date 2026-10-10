@@ -113,7 +113,7 @@ export class CalDAVTaskProvider extends CalDAVProvider {
             caldavHref: object.href,
             ...(object.etag ? { etag: object.etag.replace(/"/g, '') } : {})
           };
-          const linkedFile = this.linkedNoteIndex.getFileForEvent(event.uid || '');
+          const linkedFile = this.linkedNoteIndex.resolveLinkedFile(event);
           results.push([
             event,
             linkedFile ? { file: { path: linkedFile.path }, lineNumber: undefined } : null

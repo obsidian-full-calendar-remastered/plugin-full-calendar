@@ -10,7 +10,7 @@ import {
 } from '../../providers/Provider';
 import { t } from '../../features/i18n/i18n';
 import { LinkedNoteIndex } from '../../providers/utils/LinkedNoteIndex';
-import { OFCEvent } from '../../types';
+import { OFCEvent, isRecurringEvent } from '../../types';
 import { getEventInstanceDate } from '../../features/timezone/Timezone';
 
 /**
@@ -243,7 +243,9 @@ async function buildNavigationActions(
   };
   if (provider && typeof linkedNoteProvider.createLinkedNote === 'function') {
     // Derive the instanceDate for recurring events the same way buildDeleteActions does.
-    const instanceDate = getContextInstanceDate(context);
+    const instanceDate = isRecurringEvent(context.event)
+      ? getContextInstanceDate(context)
+      : undefined;
     actions.push({
       id: 'navigation:open-linked-note',
       title: t('ui.view.contextMenu.openLinkedNote'),

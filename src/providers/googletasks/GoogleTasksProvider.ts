@@ -190,7 +190,7 @@ export class GoogleTasksProvider
           const validated = validateEvent(event);
           if (!validated) return null;
 
-          const linkedFile = this.linkedNoteIndex.getFileForEvent(task.id);
+          const linkedFile = this.linkedNoteIndex.resolveLinkedFile(validated);
           const location = linkedFile
             ? { file: { path: linkedFile.path }, lineNumber: undefined }
             : null;

@@ -6,6 +6,7 @@
 import { LinkedNoteIndex } from './LinkedNoteIndex';
 import { PluginState } from '../../core/PluginState';
 import { App, TFile, EventRef } from 'obsidian';
+import { OFCEvent } from '../../types';
 
 // Mock Obsidian
 jest.mock(
@@ -473,5 +474,100 @@ describe('LinkedNoteIndex', () => {
 
     expect(mockMetadataCache.offref).toHaveBeenCalled();
     expect(mockVault.offref).toHaveBeenCalled();
+  });
+
+  it('recovers legacy instance note via getAnyFileForEvent when only a compound key exists', () => {
+    const file = createMockFile('events/legacy-single.md');
+    mockVault.getMarkdownFiles.mockReturnValue([file]);
+    mockMetadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        'fc-calendar-id': calendarId,
+        'fc-event-uid': 'single-uid-1',
+        'fc-event-recurrence-id': '2026-09-19'
+      }
+    });
+
+    const index = new LinkedNoteIndex(mockApp, calendarId);
+    index.initialize();
+
+    // Standard getFileForEvent without recurrenceId returns null
+    expect(index.getFileForEvent('single-uid-1')).toBeNull();
+    // getAnyFileForEvent recovers the note
+    expect(index.getAnyFileForEvent('single-uid-1')).toBe(file);
+  });
+
+  describe('resolveLinkedFile', () => {
+    it('resolves CalDAV recurrence exception using event.recurrenceId', () => {
+      const exceptionFile = createMockFile('events/standup-2026-09-21.md');
+      mockVault.getMarkdownFiles.mockReturnValue([exceptionFile]);
+      mockMetadataCache.getFileCache.mockReturnValue({
+        frontmatter: {
+          'fc-calendar-id': calendarId,
+          'fc-event-uid': 'caldav-series-1',
+          'fc-event-recurrence-id': '2026-09-21'
+        }
+      });
+
+      const index = new LinkedNoteIndex(mockApp, calendarId);
+      index.initialize();
+
+      const caldavExceptionEvent: OFCEvent = {
+        title: 'Weekly Standup',
+        type: 'single',
+        date: '2026-09-21',
+        endDate: null,
+        allDay: true,
+        uid: 'caldav-series-1',
+        recurrenceId: '2026-09-21'
+      };
+
+      const resolved = index.resolveLinkedFile(caldavExceptionEvent);
+      expect(resolved).toBe(exceptionFile);
+    });
+
+    it('resolves Google recurrence exception via recurringEventId when series note exists', () => {
+      const seriesFile = createMockFile('events/team-meeting-series.md');
+      mockVault.getMarkdownFiles.mockReturnValue([seriesFile]);
+      mockMetadataCache.getFileCache.mockReturnValue({
+        frontmatter: {
+          'fc-calendar-id': calendarId,
+          'fc-event-uid': 'google-parent-series-uid'
+        }
+      });
+
+      const index = new LinkedNoteIndex(mockApp, calendarId);
+      index.initialize();
+
+      const googleExceptionEvent: OFCEvent = {
+        title: 'Team Meeting (Rescheduled)',
+        type: 'single',
+        date: '2026-09-22',
+        endDate: null,
+        allDay: true,
+        uid: 'google-parent-series-uid_20260922',
+        recurringEventId: 'google-parent-series-uid'
+      };
+
+      const resolved = index.resolveLinkedFile(googleExceptionEvent);
+      expect(resolved).toBe(seriesFile);
+    });
+
+    it('returns null safely for empty or non-existent UIDs without performance overhead', () => {
+      const index = new LinkedNoteIndex(mockApp, calendarId);
+      index.initialize();
+
+      expect(index.getAnyFileForEvent('')).toBeNull();
+      expect(index.getAnyFileForEvent('   ')).toBeNull();
+      expect(index.getFileForEvent('')).toBeNull();
+
+      const dummyEvent: OFCEvent = {
+        title: 'Empty UID',
+        type: 'single',
+        date: '2026-09-22',
+        endDate: null,
+        allDay: true
+      };
+      expect(index.resolveLinkedFile(dummyEvent)).toBeNull();
+    });
   });
 });

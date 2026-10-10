@@ -165,7 +165,7 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
       const cached = this._readCache(year);
       if (cached && cached.length > 0) {
         for (const event of cached) {
-          const linkedFile = this.linkedNoteIndex.getFileForEvent(event.uid || event.id || '');
+          const linkedFile = this.linkedNoteIndex.resolveLinkedFile(event);
           const location = linkedFile
             ? { file: { path: linkedFile.path }, lineNumber: undefined }
             : null;
@@ -178,7 +178,7 @@ export class HolidayProvider implements CalendarProvider<HolidayProviderConfig>,
       const events = this._fetchHolidaysForYear(year);
       this._writeCache(year, events);
       for (const event of events) {
-        const linkedFile = this.linkedNoteIndex.getFileForEvent(event.uid || event.id || '');
+        const linkedFile = this.linkedNoteIndex.resolveLinkedFile(event);
         const location = linkedFile
           ? { file: { path: linkedFile.path }, lineNumber: undefined }
           : null;

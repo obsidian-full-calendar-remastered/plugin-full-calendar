@@ -24,7 +24,7 @@ import * as React from 'react';
 import ReactModal from '../ReactModal';
 import { TFile } from 'obsidian';
 
-import { OFCEvent } from '../../types';
+import { OFCEvent, isRecurringEvent } from '../../types';
 import { EditEvent } from './EditEvent';
 import { EventDetails } from './EventDetails';
 import FullCalendarPlugin from '../../main';
@@ -105,13 +105,13 @@ export function launchEditModal(
   let location = eventDetails.location;
   const provider = PluginState.getProviderRegistry().getInstance(calId);
   if (provider && 'linkedNoteIndex' in provider && provider.linkedNoteIndex) {
-    const linkedFile = (provider.linkedNoteIndex as LinkedNoteIndex).getFileForEvent(
-      eventToEdit.uid || '',
+    const linkedFile = (provider.linkedNoteIndex as LinkedNoteIndex).resolveLinkedFile(
+      eventToEdit,
       instanceDate
     );
     if (linkedFile) {
       location = { path: linkedFile.path, lineNumber: undefined };
-    } else if (instanceDate) {
+    } else if (isRecurringEvent(eventToEdit) && instanceDate) {
       location = null;
     }
   }
@@ -244,13 +244,13 @@ export function launchEventDetailsModal(
   let location = eventDetails.location;
   const provider = PluginState.getProviderRegistry().getInstance(calendarId);
   if (provider && 'linkedNoteIndex' in provider && provider.linkedNoteIndex) {
-    const linkedFile = (provider.linkedNoteIndex as LinkedNoteIndex).getFileForEvent(
-      event.uid || event.id || '',
+    const linkedFile = (provider.linkedNoteIndex as LinkedNoteIndex).resolveLinkedFile(
+      event,
       instanceDate
     );
     if (linkedFile) {
       location = { path: linkedFile.path, lineNumber: undefined };
-    } else if (instanceDate) {
+    } else if (isRecurringEvent(event) && instanceDate) {
       location = null;
     }
   }

@@ -193,7 +193,7 @@ export class OutlookProvider implements CalendarProvider<OutlookProviderConfig>,
         if (!parsed) return null;
         const validated = validateEvent(parsed);
         if (!validated) return null;
-        const linkedFile = this.linkedNoteIndex.getFileForEvent(validated.uid || '');
+        const linkedFile = this.linkedNoteIndex.resolveLinkedFile(validated);
         const location = linkedFile
           ? { file: { path: linkedFile.path }, lineNumber: undefined }
           : null;

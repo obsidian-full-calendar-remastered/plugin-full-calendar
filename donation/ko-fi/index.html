@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to Ko-Fi...</title>
+    <noscript>
+        <meta http-equiv="refresh" content="0;url=https://ko-fi.com/youfoundjk">
+    </noscript>
+    <style>
+        body {
+            background-color: #0a0b10;
+            color: #f3f4f6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            max-width: 400px;
+            padding: 2rem;
+        }
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            color: #9ca3af;
+        }
+        a {
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p>Redirecting to support page...</p>
+        <noscript>
+            <p>If you are not redirected automatically, <a href="https://ko-fi.com/youfoundjk">click here</a>.</p>
+        </noscript>
+    </div>
+
+    <script>
+        (function() {
+            var target = "https://ko-fi.com/youfoundjk";
+            try {
+                var payload = JSON.stringify({
+                    type: "event",
+                    payload: {
+                        website: "b18306c0-3f20-4089-baaf-bcb771cb9cd2",
+                        hostname: window.location.hostname || "obsidian-full-calendar-remastered.github.io",
+                        url: "/donation/ko-fi",
+                        title: "Support via Ko-Fi",
+                        referrer: document.referrer || "",
+                        language: navigator.language || "en-US",
+                        screen: (window.innerWidth || window.screen.width || 1920) + "x" + (window.innerHeight || window.screen.height || 1080)
+                    }
+                });
+
+                var beaconUrl = 'https://injest.destyleer.in.net/api/send';
+                var sent = false;
+
+                if (navigator.sendBeacon) {
+                    try {
+                        var blob = new Blob([payload], { type: 'application/json' });
+                        sent = navigator.sendBeacon(beaconUrl, blob);
+                    } catch (e) {}
+                }
+
+                if (!sent && window.fetch) {
+                    try {
+                        window.fetch(beaconUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: payload,
+                            keepalive: true
+                        });
+                    } catch (e) {}
+                }
+            } catch (e) {}
+            window.location.replace(target);
+        })();
+    </script>
+</body>
+</html>

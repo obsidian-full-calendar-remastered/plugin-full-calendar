@@ -212,7 +212,25 @@ function icsToOFC(input: ical.Event): OFCEvent | null {
 
   // The Luxon DateTime object now holds the correct zone from the ICS file.
   // Coalesce null to undefined to match the schema.
-  const timezone = isAllDay ? undefined : startDate.zoneName || undefined;
+  const dtstartProperty =
+    input.component.getFirstProperty('dtstart');
+
+  const hasTzid = Boolean(
+    (dtstartProperty as unknown as {
+      getParameter(name: string): string | null;
+    } | null)?.getParameter('tzid')
+  );
+
+  const isUtc =
+    input.startDate.toString().endsWith('Z');
+
+  const isFloating =
+    !isAllDay && !hasTzid && !isUtc;
+
+  const timezone =
+    isAllDay || isFloating
+      ? undefined
+      : startDate.zoneName || undefined;
 
   if (input.isRecurring()) {
     const rrule = rrulestr(rruleStr);

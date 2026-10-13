@@ -134,6 +134,9 @@ export async function renderCalendar(
     case 'zh':
       fcLocalePromise = import('@fullcalendar/core/locales/zh-cn.js');
       break;
+    case 'pt-BR':
+      fcLocalePromise = import('@fullcalendar/core/locales/pt-br.js');
+      break;
     default:
       fcLocalePromise = Promise.resolve(null);
   }

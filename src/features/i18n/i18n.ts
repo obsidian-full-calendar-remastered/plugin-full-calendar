@@ -35,7 +35,7 @@ function applyLocaleResource(language: LanguageCode, parsedData: Record<string, 
 /**
  * Available language codes
  */
-const SUPPORTED_LANGUAGES = ['en', 'de', 'fr', 'it', 'es', 'zh'] as const;
+const SUPPORTED_LANGUAGES = ['en', 'de', 'fr', 'it', 'es', 'zh', 'pt-BR'] as const;
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number];
 
 /**

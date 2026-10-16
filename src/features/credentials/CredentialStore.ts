@@ -342,7 +342,7 @@ export class CredentialStore {
       }
     }
     const secret = app.secretStorage?.getSecret(getSecretKey.agentApiKey());
-    return secret && secret !== '' ? secret : null;
+    return secret && secret !== '' ? secret : PluginState.getSettings().agent?.apiKey || null;
   }
 
   static setAgentApiKey(apiKey: string | null): void {

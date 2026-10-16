@@ -484,6 +484,55 @@ body.ofc-sidebar-is-resizing * {
   padding: 0;
 }
 
+/* ============================================================
+   Agent HUD Module
+   ============================================================ */
+.ofc-sidebar-agent-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.ofc-calendar-sidebar .ofc-agent-write-bar-wrapper {
+  border-top: none;
+  background-color: transparent;
+  width: 100%;
+}
+
+.ofc-calendar-sidebar .ofc-agent-pills-row {
+  padding: 4px 6px;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.ofc-calendar-sidebar .ofc-agent-pill {
+  font-size: 0.75em;
+  padding: 2px 6px;
+}
+
+.ofc-calendar-sidebar .ofc-agent-bar-row {
+  padding: 6px 4px;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ofc-calendar-sidebar .ofc-agent-input {
+  min-width: 100px;
+  height: 32px;
+  font-size: 0.85em;
+  padding: 4px 8px;
+}
+
+.ofc-calendar-sidebar .ofc-agent-btn {
+  padding: 4px 8px;
+  font-size: 0.8em;
+}
+
+.ofc-calendar-sidebar .ofc-agent-drawer {
+  max-height: 200px;
+  padding: 8px;
+  background-color: var(--background-secondary-alt);
+}
+
 /* Responsive Rules */
 .is-phone .ofc-calendar-shell .ofc-calendar-sidebar,
 .is-phone .ofc-calendar-shell .ofc-calendar-sidebar-resizer,

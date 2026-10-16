@@ -20,6 +20,10 @@ export class SidebarModuleRegistry {
       const { TaskBacklogModule } = await import('./TaskBacklogModule');
       return new TaskBacklogModule(this.store);
     });
+    this.registerModuleFactory('agent', async () => {
+      const { AgentHudModule } = await import('./AgentHudModule');
+      return new AgentHudModule(this.store);
+    });
   }
 
   public registerModuleFactory(id: string, factory: SidebarModuleFactory): void {

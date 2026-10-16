@@ -110,7 +110,7 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
       expect(settings.enabled).toBe(true);
       expect(settings.width).toBe(290);
       expect(settings.isCollapsed).toBe(false);
-      expect(settings.moduleOrder).toEqual(['mini-month', 'up-next', 'task-backlog']);
+      expect(settings.moduleOrder).toEqual(['mini-month', 'up-next', 'task-backlog', 'agent']);
     });
 
     it('clamps width within allowed bounds (200 - 520)', () => {
@@ -311,6 +311,36 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
       const emptyEl = containerEl.querySelector('.ofc-upnext-empty');
       expect(emptyEl).toBeDefined();
 
+      module.destroy();
+    });
+  });
+
+  describe('AgentHudModule', () => {
+    it('mounts inside collapsible section and calls createWriteBar when enabled', async () => {
+      const { AgentHudModule } = await import('./modules/AgentHudModule');
+      const store = new SidebarStateStore();
+      const module = new AgentHudModule(store);
+      const containerEl = document.createElement('div');
+
+      const mockCreateWriteBar = jest.fn().mockReturnValue({ destroy: jest.fn() });
+      const mockPlugin = {
+        agentManager: {
+          createWriteBar: mockCreateWriteBar
+        }
+      } as unknown as FullCalendarPlugin;
+
+      const context: SidebarContext = {
+        plugin: mockPlugin,
+        parentComponent: new Component(),
+        calendarApi: () => null,
+        sidebarContainerEl: containerEl,
+        triggerResize: jest.fn(),
+        gotoDate: jest.fn(),
+        getActiveDate: () => new Date()
+      };
+
+      module.mount(containerEl, context);
+      expect(mockCreateWriteBar).toHaveBeenCalled();
       module.destroy();
     });
   });

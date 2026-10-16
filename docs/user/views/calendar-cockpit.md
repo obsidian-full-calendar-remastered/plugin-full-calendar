@@ -82,6 +82,13 @@ The Cockpit is built on a modular widget system. Every module is wrapped in a co
 !!! tip "Timeblocking with Drag-and-Drop"
     Drag any task card from the backlog directly onto a timegrid slot. FullCalendar detects the drop target, opens the scheduling modal or directly creates the event, and writes back the scheduled date to the underlying task note or CalDAV source.
 
+### 4. Calendar Agent Module (`AgentHudModule`)
+
+* **Unobtrusive Docked Assistant:** Keeps natural language scheduling prompts, command suggestions, and event proposals encapsulated cleanly within an accordion card in the Cockpit instead of floating over or shrinking the main calendar grid.
+* **Folded by Default:** Starts collapsed to preserve vertical space, unfolding smoothly whenever you want to query your schedule, draft multi-event blocks, or review proposed calendar changes.
+* **Integrated Safety & Proposals:** Full access to audit logs, proposal confirmation cards, and chat history right from the sidebar.
+* **Respects Master Toggle:** Automatically disables itself if the Calendar Agent is switched off in plugin settings.
+
 ---
 
 ## Responsive Device-Tier Strategy
@@ -124,8 +131,8 @@ Settings for the Cockpit are managed in `FullCalendarSettings.sidebarConfig`:
 | `sidebarConfig.enabled` | `boolean` | `true` | Enables or disables the left panel globally across calendar views. |
 | `sidebarConfig.width` | `number` | `290` | Persistent width in pixels (clamped between 200px and 520px). |
 | `sidebarConfig.isCollapsed` | `boolean` | `false` | Tracks whether the entire left panel is currently folded into the expand tab. |
-| `sidebarConfig.collapsedModules` | `Record<string, boolean>` | `{}` | Remembers accordion open/close state for each module individually. |
-| `sidebarConfig.moduleOrder` | `string[]` | `['mini-month', 'up-next', 'task-backlog']` | Defines the vertical rendering order of the module cards. |
+| `sidebarConfig.collapsedModules` | `Record<string, boolean>` | `{'agent': true}` | Remembers accordion open/close state for each module individually. |
+| `sidebarConfig.moduleOrder` | `string[]` | `['mini-month', 'up-next', 'task-backlog', 'agent']` | Defines the vertical rendering order of the module cards. |
 
 ---
 

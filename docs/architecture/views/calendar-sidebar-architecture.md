@@ -28,12 +28,12 @@ The Cockpit is architected around strict separation of concerns, decoupling pres
 │      SidebarModuleRegistry      │    │  fullCalendarView.updateSize()  │
 └────────────────┬────────────────┘    └─────────────────────────────────┘
                  │
-   ┌─────────────┼─────────────┐
-   ▼             ▼             ▼
-┌──────────────┐ ┌───────────┐ ┌─────────────┐
-│MiniMonth     │ │UpNext     │ │TaskBacklog  │   [Future Extensibility:
-│Module        │ │Module     │ │Module       │    Agent HUD, Habit Trackers...]
-└──────────────┘ └───────────┘ └─────────────┘
+   ┌─────────────┼─────────────┬─────────────┐
+   ▼             ▼             ▼             ▼
+┌──────────────┐ ┌───────────┐ ┌─────────────┐ ┌──────────────┐
+│MiniMonth     │ │UpNext     │ │TaskBacklog  │ │AgentHud      │
+│Module        │ │Module     │ │Module       │ │Module        │
+└──────────────┘ └───────────┘ └─────────────┘ └──────────────┘
 ```
 
 ### 1. SOLID Design Analysis
@@ -43,9 +43,9 @@ The Cockpit is architected around strict separation of concerns, decoupling pres
     * [`SidebarResizer`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/SidebarResizer.ts): Encapsulates pointer events, clamping, and splitter DOM states.
     * [`SidebarStateStore`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/SidebarStateStore.ts): Encapsulates reading, writing, clamping, and debouncing configuration changes to Obsidian vault storage.
     * [`CollapsibleSection`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/components/CollapsibleSection.ts): Generic DRY UI wrapper handling accordion folding, chevrons, titles, and action slots.
-    * Domain modules ([`MiniMonthModule`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/modules/MiniMonthModule.ts), [`UpNextWeatherModule`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/modules/UpNextWeatherModule.ts), [`TaskBacklogModule`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/modules/TaskBacklogModule.ts)): Each module is strictly responsible for its own data rendering and user interaction.
+    * Domain modules ([`MiniMonthModule`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/modules/MiniMonthModule.ts), [`UpNextWeatherModule`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/modules/UpNextWeatherModule.ts), [`TaskBacklogModule`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/modules/TaskBacklogModule.ts), [`AgentHudModule`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/modules/AgentHudModule.ts)): Each module is strictly responsible for its own data rendering and user interaction.
 * **Open / Closed (OCP):**
-    * New modules (e.g. Agent HUD, Daily Note Quick Links) register via `registry.registerModuleFactory(id, factory)` without requiring any modifications to the core manager or existing modules.
+    * New modules register via `registry.registerModuleFactory(id, factory)` without requiring any modifications to the core manager or existing modules.
 * **Liskov Substitution (LSP):**
     * The registry interacts with all cards uniformly through the [`ISidebarModule`](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/types.ts) contract. Modules can be swapped, disabled, or reordered dynamically.
 * **Interface Segregation (ISP):**

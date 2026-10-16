@@ -293,9 +293,10 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     collapsedModules: {
       'mini-month': false,
       'up-next': false,
-      'task-backlog': false
+      'task-backlog': false,
+      'agent': true
     },
-    moduleOrder: ['mini-month', 'up-next', 'task-backlog']
+    moduleOrder: ['mini-month', 'up-next', 'task-backlog', 'agent']
   },
   githubToken: null,
   availabilityGistId: null,

@@ -15,9 +15,22 @@ export class SidebarStateStore {
         ...DEFAULT_SETTINGS.sidebarConfig.collapsedModules,
         ...(current.collapsedModules ?? {})
       },
-      moduleOrder: current.moduleOrder?.length
-        ? current.moduleOrder
-        : [...DEFAULT_SETTINGS.sidebarConfig.moduleOrder]
+      moduleOrder: (() => {
+        const order = current.moduleOrder;
+        if (!order || order.length === 0) {
+          return [...DEFAULT_SETTINGS.sidebarConfig.moduleOrder];
+        }
+        // Automatically upgrade legacy default order to include the new 'agent' module
+        if (
+          order.length === 3 &&
+          order[0] === 'mini-month' &&
+          order[1] === 'up-next' &&
+          order[2] === 'task-backlog'
+        ) {
+          return [...DEFAULT_SETTINGS.sidebarConfig.moduleOrder];
+        }
+        return order;
+      })()
     };
   }
 

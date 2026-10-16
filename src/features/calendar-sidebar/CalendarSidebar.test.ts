@@ -144,6 +144,21 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
 
       expect(store.getSettings().moduleOrder).toEqual(newOrder);
     });
+
+    it('automatically upgrades legacy 3-module default order to include agent', () => {
+      const store = new SidebarStateStore();
+      PluginState.getSettings().sidebarConfig.moduleOrder = [
+        'mini-month',
+        'up-next',
+        'task-backlog'
+      ];
+      expect(store.getSettings().moduleOrder).toEqual([
+        'mini-month',
+        'up-next',
+        'task-backlog',
+        'agent'
+      ]);
+    });
   });
 
   describe('SidebarResizer', () => {

@@ -294,7 +294,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
       'mini-month': false,
       'up-next': false,
       'task-backlog': false,
-      'agent': true
+      agent: false
     },
     moduleOrder: ['mini-month', 'up-next', 'task-backlog', 'agent']
   },

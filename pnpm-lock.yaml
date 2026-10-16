@@ -54,9 +54,6 @@ importers:
       '@fullcalendar/timegrid':
         specifier: ^6.1.21
         version: 6.1.21(@fullcalendar/core@6.1.21)
-      '@ladle/react':
-        specifier: ^5.1.1
-        version: 5.1.1(@types/node@25.9.9)(@types/react@19.3.0)(lightningcss@1.33.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@6.0.3)(yaml@2.9.1)
       '@types/deep-equal':
         specifier: ^1.0.4
         version: 1.0.4
@@ -130,6 +127,9 @@ importers:
       '@eslint/json':
         specifier: ^2.1.1
         version: 2.1.1
+      '@ladle/react':
+        specifier: ^5.1.1
+        version: 5.1.1(@types/node@25.9.9)(@types/react@19.3.0)(lightningcss@1.33.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@6.0.3)(yaml@2.9.1)
       '@types/color':
         specifier: ^4.2.1
         version: 4.2.1

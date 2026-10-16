@@ -2,13 +2,12 @@ import { ISidebarModule, SidebarContext } from '../types';
 import { SidebarStateStore } from '../SidebarStateStore';
 import { CollapsibleSection } from '../components/CollapsibleSection';
 import { PluginState } from '../../../core/PluginState';
-import { t } from '../../i18n/i18n';
 
 export class AgentHudModule implements ISidebarModule {
   public readonly id = 'agent';
-  public readonly title = 'Calendar agent';
+  public readonly title = 'Calendar Agent';
   public readonly icon = 'bot';
-  public readonly defaultCollapsed = true;
+  public readonly defaultCollapsed = false;
 
   private store: SidebarStateStore;
   private section!: CollapsibleSection;
@@ -24,10 +23,10 @@ export class AgentHudModule implements ISidebarModule {
 
     this.section = new CollapsibleSection(containerEl, {
       id: 'agent',
-      title: t('commands.openCalendarAgent') || 'Calendar agent',
+      title: 'Calendar Agent',
       icon: 'bot',
       store: this.store,
-      defaultCollapsed: true
+      defaultCollapsed: false
     });
 
     this.renderContent();
@@ -56,6 +55,11 @@ export class AgentHudModule implements ISidebarModule {
       emptyMsg.createSpan({
         text: 'Agent service is initializing...'
       });
+      window.setTimeout(() => {
+        if (!this.writeBar && this.context?.plugin.agentManager) {
+          this.renderContent();
+        }
+      }, 500);
     }
   }
 

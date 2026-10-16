@@ -104,6 +104,10 @@ body.ofc-sidebar-is-resizing * {
   color: var(--text-accent);
 }
 
+.ofc-sidebar-expand-tab.is-hidden {
+  display: none;
+}
+
 /* Resizer Splitter */
 .ofc-calendar-sidebar-resizer {
   position: relative;
@@ -499,38 +503,61 @@ body.ofc-sidebar-is-resizing * {
 }
 
 .ofc-calendar-sidebar .ofc-agent-pills-row {
-  padding: 4px 6px;
+  display: flex;
+  align-items: center;
   gap: 4px;
-  flex-wrap: wrap;
+  padding: 4px 0;
+  overflow-x: auto;
+  flex-wrap: nowrap;
 }
 
 .ofc-calendar-sidebar .ofc-agent-pill {
   font-size: 0.75em;
   padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .ofc-calendar-sidebar .ofc-agent-bar-row {
-  padding: 6px 4px;
+  display: flex;
+  align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  padding: 6px 0;
+  width: 100%;
+}
+
+.ofc-calendar-sidebar .ofc-agent-icon-badge {
+  flex-shrink: 0;
 }
 
 .ofc-calendar-sidebar .ofc-agent-input {
-  min-width: 100px;
+  flex: 1 1 0;
+  min-width: 0;
   height: 32px;
   font-size: 0.85em;
   padding: 4px 8px;
 }
 
+.ofc-calendar-sidebar .ofc-agent-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .ofc-calendar-sidebar .ofc-agent-btn {
   padding: 4px 8px;
   font-size: 0.8em;
+  white-space: nowrap;
 }
 
 .ofc-calendar-sidebar .ofc-agent-drawer {
-  max-height: 200px;
+  max-height: 220px;
   padding: 8px;
   background-color: var(--background-secondary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  margin-bottom: 6px;
 }
 
 /* Responsive Rules */

@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import { OFCEvent } from '../../../types/schema';
 import { constructTitle } from '../../../features/category/categoryParser';
 import { injectMeetingUrl } from '../../../utils/meetingUrl';
+import { resolveEffectiveTimezone } from '../../../features/timezone/Timezone';
 
 export interface OutlookEventLike {
   id?: string;
@@ -96,13 +97,6 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
     return null;
   }
 
-  const start = event.start.dateTime ? DateTime.fromISO(event.start.dateTime) : null;
-  const end = event.end.dateTime ? DateTime.fromISO(event.end.dateTime) : null;
-
-  if (!start || !end || !start.isValid || !end.isValid) {
-    return null;
-  }
-
   let location = event.location?.displayName || '';
   let description = event.bodyPreview || event.body?.content || '';
   if (event.onlineMeetingUrl) {
@@ -116,6 +110,54 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
 
   const recurringEventId = event.seriesMasterId ?? undefined;
 
+  if (event.isAllDay) {
+    const allDayStart = event.start.dateTime ? DateTime.fromISO(event.start.dateTime) : null;
+    const allDayEnd = event.end.dateTime ? DateTime.fromISO(event.end.dateTime) : null;
+    if (!allDayStart || !allDayEnd || !allDayStart.isValid || !allDayEnd.isValid) {
+      return null;
+    }
+    const inclusiveEnd = allDayEnd.minus({ days: 1 }).toISODate();
+    return {
+      type: 'single',
+      uid: event.id,
+      recurringEventId,
+      title: event.subject,
+      allDay: true,
+      date: allDayStart.toISODate() || '',
+      endDate: inclusiveEnd || null,
+      location: locationVal,
+      description: descriptionVal,
+      ...(event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number'
+        ? {
+            alarms: [
+              { minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' as const }
+            ]
+          }
+        : {})
+    };
+  }
+
+  const rawTimezone = event.start.timeZone;
+  const sourceZone = resolveEffectiveTimezone(rawTimezone);
+  const start = event.start.dateTime
+    ? DateTime.fromISO(event.start.dateTime, { zone: sourceZone })
+    : null;
+  const end = event.end.dateTime
+    ? DateTime.fromISO(event.end.dateTime, { zone: sourceZone })
+    : null;
+
+  if (!start || !end || !start.isValid || !end.isValid) {
+    return null;
+  }
+
+  // If Outlook returned UTC (default Graph API behavior or event stored in UTC),
+  // convert to effective display timezone so local time is stored in cache
+  // and displayed in event dialogs.
+  const displayZone = resolveEffectiveTimezone();
+  const targetZone = sourceZone === 'UTC' && displayZone !== 'UTC' ? displayZone : sourceZone;
+  const zonedStart = start.setZone(targetZone);
+  const zonedEnd = end.setZone(targetZone);
+
   if (event.type === 'seriesMaster' && event.recurrence?.pattern) {
     const pattern = event.recurrence.pattern;
     const range = event.recurrence.range;
@@ -124,25 +166,22 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
       type: 'recurring',
       uid: event.id,
       title: event.subject,
-      allDay: !!event.isAllDay,
+      allDay: false,
       repeatInterval: pattern.interval,
-      startRecur: range?.startDate || start.toISODate() || undefined,
+      startRecur: range?.startDate || zonedStart.toISODate() || undefined,
       endRecur: range?.type === 'endDate' ? range?.endDate : undefined,
       isTask: false,
       skipDates: [],
       location: locationVal,
-      description: descriptionVal
+      description: descriptionVal,
+      startTime: zonedStart.toFormat('HH:mm'),
+      endTime: zonedEnd.toFormat('HH:mm'),
+      timezone: targetZone
     };
     if (event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number') {
       recurringBase.alarms = [
         { minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' }
       ];
-    }
-
-    if (!event.isAllDay) {
-      recurringBase.startTime = start.toFormat('HH:mm');
-      recurringBase.endTime = end.toFormat('HH:mm');
-      recurringBase.timezone = event.start?.timeZone || range?.recurrenceTimeZone || undefined;
     }
 
     switch (pattern.type) {
@@ -196,39 +235,17 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
     return recurringBase as OFCEvent;
   }
 
-  if (event.isAllDay) {
-    const inclusiveEnd = end.minus({ days: 1 }).toISODate();
-    return {
-      type: 'single',
-      uid: event.id,
-      recurringEventId,
-      title: event.subject,
-      allDay: true,
-      date: start.toISODate() || '',
-      endDate: inclusiveEnd || null,
-      location: locationVal,
-      description: descriptionVal,
-      ...(event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number'
-        ? {
-            alarms: [
-              { minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' as const }
-            ]
-          }
-        : {})
-    };
-  }
-
   return {
     type: 'single',
     uid: event.id,
     recurringEventId,
     title: event.subject,
     allDay: false,
-    date: start.toISODate() || '',
-    startTime: start.toFormat('HH:mm'),
-    endDate: end.toISODate() !== start.toISODate() ? end.toISODate() : null,
-    endTime: end.toFormat('HH:mm'),
-    timezone: event.start.timeZone || undefined,
+    date: zonedStart.toISODate() || '',
+    startTime: zonedStart.toFormat('HH:mm'),
+    endDate: zonedEnd.toISODate() !== zonedStart.toISODate() ? zonedEnd.toISODate() : null,
+    endTime: zonedEnd.toFormat('HH:mm'),
+    timezone: targetZone,
     location: locationVal,
     description: descriptionVal,
     ...(event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number'
@@ -296,7 +313,7 @@ export function toOutlookEvent(event: OFCEvent): object {
     return payload;
   }
 
-  const timezone = event.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const timezone = resolveEffectiveTimezone(event.timezone);
   let startDate: string | undefined;
   let endDate: string | undefined;
 

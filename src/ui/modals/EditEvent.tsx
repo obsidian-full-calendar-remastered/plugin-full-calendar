@@ -382,7 +382,15 @@ export const EditEvent = ({
         initialEvent?.alarms
       ),
       ...timeInfo,
-      ...eventData
+      ...eventData,
+      ...(!allDay && (initialEvent?.timezone || PluginState.getSettings().displayTimezone)
+        ? {
+            timezone:
+              initialEvent?.timezone ||
+              PluginState.getSettings().displayTimezone ||
+              Intl.DateTimeFormat().resolvedOptions().timeZone
+          }
+        : {})
     } as OFCEvent;
 
     await submit(finalEvent, calendarIndex);

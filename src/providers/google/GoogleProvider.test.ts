@@ -783,3 +783,244 @@ describe('GoogleProvider updateEvent', () => {
     });
   });
 });
+
+describe('GoogleProvider recurring events serialization and creation', () => {
+  function makeProvider() {
+    const plugin = {
+      app: {
+        vault: { getAbstractFileByPath: jest.fn() },
+        metadataCache: { getFileCache: jest.fn(), on: jest.fn(), offref: jest.fn() }
+      }
+    } as unknown as FullCalendarPlugin;
+    const provider = new GoogleProvider(
+      { id: 'google_1', name: 'Google Calendar', calendarId: 'primary' },
+      plugin
+    );
+    jest.spyOn(provider['authManager'], 'getTokenForSource').mockResolvedValue('token');
+    return provider;
+  }
+
+  const requestMock = jest.mocked(makeAuthenticatedRequest);
+
+  beforeEach(() => {
+    requestMock.mockReset();
+  });
+
+  it('serializes an all-day daily recurring event correctly with endRecur', () => {
+    const event: OFCEvent = {
+      title: 'Daily Meeting',
+      type: 'recurring',
+      allDay: true,
+      startRecur: '2026-10-26',
+      endRecur: '2026-11-20',
+      fcrDaily: true,
+      repeatInterval: 1,
+      endDate: null,
+      skipDates: []
+    };
+
+    const gEvent = toGoogleEvent(event) as Record<string, unknown>;
+    expect(gEvent.summary).toBe('Daily Meeting');
+    expect(gEvent.start).toEqual({ date: '2026-10-26' });
+    expect(gEvent.end).toEqual({ date: '2026-10-27' });
+    expect(gEvent.recurrence).toEqual([
+      expect.stringMatching(/^RRULE:FREQ=DAILY;UNTIL=\d{8}T\d{6}Z$/)
+    ]);
+  });
+
+  it('serializes an all-day daily recurring event with interval > 1', () => {
+    const event: OFCEvent = {
+      title: 'Bi-daily Event',
+      type: 'recurring',
+      allDay: true,
+      startRecur: '2026-10-26',
+      endRecur: '2026-11-20',
+      fcrDaily: true,
+      repeatInterval: 2,
+      endDate: null,
+      skipDates: []
+    };
+
+    const gEvent = toGoogleEvent(event) as Record<string, unknown>;
+    expect(gEvent.recurrence).toEqual([
+      expect.stringMatching(/^RRULE:FREQ=DAILY;INTERVAL=2;UNTIL=\d{8}T\d{6}Z$/)
+    ]);
+  });
+
+  it('serializes a timed daily recurring event correctly without inflating duration to endRecur', () => {
+    const event: OFCEvent = {
+      title: 'Daily Standup',
+      type: 'recurring',
+      allDay: false,
+      startTime: '09:00',
+      endTime: '09:30',
+      startRecur: '2026-10-26',
+      endRecur: '2026-11-20',
+      fcrDaily: true,
+      endDate: null,
+      skipDates: []
+    };
+
+    const gEvent = toGoogleEvent(event) as Record<string, unknown>;
+    expect(gEvent.recurrence).toEqual([
+      expect.stringMatching(/^RRULE:FREQ=DAILY;UNTIL=\d{8}T\d{6}Z$/)
+    ]);
+    const startObj = gEvent.start as { dateTime: string };
+    const endObj = gEvent.end as { dateTime: string };
+    expect(startObj.dateTime).toContain('2026-10-26T09:00');
+    expect(endObj.dateTime).toContain('2026-10-26T09:30');
+  });
+
+  it('serializes weekly, monthly, and yearly recurring events to Google RRULE', () => {
+    const weeklyEvent: OFCEvent = {
+      title: 'Weekly Sync',
+      type: 'recurring',
+      allDay: true,
+      startRecur: '2026-10-26',
+      daysOfWeek: ['M', 'W', 'F'],
+      repeatInterval: 2,
+      endDate: null,
+      skipDates: []
+    };
+    expect((toGoogleEvent(weeklyEvent) as Record<string, unknown>).recurrence).toEqual([
+      'RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;INTERVAL=2'
+    ]);
+
+    const monthlyDayEvent: OFCEvent = {
+      title: 'Monthly Rent',
+      type: 'recurring',
+      allDay: true,
+      startRecur: '2026-10-01',
+      dayOfMonth: 1,
+      endDate: null,
+      skipDates: []
+    };
+    expect((toGoogleEvent(monthlyDayEvent) as Record<string, unknown>).recurrence).toEqual([
+      'RRULE:FREQ=MONTHLY;BYMONTHDAY=1'
+    ]);
+
+    const monthlyOnTheEvent: OFCEvent = {
+      title: 'Monthly First Monday',
+      type: 'recurring',
+      allDay: true,
+      startRecur: '2026-10-05',
+      repeatOn: { week: 1, weekday: 1 }, // First Monday
+      endDate: null,
+      skipDates: []
+    };
+    expect((toGoogleEvent(monthlyOnTheEvent) as Record<string, unknown>).recurrence).toEqual([
+      'RRULE:FREQ=MONTHLY;BYDAY=1MO'
+    ]);
+
+    const yearlyEvent: OFCEvent = {
+      title: 'Anniversary',
+      type: 'recurring',
+      allDay: true,
+      startRecur: '2026-10-26',
+      month: 10,
+      dayOfMonth: 26,
+      endDate: null,
+      skipDates: []
+    };
+    expect((toGoogleEvent(yearlyEvent) as Record<string, unknown>).recurrence).toEqual([
+      'RRULE:FREQ=YEARLY;BYMONTH=10;BYMONTHDAY=26'
+    ]);
+  });
+
+  it('creates an all-day recurring event via GoogleProvider.createEvent without throwing', async () => {
+    const provider = makeProvider();
+    requestMock.mockResolvedValueOnce({
+      id: 'gcal_recurring_allday_1',
+      summary: 'Daily All-Day Event',
+      start: { date: '2026-10-26' },
+      end: { date: '2026-10-27' },
+      recurrence: ['RRULE:FREQ=DAILY;UNTIL=20261120T235959Z'],
+      status: 'confirmed'
+    });
+
+    const eventToCreate: OFCEvent = {
+      title: 'Daily All-Day Event',
+      type: 'recurring',
+      allDay: true,
+      startRecur: '2026-10-26',
+      endRecur: '2026-11-20',
+      fcrDaily: true,
+      repeatInterval: 1,
+      endDate: null,
+      skipDates: []
+    };
+
+    const [createdEvent, location] = await provider.createEvent(eventToCreate);
+    expect(location).toBeNull();
+    expect(createdEvent.uid).toBe('gcal_recurring_allday_1');
+    expect(createdEvent.type).toBe('rrule');
+    expect(createdEvent.allDay).toBe(true);
+    if (createdEvent.type === 'rrule') {
+      expect(createdEvent.startDate).toBe('2026-10-26');
+      expect(createdEvent.rrule).toContain('FREQ=DAILY');
+    }
+
+    expect(requestMock).toHaveBeenCalledTimes(1);
+    const [, url, method, body] = requestMock.mock.calls[0];
+    expect(method).toBe('POST');
+    expect(url).toContain('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+    expect(body).toMatchObject({
+      summary: 'Daily All-Day Event',
+      start: { date: '2026-10-26' },
+      end: { date: '2026-10-27' },
+      recurrence: [expect.stringMatching(/^RRULE:FREQ=DAILY/)]
+    });
+  });
+
+  it('creates an instance override for an all-day recurring event', async () => {
+    const provider = makeProvider();
+    requestMock.mockResolvedValueOnce({
+      id: 'gcal_override_1',
+      summary: 'Single Instance Modified',
+      start: { date: '2026-10-28' },
+      end: { date: '2026-10-29' },
+      recurringEventId: 'master_1',
+      originalStartTime: { date: '2026-10-28' },
+      status: 'confirmed'
+    });
+
+    const masterEvent: OFCEvent = {
+      uid: 'master_1',
+      title: 'Daily All-Day Event',
+      type: 'rrule',
+      allDay: true,
+      startDate: '2026-10-26',
+      rrule: 'RRULE:FREQ=DAILY',
+      endDate: null,
+      skipDates: []
+    };
+
+    const overrideEvent: OFCEvent = {
+      title: 'Single Instance Modified',
+      type: 'single',
+      allDay: true,
+      date: '2026-10-28',
+      endDate: null
+    };
+
+    const [createdOverride] = await provider.createInstanceOverride(
+      masterEvent,
+      '2026-10-28',
+      overrideEvent
+    );
+
+    expect(createdOverride.uid).toBe('gcal_override_1');
+    expect(createdOverride.title).toBe('Single Instance Modified');
+    expect(createdOverride.allDay).toBe(true);
+
+    expect(requestMock).toHaveBeenCalledTimes(1);
+    const [, , method, body] = requestMock.mock.calls[0];
+    expect(method).toBe('POST');
+    expect(body).toMatchObject({
+      recurringEventId: 'master_1',
+      originalStartTime: { date: '2026-10-28' },
+      start: { date: '2026-10-28' },
+      end: { date: '2026-10-29' }
+    });
+  });
+});

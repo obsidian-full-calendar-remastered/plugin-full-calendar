@@ -180,3 +180,99 @@ describe('OutlookProvider reminder mapping', () => {
     });
   });
 });
+
+describe('OutlookProvider timezone handling', () => {
+  it('converts UTC timed event from Outlook to effective display timezone', () => {
+    (PluginState.getSettings as jest.Mock).mockReturnValue({
+      displayTimezone: 'Europe/Berlin'
+    });
+
+    const event = fromOutlookEvent({
+      id: 'outlook-event-tz-1',
+      subject: 'Sync Meeting',
+      isAllDay: false,
+      start: { dateTime: '2026-06-15T10:00:00.0000000', timeZone: 'UTC' },
+      end: { dateTime: '2026-06-15T11:00:00.0000000', timeZone: 'UTC' }
+    });
+
+    expect(event).toBeDefined();
+    expect(event?.allDay).toBe(false);
+    expect(event?.type).toBe('single');
+    // In summer, Europe/Berlin is UTC+2, so 10:00 UTC is 12:00 local time
+    if (event && event.type === 'single' && !event.allDay) {
+      expect(event.date).toBe('2026-06-15');
+      expect(event.startTime).toBe('12:00');
+      expect(event.endTime).toBe('13:00');
+      expect(event.timezone).toBe('Europe/Berlin');
+    }
+  });
+
+  it('preserves native event timezone when provided from Outlook', () => {
+    (PluginState.getSettings as jest.Mock).mockReturnValue({
+      displayTimezone: 'America/New_York'
+    });
+
+    const event = fromOutlookEvent({
+      id: 'outlook-event-tz-2',
+      subject: 'Paris Meeting',
+      isAllDay: false,
+      start: { dateTime: '2026-06-15T14:00:00.0000000', timeZone: 'Europe/Paris' },
+      end: { dateTime: '2026-06-15T15:00:00.0000000', timeZone: 'Europe/Paris' }
+    });
+
+    expect(event).toBeDefined();
+    expect(event?.allDay).toBe(false);
+    if (event && !event.allDay) {
+      expect(event.startTime).toBe('14:00');
+      expect(event.endTime).toBe('15:00');
+      expect(event.timezone).toBe('Europe/Paris');
+    }
+  });
+
+  it('normalizes Windows timezone name to IANA in fromOutlookEvent', () => {
+    (PluginState.getSettings as jest.Mock).mockReturnValue({
+      displayTimezone: 'UTC'
+    });
+
+    const event = fromOutlookEvent({
+      id: 'outlook-event-tz-3',
+      subject: 'Pacific Meeting',
+      isAllDay: false,
+      start: { dateTime: '2026-06-15T09:00:00.0000000', timeZone: 'Pacific Standard Time' },
+      end: { dateTime: '2026-06-15T10:00:00.0000000', timeZone: 'Pacific Standard Time' }
+    });
+
+    expect(event).toBeDefined();
+    if (event && !event.allDay) {
+      expect(event.startTime).toBe('09:00');
+      expect(event.endTime).toBe('10:00');
+      expect(event.timezone).toBe('America/Los_Angeles');
+    }
+  });
+
+  it('uses resolveEffectiveTimezone in toOutlookEvent when event.timezone is missing', () => {
+    (PluginState.getSettings as jest.Mock).mockReturnValue({
+      displayTimezone: 'Asia/Tokyo'
+    });
+
+    const event = {
+      title: 'New Event',
+      type: 'single',
+      date: '2026-10-16',
+      endDate: null,
+      allDay: false,
+      startTime: '14:00',
+      endTime: '15:00'
+    } as OFCEvent;
+
+    const payload = toOutlookEvent(event) as {
+      start: { dateTime: string; timeZone: string };
+      end: { dateTime: string; timeZone: string };
+    };
+
+    expect(payload.start.timeZone).toBe('Asia/Tokyo');
+    expect(payload.end.timeZone).toBe('Asia/Tokyo');
+    expect(payload.start.dateTime).toBe('2026-10-16T14:00:00');
+    expect(payload.end.dateTime).toBe('2026-10-16T15:00:00');
+  });
+});

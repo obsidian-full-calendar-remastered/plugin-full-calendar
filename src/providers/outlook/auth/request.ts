@@ -15,7 +15,8 @@ export async function makeAuthenticatedRequest<T = unknown>(
   token: string,
   url: string,
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
-  body?: object
+  body?: object,
+  extraHeaders?: Record<string, string>
 ): Promise<T> {
   try {
     const response = await requestUrl({
@@ -23,7 +24,8 @@ export async function makeAuthenticatedRequest<T = unknown>(
       method,
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...extraHeaders
       },
       body: body ? JSON.stringify(body) : undefined
     });

@@ -124,7 +124,8 @@ export function dateEndpointsToFrontmatter(
       ? {}
       : {
           startTime: getTime(start, displayZone),
-          endTime: getTime(end, displayZone)
+          endTime: getTime(end, displayZone),
+          timezone: displayZone
         })
   };
 }

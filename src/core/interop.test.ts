@@ -19,7 +19,7 @@
 
 import { DateTime } from 'luxon';
 import { EventApi } from '@fullcalendar/core';
-import { toEventInput, fromEventApi } from './interop';
+import { toEventInput, fromEventApi, dateEndpointsToFrontmatter } from './interop';
 import { OFCEvent } from '../types';
 import { FullCalendarSettings, DEFAULT_SETTINGS } from '../types/settings';
 import { getInlineEventFromLine, modifyListItem } from '../providers/dailynote/parser_dailyN';
@@ -1223,6 +1223,38 @@ describe('rrule-type events: DST boundary robustness', () => {
       expect(rrule).toContain('DTSTART;TZID=UTC:20250106T120000');
       const exdates = extractExdates(rrule);
       expect(exdates[0]).toContain('T120000');
+    });
+  });
+});
+
+describe('dateEndpointsToFrontmatter', () => {
+  it('converts date endpoints to timed event with local times and timezone', () => {
+    // 10:00 UTC = 12:00 in Europe/Berlin (UTC+2)
+    const start = new Date('2026-06-15T10:00:00.000Z');
+    const end = new Date('2026-06-15T11:00:00.000Z');
+    const result = dateEndpointsToFrontmatter(start, end, false, 'Europe/Berlin');
+
+    expect(result).toEqual({
+      type: 'single',
+      date: '2026-06-15',
+      endDate: undefined,
+      allDay: false,
+      startTime: '12:00',
+      endTime: '13:00',
+      timezone: 'Europe/Berlin'
+    });
+  });
+
+  it('converts date endpoints to all-day event without time or timezone', () => {
+    const start = new Date('2026-06-15T00:00:00.000Z');
+    const end = new Date('2026-06-15T00:00:00.000Z');
+    const result = dateEndpointsToFrontmatter(start, end, true, 'Europe/Berlin');
+
+    expect(result).toEqual({
+      type: 'single',
+      date: '2026-06-15',
+      endDate: undefined,
+      allDay: true
     });
   });
 });

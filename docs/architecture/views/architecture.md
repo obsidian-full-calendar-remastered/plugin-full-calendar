@@ -60,8 +60,10 @@ This triggers a complete asynchronous query reload and view refresh.
 
 ---
 
-## Related User Docs
+## Related Documentation
 
+- [Calendar Cockpit Architecture](calendar-sidebar-architecture.md)
+- [Calendar Cockpit User Guide](../../user/views/calendar-cockpit.md)
 - [Workspaces](../../user/views/workspaces.md)
 - [Timeline View Usage](../../user/views/timeline_view.md)
 

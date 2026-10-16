@@ -7,6 +7,7 @@
 
 | Goal | Start Here | Typical Follow-up |
 |---|---|---|
+| Persistent multi-widget command panel on desktop | [Calendar Cockpit](calendar-cockpit.md) | [Task Backlog](../features/tasks-backlog.md), [Weather](../features/weather.md) |
 | Save and switch planning contexts | [Workspaces](workspaces.md) | [Settings](../settings/index.md) |
 | Schedule by hierarchy/resource shape | [Timeline View Usage](timeline_view.md) | [Events](../events/index.md) |
 | Analyze time distribution and patterns | [Chrono Analyser](../chrono_analyser/introduction.md) | [Use Cases](../chrono_analyser/usecases.md), [FAQ](../chrono_analyser/faq.md) |
@@ -27,4 +28,4 @@ Support: [FAQ](../chrono_analyser/faq.md)
 
 ---
 
-[Workspaces](workspaces.md) · [Timeline View](timeline_view.md) · [Chrono Analyser](../chrono_analyser/index.md) · [Architecture](../../architecture/views/architecture.md)
+[Calendar Cockpit](calendar-cockpit.md) · [Workspaces](workspaces.md) · [Timeline View](timeline_view.md) · [Chrono Analyser](../chrono_analyser/index.md) · [Architecture](../../architecture/views/architecture.md)

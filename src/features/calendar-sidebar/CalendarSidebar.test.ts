@@ -1,0 +1,317 @@
+// Augment HTMLElement prototype for testing Obsidian DOM methods
+const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
+if (!proto.empty) {
+  proto.empty = function (this: HTMLElement) {
+    this.innerHTML = '';
+  };
+}
+if (!proto.addClass) {
+  proto.addClass = function (this: HTMLElement, cls: string) {
+    this.classList.add(cls);
+  };
+}
+if (!proto.removeClass) {
+  proto.removeClass = function (this: HTMLElement, cls: string) {
+    this.classList.remove(cls);
+  };
+}
+if (!proto.toggleClass) {
+  proto.toggleClass = function (this: HTMLElement, cls: string, force?: boolean) {
+    this.classList.toggle(cls, force);
+  };
+}
+if (!proto.setText) {
+  proto.setText = function (this: HTMLElement, val: string) {
+    this.textContent = val;
+  };
+}
+if (!proto.createEl) {
+  proto.createEl = function (
+    this: HTMLElement,
+    tag: string,
+    options?: { text?: string; cls?: string; attr?: Record<string, string> }
+  ) {
+    const el = document.createElement(tag);
+    if (options?.text) el.textContent = options.text;
+    if (options?.cls) el.className = options.cls;
+    if (options?.attr) {
+      for (const [k, v] of Object.entries(options.attr)) {
+        el.setAttribute(k, v);
+      }
+    }
+    this.appendChild(el);
+    return el;
+  };
+}
+if (!proto.createDiv) {
+  proto.createDiv = function (this: HTMLElement, options?: { cls?: string; text?: string }) {
+    return (this as unknown as { createEl: (tag: string, opts?: unknown) => HTMLElement }).createEl(
+      'div',
+      options
+    );
+  };
+}
+if (!proto.createSpan) {
+  proto.createSpan = function (this: HTMLElement, options?: { cls?: string; text?: string }) {
+    return (this as unknown as { createEl: (tag: string, opts?: unknown) => HTMLElement }).createEl(
+      'span',
+      options
+    );
+  };
+}
+
+(window as unknown as Record<string, unknown>).createDiv = (options?: { cls?: string }) => {
+  const el = document.createElement('div');
+  if (options?.cls) el.className = options.cls;
+  return el;
+};
+
+jest.mock('@fullcalendar/interaction', () => ({
+  Draggable: jest.fn().mockImplementation(() => ({
+    destroy: jest.fn()
+  }))
+}));
+jest.mock('@fullcalendar/core', () => ({}));
+jest.mock('../task-backlogs/EmbeddedTaskBacklog', () => ({
+  EmbeddedTaskBacklog: class {
+    onload() {}
+    onunload() {}
+  }
+}));
+
+import { SidebarStateStore } from './SidebarStateStore';
+import { SidebarResizer } from './SidebarResizer';
+import { CollapsibleSection } from './components/CollapsibleSection';
+import { SidebarModuleRegistry } from './modules/SidebarModuleRegistry';
+import { MiniMonthModule } from './modules/MiniMonthModule';
+import { UpNextWeatherModule } from './modules/UpNextWeatherModule';
+import { PluginState } from '../../core/PluginState';
+import { DEFAULT_SETTINGS, FullCalendarSettings } from '../../types/settings';
+import { SidebarContext } from './types';
+import { Component } from 'obsidian';
+import FullCalendarPlugin from '../../main';
+
+describe('Calendar Left Panel (Sidebar) Feature', () => {
+  beforeEach(() => {
+    // Reset PluginState mock settings
+    const mockSettings: FullCalendarSettings = {
+      ...DEFAULT_SETTINGS,
+      sidebarConfig: { ...DEFAULT_SETTINGS.sidebarConfig }
+    };
+    PluginState.setSettings(mockSettings);
+    PluginState.saveSettings = jest.fn().mockResolvedValue(undefined);
+  });
+
+  describe('SidebarStateStore', () => {
+    it('initializes with default settings', () => {
+      const store = new SidebarStateStore();
+      const settings = store.getSettings();
+
+      expect(settings.enabled).toBe(true);
+      expect(settings.width).toBe(290);
+      expect(settings.isCollapsed).toBe(false);
+      expect(settings.moduleOrder).toEqual(['mini-month', 'up-next', 'task-backlog']);
+    });
+
+    it('clamps width within allowed bounds (200 - 520)', () => {
+      const store = new SidebarStateStore();
+
+      store.setWidth(150);
+      expect(store.getSettings().width).toBe(200);
+
+      store.setWidth(600);
+      expect(store.getSettings().width).toBe(520);
+
+      store.setWidth(350);
+      expect(store.getSettings().width).toBe(350);
+    });
+
+    it('tracks collapsed state for sidebar and individual modules', () => {
+      const store = new SidebarStateStore();
+
+      store.setCollapsed(true);
+      expect(store.getSettings().isCollapsed).toBe(true);
+
+      store.setModuleCollapsed('mini-month', true);
+      expect(store.isModuleCollapsed('mini-month')).toBe(true);
+      expect(store.isModuleCollapsed('up-next')).toBe(false);
+    });
+
+    it('updates module order', () => {
+      const store = new SidebarStateStore();
+      const newOrder = ['up-next', 'mini-month'];
+      store.setModuleOrder(newOrder);
+
+      expect(store.getSettings().moduleOrder).toEqual(newOrder);
+    });
+  });
+
+  describe('SidebarResizer', () => {
+    it('creates separator element with accessibility attributes', () => {
+      const shellEl = document.createElement('div');
+      const sidebarEl = document.createElement('div');
+      const store = new SidebarStateStore();
+
+      const resizer = new SidebarResizer({
+        shellEl,
+        sidebarEl,
+        store,
+        onResize: jest.fn(),
+        onResizeEnd: jest.fn(),
+        onDoubleClick: jest.fn()
+      });
+
+      const el = resizer.getElement();
+      expect(el.classList.contains('ofc-calendar-sidebar-resizer')).toBe(true);
+      expect(el.getAttribute('role')).toBe('separator');
+      expect(el.getAttribute('aria-orientation')).toBe('vertical');
+
+      resizer.destroy();
+    });
+
+    it('triggers double-click callback to toggle collapse', () => {
+      const shellEl = document.createElement('div');
+      const sidebarEl = document.createElement('div');
+      const store = new SidebarStateStore();
+      const onDoubleClick = jest.fn();
+
+      const resizer = new SidebarResizer({
+        shellEl,
+        sidebarEl,
+        store,
+        onResize: jest.fn(),
+        onResizeEnd: jest.fn(),
+        onDoubleClick
+      });
+
+      const el = resizer.getElement();
+      el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+
+      expect(onDoubleClick).toHaveBeenCalledTimes(1);
+      resizer.destroy();
+    });
+  });
+
+  describe('CollapsibleSection', () => {
+    it('creates header and collapsible body with toggle support', () => {
+      const containerEl = document.createElement('div');
+      const store = new SidebarStateStore();
+      const onToggle = jest.fn();
+
+      const section = new CollapsibleSection(containerEl, {
+        id: 'test-section',
+        title: 'Test Section',
+        icon: 'calendar',
+        store,
+        defaultCollapsed: false,
+        onToggle
+      });
+
+      expect(section.getIsCollapsed()).toBe(false);
+      expect(section.getBodyEl()).toBeDefined();
+
+      // Test badge setting
+      section.setBadge('5');
+      const badgeEl = containerEl.querySelector('.ofc-sidebar-section-badge');
+      expect(badgeEl?.textContent).toBe('5');
+      expect(badgeEl?.classList.contains('is-hidden')).toBe(false);
+
+      // Toggle collapsed state
+      section.toggle();
+      expect(section.getIsCollapsed()).toBe(true);
+      expect(onToggle).toHaveBeenCalledWith(true);
+
+      section.destroy();
+    });
+  });
+
+  describe('SidebarModuleRegistry', () => {
+    it('registers built-in modules and mounts them', async () => {
+      const store = new SidebarStateStore();
+      const registry = new SidebarModuleRegistry(store);
+      const containerEl = document.createElement('div');
+
+      const mockGotoDate = jest.fn();
+      const mockPlugin = {} as unknown as FullCalendarPlugin;
+      const context: SidebarContext = {
+        plugin: mockPlugin,
+        parentComponent: new Component(),
+        calendarApi: () => null,
+        sidebarContainerEl: containerEl,
+        triggerResize: jest.fn(),
+        gotoDate: mockGotoDate,
+        getActiveDate: () => new Date(2026, 9, 16)
+      };
+
+      await registry.mountAll(containerEl, context);
+
+      const sections = containerEl.querySelectorAll('.ofc-sidebar-section');
+      expect(sections.length).toBeGreaterThanOrEqual(2);
+
+      registry.destroyAll();
+    });
+  });
+
+  describe('MiniMonthModule', () => {
+    it('renders month navigation and responds to date clicks', () => {
+      const store = new SidebarStateStore();
+      const module = new MiniMonthModule(store);
+      const containerEl = document.createElement('div');
+
+      const mockGotoDate = jest.fn();
+      const mockPlugin = {} as unknown as FullCalendarPlugin;
+      const context: SidebarContext = {
+        plugin: mockPlugin,
+        parentComponent: new Component(),
+        calendarApi: () => null,
+        sidebarContainerEl: containerEl,
+        triggerResize: jest.fn(),
+        gotoDate: mockGotoDate,
+        getActiveDate: () => new Date(2026, 9, 16)
+      };
+
+      module.mount(containerEl, context);
+
+      const cells = containerEl.querySelectorAll('.ofc-mini-month-cell:not(.is-other-month)');
+      expect(cells.length).toBe(31); // October has 31 days
+
+      // Click on day 16
+      const cell16 = Array.from(cells).find(c => c.textContent?.trim() === '16');
+      expect(cell16).toBeDefined();
+      cell16?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      expect(mockGotoDate).toHaveBeenCalled();
+      const calls = mockGotoDate.mock.calls as [Date][];
+      const calledDate = calls[0]?.[0];
+      expect(calledDate?.getDate()).toBe(16);
+
+      module.destroy();
+    });
+  });
+
+  describe('UpNextWeatherModule', () => {
+    it('mounts clean empty state when no upcoming events exist', () => {
+      const store = new SidebarStateStore();
+      const module = new UpNextWeatherModule(store);
+      const containerEl = document.createElement('div');
+
+      const mockPlugin = {} as unknown as FullCalendarPlugin;
+      const context: SidebarContext = {
+        plugin: mockPlugin,
+        parentComponent: new Component(),
+        calendarApi: () => null,
+        sidebarContainerEl: containerEl,
+        triggerResize: jest.fn(),
+        gotoDate: jest.fn(),
+        getActiveDate: () => new Date(2026, 9, 16)
+      };
+
+      module.mount(containerEl, context);
+
+      const emptyEl = containerEl.querySelector('.ofc-upnext-empty');
+      expect(emptyEl).toBeDefined();
+
+      module.destroy();
+    });
+  });
+});

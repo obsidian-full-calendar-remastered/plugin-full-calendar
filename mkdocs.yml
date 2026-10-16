@@ -151,6 +151,7 @@ nav:
                 - Hover and Context Menu: user/events/hover_context.md
           - Views:
                 - user/views/index.md
+                - Calendar Cockpit (Left Panel): user/views/calendar-cockpit.md
                 - Workspaces: user/views/workspaces.md
                 - Timeline View Usage: user/views/timeline_view.md
           - Features:    
@@ -245,6 +246,7 @@ nav:
                 - Calendar Agent Architecture: architecture/system/features/agent-architecture.md
           - Views Architecture:
                 - architecture/views/architecture.md
+                - Calendar Cockpit Architecture: architecture/views/calendar-sidebar-architecture.md
                 - Unified Embedded Widgets Architecture: architecture/views/embedded_widgets.md
           - ChronoAnalyser:
                 - architecture/chrono_analyser/architecture.md

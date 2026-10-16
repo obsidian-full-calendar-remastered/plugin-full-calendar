@@ -1,0 +1,492 @@
+/* Calendar Left Panel (Sidebar) Styles */
+
+.ofc-calendar-shell {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  --sidebar-width: 290px;
+}
+
+body.ofc-sidebar-is-resizing,
+body.ofc-sidebar-is-resizing * {
+  cursor: col-resize;
+}
+
+/* Sidebar Shell */
+.ofc-calendar-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width, 290px);
+  min-width: 200px;
+  max-width: 520px;
+  height: 100%;
+  background-color: var(--background-secondary);
+  border-right: 1px solid var(--background-modifier-border);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.15s ease-out;
+}
+
+.ofc-calendar-shell .ofc-calendar-sidebar.is-collapsed {
+  width: 0;
+  min-width: 0;
+  border-right: none;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Top Bar */
+.ofc-sidebar-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary-alt, var(--background-secondary));
+  flex-shrink: 0;
+}
+
+.ofc-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ofc-sidebar-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Scrollable Modules Body */
+.ofc-sidebar-scroll-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Expand Tab when collapsed */
+.ofc-sidebar-expand-tab {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 36px;
+  border-radius: 0 6px 6px 0;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-left: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ofc-sidebar-expand-tab:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
+}
+
+/* Resizer Splitter */
+.ofc-calendar-sidebar-resizer {
+  position: relative;
+  width: 6px;
+  margin-left: -3px;
+  margin-right: -3px;
+  z-index: 25;
+  cursor: col-resize;
+  background: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.ofc-calendar-sidebar-resizer:hover,
+.ofc-sidebar-is-resizing .ofc-calendar-sidebar-resizer {
+  background-color: var(--interactive-accent);
+}
+
+.ofc-calendar-sidebar.is-collapsed + .ofc-calendar-sidebar-resizer {
+  display: none;
+}
+
+/* Main Calendar Container flex adjustment */
+.ofc-calendar-shell .ofc-calendar-container {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Reusable Buttons */
+.ofc-sidebar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.ofc-sidebar-icon-btn:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.ofc-sidebar-action-btn {
+  font-size: 0.75em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background-color: var(--background-modifier-form-field);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ofc-sidebar-action-btn:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+/* Collapsible Section Card */
+.ofc-sidebar-section {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background-color: var(--background-primary);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.ofc-sidebar-section:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.ofc-sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  cursor: pointer;
+  background-color: var(--background-secondary-alt, var(--background-secondary));
+  transition: background-color 0.15s ease;
+}
+
+.ofc-sidebar-section-header:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.ofc-sidebar-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.ofc-sidebar-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  width: 14px;
+  height: 14px;
+}
+
+.ofc-sidebar-section-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-accent);
+  width: 16px;
+  height: 16px;
+}
+
+.ofc-sidebar-section-title {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ofc-sidebar-section-badge {
+  font-size: 0.7em;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background-color: var(--background-modifier-accent, var(--interactive-accent));
+  color: var(--text-on-accent, white);
+  font-weight: 600;
+}
+
+.ofc-sidebar-section-badge.is-hidden {
+  display: none;
+}
+
+.ofc-sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ofc-sidebar-section-body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ofc-sidebar-section.is-collapsed .ofc-sidebar-section-body {
+  display: none;
+}
+
+/* ============================================================
+   Mini Month Module
+   ============================================================ */
+.ofc-mini-month {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ofc-mini-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.ofc-mini-month-title {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-mini-month-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ofc-mini-month-day-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.72em;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-bottom: 2px;
+}
+
+.ofc-mini-month-cells {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.ofc-mini-month-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  font-size: 0.75em;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-normal);
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.ofc-mini-month-cell:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
+}
+
+.ofc-mini-month-cell.is-other-month {
+  color: var(--text-faint);
+  opacity: 0.5;
+}
+
+.ofc-mini-month-cell.is-today {
+  font-weight: 700;
+  color: var(--text-accent);
+  background-color: rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.12);
+}
+
+.ofc-mini-month-cell.is-selected {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent, white);
+  font-weight: 700;
+}
+
+.ofc-mini-month-dot {
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--text-accent);
+}
+
+.ofc-mini-month-cell.is-selected .ofc-mini-month-dot {
+  background-color: var(--text-on-accent, white);
+}
+
+/* ============================================================
+   Up Next & Weather Module
+   ============================================================ */
+.ofc-upnext-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ofc-upnext-empty {
+  padding: 12px;
+  text-align: center;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.ofc-upnext-card {
+  display: flex;
+  border-radius: 6px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+
+.ofc-upnext-card:hover {
+  border-color: var(--interactive-accent);
+  transform: translateY(-1px);
+}
+
+.ofc-upnext-color-indicator {
+  width: 4px;
+  flex-shrink: 0;
+  background-color: var(--interactive-accent);
+}
+
+.ofc-upnext-content {
+  flex: 1;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.ofc-upnext-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ofc-upnext-title {
+  font-size: 0.82em;
+  font-weight: 600;
+  color: var(--text-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ofc-upnext-time-pill {
+  font-size: 0.7em;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background-color: var(--background-modifier-form-field);
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.ofc-upnext-time-pill.is-ongoing {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  font-weight: 600;
+}
+
+.ofc-upnext-time-pill.is-soon {
+  background-color: rgba(241, 196, 15, 0.2);
+  color: #f39c12;
+  font-weight: 600;
+}
+
+.ofc-upnext-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.75em;
+  color: var(--text-muted);
+}
+
+.ofc-upnext-time-range {
+  white-space: nowrap;
+}
+
+.ofc-upnext-weather-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.ofc-upnext-weather-emoji {
+  font-size: 0.9em;
+}
+
+.ofc-upnext-weather-temp {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.ofc-upnext-weather-rain-warn {
+  font-size: 0.85em;
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Task Backlog Module Compact
+   ============================================================ */
+.ofc-sidebar-backlog-container {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.ofc-sidebar-backlog-container .fcr-task-backlog {
+  padding: 0;
+}
+
+/* Responsive Rules */
+.is-phone .ofc-calendar-shell .ofc-calendar-sidebar,
+.is-phone .ofc-calendar-shell .ofc-calendar-sidebar-resizer,
+.is-phone .ofc-calendar-shell .ofc-sidebar-expand-tab {
+  display: none;
+}

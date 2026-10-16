@@ -33,6 +33,13 @@ jest.mock(
       isMobile: false
     },
     ItemView: jest.fn(),
+    Component: class {
+      onload() {}
+      onunload() {}
+      addChild() {}
+      removeChild() {}
+      registerDomEvent() {}
+    },
     WorkspaceLeaf: jest.fn(),
     TFile: jest.fn(),
     TFolder: jest.fn(),

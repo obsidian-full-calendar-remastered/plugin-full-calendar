@@ -256,6 +256,7 @@ export interface FullCalendarSettings {
   availabilityDefaultTimeRange: { startTime: string; endTime: string };
   openDailyNoteOnDateClick: boolean;
   agent: AgentSettings;
+  sidebarConfig: SidebarSettings;
 }
 
 export interface AgentSettings {
@@ -269,6 +270,14 @@ export interface AgentSettings {
   timeoutMs: number;
 }
 
+export interface SidebarSettings {
+  enabled: boolean;
+  width: number;
+  isCollapsed: boolean;
+  collapsedModules: Record<string, boolean>;
+  moduleOrder: string[];
+}
+
 export interface BreakTimerSettings {
   enabled: boolean;
   intervalMins: number;
@@ -277,6 +286,17 @@ export interface BreakTimerSettings {
 }
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
+  sidebarConfig: {
+    enabled: true,
+    width: 290,
+    isCollapsed: false,
+    collapsedModules: {
+      'mini-month': false,
+      'up-next': false,
+      'task-backlog': false
+    },
+    moduleOrder: ['mini-month', 'up-next', 'task-backlog']
+  },
   githubToken: null,
   availabilityGistId: null,
   availabilityExportPath: '',

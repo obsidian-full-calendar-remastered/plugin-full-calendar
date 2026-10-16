@@ -48,6 +48,7 @@ import { ViewUIHandler } from './calendar/ViewUIHandler';
 import { ViewEventInteractionHandler } from './calendar/ViewEventInteractionHandler';
 import { ViewSettingsHandler } from './calendar/ViewSettingsHandler';
 import { buildLinkedNoteHoverPayload } from '../features/linked-notes/linkedNoteHover';
+import { CalendarSidebarManager } from '../features/calendar-sidebar';
 export { getCalendarColors, isLightColor } from './calendar/utils';
 
 export const FULL_CALENDAR_VIEW_TYPE = 'full-calendar-view';
@@ -89,6 +90,7 @@ export class CalendarView extends ItemView implements ViewContext {
   private interactionHandler: ViewEventInteractionHandler;
   private settingsHandler: ViewSettingsHandler;
   private agentWriteBar: import('../features/agent').AgentWriteBar | null = null;
+  private sidebarManager: CalendarSidebarManager | null = null;
 
   private renderConfig: ResolvedCalendarProps | null = null;
   private pendingSourceUpdateRaf: number | null = null;
@@ -153,6 +155,7 @@ export class CalendarView extends ItemView implements ViewContext {
 
     this.searchHandler.clearCaches();
     this.searchHandler.scheduleApplyFilter();
+    this.sidebarManager?.notifyCacheUpdate();
   }
 
   /**
@@ -187,7 +190,35 @@ export class CalendarView extends ItemView implements ViewContext {
         hideLoadingIndicators();
       }
 
+      if (this.sidebarManager) {
+        this.removeChild(this.sidebarManager);
+        this.sidebarManager = null;
+      }
+
       const calendarEl = calendarShellEl.createDiv({ cls: 'ofc-calendar-container' });
+
+      if (!this.inSidebar) {
+        this.sidebarManager = new CalendarSidebarManager({
+          plugin: this.plugin,
+          shellEl: calendarShellEl,
+          calendarEl: calendarEl,
+          calendarApi: () => this.fullCalendarView,
+          triggerResize: () => {
+            if (this.fullCalendarView) {
+              this.fullCalendarView.updateSize();
+            }
+          },
+          gotoDate: (date: Date) => {
+            if (this.fullCalendarView) {
+              this.fullCalendarView.gotoDate(date);
+            }
+          },
+          getActiveDate: () => {
+            return this.fullCalendarView?.getDate() || new Date();
+          }
+        });
+        this.addChild(this.sidebarManager);
+      }
 
       this.registerDomEvent(
         calendarEl,
@@ -269,6 +300,15 @@ export class CalendarView extends ItemView implements ViewContext {
 
           this.zoomHandler.applyZoomForView(newViewType);
           currentViewType = newViewType;
+
+          if (this.sidebarManager && this.fullCalendarView) {
+            this.sidebarManager.notifyDateChange(this.fullCalendarView.getDate());
+            const activeStart = this.fullCalendarView.view?.activeStart;
+            const activeEnd = this.fullCalendarView.view?.activeEnd;
+            if (activeStart && activeEnd) {
+              this.sidebarManager.notifyDateRangeChange({ start: activeStart, end: activeEnd });
+            }
+          }
         };
 
         const renderConfig = resolveCalendarRenderConfig(
@@ -300,6 +340,7 @@ export class CalendarView extends ItemView implements ViewContext {
             onEventsSet: () => {
               this.searchHandler.clearCaches();
               this.searchHandler.scheduleApplyFilter();
+              this.sidebarManager?.notifyCacheUpdate();
             },
             onBlankView: liveCal => {
               const storeCount = PluginState.getCache().store.getAllEvents().length;
@@ -553,6 +594,10 @@ export class CalendarView extends ItemView implements ViewContext {
     if (this.dateNavigation) {
       this.dateNavigation.destroy();
       this.dateNavigation = null;
+    }
+    if (this.sidebarManager) {
+      this.removeChild(this.sidebarManager);
+      this.sidebarManager = null;
     }
     if (this.callback) {
       PluginState.getCache().off('update', this.callback);

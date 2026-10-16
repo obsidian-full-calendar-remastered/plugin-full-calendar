@@ -1,3 +1,4 @@
+import path from 'path';
 import moment from '../moment-shim';
 import tzShim from '../moment-timezone-shim';
 
@@ -56,10 +57,11 @@ describe('moment-timezone-shim and moment-shim', () => {
   });
 
   describe('date-holidays integration with custom vendor bundle', () => {
-    it('should fetch US, CA, and JP holidays without throwing TypeError: m.default.tz is not a function', async () => {
-      const HolidaysModule =
-        (await import('../../../vendor/date-holidays-custom.min.js')) as unknown as
-          { default?: HolidaysConstructor } | HolidaysConstructor;
+    it('should fetch US, CA, and JP holidays without throwing TypeError: m.default.tz is not a function', () => {
+      const vendorPath = path.resolve(__dirname, '../../../vendor/date-holidays-custom.min.js');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const HolidaysModule = require(vendorPath) as
+        { default?: HolidaysConstructor } | HolidaysConstructor;
       const HolidaysClass = (
         'default' in HolidaysModule && HolidaysModule.default
           ? HolidaysModule.default

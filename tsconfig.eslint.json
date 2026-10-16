@@ -11,5 +11,5 @@
     "test_helpers/**/*.tsx",
     "__mocks__/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist", "build", "main.js"]
+  "exclude": ["node_modules", "dist", "build", "main.js", "vendor/**/*.js", "**/*.min.js"]
 }

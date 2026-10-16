@@ -7,7 +7,23 @@ import globals from 'globals';
 
 export default tseslint.config(
     {
-        ignores: ['node_modules/**', 'dist/**', 'build/**', 'main.js', '*.min.js', 'web/**', 'docs/**', 'coverage/**', 'obsidian-dev-vault/**', 'tools/**'],
+        ignores: [
+            'node_modules/**',
+            'dist/**',
+            'build/**',
+            'main.js',
+            '**/*.min.js',
+            'vendor/**',
+            '.ladle/**',
+            'site/**',
+            'web/**',
+            'docs/**',
+            'coverage/**',
+            'obsidian-dev-vault/**',
+            'tools/**'
+        ]
+    },
+    {
         linterOptions: {
             reportUnusedDisableDirectives: 'error'
         }

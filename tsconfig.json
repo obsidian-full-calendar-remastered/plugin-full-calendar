@@ -26,5 +26,15 @@
 		"**/*.d.ts",
 		"**/*.ts",
 		"**/*.tsx"
+	],
+	"exclude": [
+		"node_modules",
+		"vendor/**/*.js",
+		"dist",
+		"build",
+		"coverage",
+		"web",
+		"obsidian-dev-vault",
+		"**/*.min.js"
 	]
 }

@@ -964,11 +964,37 @@ export class TasksPluginProvider
       (line, dateTarget) => this.updateTaskLine(line, date, dateTarget),
       task.originalMarkdown
     );
-    await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
+
+    // Update in-memory state BEFORE writing the file so that the Tasks plugin's
+    // async `cache-update` event (triggered by the file write below) sees the
+    // already-updated task in `this.allTasks` and produces an empty diff.
+    // Without this pre-update, the live handler would see oldTask.originalMarkdown
+    // without a date while the Tasks plugin cache shows the new dated markdown,
+    // classify the task as `!wasDated && isDated` (an "addition"), and create a
+    // duplicate calendar event alongside the one already added by
+    // `CacheMutationHandler.scheduleTask → syncCalendar`.
+    const previousMarkdown = task.originalMarkdown;
+    const previousDates = dateTargets.map(dt => ({
+      target: dt,
+      value: this.getTaskDateValue(task, dt)
+    }));
     task.originalMarkdown = newLine;
     for (const dateTarget of dateTargets) {
       this.setTaskDate(task, dateTarget, date);
     }
+
+    try {
+      await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
+    } catch (err) {
+      // Restore the previous in-memory state if the file write fails so the
+      // provider cache stays consistent with the file on disk.
+      task.originalMarkdown = previousMarkdown;
+      for (const { target, value } of previousDates) {
+        this.setTaskDate(task, target, value);
+      }
+      throw err;
+    }
+
     const tasksApi = (
       this.plugin.app as unknown as {
         plugins?: {
@@ -1004,13 +1030,34 @@ export class TasksPluginProvider
       (line, dateTarget) => this.clearTaskDateLine(line, dateTarget),
       task.originalMarkdown
     );
-    await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
+
+    // Update in-memory state BEFORE writing the file (same race-condition fix as
+    // scheduleTask) so the live `cache-update` handler sees an empty diff.
+    const previousMarkdown = task.originalMarkdown;
+    const previousDates = dateTargets.map(dt => ({
+      target: dt,
+      value: this.getTaskDateValue(task, dt)
+    }));
+    const previousStartTime = task.startTime;
+    const previousEndTime = task.endTime;
     task.originalMarkdown = newLine;
     for (const dateTarget of dateTargets) {
       this.setTaskDate(task, dateTarget, null);
     }
     task.startTime = null;
     task.endTime = null;
+
+    try {
+      await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
+    } catch (err) {
+      task.originalMarkdown = previousMarkdown;
+      for (const { target, value } of previousDates) {
+        this.setTaskDate(task, target, value);
+      }
+      task.startTime = previousStartTime;
+      task.endTime = previousEndTime;
+      throw err;
+    }
   }
 
   public async editInProviderUI(eventId: string): Promise<void> {

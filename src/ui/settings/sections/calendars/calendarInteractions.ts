@@ -153,6 +153,67 @@ export function createMobileAgendaManager(
   };
 }
 
+export function getEventInstanceKey(event: {
+  id?: string;
+  title?: string;
+  start?: Date | string | null;
+  startStr?: string;
+}): string {
+  const baseId = event.id || event.title || 'event';
+  let startMs = 0;
+  if (event.start instanceof Date) {
+    startMs = event.start.getTime();
+  } else if (event.start) {
+    startMs = new Date(event.start).getTime();
+  } else if (event.startStr) {
+    startMs = new Date(event.startStr).getTime();
+  }
+  return `${baseId}::${Number.isNaN(startMs) ? 0 : startMs}`;
+}
+
+export function findCurrentOrNextEvent(
+  events: EventApi[],
+  options?: { highlightCurrentOrNextEvent?: boolean; nowMs?: number }
+): EventApi | null {
+  if (options?.highlightCurrentOrNextEvent === false) {
+    return null;
+  }
+
+  const nowMs = options?.nowMs ?? Date.now();
+  let currentCandidate: EventApi | null = null;
+  let currentCandidateEnd = Number.POSITIVE_INFINITY;
+  let nextCandidate: EventApi | null = null;
+  let nextCandidateStart = Number.POSITIVE_INFINITY;
+
+  for (const event of events) {
+    if (event.extendedProps?.isShadow || !event.start || event.allDay) {
+      continue;
+    }
+
+    const startMs = event.start.getTime();
+    const rawEndMs = event.end?.getTime() ?? startMs;
+    if (rawEndMs < nowMs) {
+      continue;
+    }
+    const endMs = rawEndMs <= startMs ? startMs + 1 : rawEndMs;
+
+    if (startMs <= nowMs && nowMs < endMs) {
+      if (endMs < currentCandidateEnd) {
+        currentCandidate = event;
+        currentCandidateEnd = endMs;
+      }
+      continue;
+    }
+
+    if (startMs > nowMs && startMs < nextCandidateStart) {
+      nextCandidate = event;
+      nextCandidateStart = startMs;
+    }
+  }
+
+  return currentCandidate ?? nextCandidate;
+}
+
 export function createEventHighlightManager(
   containerEl: HTMLElement,
   settings: ExtraRenderProps | undefined,
@@ -160,83 +221,102 @@ export function createEventHighlightManager(
   interactionDocument: Document
 ): {
   updateCurrentOrNextEventHighlight: (providedEvents?: EventApi[]) => void;
+  isInstanceHighlighted: (instanceKey: string) => boolean;
   destroy: () => void;
 } {
-  let currentUpcomingEventIds = new Set<string>();
+  let currentActiveInstanceKey: string | null = null;
 
-  const toggleEventHighlightById = (eventId: string, add: boolean) => {
-    const escapedId = CSS.escape(eventId);
-    const elements = containerEl.querySelectorAll<HTMLElement>(`[data-event-id="${escapedId}"]`);
+  const escapeCss = (val: string): string => {
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+      return CSS.escape(val);
+    }
+    return val.replace(/["\\#.:\s]/g, '\\$&');
+  };
+
+  const setClass = (el: HTMLElement, cls: string, force: boolean) => {
+    if (typeof el.toggleClass === 'function') {
+      el.toggleClass(cls, force);
+    } else {
+      el.classList.toggle(cls, force);
+    }
+  };
+
+  const toggleEventHighlightByInstanceKey = (instanceKey: string, add: boolean) => {
+    const escapedKey = escapeCss(instanceKey);
+    const elements = containerEl.querySelectorAll<HTMLElement>(
+      `[data-event-instance-key="${escapedKey}"]`
+    );
     elements.forEach(el => {
-      el.toggleClass('ofc-event-current-or-next', add);
+      setClass(el, 'ofc-event-current-or-next', add);
 
       const harness = el.closest<HTMLElement>(
         '.fc-timegrid-event-harness, .fc-daygrid-event-harness, .fc-timeline-event-harness'
       );
-      harness?.toggleClass('ofc-event-current-or-next-harness', add);
+      if (harness) {
+        setClass(harness, 'ofc-event-current-or-next-harness', add);
+      }
     });
   };
 
-  const findCurrentOrNextEventIds = (events: EventApi[]): Set<string> => {
-    const result = new Set<string>();
+  const updateCurrentOrNextEventHighlight = (providedEvents?: EventApi[]) => {
     if (!settings?.highlightCurrentOrNextEvent) {
-      return result;
-    }
-
-    const nowMs = Date.now();
-    let currentCandidate: EventApi | null = null;
-    let currentCandidateEnd = Number.POSITIVE_INFINITY;
-    let nextCandidate: EventApi | null = null;
-    let nextCandidateStart = Number.POSITIVE_INFINITY;
-
-    for (const event of events) {
-      if (event.extendedProps?.isShadow || !event.start || event.allDay) {
-        continue;
-      }
-
-      const startMs = event.start.getTime();
-      const rawEndMs = event.end?.getTime() ?? startMs;
-      if (rawEndMs < nowMs) {
-        continue;
-      }
-      const endMs = rawEndMs <= startMs ? startMs + 1 : rawEndMs;
-
-      if (startMs <= nowMs && nowMs < endMs) {
-        if (endMs < currentCandidateEnd) {
-          currentCandidate = event;
-          currentCandidateEnd = endMs;
+      currentActiveInstanceKey = null;
+      containerEl.querySelectorAll<HTMLElement>('.ofc-event-current-or-next').forEach(el => {
+        setClass(el, 'ofc-event-current-or-next', false);
+        const harness = el.closest<HTMLElement>(
+          '.fc-timegrid-event-harness, .fc-daygrid-event-harness, .fc-timeline-event-harness'
+        );
+        if (harness) {
+          setClass(harness, 'ofc-event-current-or-next-harness', false);
         }
-        continue;
-      }
-
-      if (startMs > nowMs && startMs < nextCandidateStart) {
-        nextCandidate = event;
-        nextCandidateStart = startMs;
-      }
+      });
+      containerEl
+        .querySelectorAll<HTMLElement>('.ofc-event-current-or-next-harness')
+        .forEach(harness => {
+          setClass(harness, 'ofc-event-current-or-next-harness', false);
+        });
+      return;
     }
 
-    const activeEvent = currentCandidate ?? nextCandidate;
-    if (activeEvent?.id) {
-      result.add(activeEvent.id);
+    const events = providedEvents ?? getCalendar()?.getEvents() ?? [];
+    const activeEvent = findCurrentOrNextEvent(events, {
+      highlightCurrentOrNextEvent: settings.highlightCurrentOrNextEvent
+    });
+    const nextActiveInstanceKey = activeEvent ? getEventInstanceKey(activeEvent) : null;
+
+    // Clean up any elements that are no longer the target active instance
+    containerEl.querySelectorAll<HTMLElement>('.ofc-event-current-or-next').forEach(el => {
+      const key = el.getAttribute('data-event-instance-key');
+      if (!nextActiveInstanceKey || key !== nextActiveInstanceKey) {
+        setClass(el, 'ofc-event-current-or-next', false);
+        const harness = el.closest<HTMLElement>(
+          '.fc-timegrid-event-harness, .fc-daygrid-event-harness, .fc-timeline-event-harness'
+        );
+        if (harness) {
+          setClass(harness, 'ofc-event-current-or-next-harness', false);
+        }
+      }
+    });
+
+    // Clean up any orphaned harness elements
+    containerEl
+      .querySelectorAll<HTMLElement>('.ofc-event-current-or-next-harness')
+      .forEach(harness => {
+        const hasActiveEvent = harness.querySelector('.ofc-event-current-or-next');
+        if (!hasActiveEvent) {
+          setClass(harness, 'ofc-event-current-or-next-harness', false);
+        }
+      });
+
+    if (nextActiveInstanceKey) {
+      toggleEventHighlightByInstanceKey(nextActiveInstanceKey, true);
     }
-    return result;
+
+    currentActiveInstanceKey = nextActiveInstanceKey;
   };
 
-  const updateCurrentOrNextEventHighlight = (providedEvents?: EventApi[]) => {
-    const events = providedEvents ?? getCalendar()?.getEvents() ?? [];
-    const nextUpcomingEventIds = findCurrentOrNextEventIds(events);
-
-    for (const oldId of currentUpcomingEventIds) {
-      if (!nextUpcomingEventIds.has(oldId)) {
-        toggleEventHighlightById(oldId, false);
-      }
-    }
-
-    for (const newId of nextUpcomingEventIds) {
-      toggleEventHighlightById(newId, true);
-    }
-
-    currentUpcomingEventIds = nextUpcomingEventIds;
+  const isInstanceHighlighted = (instanceKey: string): boolean => {
+    return !!currentActiveInstanceKey && currentActiveInstanceKey === instanceKey;
   };
 
   const activeHighlightInterval = window.setInterval(updateCurrentOrNextEventHighlight, 60_000);
@@ -254,6 +334,7 @@ export function createEventHighlightManager(
 
   return {
     updateCurrentOrNextEventHighlight,
+    isInstanceHighlighted,
     destroy
   };
 }

@@ -42,6 +42,7 @@ import {
   attachTaskCheckbox,
   createEventHighlightManager,
   createMobileAgendaManager,
+  getEventInstanceKey,
   setupCalendarNavigationGestures
 } from './calendarInteractions';
 import { createWeatherDecorator } from './calendarWeather';
@@ -271,6 +272,7 @@ export async function renderCalendar(
     dayCellDidMount: weatherDecorator.handleDayCellDidMount,
     datesSet: (info: { view: { activeStart: Date; activeEnd: Date; type: string } }) => {
       void weatherDecorator.handleViewChangeAndFetchWeather(info.view);
+      highlightManager.updateCurrentOrNextEventHighlight();
 
       if (isNarrow && info.view.type === 'dayGridMonth') {
         const today = new Date();
@@ -451,6 +453,16 @@ export async function renderCalendar(
       }
 
       el.setAttribute('data-event-id', event.id);
+      const instanceKey = getEventInstanceKey(event);
+      el.setAttribute('data-event-instance-key', instanceKey);
+
+      if (highlightManager.isInstanceHighlighted(instanceKey)) {
+        el.addClass('ofc-event-current-or-next');
+        const harness = el.closest<HTMLElement>(
+          '.fc-timegrid-event-harness, .fc-daygrid-event-harness, .fc-timeline-event-harness'
+        );
+        harness?.addClass('ofc-event-current-or-next-harness');
+      }
       if (eventMouseOver) {
         el.addEventListener('mouseover', mouseEvent => {
           eventMouseOver(event, el, mouseEvent);

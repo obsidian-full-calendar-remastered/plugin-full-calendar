@@ -2123,9 +2123,8 @@
       "historyClearedNotice": "Agent chat history cleared."
     },
     "writeBar": {
-      "toggleHistory": "Toggle Agent Chat History",
-      "clearHistory": "Clear chat history",
-      "send": "Send"
+      "openAgentPanel": "Apri il pannello completo dell'agente del calendario",
+      "clearHistory": "Clear chat history"
     },
     "notices": {
       "eventApplied": "Event applied to calendar successfully.",

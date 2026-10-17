@@ -384,8 +384,48 @@
 }
 
 /* ==========================================================================
-   AGENT RIGHT SIDEBAR VIEW
+   AGENT SHARED CHAT VIEW & RIGHT SIDEBAR VIEW
    ========================================================================== */
+
+.ofc-agent-chat-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ofc-agent-chat-view-compact {
+  padding: 0;
+  flex: unset;
+}
+
+.ofc-agent-chat-view-compact .ofc-agent-sidebar-messages {
+  max-height: 260px;
+  min-height: 48px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  background-color: var(--background-secondary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  flex: unset;
+}
+
+.ofc-agent-chat-view-compact .ofc-agent-sidebar-input-area {
+  padding: 0;
+  border-top: none;
+  background: transparent;
+}
+
+.ofc-agent-chat-view-compact .ofc-agent-pills-row {
+  padding: 2px 0 6px 0;
+}
+
+.ofc-agent-chat-view-compact .ofc-agent-input-wrapper {
+  padding: 4px 6px;
+}
 
 .ofc-agent-sidebar-view {
   display: flex;

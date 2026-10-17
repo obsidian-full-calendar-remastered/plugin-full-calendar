@@ -197,3 +197,5 @@ export interface AgentSessionState {
   messages: ChatMessage[];
   pendingProposals: EventProposal[];
 }
+
+export const FULL_CALENDAR_AGENT_VIEW = 'full-calendar-agent-view';

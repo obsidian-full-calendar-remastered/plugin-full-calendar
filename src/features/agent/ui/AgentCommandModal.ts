@@ -46,6 +46,9 @@ export class AgentCommandModal extends Modal {
       this.bridge,
       () => {
         this.onEventMutated?.();
+      },
+      () => {
+        this.close();
       }
     );
 

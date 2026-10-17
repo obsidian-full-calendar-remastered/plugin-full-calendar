@@ -145,7 +145,20 @@ export const editorInfoField = StateField.define<unknown>({
     update: (val: unknown) => val
 });
 
-export class Component {}
+export class Component {
+    load() {}
+    onload() {}
+    unload() {
+        this.onunload();
+    }
+    onunload() {}
+    addChild<T extends Component>(component: T): T { return component; }
+    removeChild<T extends Component>(component: T): T { return component; }
+    register(cb: () => unknown) {}
+    registerEvent(eventRef: unknown) {}
+    registerDomEvent(el: unknown, type: unknown, callback: unknown, options?: unknown) {}
+    registerInterval(id: number) { return id; }
+}
 export class MarkdownRenderChild extends Component {}
 export class Modal {
     contentEl: HTMLElement;

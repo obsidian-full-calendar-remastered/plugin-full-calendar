@@ -17,6 +17,7 @@ import { AgentEngine } from './core/AgentEngine';
 import { AgentWriteBar } from './ui/AgentWriteBar';
 import { AgentCommandModal } from './ui/AgentCommandModal';
 import { AgentSidebarView, FULL_CALENDAR_AGENT_VIEW } from './ui/AgentSidebarView';
+import { AgentChatComponent } from './ui/AgentChatComponent';
 import { renderAgentSettings } from './ui/renderAgentSettings';
 import { t } from '../i18n/i18n';
 import './ui/styles/agent.css';
@@ -117,34 +118,47 @@ export class AgentManager {
     });
   }
 
-  public createWriteBar(containerEl: HTMLElement, onEventMutated?: () => void): AgentWriteBar {
+  public createWriteBar(
+    containerEl: HTMLElement,
+    onEventMutated?: () => void,
+    onOpenSidebar?: (initialPrompt?: string) => void,
+    parentComponent?: import('obsidian').Component
+  ): AgentWriteBar {
     return new AgentWriteBar(
       containerEl,
       this.plugin.app,
       this.engine,
       this.logger,
       this.bridge,
-      onEventMutated
+      onEventMutated,
+      onOpenSidebar ?? ((initialPrompt?: string) => void this.openSidebarView(initialPrompt)),
+      parentComponent
     );
   }
 
-  public async openSidebarView(): Promise<void> {
+  public async openSidebarView(initialPrompt?: string): Promise<void> {
     const workspace = this.plugin.app.workspace;
-    const existing = workspace.getLeavesOfType(FULL_CALENDAR_AGENT_VIEW)[0];
-    if (existing) {
-      void workspace.revealLeaf(existing);
-      return;
+    let leaf = workspace.getLeavesOfType(FULL_CALENDAR_AGENT_VIEW)[0];
+    if (leaf) {
+      void workspace.revealLeaf(leaf);
+    } else {
+      const rightLeaf = workspace.getRightLeaf(false);
+      if (!rightLeaf) return;
+
+      await rightLeaf.setViewState({
+        type: FULL_CALENDAR_AGENT_VIEW,
+        active: true
+      });
+      leaf = rightLeaf;
+      void workspace.revealLeaf(leaf);
     }
 
-    const leaf = workspace.getRightLeaf(false);
-    if (!leaf) return;
-
-    await leaf.setViewState({
-      type: FULL_CALENDAR_AGENT_VIEW,
-      active: true
-    });
-
-    void workspace.revealLeaf(leaf);
+    if (leaf.view instanceof AgentSidebarView) {
+      if (initialPrompt) {
+        leaf.view.setPrompt(initialPrompt);
+      }
+      leaf.view.focus();
+    }
   }
 
   public openCommandModal(onEventMutated?: () => void): void {
@@ -165,6 +179,7 @@ export {
   AgentWriteBar,
   AgentCommandModal,
   AgentSidebarView,
+  AgentChatComponent,
   FULL_CALENDAR_AGENT_VIEW
 };
 export type {

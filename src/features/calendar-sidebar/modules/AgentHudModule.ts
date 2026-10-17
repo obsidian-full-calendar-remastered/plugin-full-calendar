@@ -47,9 +47,14 @@ export class AgentHudModule implements ISidebarModule {
     }
 
     if (this.context?.plugin.agentManager) {
-      this.writeBar = this.context.plugin.agentManager.createWriteBar(contentEl, () => {
-        this.context?.triggerResize();
-      });
+      this.writeBar = this.context.plugin.agentManager.createWriteBar(
+        contentEl,
+        () => {
+          this.context?.triggerResize();
+        },
+        undefined,
+        this.context.parentComponent
+      );
     } else {
       const emptyMsg = contentEl.createDiv({ cls: 'ofc-sidebar-empty-state' });
       emptyMsg.createSpan({

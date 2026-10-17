@@ -86,7 +86,7 @@ The Cockpit is built on a modular widget system. Every module is wrapped in a co
 
 * **Unobtrusive Docked Assistant:** Keeps natural language scheduling prompts, command suggestions, and event proposals encapsulated cleanly within an accordion card in the Cockpit instead of floating over or shrinking the main calendar grid.
 * **Folded by Default:** Starts collapsed to preserve vertical space, unfolding smoothly whenever you want to query your schedule, draft multi-event blocks, or review proposed calendar changes.
-* **Integrated Safety & Proposals:** Full access to audit logs, proposal confirmation cards, and chat history right from the sidebar.
+* **Integrated Safety & Proposals:** Quick messages, suggestion pills, proposal confirmation cards, and a one-click launcher to open the full-fledged Right Sidebar Agent Panel for deeper conversations and full audit logs.
 * **Respects Master Toggle:** Automatically disables itself if the Calendar Agent is switched off in plugin settings.
 
 ---

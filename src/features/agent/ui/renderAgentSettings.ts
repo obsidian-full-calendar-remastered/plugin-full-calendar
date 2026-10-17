@@ -100,7 +100,9 @@ export function renderAgentSettings(
       for (const name of Object.keys(ENDPOINT_PRESETS)) {
         dropdown.addOption(name, name);
       }
-      dropdown.setValue(findMatchingPreset(getAgentSettings().endpointUrl, getAgentSettings().model));
+      dropdown.setValue(
+        findMatchingPreset(getAgentSettings().endpointUrl, getAgentSettings().model)
+      );
       dropdown.onChange(async val => {
         if (val !== 'custom' && ENDPOINT_PRESETS[val]) {
           const preset = ENDPOINT_PRESETS[val];

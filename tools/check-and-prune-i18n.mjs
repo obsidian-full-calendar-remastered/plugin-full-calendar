@@ -110,6 +110,8 @@ if (missingKeys.length > 0) {
   missingKeys.forEach(m => console.error(`  - ${m.key} (used in ${m.file})`));
   fs.writeFileSync('missing.json', JSON.stringify(missingKeys, null, 2), 'utf8');
   hasErrors = true;
+} else if (fs.existsSync('missing.json')) {
+  fs.unlinkSync('missing.json');
 }
 
 if (unusedKeys.length > 0) {

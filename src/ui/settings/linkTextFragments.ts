@@ -14,7 +14,10 @@ export interface LinkItem {
 
 const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\(([^)]+)\)/g;
 
-export function parseMarkdownLinks(text: string): LinkTextSegment[] {
+export function parseMarkdownLinks(text?: string): LinkTextSegment[] {
+  if (!text) {
+    return [];
+  }
   const segments: LinkTextSegment[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;

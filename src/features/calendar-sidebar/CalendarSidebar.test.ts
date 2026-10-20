@@ -59,6 +59,11 @@ if (!proto.createSpan) {
     );
   };
 }
+if (!proto.setCssProps) {
+  proto.setCssProps = function (this: HTMLElement, props: Record<string, string>) {
+    Object.assign(this.style, props);
+  };
+}
 
 (window as unknown as Record<string, unknown>).createDiv = (options?: { cls?: string }) => {
   const el = document.createElement('div');

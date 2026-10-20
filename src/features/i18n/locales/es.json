@@ -333,7 +333,6 @@
       }
     },
     "appearance": {
-      "title": "Apariencia",
       "enableLivePreview": {
         "label": "Activar decoración de eventos en Live Preview",
         "description": "Muestra eventos y encabezados con estilo directamente en sus Notas Diarias y editores de notas de eventos."
@@ -851,7 +850,8 @@
       "linkedNotes": {
         "title": "Configuración de notas vinculadas",
         "description": "Configure la creación de notas locales de Obsidian vinculadas a eventos de calendario remotos.",
-        "learnMore": "Guía de notas vinculadas"
+        "learnMore": "Guía de notas vinculadas",
+        "configButton": "Configure linked note settings"
       },
       "holidays": {
         "calendarName": {
@@ -1102,7 +1102,8 @@
       "offlineBanner": {
         "title": "⚠️ Aplicación companion desconectada",
         "message": "FCR Reminder no se está ejecutando. Inicia la aplicación companion para habilitar las notificaciones nativas sin conexión."
-      }
+      },
+      "configButton": "Configure reminder companion settings"
     },
     "taskBacklog": {
       "addUnscheduledTask": "Add unscheduled task",
@@ -1708,7 +1709,9 @@
         "label": "Copy-paste authorization",
         "description": "Show a popup with the authorization URL to manually copy and paste into a browser of your choice, instead of automatically opening the system default browser."
       }
-    }
+    },
+    "description": "Manage Google accounts, authentication, and custom Google Cloud credentials.",
+    "configTooltip": "Configure Google accounts & credentials"
   },
   "ui": {
     "view": {
@@ -1920,7 +1923,9 @@
       "fetchCalendars": "No se pudo obtener los calendarios de Outlook para {{email}}. {{message}}",
       "unknown": "Error desconocido"
     },
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "description": "Manage Microsoft Outlook accounts and custom OAuth credentials.",
+    "configTooltip": "Configure Outlook accounts & credentials"
   },
   "linkedNotes": {
     "untitledNote": "Nota vinculada sin título"

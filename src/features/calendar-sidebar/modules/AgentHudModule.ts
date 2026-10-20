@@ -101,7 +101,9 @@ export class AgentHudModule implements ISidebarModule {
         cls: 'mod-cta',
         text: 'Retry'
       });
-      retryBtn.style.marginTop = '8px';
+      if (typeof retryBtn.setCssProps === 'function') {
+        retryBtn.setCssProps({ marginTop: '8px' });
+      }
       retryBtn.addEventListener('click', () => {
         this.renderContent();
       });

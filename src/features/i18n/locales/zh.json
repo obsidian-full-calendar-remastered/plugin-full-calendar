@@ -333,7 +333,6 @@
       }
     },
     "appearance": {
-      "title": "外观",
       "enableLivePreview": {
         "label": "启用实时预览事件装饰",
         "description": "直接在您的日记和事件笔记编辑器中显示样式化的事件和标题。"
@@ -851,7 +850,8 @@
       "linkedNotes": {
         "title": "链接笔记设置",
         "description": "配置用于创建与远程日历事件相关联的本地 Obsidian 笔记的设置。",
-        "learnMore": "链接笔记指南"
+        "learnMore": "链接笔记指南",
+        "configButton": "Configure linked note settings"
       },
       "holidays": {
         "calendarName": {
@@ -1102,7 +1102,8 @@
       "offlineBanner": {
         "title": "⚠️ Companion 应用已离线",
         "message": "FCR Reminder 未运行。请启动 companion 应用以启用本地离线通知。"
-      }
+      },
+      "configButton": "Configure reminder companion settings"
     },
     "taskBacklog": {
       "addUnscheduledTask": "Add unscheduled task",
@@ -1708,7 +1709,9 @@
         "label": "Copy-paste authorization",
         "description": "Show a popup with the authorization URL to manually copy and paste into a browser of your choice, instead of automatically opening the system default browser."
       }
-    }
+    },
+    "description": "Manage Google accounts, authentication, and custom Google Cloud credentials.",
+    "configTooltip": "Configure Google accounts & credentials"
   },
   "ui": {
     "view": {
@@ -1920,7 +1923,9 @@
       "fetchCalendars": "无法获取 {{email}} 的 Outlook 日历。{{message}}",
       "unknown": "未知错误"
     },
-    "loading": "加载中..."
+    "loading": "加载中...",
+    "description": "Manage Microsoft Outlook accounts and custom OAuth credentials.",
+    "configTooltip": "Configure Outlook accounts & credentials"
   },
   "linkedNotes": {
     "untitledNote": "未命名的链接笔记"

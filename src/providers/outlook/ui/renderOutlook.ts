@@ -1,26 +1,26 @@
+/**
+ * @file renderOutlook.ts
+ * @brief Renders the Microsoft Outlook management section and modal content.
+ * @license See LICENSE.md
+ */
+
 import { Setting } from 'obsidian';
 import FullCalendarPlugin from '../../../main';
 import { PluginState } from '../../../core/PluginState';
 import { OutlookAuthManager } from '../auth/OutlookAuthManager';
 import { t } from '../../../features/i18n/i18n';
-import { createDocsLinksFragment } from '../../../ui/settings/docsLinks';
+import { createDescWithDocs } from '../../../ui/settings/docsLinks';
+import { SettingsModal } from '../../../ui/modals/SettingsModal';
 
-export function renderOutlookSettings(
+/**
+ * Renders the internal Outlook settings controls (used inside the common SettingsModal).
+ */
+export function renderOutlookSettingsContent(
   containerEl: HTMLElement,
   plugin: FullCalendarPlugin,
   rerender: () => void
 ): void {
   const authManager = new OutlookAuthManager(plugin);
-
-  new Setting(containerEl)
-    .setName(t('outlook.title'))
-    .setHeading()
-    .setDesc(
-      createDocsLinksFragment([
-        { text: t('outlook.docs.setupGuide'), path: 'user/calendars/outlook' },
-        { text: t('outlook.misc.settingsSourcesLink'), path: 'user/settings/sources' }
-      ])
-    );
 
   new Setting(containerEl)
     .setName(t('outlook.customCredentials.enable.label'))
@@ -59,9 +59,14 @@ export function renderOutlookSettings(
       });
   }
 
+  containerEl.createEl('h3', { text: t('outlook.title') });
+
   const accounts = PluginState.getSettings().microsoftAccounts || [];
   if (accounts.length === 0) {
-    containerEl.createEl('p', { text: t('outlook.noAccounts') });
+    containerEl.createEl('p', {
+      text: t('outlook.noAccounts'),
+      cls: 'setting-item-description'
+    });
   }
 
   accounts.forEach(account => {
@@ -78,4 +83,53 @@ export function renderOutlookSettings(
           });
       });
   });
+}
+
+/**
+ * Renders the consolidated Outlook integration setting row with gear button.
+ */
+export function renderOutlookSettings(
+  containerEl: HTMLElement,
+  plugin: FullCalendarPlugin,
+  rerender: () => void
+): void {
+  new Setting(containerEl)
+    .setName(t('outlook.title'))
+    .setDesc(
+      createDescWithDocs(t('outlook.description'), [
+        { text: t('outlook.docs.setupGuide'), path: 'user/calendars/outlook' },
+        { text: t('outlook.misc.settingsSourcesLink'), path: 'user/settings/sources' },
+        { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
+      ])
+    )
+    .addExtraButton(button => {
+      button
+        .setIcon('gear')
+        .setTooltip(t('outlook.configTooltip'))
+        .onClick(() => {
+          SettingsModal.open(
+            plugin.app,
+            {
+              title: t('outlook.title') || 'Outlook Accounts',
+              docsLinks: [
+                {
+                  text: t('outlook.docs.setupGuide'),
+                  path: 'user/calendars/outlook'
+                },
+                {
+                  text: t('outlook.misc.settingsSourcesLink'),
+                  path: 'user/settings/sources'
+                },
+                { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
+              ]
+            },
+            (contentEl, rerenderModal) => {
+              renderOutlookSettingsContent(contentEl, plugin, () => {
+                rerenderModal();
+                rerender();
+              });
+            }
+          );
+        });
+    });
 }

@@ -1,33 +1,26 @@
 /**
  * @file renderGoogle.ts
- * @brief Renders the Google Account management section of the settings tab.
+ * @brief Renders the Google Account management section and modal content.
  * @license See LICENSE.md
  */
 
-import { PluginState } from '../../../core/PluginState';
 import { Setting } from 'obsidian';
+import { PluginState } from '../../../core/PluginState';
 import FullCalendarPlugin from '../../../main';
 import { GoogleAuthManager } from '../auth/GoogleAuthManager';
 import { t } from '../../../features/i18n/i18n';
-import { createDescWithDocs, createDocsLinksFragment } from '../../../ui/settings/docsLinks';
+import { createDescWithDocs } from '../../../ui/settings/docsLinks';
+import { SettingsModal } from '../../../ui/modals/SettingsModal';
 
-export function renderGoogleSettings(
+/**
+ * Renders the internal Google settings controls (used inside the common SettingsModal).
+ */
+export function renderGoogleSettingsContent(
   containerEl: HTMLElement,
   plugin: FullCalendarPlugin,
   rerender: () => void
 ): void {
   const authManager = new GoogleAuthManager(plugin);
-
-  new Setting(containerEl)
-    .setName(t('google.title'))
-    .setHeading()
-    .setDesc(
-      createDocsLinksFragment([
-        { text: 'Google calendar setup', path: 'user/calendars/gcal' },
-        { text: 'Calendar sources settings', path: 'user/settings/sources' },
-        { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
-      ])
-    );
 
   // Copy-paste Auth toggle
   new Setting(containerEl)
@@ -81,11 +74,14 @@ export function renderGoogleSettings(
       });
   }
 
+  containerEl.createEl('h3', { text: t('google.title') });
+
   const accounts = PluginState.getSettings().googleAccounts || [];
 
   if (accounts.length === 0) {
     containerEl.createEl('p', {
-      text: t('google.noAccounts')
+      text: t('google.noAccounts'),
+      cls: 'setting-item-description'
     });
   }
 
@@ -103,4 +99,47 @@ export function renderGoogleSettings(
           });
       });
   });
+}
+
+/**
+ * Renders the consolidated Google integration setting row with gear button.
+ */
+export function renderGoogleSettings(
+  containerEl: HTMLElement,
+  plugin: FullCalendarPlugin,
+  rerender: () => void
+): void {
+  new Setting(containerEl)
+    .setName(t('google.title'))
+    .setDesc(
+      createDescWithDocs(t('google.description'), [
+        { text: 'Google calendar setup', path: 'user/calendars/gcal' },
+        { text: 'Calendar sources settings', path: 'user/settings/sources' },
+        { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
+      ])
+    )
+    .addExtraButton(button => {
+      button
+        .setIcon('gear')
+        .setTooltip(t('google.configTooltip'))
+        .onClick(() => {
+          SettingsModal.open(
+            plugin.app,
+            {
+              title: t('google.title') || 'Google Accounts',
+              docsLinks: [
+                { text: 'Google calendar setup', path: 'user/calendars/gcal' },
+                { text: 'Calendar sources settings', path: 'user/settings/sources' },
+                { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
+              ]
+            },
+            (contentEl, rerenderModal) => {
+              renderGoogleSettingsContent(contentEl, plugin, () => {
+                rerenderModal();
+                rerender();
+              });
+            }
+          );
+        });
+    });
 }

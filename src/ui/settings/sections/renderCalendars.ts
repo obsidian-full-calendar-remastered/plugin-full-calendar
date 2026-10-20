@@ -8,12 +8,14 @@ import { PluginState } from '../../../core/PluginState';
 import { Setting, TFolder } from 'obsidian';
 import * as ReactDOM from 'react-dom/client';
 import React, { createElement, RefObject } from 'react';
-import { addCalendarButton, FullCalendarSettingTab } from '../SettingsTab';
+import FullCalendarPlugin from '../../../main';
+import { addCalendarButton, type FullCalendarSettingTab } from '../SettingsTab';
 import { CalendarSettings, CalendarSettingsRef } from './calendars/CalendarSetting';
 import { CalendarInfo } from '../../../types/calendar_settings';
 import { t } from '../../../features/i18n/i18n';
 import { createDescWithDocs, createDocsLinksFragment } from '../docsLinks';
 import { listWritableCalendars } from '../../../utils/writableCalendars';
+import { SettingsModal } from '../../modals/SettingsModal';
 
 export function renderCalendarManagement(
   containerEl: HTMLElement,
@@ -21,18 +23,133 @@ export function renderCalendarManagement(
   calendarSettingsRef: RefObject<CalendarSettingsRef>
 ): void {
   const plugin = tab.plugin;
+
+  new Setting(containerEl)
+    .setName(t('settings.calendars.defaultCalendar.label'))
+    .setDesc(t('settings.calendars.defaultCalendar.description'))
+    .addDropdown(dropdown => {
+      dropdown.addOption('', t('settings.calendars.defaultCalendar.firstAvailable'));
+      listWritableCalendars().forEach(calendar => {
+        dropdown.addOption(calendar.id, calendar.name || calendar.id);
+      });
+
+      dropdown.setValue(PluginState.getSettings().defaultCalendarId ?? '');
+      dropdown.onChange(async value => {
+        PluginState.getSettings().defaultCalendarId = value || null;
+        await PluginState.saveSettings();
+      });
+    });
+
+  containerEl.createEl('hr', { cls: 'settings-view-new-divider' });
+
   new Setting(containerEl)
     .setName(t('settings.calendars.linkedNotes.title'))
-    .setHeading()
     .setDesc(
       createDescWithDocs(t('settings.calendars.linkedNotes.description'), [
         {
           text: t('settings.calendars.linkedNotes.learnMore'),
           path: 'user/features/event-linked-notes'
-        }
+        },
+        { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
+      ])
+    )
+    .addExtraButton(button => {
+      button
+        .setIcon('gear')
+        .setTooltip(t('settings.calendars.linkedNotes.configButton'))
+        .onClick(() => {
+          SettingsModal.open(
+            plugin.app,
+            {
+              title: t('settings.calendars.linkedNotes.title') || 'Linked Note Settings',
+              headerDesc: t('settings.calendars.linkedNotes.description'),
+              docsLinks: [
+                {
+                  text: t('settings.calendars.linkedNotes.learnMore'),
+                  path: 'user/features/event-linked-notes'
+                },
+                { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
+              ]
+            },
+            (modalContentEl, rerender) => {
+              renderLinkedNotesSettingsContent(modalContentEl, plugin, rerender);
+            }
+          );
+        });
+    });
+
+  containerEl.createEl('hr', { cls: 'settings-view-new-divider' });
+
+  new Setting(containerEl)
+    .setName(t('settings.calendars.title'))
+    .setHeading()
+    .setDesc(
+      createDocsLinksFragment([
+        { text: 'Calendar sources settings', path: 'user/settings/sources' },
+        { text: 'Calendar types', path: 'user/calendars/' }
       ])
     );
+  containerEl.createEl('hr', { cls: 'settings-view-new-divider' });
+  const sourcesDiv = containerEl.createDiv();
+  const root = ReactDOM.createRoot(sourcesDiv);
+  tab.registerReactRoot(root);
+  root.render(
+    createElement(CalendarSettings, {
+      ref: calendarSettingsRef as React.Ref<CalendarSettings>,
+      sources: PluginState.getProviderRegistry().getAllSources(),
+      plugin: plugin,
+      submit: (settings: CalendarInfo[]): void => {
+        void (async () => {
+          PluginState.getSettings().calendarSources = settings;
+          await PluginState.saveSettings();
+        })();
+      }
+    })
+  );
+  addCalendarButton(
+    plugin,
+    containerEl,
+    (source: CalendarInfo | CalendarInfo[]): void => {
+      const sources = Array.isArray(source) ? source : [source];
+      calendarSettingsRef.current?.addSources(sources);
+    },
+    () => calendarSettingsRef.current?.getUsedDirectories() ?? []
+  );
 
+  new Setting(containerEl).setDesc(
+    createDocsLinksFragment(
+      [
+        { text: t('settings.calendars.docs.fullNote'), path: 'user/calendars/local' },
+        { text: t('settings.calendars.docs.dailyNote'), path: 'user/calendars/dailynote' },
+        { text: t('settings.calendars.docs.journals'), path: 'user/calendars/journals' },
+        { text: t('settings.calendars.docs.ics'), path: 'user/calendars/ics' },
+        { text: t('settings.calendars.docs.caldav'), path: 'user/calendars/caldav' },
+        {
+          text: t('settings.calendars.docs.caldavTasks'),
+          path: 'user/calendars/caldav-tasks'
+        },
+        { text: t('settings.calendars.docs.google'), path: 'user/calendars/gcal' },
+        { text: t('settings.calendars.docs.outlook'), path: 'user/calendars/outlook' },
+        {
+          text: t('settings.calendars.docs.tasks'),
+          path: 'user/calendars/tasks-plugin-integration'
+        },
+        { text: t('settings.calendars.docs.bases'), path: 'user/calendars/bases' },
+        { text: t('settings.calendars.docs.taskNotes'), path: 'user/calendars/tasknotes' }
+      ],
+      t('settings.calendars.docs.providerGuides')
+    )
+  );
+}
+
+/**
+ * Renders the internal Linked Notes settings controls (used inside the common SettingsModal).
+ */
+export function renderLinkedNotesSettingsContent(
+  containerEl: HTMLElement,
+  plugin: FullCalendarPlugin,
+  rerenderModal: () => void
+): void {
   new Setting(containerEl)
     .setName(t('settings.general.linkedNotesDirectory.label'))
     .setDesc(t('settings.general.linkedNotesDirectory.description'))
@@ -97,7 +214,7 @@ export function renderCalendarManagement(
         .onChange(async value => {
           PluginState.getSettings().enableLinkedNoteTemplatesPreset = value;
           await PluginState.saveSettings();
-          tab.renderSettings();
+          rerenderModal();
         });
     });
 
@@ -120,7 +237,7 @@ export function renderCalendarManagement(
               presets.splice(index, 1);
               PluginState.getSettings().linkedNoteTemplatesPresets = presets;
               await PluginState.saveSettings();
-              tab.renderSettings();
+              rerenderModal();
             });
         });
     });
@@ -146,88 +263,9 @@ export function renderCalendarManagement(
             presets.push(value);
             PluginState.getSettings().linkedNoteTemplatesPresets = presets;
             await PluginState.saveSettings();
-            tab.renderSettings();
+            rerenderModal();
           }
         });
       });
   }
-
-  containerEl.createEl('hr', { cls: 'settings-view-new-divider' });
-
-  new Setting(containerEl)
-    .setName(t('settings.calendars.title'))
-    .setHeading()
-    .setDesc(
-      createDocsLinksFragment([
-        { text: 'Calendar sources settings', path: 'user/settings/sources' },
-        { text: 'Calendar types', path: 'user/calendars/' }
-      ])
-    );
-  containerEl.createEl('hr', { cls: 'settings-view-new-divider' });
-  const sourcesDiv = containerEl.createDiv();
-  const root = ReactDOM.createRoot(sourcesDiv);
-  tab.registerReactRoot(root);
-  root.render(
-    createElement(CalendarSettings, {
-      ref: calendarSettingsRef as React.Ref<CalendarSettings>,
-      sources: PluginState.getProviderRegistry().getAllSources(),
-      plugin: plugin,
-      submit: (settings: CalendarInfo[]): void => {
-        void (async () => {
-          PluginState.getSettings().calendarSources = settings;
-          await PluginState.saveSettings();
-        })();
-      }
-    })
-  );
-  addCalendarButton(
-    plugin,
-    containerEl,
-    (source: CalendarInfo | CalendarInfo[]): void => {
-      const sources = Array.isArray(source) ? source : [source];
-      calendarSettingsRef.current?.addSources(sources);
-    },
-    () => calendarSettingsRef.current?.getUsedDirectories() ?? []
-  );
-
-  new Setting(containerEl)
-    .setName(t('settings.calendars.defaultCalendar.label'))
-    .setDesc(t('settings.calendars.defaultCalendar.description'))
-    .addDropdown(dropdown => {
-      dropdown.addOption('', t('settings.calendars.defaultCalendar.firstAvailable'));
-      listWritableCalendars().forEach(calendar => {
-        dropdown.addOption(calendar.id, calendar.name || calendar.id);
-      });
-
-      dropdown.setValue(PluginState.getSettings().defaultCalendarId ?? '');
-      dropdown.onChange(async value => {
-        PluginState.getSettings().defaultCalendarId = value || null;
-        await PluginState.saveSettings();
-      });
-    });
-
-  new Setting(containerEl).setDesc(
-    createDocsLinksFragment(
-      [
-        { text: t('settings.calendars.docs.fullNote'), path: 'user/calendars/local' },
-        { text: t('settings.calendars.docs.dailyNote'), path: 'user/calendars/dailynote' },
-        { text: t('settings.calendars.docs.journals'), path: 'user/calendars/journals' },
-        { text: t('settings.calendars.docs.ics'), path: 'user/calendars/ics' },
-        { text: t('settings.calendars.docs.caldav'), path: 'user/calendars/caldav' },
-        {
-          text: t('settings.calendars.docs.caldavTasks'),
-          path: 'user/calendars/caldav-tasks'
-        },
-        { text: t('settings.calendars.docs.google'), path: 'user/calendars/gcal' },
-        { text: t('settings.calendars.docs.outlook'), path: 'user/calendars/outlook' },
-        {
-          text: t('settings.calendars.docs.tasks'),
-          path: 'user/calendars/tasks-plugin-integration'
-        },
-        { text: t('settings.calendars.docs.bases'), path: 'user/calendars/bases' },
-        { text: t('settings.calendars.docs.taskNotes'), path: 'user/calendars/tasknotes' }
-      ],
-      t('settings.calendars.docs.providerGuides')
-    )
-  );
 }

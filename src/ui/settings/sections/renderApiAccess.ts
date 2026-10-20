@@ -4,6 +4,8 @@ import type FullCalendarPlugin from '../../../main';
 import type { ApiScope, ApiTokenRecord } from '../../../types/settings';
 import { API_SCOPES, FULL_ACCESS_SCOPE } from '../../../api/apiScopes';
 import { t } from '../../../features/i18n/i18n';
+import { createDescWithDocs, createDocsLinksFragment } from '../docsLinks';
+import { SettingsModal } from '../../modals/SettingsModal';
 
 type TokenEntry = [string, ApiTokenRecord];
 
@@ -127,9 +129,14 @@ class GeneratePatModal extends Modal {
     const { contentEl, titleEl } = this;
     titleEl.setText(t('api.settings.patModalTitle'));
 
-    contentEl.createEl('p', {
-      text: t('api.settings.patModalDesc')
-    });
+    const descEl = contentEl.createDiv({ cls: 'ofc-settings-modal-docs' });
+    descEl.setCssProps({ marginBottom: '12px' });
+    descEl.appendChild(
+      createDescWithDocs(t('api.settings.patModalDesc'), [
+        { text: 'PAT documentation', path: 'user/features/api' },
+        { text: 'Scopes & permissions', path: 'user/settings/api' }
+      ])
+    );
 
     new Setting(contentEl)
       .setName(t('api.settings.patModalName'))
@@ -243,7 +250,10 @@ class ShowTokenModal extends Modal {
   }
 }
 
-export function renderApiAccessSettings(
+/**
+ * Renders the internal API Access settings controls (used inside the common SettingsModal).
+ */
+export function renderApiAccessSettingsContent(
   containerEl: HTMLElement,
   plugin: FullCalendarPlugin,
   onChange: () => void
@@ -251,11 +261,23 @@ export function renderApiAccessSettings(
   const settings = PluginState.getSettings();
 
   // --- 1. LOCAL REST SERVER CONFIGURATION ---
-  new Setting(containerEl).setName(t('api.settings.serverTitle')).setHeading();
+  new Setting(containerEl)
+    .setName(t('api.settings.serverTitle'))
+    .setHeading()
+    .setDesc(
+      createDocsLinksFragment([
+        { text: 'REST Server documentation', path: 'user/features/api' },
+        { text: 'REST API architecture', path: 'architecture/api/rest-server' }
+      ])
+    );
 
   new Setting(containerEl)
     .setName(t('api.settings.serverEnable'))
-    .setDesc(t('api.settings.serverEnableDesc'))
+    .setDesc(
+      createDescWithDocs(t('api.settings.serverEnableDesc'), [
+        { text: 'Local server setup', path: 'user/features/api' }
+      ])
+    )
     .addToggle(toggle => {
       toggle.setValue(settings.enableLocalServer).onChange(value => {
         void (async () => {
@@ -279,13 +301,22 @@ export function renderApiAccessSettings(
             if (!isNaN(port) && port >= 1024 && port <= 65535) {
               PluginState.getSettings().localServerPort = port;
               await PluginState.saveSettings(false);
+              onChange();
             }
           })();
         });
     });
 
   // --- 2. PERSONAL ACCESS TOKENS (PATs) ---
-  const patSetting = new Setting(containerEl).setName(t('api.settings.patTitle')).setHeading();
+  const patSetting = new Setting(containerEl)
+    .setName(t('api.settings.patTitle'))
+    .setHeading()
+    .setDesc(
+      createDocsLinksFragment([
+        { text: 'Personal Access Tokens', path: 'user/features/api' },
+        { text: 'Scopes & security', path: 'user/settings/api' }
+      ])
+    );
 
   const tokenStore = settings.apiTokens || {};
   const tokenEntries = Object.entries(tokenStore) as TokenEntry[];
@@ -359,11 +390,20 @@ export function renderApiAccessSettings(
   }
 
   // --- 3. AUTHORIZED PLUGINS ---
-  new Setting(containerEl).setName(t('api.settings.title')).setHeading();
+  new Setting(containerEl)
+    .setName(t('api.settings.title'))
+    .setHeading()
+    .setDesc(
+      createDocsLinksFragment([
+        { text: 'Authorized plugins guide', path: 'user/settings/api' },
+        { text: 'Security best practices', path: 'user/settings/api' }
+      ])
+    );
 
   if (pluginTokens.length === 0) {
     containerEl.createEl('p', {
-      text: t('api.settings.noAuthorizedPlugins')
+      text: t('api.settings.noAuthorizedPlugins'),
+      cls: 'setting-item-description'
     });
     return;
   }
@@ -411,4 +451,61 @@ export function renderApiAccessSettings(
           });
       });
   });
+}
+
+/**
+ * Renders the consolidated API Access setting row with gear button.
+ */
+export function renderApiAccessSettings(
+  containerEl: HTMLElement,
+  plugin: FullCalendarPlugin,
+  onChange: () => void
+): void {
+  const settings = PluginState.getSettings();
+
+  new Setting(containerEl)
+    .setName(t('api.settings.title'))
+    .setDesc(
+      createDescWithDocs(
+        'Configure local REST API server, Personal Access Tokens (PATs), and external plugin authorizations.',
+        [
+          { text: 'Developer API & REST server', path: 'user/features/api' },
+          { text: 'API & Security settings', path: 'user/settings/api' },
+          { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
+        ]
+      )
+    )
+    .addToggle(toggle => {
+      toggle.setValue(settings.enableLocalServer).onChange(value => {
+        void (async () => {
+          PluginState.getSettings().enableLocalServer = value;
+          await PluginState.saveSettings();
+          onChange();
+        })();
+      });
+    })
+    .addExtraButton(button => {
+      button
+        .setIcon('gear')
+        .setTooltip('Configure api, rest server, and access tokens')
+        .onClick(() => {
+          SettingsModal.open(
+            plugin.app,
+            {
+              title: t('api.settings.title') || 'API access',
+              docsLinks: [
+                { text: 'Developer API & REST server', path: 'user/features/api' },
+                { text: 'API & Security settings', path: 'user/settings/api' },
+                { text: 'Troubleshooting', path: 'user/guides/troubleshooting' }
+              ]
+            },
+            (contentEl, rerenderModal) => {
+              renderApiAccessSettingsContent(contentEl, plugin, () => {
+                rerenderModal();
+                onChange();
+              });
+            }
+          );
+        });
+    });
 }

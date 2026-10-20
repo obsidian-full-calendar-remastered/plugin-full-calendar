@@ -445,7 +445,6 @@
       }
     },
     "appearance": {
-      "title": "Appearance",
       "highlightCurrentOrNextEvent": "Highlight current or next event",
       "highlightCurrentOrNextEventDesc": "Highlights the current timed event, or the immediate next timed event if none is active.",
       "enableLivePreview": {
@@ -792,7 +791,8 @@
       "linkedNotes": {
         "title": "Linked Note Settings",
         "description": "Configure settings for creating local Obsidian notes linked to remote calendar events.",
-        "learnMore": "Linked Notes Guide"
+        "learnMore": "Linked Notes Guide",
+        "configButton": "Configure linked note settings"
       },
       "defaultCalendar": {
         "label": "Default calendar for new events",
@@ -1226,6 +1226,7 @@
       "title": "FCR Reminder Companion",
       "description": "Sync your upcoming calendar events with the persistent FCR Reminder background companion daemon to receive native system-level toast notifications even when Obsidian is completely closed.",
       "learnMore": "FCR Reminder Guide",
+      "configButton": "Configure reminder companion settings",
       "enable": {
         "label": "Enable companion integration",
         "description": "Synchronize upcoming event alarms to the background companion daemon."
@@ -1664,6 +1665,8 @@
       "waitingModalCancel": "Cancel"
     },
     "title": "Google Accounts",
+    "description": "Manage Google accounts, authentication, and custom Google Cloud credentials.",
+    "configTooltip": "Configure Google accounts & credentials",
     "copyPasteAuth": {
       "enable": {
         "label": "Copy-paste authorization",
@@ -1729,6 +1732,8 @@
       "callbackFailed": "Authentication failed. Check Obsidian console and try again."
     },
     "title": "Outlook Accounts",
+    "description": "Manage Microsoft Outlook accounts and custom OAuth credentials.",
+    "configTooltip": "Configure Outlook accounts & credentials",
     "docs": {
       "setupGuide": "Outlook calendar setup"
     },

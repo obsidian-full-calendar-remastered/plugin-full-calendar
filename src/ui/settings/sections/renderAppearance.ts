@@ -27,16 +27,6 @@ export function renderAppearanceSettings(
   rerender: () => void
 ): void {
   new Setting(containerEl)
-    .setName(t('settings.appearance.title'))
-    .setHeading()
-    .setDesc(
-      createDocsLinksFragment([
-        { text: 'Display and behavior', path: 'user/settings/fc_config' },
-        { text: 'Views guide', path: 'user/views/' }
-      ])
-    );
-
-  new Setting(containerEl)
     .setName(t('settings.appearance.firstDay.label'))
     .setDesc(
       createDescWithDocs(t('settings.appearance.firstDay.description'), [

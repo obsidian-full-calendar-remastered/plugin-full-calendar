@@ -422,5 +422,87 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
 
       module.destroy();
     });
+
+    it('handles deferred initialization via polling retry loop', async () => {
+      jest.useFakeTimers();
+      try {
+        const { AgentHudModule } = await import('./modules/AgentHudModule');
+        const store = new SidebarStateStore();
+        const module = new AgentHudModule(store);
+        const containerEl = document.createElement('div');
+
+        const mockCreateWriteBar = jest.fn().mockReturnValue({ destroy: jest.fn() });
+        const mockPlugin: Record<string, unknown> = {
+          agentManager: undefined
+        };
+
+        const context: SidebarContext = {
+          plugin: mockPlugin as unknown as FullCalendarPlugin,
+          parentComponent: new Component(),
+          calendarApi: () => null,
+          sidebarContainerEl: containerEl,
+          triggerResize: jest.fn(),
+          gotoDate: jest.fn(),
+          getActiveDate: () => new Date()
+        };
+
+        module.mount(containerEl, context);
+        expect(containerEl.textContent).toContain('Agent service is initializing...');
+
+        // Advance timer by one retry step while still undefined
+        jest.advanceTimersByTime(200);
+        expect(mockCreateWriteBar).not.toHaveBeenCalled();
+
+        // Agent now available, advance next retry
+        mockPlugin.agentManager = { createWriteBar: mockCreateWriteBar };
+        jest.advanceTimersByTime(200);
+
+        expect(mockCreateWriteBar).toHaveBeenCalled();
+        module.destroy();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('shows retry button if max attempts exceeded', async () => {
+      jest.useFakeTimers();
+      try {
+        const { AgentHudModule } = await import('./modules/AgentHudModule');
+        const store = new SidebarStateStore();
+        const module = new AgentHudModule(store);
+        const containerEl = document.createElement('div');
+
+        const mockPlugin: Record<string, unknown> = {
+          agentManager: undefined
+        };
+
+        const context: SidebarContext = {
+          plugin: mockPlugin as unknown as FullCalendarPlugin,
+          parentComponent: new Component(),
+          calendarApi: () => null,
+          sidebarContainerEl: containerEl,
+          triggerResize: jest.fn(),
+          gotoDate: jest.fn(),
+          getActiveDate: () => new Date()
+        };
+
+        module.mount(containerEl, context);
+        expect(containerEl.textContent).toContain('Agent service is initializing...');
+
+        // Advance timers past max attempts (50 * 200ms = 10,000ms)
+        jest.advanceTimersByTime(11000);
+
+        expect(containerEl.textContent).toContain(
+          'Agent service is taking longer than expected to initialize.'
+        );
+        const retryBtn = containerEl.querySelector('button');
+        expect(retryBtn).not.toBeNull();
+        expect(retryBtn?.textContent).toBe('Retry');
+
+        module.destroy();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 });

@@ -172,6 +172,7 @@ export class CalendarView extends ItemView implements ViewContext {
 
       const container = this.contentEl;
       container.empty();
+      container.addClass('ofc-calendar-view-container');
       const calendarShellEl = container.createDiv({ cls: 'ofc-calendar-shell' });
 
       // Add loading progress bar and floating status badge for background syncing when cache is populating

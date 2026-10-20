@@ -39,7 +39,11 @@ export class TaskBacklogModule implements ISidebarModule {
       {
         showSearch: true,
         showFooter: false,
-        showDateSelector: false
+        showDateSelector: false,
+        showHeaderTitle: false,
+        onTaskCountChange: count => {
+          this.section.setBadge(count > 0 ? String(count) : null);
+        }
       },
       cb => {
         this.updateCallbacks.push(cb);
@@ -47,6 +51,14 @@ export class TaskBacklogModule implements ISidebarModule {
     );
 
     context.parentComponent.addChild(this.embeddedBacklog);
+  }
+
+  public setCollapsed(collapsed: boolean): void {
+    this.section.setCollapsed(collapsed);
+  }
+
+  public isCollapsed(): boolean {
+    return this.section.getIsCollapsed();
   }
 
   public onCacheUpdate(): void {

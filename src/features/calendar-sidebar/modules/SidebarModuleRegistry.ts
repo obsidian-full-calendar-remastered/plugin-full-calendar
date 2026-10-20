@@ -79,6 +79,21 @@ export class SidebarModuleRegistry {
     });
   }
 
+  public setAllCollapsed(collapsed: boolean): void {
+    this.activeModules.forEach(mod => {
+      try {
+        mod.setCollapsed?.(collapsed);
+      } catch (err) {
+        console.error(`Full Calendar Sidebar: Error setting collapsed on ${mod.id}`, err);
+      }
+    });
+  }
+
+  public areAllCollapsed(): boolean {
+    if (this.activeModules.length === 0) return false;
+    return this.activeModules.every(mod => (mod.isCollapsed ? mod.isCollapsed() : true));
+  }
+
   public destroyAll(): void {
     this.activeModules.forEach(mod => {
       try {

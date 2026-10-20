@@ -79,7 +79,19 @@ export class MiniMonthModule implements ISidebarModule {
       this.changeMonth(-1);
     });
 
-    this.monthTitleEl = navBar.createSpan({ cls: 'ofc-mini-month-title' });
+    this.monthTitleEl = navBar.createSpan({
+      cls: 'ofc-mini-month-title ofc-clickable',
+      attr: { title: 'Jump to current date' }
+    });
+    this.monthTitleEl.addEventListener('click', (e: MouseEvent) => {
+      e.stopPropagation();
+      const now = new Date();
+      this.selectedDate = new Date(now);
+      this.displayedYear = now.getFullYear();
+      this.displayedMonth = now.getMonth();
+      this.updateView();
+      this.context.gotoDate(now);
+    });
 
     const nextBtn = navBar.createEl('button', {
       cls: 'ofc-sidebar-icon-btn ofc-mini-month-next',
@@ -153,11 +165,19 @@ export class MiniMonthModule implements ISidebarModule {
     // Leading days from previous month
     for (let i = leadingBlanks - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i;
+      const cellDate = new Date(this.displayedYear, this.displayedMonth - 1, dayNum);
       const cell = daysContainer.createDiv({
         cls: 'ofc-mini-month-cell is-other-month',
-        text: String(dayNum)
+        text: String(dayNum),
+        attr: {
+          title: cellDate.toLocaleDateString(undefined, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          })
+        }
       });
-      const cellDate = new Date(this.displayedYear, this.displayedMonth - 1, dayNum);
       cell.addEventListener('click', () => {
         this.selectDate(cellDate);
       });
@@ -165,9 +185,18 @@ export class MiniMonthModule implements ISidebarModule {
 
     // Days of the month
     for (let day = 1; day <= daysInCurrentMonth; day++) {
+      const cellDate = new Date(this.displayedYear, this.displayedMonth, day);
       const cell = daysContainer.createDiv({
         cls: 'ofc-mini-month-cell',
-        text: String(day)
+        text: String(day),
+        attr: {
+          title: cellDate.toLocaleDateString(undefined, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          })
+        }
       });
 
       const isToday = isCurrentYearAndMonth && today.getDate() === day;
@@ -187,7 +216,6 @@ export class MiniMonthModule implements ISidebarModule {
         cell.createSpan({ cls: 'ofc-mini-month-dot' });
       }
 
-      const cellDate = new Date(this.displayedYear, this.displayedMonth, day);
       cell.addEventListener('click', () => {
         this.selectDate(cellDate);
       });
@@ -197,11 +225,19 @@ export class MiniMonthModule implements ISidebarModule {
     const totalRendered = leadingBlanks + daysInCurrentMonth;
     const trailingBlanks = totalRendered <= 35 ? 35 - totalRendered : 42 - totalRendered;
     for (let day = 1; day <= trailingBlanks; day++) {
+      const cellDate = new Date(this.displayedYear, this.displayedMonth + 1, day);
       const cell = daysContainer.createDiv({
         cls: 'ofc-mini-month-cell is-other-month',
-        text: String(day)
+        text: String(day),
+        attr: {
+          title: cellDate.toLocaleDateString(undefined, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          })
+        }
       });
-      const cellDate = new Date(this.displayedYear, this.displayedMonth + 1, day);
       cell.addEventListener('click', () => {
         this.selectDate(cellDate);
       });
@@ -270,6 +306,14 @@ export class MiniMonthModule implements ISidebarModule {
 
   public onCacheUpdate(): void {
     this.updateView();
+  }
+
+  public setCollapsed(collapsed: boolean): void {
+    this.section.setCollapsed(collapsed);
+  }
+
+  public isCollapsed(): boolean {
+    return this.section.getIsCollapsed();
   }
 
   public destroy(): void {

@@ -294,6 +294,14 @@ export class UpNextWeatherModule implements ISidebarModule {
     return matched || dayData.hourly[0] || null;
   }
 
+  public setCollapsed(collapsed: boolean): void {
+    this.section.setCollapsed(collapsed);
+  }
+
+  public isCollapsed(): boolean {
+    return this.section.getIsCollapsed();
+  }
+
   public destroy(): void {
     this.section.destroy();
   }

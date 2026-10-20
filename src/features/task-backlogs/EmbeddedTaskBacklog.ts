@@ -27,6 +27,8 @@ export interface BacklogWidgetConfig {
   showSearch?: boolean;
   showFooter?: boolean;
   showDateSelector?: boolean;
+  showHeaderTitle?: boolean;
+  onTaskCountChange?: (count: number) => void;
 }
 
 export class EmbeddedTaskBacklog extends Component {
@@ -210,11 +212,15 @@ export class EmbeddedTaskBacklog extends Component {
       showDateSelector && providers.some(provider => provider.type === 'tasks');
 
     const openTaskCount = this.getOpenTasks().length;
+    this.config.onTaskCountChange?.(openTaskCount);
 
-    if (showSearch || hasDateSelector) {
+    const showHeaderTitle = this.config.showHeaderTitle ?? true;
+    if (showSearch || hasDateSelector || showHeaderTitle) {
       const header = contentContainer.createDiv({ cls: 'tasks-backlog-header' });
-      const headerTitleRow = header.createDiv({ cls: 'tasks-backlog-title-row' });
-      headerTitleRow.createEl('h3', { text: t('settings.taskBacklog.title') });
+      if (showHeaderTitle) {
+        const headerTitleRow = header.createDiv({ cls: 'tasks-backlog-title-row' });
+        headerTitleRow.createEl('h3', { text: t('settings.taskBacklog.title') });
+      }
 
       if (showSearch) {
         this.renderSearchBar(header, hasDateSelector);

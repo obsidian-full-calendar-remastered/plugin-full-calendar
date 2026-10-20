@@ -59,7 +59,8 @@ export class CalendarSidebarManager extends Component {
 
     // Expand tab (visible when collapsed)
     this.expandTabEl = this.shellEl.createDiv({ cls: 'ofc-sidebar-expand-tab is-hidden' });
-    this.expandTabEl.setAttribute('title', 'Expand sidebar');
+    this.expandTabEl.setAttribute('title', 'Expand cockpit');
+    this.expandTabEl.setAttribute('aria-label', 'Expand cockpit');
     setIcon(this.expandTabEl, 'chevron-right');
     this.expandTabEl.addEventListener('click', () => {
       this.setCollapsed(false);
@@ -108,9 +109,42 @@ export class CalendarSidebarManager extends Component {
     brand.createSpan({ text: 'Cockpit' });
 
     const actions = topBar.createDiv({ cls: 'ofc-sidebar-top-actions' });
+
+    // 1. Toggle all sections (Expand/Collapse all)
+    const toggleAllBtn = actions.createEl('button', {
+      cls: 'ofc-sidebar-icon-btn ofc-sidebar-toggle-all-btn',
+      attr: { 'aria-label': 'Collapse all sections', title: 'Collapse all sections' }
+    });
+    setIcon(toggleAllBtn, 'chevrons-up-down');
+    toggleAllBtn.addEventListener('click', () => {
+      const allCollapsed = this.registry.areAllCollapsed();
+      this.registry.setAllCollapsed(!allCollapsed);
+      const nextLabel = allCollapsed ? 'Collapse all sections' : 'Expand all sections';
+      toggleAllBtn.setAttribute('aria-label', nextLabel);
+      toggleAllBtn.setAttribute('title', nextLabel);
+    });
+
+    // 2. Refresh cockpit data
+    const refreshBtn = actions.createEl('button', {
+      cls: 'ofc-sidebar-icon-btn ofc-sidebar-refresh-btn',
+      attr: { 'aria-label': 'Refresh cockpit', title: 'Refresh cockpit' }
+    });
+    setIcon(refreshBtn, 'refresh-cw');
+    refreshBtn.addEventListener('click', () => {
+      refreshBtn.addClass('is-spinning');
+      this.notifyCacheUpdate();
+      window.setTimeout(() => {
+        refreshBtn.removeClass('is-spinning');
+      }, 500);
+    });
+
+    // 3. Collapse Cockpit sidebar
     const collapseBtn = actions.createEl('button', {
-      cls: 'ofc-sidebar-icon-btn',
-      attr: { 'aria-label': 'Collapse sidebar', title: 'Collapse sidebar' }
+      cls: 'ofc-sidebar-icon-btn ofc-sidebar-collapse-btn',
+      attr: {
+        'aria-label': 'Collapse cockpit (double-click border to toggle)',
+        title: 'Collapse cockpit (double-click border to toggle)'
+      }
     });
     setIcon(collapseBtn, 'panel-left-close');
     collapseBtn.addEventListener('click', () => {

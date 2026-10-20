@@ -263,12 +263,19 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
       const sections = containerEl.querySelectorAll('.ofc-sidebar-section');
       expect(sections.length).toBeGreaterThanOrEqual(2);
 
+      // Test collapsing all and checking state
+      registry.setAllCollapsed(true);
+      expect(registry.areAllCollapsed()).toBe(true);
+
+      registry.setAllCollapsed(false);
+      expect(registry.areAllCollapsed()).toBe(false);
+
       registry.destroyAll();
     });
   });
 
   describe('MiniMonthModule', () => {
-    it('renders month navigation and responds to date clicks', () => {
+    it('renders month navigation and responds to date clicks and title clicks', () => {
       const store = new SidebarStateStore();
       const module = new MiniMonthModule(store);
       const containerEl = document.createElement('div');
@@ -290,6 +297,10 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
       const cells = containerEl.querySelectorAll('.ofc-mini-month-cell:not(.is-other-month)');
       expect(cells.length).toBe(31); // October has 31 days
 
+      // Day cells have accessibility title
+      const cell1 = cells[0];
+      expect(cell1.getAttribute('title')).toBeDefined();
+
       // Click on day 16
       const cell16 = Array.from(cells).find(c => c.textContent?.trim() === '16');
       expect(cell16).toBeDefined();
@@ -300,12 +311,23 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
       const calledDate = calls[0]?.[0];
       expect(calledDate?.getDate()).toBe(16);
 
+      // Click month title to jump to today
+      const titleEl = containerEl.querySelector('.ofc-mini-month-title');
+      expect(titleEl).toBeDefined();
+      titleEl?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(mockGotoDate).toHaveBeenCalledTimes(2);
+
+      // Test module collapse methods
+      expect(module.isCollapsed()).toBe(false);
+      module.setCollapsed(true);
+      expect(module.isCollapsed()).toBe(true);
+
       module.destroy();
     });
   });
 
   describe('UpNextWeatherModule', () => {
-    it('mounts clean empty state when no upcoming events exist', () => {
+    it('mounts clean empty state when no upcoming events exist and supports collapse', () => {
       const store = new SidebarStateStore();
       const module = new UpNextWeatherModule(store);
       const containerEl = document.createElement('div');
@@ -325,6 +347,43 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
 
       const emptyEl = containerEl.querySelector('.ofc-upnext-empty');
       expect(emptyEl).toBeDefined();
+
+      expect(module.isCollapsed()).toBe(false);
+      module.setCollapsed(true);
+      expect(module.isCollapsed()).toBe(true);
+
+      module.destroy();
+    });
+  });
+
+  describe('TaskBacklogModule', () => {
+    it('mounts and supports collapse and cache updates', async () => {
+      const { TaskBacklogModule } = await import('./modules/TaskBacklogModule');
+      const store = new SidebarStateStore();
+      const module = new TaskBacklogModule(store);
+      const containerEl = document.createElement('div');
+
+      const mockPlugin = {
+        app: {}
+      } as unknown as FullCalendarPlugin;
+
+      const context: SidebarContext = {
+        plugin: mockPlugin,
+        parentComponent: new Component(),
+        calendarApi: () => null,
+        sidebarContainerEl: containerEl,
+        triggerResize: jest.fn(),
+        gotoDate: jest.fn(),
+        getActiveDate: () => new Date()
+      };
+
+      module.mount(containerEl, context);
+
+      expect(module.isCollapsed()).toBe(false);
+      module.setCollapsed(true);
+      expect(module.isCollapsed()).toBe(true);
+
+      expect(() => module.onCacheUpdate()).not.toThrow();
 
       module.destroy();
     });
@@ -356,6 +415,11 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
 
       module.mount(containerEl, context);
       expect(mockCreateWriteBar).toHaveBeenCalled();
+
+      expect(module.isCollapsed()).toBe(false);
+      module.setCollapsed(true);
+      expect(module.isCollapsed()).toBe(true);
+
       module.destroy();
     });
   });

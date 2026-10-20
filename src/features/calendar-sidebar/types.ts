@@ -26,6 +26,8 @@ export interface ISidebarModule {
   onDateRangeChange?(range: { start: Date; end: Date }): void;
   onCacheUpdate?(): void;
   renderHeaderActions?(actionsEl: HTMLElement): void;
+  setCollapsed?(collapsed: boolean): void;
+  isCollapsed?(): boolean;
 }
 
 export type SidebarModuleFactory = () => ISidebarModule | Promise<ISidebarModule>;

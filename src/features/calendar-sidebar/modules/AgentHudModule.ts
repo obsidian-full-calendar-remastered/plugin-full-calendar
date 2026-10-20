@@ -75,6 +75,14 @@ export class AgentHudModule implements ISidebarModule {
     }
   }
 
+  public setCollapsed(collapsed: boolean): void {
+    this.section?.setCollapsed(collapsed);
+  }
+
+  public isCollapsed(): boolean {
+    return this.section?.getIsCollapsed() ?? false;
+  }
+
   public destroy(): void {
     if (this.writeBar) {
       this.writeBar.destroy();

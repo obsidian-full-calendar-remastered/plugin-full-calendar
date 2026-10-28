@@ -19,6 +19,8 @@ These parameters control the appearance, density, and layout structure of the ca
 | `zoomLevel` | `number` | `0` to `4` | Density multiplier for the timeline timeslots. | [Zoom Settings](../settings/fc_config.md) |
 | `slotDuration` | `string` | `00:15:00`, `00:30:00` | Custom agenda row time block size. | [Display Settings](../settings/fc_config.md) |
 | `slotLabelInterval` | `string` | `01:00:00`, `02:00:00` | Grid line label occurrence frequency. | [Display Settings](../settings/fc_config.md) |
+| `slotMinTime` | `string` | `06:00:00`, `08:00:00` | First visible time slot in the calendar. | [Display Settings](../settings/fc_config.md) |
+| `slotMaxTime` | `string` | `22:00:00`, `23:00:00` | Last visible time slot in the calendar. | [Display Settings](../settings/fc_config.md) |
 | `weather` | `boolean` | `true`, `false` | Displays weather forecast icons inline. | [Weather Forecasts](../features/weather.md) |
 | `inheritFilters` | `boolean` | `true`, `false` | Toggles parent-to-child filter cascading. | [Dashboard Layouts](#dashboard-layouts-inheritance) |
 

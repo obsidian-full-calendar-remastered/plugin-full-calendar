@@ -45,6 +45,8 @@ export interface ViewConfig {
   zoomLevel?: number;
   slotDuration?: string;
   slotLabelInterval?: string;
+  slotMinTime?: string;
+  slotMaxTime?: string;
   styles?: Record<string, string>;
   weather?: boolean;
   stickyHeader?: boolean;
@@ -261,6 +263,8 @@ export class EmbeddedCalendar extends Component implements ViewContext {
       weatherHide: config.weather === false,
       ...(slotDuration !== undefined && { slotDuration }),
       ...(slotLabelInterval !== undefined && { slotLabelInterval }),
+      ...(config.slotMinTime && { slotMinTime: config.slotMinTime }),
+      ...(config.slotMaxTime && { slotMaxTime: config.slotMaxTime }),
       ...(isTimelineView && { enableAdvancedCategorization: true }),
       ...(resources !== undefined && { resources }),
       eventClick: (info: EventClickArg) => {

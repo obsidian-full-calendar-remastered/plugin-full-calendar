@@ -1,0 +1,252 @@
+{
+  "version": 3,
+  "locale": "ru",
+  "categoryParsing": {
+    "spokenDelimiterRegex": "\\s+(?:тире|дефис|ч[её]рточк[аи])\\s+",
+    "spokenDelimiterFlags": "gi",
+    "explicitCategoryRegex": "\\bкатегори[яию]\\s+(.+)$",
+    "explicitCategoryFlags": "i"
+  },
+  "rules": [
+    {
+      "name": "navigate_week",
+      "regex": "^(?:открой|открыть|покажи|показать|перейди|перейти|переключись|переключиться|включи|включить)\\s+(?:(?:в|на)\\s+)?(?:недельн\\w*(?:\\s+(?:вид|представление))?|неделю)\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(NAVIGATE_WEEK)"]
+    },
+    {
+      "name": "navigate_month",
+      "regex": "^(?:открой|открыть|покажи|показать|перейди|перейти|переключись|переключиться|включи|включить)\\s+(?:(?:в|на)\\s+)?(?:месячн\\w*(?:\\s+(?:вид|представление))?|месяц)\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(NAVIGATE_MONTH)"]
+    },
+    {
+      "name": "navigate_day",
+      "regex": "^(?:открой|открыть|покажи|показать|перейди|перейти|переключись|переключиться|включи|включить)\\s+(?:(?:в|на)\\s+)?(?:дневн\\w*(?:\\s+(?:вид|представление))?|день)\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(NAVIGATE_DAY)"]
+    },
+    {
+      "name": "navigate_calendar",
+      "regex": "^(?:открой|открыть|покажи|показать)\\s+(?:календар[ья]|календари)\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(OPEN_CALENDAR)"]
+    },
+    {
+      "name": "navigate_sidebar",
+      "regex": "^(?:открой|открыть|покажи|показать)\\s+(?:боковую\\s+)?панел[ьи]\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(OPEN_SIDEBAR)"]
+    },
+    {
+      "name": "open_settings",
+      "regex": "^(?:открой|открыть|покажи|показать)\\s+настройк[иау]\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(OPEN_SETTINGS)"]
+    },
+    {
+      "name": "open_chrono",
+      "regex": "^(?:открой|открыть|покажи|показать|запусти|запустить)\\s+(?:хроно|chrono|анализ\\w*|анализатор\\w*|инсайт\\w*)\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(OPEN_CHRONO)"]
+    },
+    {
+      "name": "show_changelog",
+      "regex": "^(?:покажи|показать|открой|открыть|посмотри|посмотреть)\\s+(?:историю\\s+изменений|что\\s+нового|примечания\\s+к\\s+выпуску|changelog)\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(SHOW_CHANGELOG)"]
+    },
+    {
+      "name": "show_milestones",
+      "regex": "^(?:покажи|показать|открой|открыть|посмотри|посмотреть)\\s+(?:вех[иу]|достижени\\w*)\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(SHOW_MILESTONES)"]
+    },
+    {
+      "name": "reset_cache",
+      "regex": "^(?:сбрось|сбросить|сбросьте|очисти|очистить|очистите)\\s+(?:кэш\\s+событий|кэш)\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(RESET_CACHE)"]
+    },
+    {
+      "name": "revalidate_remote",
+      "regex": "^(?:обнови|обновить|перепроверь|перепроверить|перезагрузи|перезагрузить|пересинхронизируй|пересинхронизировать)\\s+(?:удал[её]нн\\w+\\s+)?календар[ьи]\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(REVALIDATE_REMOTE)"]
+    },
+    {
+      "name": "sync_activitywatch",
+      "regex": "^(?:синхронизируй|синхронизировать|запусти|запустить|выполни|выполнить)\\s+(?:activitywatch|activity\\s+watch|aw)\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(SYNC_ACTIVITYWATCH)"]
+    },
+    {
+      "name": "sync_fcr_reminder",
+      "regex": "^(?:синхронизируй|синхронизировать|запусти|запустить|обнови|обновить)\\s+(?:fcr\\s+)?(?:напоминани\\w+\\s+)?companion\\b",
+      "flags": "i",
+      "actions": ["SET_INTENT(SYNC_FCR_REMINDER)"]
+    },
+    {
+      "name": "goto_date",
+      "regex": "^(?:перейди|перейти|переключись|переключиться|переместись|переместиться)\\s+(?:к|на|в|во)\\s+",
+      "flags": "i",
+      "actions": ["SET_INTENT(GOTO_DATE)"]
+    },
+    {
+      "name": "new_event",
+      "regex": "^(?:новое|создай|создать|добавь|добавить)\\s+(?:новое\\s+)?(?:событие|встреч[уа]|мероприятие)\\b",
+      "flags": "i",
+      "actions": []
+    },
+    {
+      "name": "next_weekday",
+      "regex": "\\b(?:следующ\\w+|ближайш\\w+)\\s+(понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)\\b",
+      "flags": "i",
+      "actions": ["NEXT_WEEKDAY($1)"]
+    },
+    {
+      "name": "next_occurring_day",
+      "regex": "\\b(?:на\\s+)?(\\d{1,2})(?:-?(?:го|е)(?:\\s+числ[оа])?|\\s+числ[оа])\\b",
+      "flags": "i",
+      "actions": ["SET_NEXT_OCCURRING_DAY($1)"]
+    },
+    {
+      "name": "duration_last_hrs",
+      "regex": "\\b(?:за|в\\s+течение)\\s+(?:последн\\w+\\s+)?(\\d+)\\s+час(?:а|ов)?\\b",
+      "flags": "i",
+      "actions": ["SUBTRACT_HOURS($1)", "ADD_DURATION($1,0)"]
+    },
+    {
+      "name": "duration_last_mins",
+      "regex": "\\b(?:за|в\\s+течение)\\s+(?:последн\\w+\\s+)?(\\d+)\\s+минут(?:у|ы)?\\b",
+      "flags": "i",
+      "actions": ["SUBTRACT_MINUTES($1)", "ADD_DURATION(0,$1)"]
+    },
+    {
+      "name": "duration_next_hrs",
+      "regex": "\\b(?:на|в\\s+течение)\\s+(?:следующ\\w+|ближайш\\w+)\\s+(\\d+)\\s+час(?:а|ов)?\\b",
+      "flags": "i",
+      "actions": ["ADD_DURATION($1,0)"]
+    },
+    {
+      "name": "duration_next_mins",
+      "regex": "\\b(?:на|в\\s+течение)\\s+(?:следующ\\w+|ближайш\\w+)\\s+(\\d+)\\s+минут(?:у|ы)?\\b",
+      "flags": "i",
+      "actions": ["ADD_DURATION(0,$1)"]
+    },
+    {
+      "name": "duration_hrs",
+      "regex": "\\bна\\s+(\\d+)\\s+час(?:а|ов)?\\b",
+      "flags": "i",
+      "actions": ["ADD_DURATION($1,0)"]
+    },
+    {
+      "name": "duration_mins",
+      "regex": "\\bна\\s+(\\d+)\\s+минут(?:у|ы)?\\b",
+      "flags": "i",
+      "actions": ["ADD_DURATION(0,$1)"]
+    },
+    {
+      "name": "time_noon",
+      "regex": "\\bв\\s+полдень\\b",
+      "flags": "i",
+      "actions": ["SET_TIME(12,0,\"\")"]
+    },
+    {
+      "name": "time_midnight",
+      "regex": "\\bв\\s+полночь\\b",
+      "flags": "i",
+      "actions": ["SET_TIME(0,0,\"\")"]
+    },
+    {
+      "name": "in_minutes",
+      "regex": "\\bчерез\\s+(\\d+)\\s+минут(?:у|ы)?\\b",
+      "flags": "i",
+      "actions": ["ADD_MINUTES($1)"]
+    },
+    {
+      "name": "in_hours",
+      "regex": "\\bчерез\\s+(\\d+)\\s+час(?:а|ов)?\\b",
+      "flags": "i",
+      "actions": ["ADD_HOURS($1)"]
+    },
+    {
+      "name": "in_days",
+      "regex": "\\bчерез\\s+(\\d+)\\s+д(?:ень|ня|ней)\\b",
+      "flags": "i",
+      "actions": ["ADD_DAYS($1)"]
+    },
+    {
+      "name": "in_weeks",
+      "regex": "\\bчерез\\s+(\\d+)\\s+недел(?:ю|и|ь)\\b",
+      "flags": "i",
+      "actions": ["ADD_WEEKS($1)"]
+    },
+    {
+      "name": "time_range_ampm",
+      "regex": "\\b(?:с|от)\\s+(\\d{1,2}(?::\\d{2})?|\\d{3,4})\\s*(утра|дня|вечера|ночи)?\\s+(?:до|по)\\s+(\\d{1,2}(?::\\d{2})?|\\d{3,4})\\s*(утра|дня|вечера|ночи)?\\b",
+      "flags": "i",
+      "actions": ["SET_TIME_RANGE($1,$2,$3,$4)"]
+    },
+    {
+      "name": "time_exact_ampm",
+      "regex": "\\bв\\s+(\\d{1,2}(?::\\d{2})?|\\d{3,4})\\s*(?:час(?:а|ов)?\\s*)?(утра|дня|вечера|ночи)?\\b",
+      "flags": "i",
+      "actions": ["SET_TIME_TOKEN($1,$2)"]
+    },
+    {
+      "name": "next_week",
+      "regex": "\\b(?:на\\s+)?(?:следующ\\w+\\s+недел\\w*|через\\s+неделю)\\b",
+      "flags": "i",
+      "actions": ["ADD_DAYS(7)"]
+    },
+    {
+      "name": "next_month",
+      "regex": "\\b(?:в\\s+)?(?:следующ\\w+\\s+месяц\\w*|через\\s+месяц)\\b",
+      "flags": "i",
+      "actions": ["ADD_DAYS(30)"]
+    },
+    {
+      "name": "day_after_tomorrow",
+      "regex": "\\bпослезавтра\\b",
+      "flags": "i",
+      "actions": ["ADD_DAYS(2)"]
+    },
+    {
+      "name": "tomorrow",
+      "regex": "\\b(завтра)\\b",
+      "flags": "i",
+      "actions": ["ADD_DAYS(1)"]
+    },
+    {
+      "name": "today",
+      "regex": "\\b(сегодня)\\b",
+      "flags": "i",
+      "actions": ["ADD_DAYS(0)"]
+    },
+    {
+      "name": "yesterday",
+      "regex": "\\b(вчера)\\b",
+      "flags": "i",
+      "actions": ["SUBTRACT_DAYS(1)"]
+    },
+    {
+      "name": "target_calendar",
+      "regex": "\\bв\\s+календаре\\s+([а-яёa-z0-9_\\-\\/ ]{2,50})\\b",
+      "flags": "i",
+      "actions": ["SET_TARGET($1)"]
+    },
+    {
+      "name": "recur_daily",
+      "regex": "\\b(?:каждый\\s+день|ежедневно)\\b",
+      "flags": "i",
+      "actions": ["SET_RECURRENCE(DAILY,1)"]
+    },
+    {
+      "name": "recur_weekly_weekday",
+      "regex": "\\bкаждый\\s+(понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)\\b",
+      "flags": "i",
+      "actions": ["SET_RECURRENCE(WEEKLY,1,$1)"]
+    }
+  ]
+}

@@ -2,6 +2,9 @@
 
 This page provides the complete technical specification of the parameters, filters, layout cascading, and custom styling rules available in the `fc-calendar` codeblock.
 
+!!! tip "Looking for a Quickstart?"
+    If you are new to code blocks or want simple copy-paste recipes, check out the **[Beginner Quickstart Guide](index.md#quickstart-embed-in-3-steps)**.
+
 ---
 
 ## Layout & View Config

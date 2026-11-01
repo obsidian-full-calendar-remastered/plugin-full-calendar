@@ -3,8 +3,7 @@
 !!! abstract "Welcome to Full Calendar Remastered"
     This guide will walk you through the installation, initial setup, and basic usage of the plugin. For a faster start, check out the [Pro Workflow](#pro-workflow) tips below.
 
-Fast track through [Installation](#installation) · [First-Time Setup](#first-time-setup) · [Opening the Calendar](#opening-the-calendar)  
-[Sidebar Calendar](#sidebar-calendar) · [Troubleshooting](user/guides/troubleshooting.md)  
+Fast track through [Installation](#installation) · [First-Time Setup](#first-time-setup) · [Opening the Calendar](#opening-the-calendar) · [Sidebar Calendar](#sidebar-calendar) · [Embedding in Notes](#embedding-in-notes-codeblocks) · [Troubleshooting](user/guides/troubleshooting.md)  
 
 ## Pro Workflow
 
@@ -73,3 +72,15 @@ For quick reference, you can open a more compact version of the calendar in the 
 
 ![Sidebar calendar](assets/guides/sidebar.gif)
 
+## Embedding in Notes (Codeblocks)
+
+You can embed an interactive calendar, task backlog, or weather forecast directly into any note using the `fc-calendar` code block:
+
+````markdown
+```fc-calendar
+view: dayGridMonth
+height: 500px
+```
+````
+
+For copy-paste starter snippets, daily note auto-linking (`defaultDate: auto`), and dashboard layouts, see the **[Embedded Calendars Guide](user/embeds/index.md)**.

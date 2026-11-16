@@ -371,15 +371,52 @@ export class TasksPluginProvider
     return { retryDelayMs: TASKS_CACHE_RETRY_DELAY_MS };
   }
 
-  private getDefaultEndTime(startTime: string): string {
+  private parseTaskTime(time: string): DateTime | null {
     const formats = ['H:mm', 'HH:mm', 'h:mm a'];
     for (const format of formats) {
-      const parsed = DateTime.fromFormat(startTime, format);
+      const parsed = DateTime.fromFormat(time, format);
       if (parsed.isValid) {
-        return parsed.plus({ minutes: DEFAULT_TIMED_TASK_DURATION_MINUTES }).toFormat('HH:mm');
+        return parsed;
       }
     }
-    return startTime;
+    return null;
+  }
+
+  private getDefaultEndTime(startTime: string): string {
+    const parsed = this.parseTaskTime(startTime);
+    return parsed
+      ? parsed.plus({ minutes: DEFAULT_TIMED_TASK_DURATION_MINUTES }).toFormat('HH:mm')
+      : startTime;
+  }
+
+  /**
+   * Resolves a backlog drop onto a time slot into the date and time block to write.
+   * The drop instant is read in the display timezone, matching how timed drags are
+   * converted. A task that already carries a time range keeps its duration.
+   */
+  private getDroppedTimeSlot(
+    task: CalendarTask,
+    date: Date
+  ): { date: Date; startTime: string; endTime: string } | null {
+    const zone = PluginState.getSettings().displayTimezone || DateTime.local().zoneName;
+    const dropped = DateTime.fromJSDate(date).setZone(zone);
+    const droppedDate = dropped.toISODate();
+    if (!dropped.isValid || !droppedDate) {
+      return null;
+    }
+
+    let durationMinutes = DEFAULT_TIMED_TASK_DURATION_MINUTES;
+    const start = task.startTime ? this.parseTaskTime(task.startTime) : null;
+    const end = task.endTime ? this.parseTaskTime(task.endTime) : null;
+    if (start && end && end > start) {
+      durationMinutes = end.diff(start, 'minutes').minutes;
+    }
+
+    return {
+      date: DateTime.fromISO(droppedDate).toJSDate(),
+      startTime: dropped.toFormat('HH:mm'),
+      endTime: dropped.plus({ minutes: durationMinutes }).toFormat('HH:mm')
+    };
   }
 
   /**
@@ -954,16 +991,29 @@ export class TasksPluginProvider
     );
   }
 
-  public async scheduleTask(taskId: string, date: Date, _allDay = true): Promise<void> {
+  public async scheduleTask(taskId: string, date: Date, allDay = true): Promise<void> {
     const task = this.allTasks.find(t => t.id === taskId);
     if (!task) {
       throw new Error(`Cannot find original task to schedule at ${taskId}`);
     }
     const dateTargets = this.getTaskPlanningDateTargets();
-    const newLine = dateTargets.reduce(
-      (line, dateTarget) => this.updateTaskLine(line, date, dateTarget),
+    const timedSlot = allDay ? null : this.getDroppedTimeSlot(task, date);
+    const scheduleDate = timedSlot ? timedSlot.date : date;
+    let newLine = dateTargets.reduce(
+      (line, dateTarget) => this.updateTaskLine(line, scheduleDate, dateTarget),
       task.originalMarkdown
     );
+    if (timedSlot) {
+      const settings = PluginState.getSettings();
+      newLine = updateTimeInLine(
+        newLine,
+        timedSlot.startTime,
+        timedSlot.endTime,
+        settings.timeFormat24h,
+        this.getDateTargetEmoji(settings.tasksIntegration.calendarDisplayDateTarget),
+        settings.tasksIntegration.taskDisplayFormat ?? 'dayPlanner'
+      );
+    }
 
     // Update in-memory state BEFORE writing the file so that the Tasks plugin's
     // async `cache-update` event (triggered by the file write below) sees the
@@ -978,9 +1028,15 @@ export class TasksPluginProvider
       target: dt,
       value: this.getTaskDateValue(task, dt)
     }));
+    const previousStartTime = task.startTime;
+    const previousEndTime = task.endTime;
     task.originalMarkdown = newLine;
     for (const dateTarget of dateTargets) {
-      this.setTaskDate(task, dateTarget, date);
+      this.setTaskDate(task, dateTarget, scheduleDate);
+    }
+    if (timedSlot) {
+      task.startTime = timedSlot.startTime;
+      task.endTime = timedSlot.endTime;
     }
 
     try {
@@ -992,6 +1048,8 @@ export class TasksPluginProvider
       for (const { target, value } of previousDates) {
         this.setTaskDate(task, target, value);
       }
+      task.startTime = previousStartTime;
+      task.endTime = previousEndTime;
       throw err;
     }
 

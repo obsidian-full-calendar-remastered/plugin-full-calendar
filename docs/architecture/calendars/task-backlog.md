@@ -71,7 +71,8 @@ Task IDs are serialized string identifiers containing sufficient metadata for ma
    const provider = ProviderRegistry.getBacklogProviderForTask(taskId);
    await provider.scheduleTask(taskId, date, allDay);
    ```
-2. **Backwards Compatibility Fallbacks**: CalDAV provider's `scheduleTask` and `validateTaskSchedule` feature a fallback system which automatically processes both fully qualified backlog IDs (`caldav::...`) and raw `taskUid` strings, safeguarding direct unit tests and integration endpoints.
+2. **Timed Drops**: `allDay` is `false` when the drop lands on a time slot. Obsidian Tasks then writes the slot time (read in the display timezone) as a time block; the block keeps the task's existing time range length, or defaults to 30 minutes.
+3. **Backwards Compatibility Fallbacks**: CalDAV provider's `scheduleTask` and `validateTaskSchedule` feature a fallback system which automatically processes both fully qualified backlog IDs (`caldav::...`) and raw `taskUid` strings, safeguarding direct unit tests and integration endpoints.
 
 ---
 

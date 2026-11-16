@@ -156,7 +156,7 @@ Where `<date marker>` is one of `⏳ YYYY-MM-DD`, `🛫 YYYY-MM-DD`, or `📅 YY
 - `- [ ] 5:00 - 19:00 Sync with Team ⏳ 2025-03-28`
 - `- [ ] Sync with Team (14:00-15:00) ⏳ 2025-03-28`
 
-*Dragging an event on the calendar automatically updates this time-block in your markdown.*
+*Dragging an event on the calendar automatically updates this time-block in your markdown. Dropping a backlog task onto a time slot writes a 30-minute block, or keeps the length of the task's existing time range.*
 
 > [!NOTE]
 > Full Calendar parses both formats automatically in calendar/backlog views. You do not need to migrate older tasks for them to remain visible and schedulable.

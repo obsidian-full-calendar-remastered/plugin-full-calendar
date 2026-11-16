@@ -1,4 +1,5 @@
 import {
+  AlarmSchema,
   CommonSchema,
   EventSchema,
   OFCEvent,
@@ -6,7 +7,8 @@ import {
   ParsedTime,
   TimeSchema,
   parseEvent,
-  serializeEvent
+  serializeEvent,
+  validateEvent
 } from './schema';
 import { z } from 'zod';
 import fc from 'fast-check';
@@ -217,6 +219,60 @@ describe('schema parsing tests', () => {
           "type": "single",
         }
       `);
+    });
+
+    it('supports alarms with any non-negative minutesBefore without arbitrary 7-day limit', () => {
+      const event = parseEvent({
+        title: 'Test Long Alarm',
+        date: '2021-01-01',
+        allDay: true,
+        alarms: [
+          { minutesBefore: 0, action: 'DISPLAY' },
+          { minutesBefore: 10080, action: 'DISPLAY' },
+          { minutesBefore: 20160, action: 'DISPLAY' },
+          { minutesBefore: 1051920, action: 'EMAIL' }
+        ]
+      });
+
+      expect(event.alarms).toEqual([
+        { minutesBefore: 0, action: 'DISPLAY' },
+        { minutesBefore: 10080, action: 'DISPLAY' },
+        { minutesBefore: 20160, action: 'DISPLAY' },
+        { minutesBefore: 1051920, action: 'EMAIL' }
+      ]);
+    });
+
+    it('rejects negative minutesBefore in AlarmSchema', () => {
+      expect(AlarmSchema.safeParse({ minutesBefore: -1, action: 'DISPLAY' }).success).toBe(false);
+      expect(AlarmSchema.safeParse({ minutesBefore: 15, action: 'DISPLAY' }).success).toBe(true);
+      expect(AlarmSchema.safeParse({ minutesBefore: 20160, action: 'DISPLAY' }).success).toBe(true);
+    });
+
+    it('validateEvent logs redacted warning and returns null when event structure is invalid', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const result = validateEvent({
+        invalidField: true,
+        uid: 'test-uid-123',
+        id: 'test-id-456',
+        type: 'single',
+        title: 'Secret Oncology Appointment',
+        description: 'Private medical details'
+      });
+      expect(result).toBeNull();
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Full Calendar: Event validation failed:',
+        expect.any(Array),
+        {
+          id: 'test-id-456',
+          uid: 'test-uid-123',
+          type: 'single'
+        }
+      );
+      // Ensure private details are not leaked in the logged context object
+      const loggedContext = warnSpy.mock.calls[0][2] as Record<string, unknown>;
+      expect(loggedContext).not.toHaveProperty('title');
+      expect(loggedContext).not.toHaveProperty('description');
+      warnSpy.mockRestore();
     });
   });
 

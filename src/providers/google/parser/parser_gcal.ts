@@ -11,7 +11,7 @@
  */
 
 import { DateTime } from 'luxon';
-import { OFCEvent } from '../../../types/schema';
+import { OFCEvent, AlarmSchema, OFCAlarm } from '../../../types';
 import { constructTitle } from '../../../features/category/categoryParser';
 import { rrulestr } from 'rrule';
 import { injectMeetingUrl } from '../../../utils/meetingUrl';
@@ -141,7 +141,10 @@ export function fromGoogleEvent(gEvent: GoogleEventLike): OFCEvent | null {
     .map(reminder => ({
       minutesBefore: reminder.minutes,
       action: reminder.method === 'email' ? ('EMAIL' as const) : ('DISPLAY' as const)
-    }));
+    }))
+    .map(alarm => AlarmSchema.safeParse(alarm))
+    .filter((res): res is { success: true; data: OFCAlarm } => res.success)
+    .map(res => res.data);
   if (reminderOverrides && reminderOverrides.length > 0) {
     eventData.alarms = reminderOverrides;
   }
@@ -280,7 +283,7 @@ export function toGoogleEvent(event: OFCEvent): object {
       useDefault: false,
       overrides: event.alarms.map(alarm => ({
         method: alarm.action === 'EMAIL' ? 'email' : 'popup',
-        minutes: alarm.minutesBefore
+        minutes: Math.min(40320, Math.max(0, alarm.minutesBefore))
       }))
     };
   }

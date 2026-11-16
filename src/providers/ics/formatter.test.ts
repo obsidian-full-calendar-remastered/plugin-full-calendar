@@ -255,6 +255,26 @@ describe('ICS Formatter timezone serialization', () => {
     expect(ics).toContain('END:VALARM');
   });
 
+  it('should serialize provider alarms with > 10080 minutes (e.g. 2 weeks: 20160m)', () => {
+    const event = {
+      type: 'single',
+      title: 'Long Lead Reminder Event',
+      date: '2026-05-20',
+      startTime: '10:00',
+      endTime: '11:00',
+      allDay: false,
+      endDate: null,
+      alarms: [{ minutesBefore: 20160, action: 'DISPLAY' }]
+    } as OFCEvent;
+
+    const ics = eventToIcs(event);
+    expect(ics).toContain('BEGIN:VALARM');
+    expect(ics).toContain('ACTION:DISPLAY');
+    expect(ics).toContain('TRIGGER:-PT20160M');
+    expect(ics).toContain('DESCRIPTION:Long Lead Reminder Event');
+    expect(ics).toContain('END:VALARM');
+  });
+
   it('should serialize the display mode as an X-OFC-DISPLAY property', () => {
     const event = {
       type: 'single',

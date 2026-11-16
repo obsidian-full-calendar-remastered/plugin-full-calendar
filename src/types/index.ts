@@ -13,8 +13,8 @@
 
 import { CalendarInfo } from './calendar_settings';
 
-export type { OFCEvent } from './schema';
-export { validateEvent, isRecurringEvent } from './schema';
+export type { OFCEvent, OFCAlarm } from './schema';
+export { validateEvent, isRecurringEvent, AlarmSchema } from './schema';
 export type { CalendarInfo } from './calendar_settings';
 
 export const PLUGIN_SLUG = 'full-calendar-plugin';

@@ -16,7 +16,7 @@ import { DateTime } from 'luxon';
 import { rrulestr } from 'rrule';
 
 import ical from 'ical.js';
-import { OFCEvent, validateEvent } from '../../types';
+import { OFCEvent, validateEvent, AlarmSchema, OFCAlarm } from '../../types';
 import { injectMeetingUrl } from '../../utils/meetingUrl';
 import { ICAL_DISPLAY_PROPERTY, isDisplayValue } from '../utils/displayProperty';
 
@@ -51,33 +51,48 @@ function specifiesEnd(iCalEvent: ical.Event) {
   );
 }
 
-type ProviderAlarm = NonNullable<OFCEvent['alarms']>[number];
+type ProviderAlarm = OFCAlarm;
 
 function durationToSeconds(value: unknown): number | null {
   if (typeof value === 'string') {
-    const match = value.match(/^(-?)P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i);
+    const match = value.match(
+      /^(-?)P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i
+    );
     if (!match) return null;
     const sign = match[1] === '-' ? -1 : 1;
-    const days = Number(match[2] || 0);
-    const hours = Number(match[3] || 0);
-    const minutes = Number(match[4] || 0);
-    const seconds = Number(match[5] || 0);
-    return sign * (days * 86400 + hours * 3600 + minutes * 60 + seconds);
+    const weeks = Number(match[2] || 0);
+    const days = Number(match[3] || 0);
+    const hours = Number(match[4] || 0);
+    const minutes = Number(match[5] || 0);
+    const seconds = Number(match[6] || 0);
+    return sign * (weeks * 7 * 86400 + days * 86400 + hours * 3600 + minutes * 60 + seconds);
   }
 
   if (value && typeof value === 'object') {
     const candidate = value as {
       toSeconds?: () => number;
       isNegative?: boolean;
+      weeks?: number;
       days?: number;
       hours?: number;
       minutes?: number;
       seconds?: number;
+      icaltype?: string;
     };
     if (typeof candidate.toSeconds === 'function') {
       return candidate.toSeconds();
     }
+    const hasDurationUnits =
+      typeof candidate.weeks === 'number' ||
+      typeof candidate.days === 'number' ||
+      typeof candidate.hours === 'number' ||
+      typeof candidate.minutes === 'number' ||
+      typeof candidate.seconds === 'number';
+    if (!hasDurationUnits) {
+      return null;
+    }
     const seconds =
+      (candidate.weeks || 0) * 7 * 86400 +
       (candidate.days || 0) * 86400 +
       (candidate.hours || 0) * 3600 +
       (candidate.minutes || 0) * 60 +
@@ -99,12 +114,27 @@ function extractProviderAlarms(component: ical.Component): ProviderAlarm[] | und
       if (seconds === null || seconds > 0) return null;
 
       const action = String(alarm.getFirstPropertyValue('action') || 'DISPLAY').toUpperCase();
-      if (action !== 'DISPLAY' && action !== 'AUDIO' && action !== 'EMAIL') return null;
+      const candidateAction =
+        action === 'DISPLAY' || action === 'AUDIO' || action === 'EMAIL' ? action : null;
+      if (!candidateAction) return null;
 
-      return {
-        minutesBefore: Math.round(Math.abs(seconds) / 60),
-        action
-      };
+      const minutesBefore = Math.round(Math.abs(seconds) / 60);
+      if (!Number.isFinite(minutesBefore) || minutesBefore < 0) return null;
+
+      const parseResult = AlarmSchema.safeParse({
+        minutesBefore,
+        action: candidateAction
+      });
+
+      if (!parseResult.success) {
+        console.warn(
+          'Full Calendar ICS Parser: Dropping invalid VALARM reminder:',
+          parseResult.error.issues
+        );
+        return null;
+      }
+
+      return parseResult.data;
     })
     .filter((alarm): alarm is ProviderAlarm => alarm !== null);
 

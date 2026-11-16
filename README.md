@@ -58,10 +58,11 @@ pnpm run prod:lead
 ```
 
 
-### Your turn to support OpenSource
+## Sponsors 💖
+
 > FCR is developed at a [high velocity](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/SustainabilityEthics/#the-economic-reality-of-maintenance) using AI-augmented engineering. To keep up this pace (and avoid reverting to slow, manual coding), the project relies on a small community subsidy to cover AI tools (25 USD / month). 
 
-If this project has helped you consider supporting:
+If this project has helped you, please consider supporting:
 
 <div align="center">
   <br>
@@ -70,6 +71,38 @@ If this project has helped you consider supporting:
   </a>
   <br><br>
 </div>
+
+### Current Sponsors
+
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="120px">
+        <a href="https://github.com/JordanBrown98">
+          <img src="https://avatars.githubusercontent.com/u/112373080?v=4" width="60px;" alt="Jordan Brown" style="border-radius: 50%;" /><br />
+          <sub><b>Jordan Brown</b></sub><br />
+          <sub>@JordanBrown98</sub>
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+### Past Sponsors
+
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="120px">
+        <a href="https://github.com/KOGELSPONS">
+          <img src="https://avatars.githubusercontent.com/u/38210310?v=4" width="60px;" alt="KOGELSPONS" style="border-radius: 50%;" /><br />
+          <sub><b>KOGELSPONS</b></sub><br />
+          <sub>@KOGELSPONS</sub>
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 
 

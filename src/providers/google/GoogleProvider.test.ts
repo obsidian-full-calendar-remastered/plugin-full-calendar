@@ -494,6 +494,26 @@ describe('GoogleProvider reminder mapping', () => {
       }
     });
   });
+
+  it('clamps alarms exceeding 40320 minutes (4 weeks) to 40320 for Google Calendar API', () => {
+    const event = {
+      title: 'Long Lead Google Reminder',
+      type: 'single',
+      date: '2026-06-15',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00',
+      alarms: [{ minutesBefore: 50000, action: 'DISPLAY' }]
+    } as OFCEvent;
+
+    expect(toGoogleEvent(event)).toMatchObject({
+      reminders: {
+        useDefault: false,
+        overrides: [{ method: 'popup', minutes: 40320 }]
+      }
+    });
+  });
 });
 
 describe('GoogleProvider display mapping', () => {

@@ -65,6 +65,126 @@ END:VCALENDAR`;
     expect(events[0].alarms).toEqual([{ minutesBefore: 15, action: 'DISPLAY' }]);
   });
 
+  it('parses VALARM with TRIGGER -P2W (2 weeks before)', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:fastmail-2w-alarm
+SUMMARY:Two Week Reminder Event
+DTSTART:20260615T100000Z
+DTEND:20260615T110000Z
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER;RELATED=START:-P2W
+DESCRIPTION:Two Week Reminder Event
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    expect(events[0].alarms).toEqual([{ minutesBefore: 20160, action: 'DISPLAY' }]);
+  });
+
+  it('parses recurring VALARM with TRIGGER -P2W without discarding recurring event', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:fastmail-2w-alarm-recurring
+SUMMARY:Two Week Recurring Reminder Event
+RRULE:FREQ=WEEKLY
+DTSTART:20260615T100000Z
+DTEND:20260615T110000Z
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER;RELATED=START:-P2W
+DESCRIPTION:Two Week Recurring Reminder Event
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('rrule');
+    expect(events[0].alarms).toEqual([{ minutesBefore: 20160, action: 'DISPLAY' }]);
+  });
+
+  it('parses long lead-time VALARM (e.g. 2 years ahead: 1051920 minutes)', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:long-lead-alarm
+SUMMARY:Passport Renewal
+DTSTART:20280615T100000Z
+DTEND:20280615T110000Z
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT1051920M
+DESCRIPTION:Passport Renewal
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    expect(events[0].alarms).toEqual([{ minutesBefore: 1051920, action: 'DISPLAY' }]);
+  });
+
+  it('drops malformed or unsupported VALARM without discarding the VEVENT or other alarms', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:mixed-alarms-event
+SUMMARY:Event With Mixed Alarms
+DTSTART:20260615T100000Z
+DTEND:20260615T110000Z
+BEGIN:VALARM
+ACTION:UNSUPPORTED_ACTION
+TRIGGER:-PT30M
+DESCRIPTION:Invalid action alarm
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER;RELATED=START:-P2W
+DESCRIPTION:Valid 2-week alarm
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT15M
+DESCRIPTION:Positive trigger alarm (unsupported)
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    expect(events[0].title).toBe('Event With Mixed Alarms');
+    expect(events[0].alarms).toEqual([{ minutesBefore: 20160, action: 'DISPLAY' }]);
+  });
+
+  it('safely drops absolute DATE-TIME VALARM triggers without collapsing to 0-minute alarms', () => {
+    const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:absolute-alarm-event
+SUMMARY:Absolute Alarm Event
+DTSTART:20260615T100000Z
+DTEND:20260615T110000Z
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER;VALUE=DATE-TIME:20260601T100000Z
+DESCRIPTION:Absolute Trigger Alarm
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+    const events = getEventsFromICS(ics);
+    expect(events).toHaveLength(1);
+    expect(events[0].title).toBe('Absolute Alarm Event');
+    // Absolute date-time alarms are not relative duration offsets; they should be dropped, not converted to 0
+    expect(events[0].alarms).toBeUndefined();
+  });
+
   it('parses X-OFC-DISPLAY into the event display mode', () => {
     const ics = `BEGIN:VCALENDAR
 VERSION:2.0

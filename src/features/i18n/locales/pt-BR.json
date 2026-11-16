@@ -2125,7 +2125,10 @@
       "diagnosticsDesc": "Inspecione a trilha de auditoria estruturada de todas as interações do agente ou limpe o histórico de chat armazenado.",
       "viewAuditTrailBtn": "Visualizar trilha de auditoria",
       "clearHistoryBtn": "Limpar histórico",
-      "historyClearedNotice": "Histórico de chat do agente limpo."
+      "historyClearedNotice": "Histórico de chat do agente limpo.",
+      "temperatureName": "Model temperature",
+      "temperatureDesc": "Sampling temperature (e.g. 0.2). Leave empty to use provider default (recommended for Claude, o1/o3, and reasoning models).",
+      "temperaturePlaceholder": "Provider default (recommended)"
     },
     "writeBar": {
       "clearHistory": "Limpar histórico de chat",

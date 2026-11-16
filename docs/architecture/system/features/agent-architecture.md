@@ -83,6 +83,11 @@ To guarantee desktop reliability:
 * If no header is provided, applies exponential backoff: `backoffMs = baseDelayMs * 2^(attempt - 1) + jitter`.
 * Rejects immediately on non-transient client errors (HTTP 400, 401, 403, 404) without wasting retries.
 
+#### Dynamic Temperature & Auto-Healing Fallback
+To ensure complete compatibility across modern frontier reasoning architectures (e.g. OpenAI `o1`/`o3`, Claude Opus, Sonnet, and newer Anthropic API revisions):
+1. **Payload Omission**: `temperature` is optional (`temperature?: number`). If unset by the user, the parameter is omitted from the request body, allowing the model provider to use its native default.
+2. **Auto-Healing Retry**: If an endpoint rejects requests with HTTP 400 stating `temperature is deprecated` or `unsupported parameter: temperature`, `AgentClient` automatically strips `temperature` and retries once in-place during both `testConnection()` and `chatCompletion()`.
+
 ---
 
 ### 2. Sandboxed Bridge (`AgentCalendarBridge`)

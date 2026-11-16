@@ -296,8 +296,19 @@ describe('Journals compatibility bridge', () => {
     const journalRenamed = jest.fn();
     const dispose = resolution.bridge.subscribe({ noteAdded, noteRemoved, journalRenamed });
 
-    mocks.handlers.noteAdded?.({ journal: 'Work', date: '2026-08-30', path: 'Work.md' });
-    mocks.handlers.noteRemoved?.({ journal: 'Work', date: '2026-08-30', path: 'Work.md' });
+    mocks.handlers.noteAdded?.({
+      journal: 'Work',
+      date: '2026-08-30',
+      path: 'Work.md',
+      reason: 'created',
+      canonical: true
+    });
+    mocks.handlers.noteRemoved?.({
+      journal: 'Work',
+      date: '2026-08-30',
+      path: 'Work.md',
+      reason: 'deleted'
+    });
     mocks.handlers.journalRenamed?.({ from: 'Work', to: 'Office' });
     expect(noteAdded).toHaveBeenCalledTimes(1);
     expect(noteRemoved).toHaveBeenCalledTimes(1);

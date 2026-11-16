@@ -65,10 +65,14 @@ export class AgentClient {
   constructor(options: AgentClientOptions, logger?: AgentAuditLogger) {
     this.options = {
       ...options,
-      temperature: options.temperature ?? 0.2,
       maxRetries: options.maxRetries ?? 3,
       timeoutMs: options.timeoutMs ?? 60000
     };
+    if (typeof options.temperature === 'number') {
+      this.options.temperature = options.temperature;
+    } else {
+      delete this.options.temperature;
+    }
     this.logger = logger;
   }
 
@@ -77,6 +81,9 @@ export class AgentClient {
       ...this.options,
       ...options
     };
+    if (options.temperature === undefined && 'temperature' in options) {
+      delete this.options.temperature;
+    }
   }
 
   private normalizeUrl(endpointUrl: string): string {
@@ -167,9 +174,12 @@ export class AgentClient {
         if (m.tool_call_id) base.tool_call_id = m.tool_call_id;
         if (m.tool_calls) base.tool_calls = m.tool_calls;
         return base;
-      }),
-      temperature: this.options.temperature
+      })
     };
+
+    if (typeof this.options.temperature === 'number') {
+      payload.temperature = this.options.temperature;
+    }
 
     if (tools && tools.length > 0) {
       payload.tools = tools;
@@ -212,6 +222,13 @@ export class AgentClient {
       return text.slice(0, 300);
     }
     return `status ${status}`;
+  }
+
+  private isTemperatureRejection(status: number, message: string): boolean {
+    if (status !== 400) return false;
+    return /temperature.*deprecated|deprecated.*temperature|unsupported.*temperature|temperature.*not supported|invalid.*temperature/i.test(
+      message
+    );
   }
 
   private handleHttpError(
@@ -321,13 +338,35 @@ export class AgentClient {
       const headers = this.buildHeaders();
       const payload = this.buildPayload([{ role: 'user', content: 'Respond with OK.' }], [], 5);
 
-      const res = await requestUrl({
+      let res = await requestUrl({
         url,
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
         throw: false
       });
+
+      // Auto-healing fallback: if 400 specifically rejects temperature, retry once without it
+      if (res && res.status === 400 && 'temperature' in payload) {
+        const text = res?.text ?? '';
+        const json: unknown = res?.json;
+        const errorDetail = this.extractErrorMessage(res.status, text, json);
+        if (this.isTemperatureRejection(res.status, errorDetail)) {
+          this.logger?.warn(
+            'Endpoint rejected temperature parameter. Retrying test ping without temperature...',
+            { model: this.options.model }
+          );
+          delete payload.temperature;
+          delete this.options.temperature;
+          res = await requestUrl({
+            url,
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+            throw: false
+          });
+        }
+      }
 
       if (res && res.status === 200) {
         return {
@@ -415,7 +454,21 @@ export class AgentClient {
           continue;
         }
 
-        // 3. Non-retryable error
+        // 3. Auto-healing fallback: if 400 specifically rejects temperature, retry once without it
+        if (res.status === 400 && 'temperature' in payload) {
+          const errorDetail = this.extractErrorMessage(res.status, res.text, res.json);
+          if (this.isTemperatureRejection(res.status, errorDetail)) {
+            this.logger?.warn(
+              'Endpoint rejected temperature parameter. Retrying chat completion without temperature...',
+              { model: this.options.model }
+            );
+            delete payload.temperature;
+            delete this.options.temperature;
+            continue;
+          }
+        }
+
+        // 4. Non-retryable error
         const errorDetail = this.extractErrorMessage(res.status, res.text, res.json);
         this.handleHttpError(res.status, url, res.text, errorDetail);
       } catch (err) {

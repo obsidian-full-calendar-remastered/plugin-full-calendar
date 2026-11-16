@@ -46,7 +46,6 @@ export function renderAgentSettingsContent(
         enabled: true,
         endpointUrl: 'https://api.openai.com/v1',
         model: 'gpt-4o-mini',
-        temperature: 0.2,
         specUrl:
           'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/architecture/api/agent-spec.md',
         maxRetries: 3,
@@ -149,6 +148,34 @@ export function renderAgentSettingsContent(
         });
     });
 
+  // 4b. Model Temperature (Optional)
+  new Setting(containerEl)
+    .setName(t('agent.settings.temperatureName'))
+    .setDesc(t('agent.settings.temperatureDesc'))
+    .addText(text => {
+      const currentTemp = getAgentSettings().temperature;
+      text
+        .setPlaceholder(t('agent.settings.temperaturePlaceholder'))
+        .setValue(typeof currentTemp === 'number' ? String(currentTemp) : '')
+        .onChange(async val => {
+          const trimmed = val.trim();
+          if (trimmed === '') {
+            delete getAgentSettings().temperature;
+          } else {
+            const parsed = parseFloat(trimmed);
+            if (!isNaN(parsed) && parsed >= 0 && parsed <= 2) {
+              getAgentSettings().temperature = parsed;
+            } else if (!isNaN(parsed)) {
+              getAgentSettings().temperature = parsed;
+            } else {
+              delete getAgentSettings().temperature;
+            }
+          }
+          await PluginState.saveSettings();
+          plugin.agentManager?.updateSettings();
+        });
+    });
+
   // 5. API Key (Keychain)
   const currentKey = CredentialStore.getAgentApiKey() || '';
   new Setting(containerEl)
@@ -186,6 +213,7 @@ export function renderAgentSettingsContent(
             endpointUrl: currentAgent.endpointUrl,
             apiKey: CredentialStore.getAgentApiKey() || currentAgent.apiKey || '',
             model: currentAgent.model,
+            temperature: currentAgent.temperature,
             timeoutMs: 15000
           },
           logger
@@ -273,7 +301,6 @@ export function renderAgentSettings(
         enabled: true,
         endpointUrl: 'https://api.openai.com/v1',
         model: 'gpt-4o-mini',
-        temperature: 0.2,
         specUrl:
           'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/architecture/api/agent-spec.md',
         maxRetries: 3,

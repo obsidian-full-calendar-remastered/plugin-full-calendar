@@ -2125,7 +2125,10 @@
       "diagnosticsDesc": "Inspect the structured audit trail of all agent interactions, or clear stored chat history.",
       "viewAuditTrailBtn": "View audit trail",
       "clearHistoryBtn": "Clear history",
-      "historyClearedNotice": "Agent chat history cleared."
+      "historyClearedNotice": "Agent chat history cleared.",
+      "temperatureName": "Model temperature",
+      "temperatureDesc": "Sampling temperature (e.g. 0.2). Leave empty to use provider default (recommended for Claude, o1/o3, and reasoning models).",
+      "temperaturePlaceholder": "Provider default (recommended)"
     },
     "writeBar": {
       "openAgentPanel": "打开完整日历代理面板",

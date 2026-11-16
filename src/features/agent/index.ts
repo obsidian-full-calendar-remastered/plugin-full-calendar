@@ -46,7 +46,7 @@ export class AgentManager {
         endpointUrl: settings?.endpointUrl || 'https://api.openai.com/v1',
         apiKey,
         model: settings?.model || 'gpt-4o-mini',
-        temperature: settings?.temperature ?? 0.2,
+        temperature: settings?.temperature,
         maxRetries: settings?.maxRetries ?? 3,
         timeoutMs: settings?.timeoutMs ?? 60000
       },
@@ -112,7 +112,7 @@ export class AgentManager {
       endpointUrl: settings?.endpointUrl || 'https://api.openai.com/v1',
       apiKey,
       model: settings?.model || 'gpt-4o-mini',
-      temperature: settings?.temperature ?? 0.2,
+      temperature: settings?.temperature,
       maxRetries: settings?.maxRetries ?? 3,
       timeoutMs: settings?.timeoutMs ?? 60000
     });

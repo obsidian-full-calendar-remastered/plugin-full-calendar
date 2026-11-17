@@ -986,10 +986,8 @@ export class TasksPluginProvider
     const settings = PluginState.getSettings();
     const zone = settings.displayTimezone || DateTime.local().zoneName;
     const droppedInstant = DateTime.fromJSDate(date).setZone(zone);
-    const scheduledDate =
-      droppedInstant.isValid && droppedInstant.toISODate()
-        ? DateTime.fromISO(droppedInstant.toISODate()!).toJSDate()
-        : date;
+    const droppedIsoDate = droppedInstant.isValid ? droppedInstant.toISODate() : null;
+    const scheduledDate = droppedIsoDate ? DateTime.fromISO(droppedIsoDate).toJSDate() : date;
 
     const dateTargets = this.getTaskPlanningDateTargets();
     let newLine = dateTargets.reduce(

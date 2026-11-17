@@ -105,6 +105,12 @@
     border-bottom: 0;
 }
 
+/* Restore FullCalendar's liquid scroll section height in embedded notes */
+.markdown-rendered .ofc-calendar-shell .fc-scrollgrid-section-liquid > td,
+.markdown-rendered .ofc-embedded-calendar-container .fc-scrollgrid-section-liquid > td {
+    height: 100%;
+}
+
 .markdown-rendered .ofc-calendar-shell .fc-theme-standard td,
 .markdown-rendered .ofc-calendar-shell .fc-theme-standard th,
 .markdown-rendered .ofc-embedded-calendar-container .fc-theme-standard td,

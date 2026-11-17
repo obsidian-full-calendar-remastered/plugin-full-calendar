@@ -26,8 +26,10 @@ The Task Backlog view is highly optimized to help you quickly organize and sched
 ### 📅 Drag-and-Drop Scheduling
 To block out time or assign a date to a task:
 1. Simply drag any task from the backlog sidebar.
-2. Drop it onto a specific date or time slot on your calendar grid.
-3. Full Calendar will automatically update the task's due date (or scheduled date) in the corresponding provider and sync the changes in real-time.
+2. Drop it onto a specific date or time slot on your calendar grid:
+   - **Time Slot (Time Grid)**: Dropping onto a specific time slot (e.g. `14:00` in week or day view) schedules the task at that time with a concrete time block (defaulting to 30 minutes, or preserving the task's existing duration span if one was already set) according to your configured task display format (`dayPlanner` prefix or `standard` time block).
+   - **All-Day Bar / Month Cell**: Dropping onto the all-day header row or a month cell schedules the task as an all-day event on that date and strips any prior time token.
+3. Full Calendar will automatically update the task's date and time in the corresponding provider and sync the changes in real-time.
 
 ### 📥 Completion Toggling
 Click the checkbox directly next to a task title in the backlog sidebar to mark it as completed. Once marked, it will automatically sync to your provider and disappear from the backlog.

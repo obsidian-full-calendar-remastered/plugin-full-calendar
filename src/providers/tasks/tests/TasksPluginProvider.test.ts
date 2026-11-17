@@ -870,6 +870,432 @@ describe('TasksPluginProvider', () => {
         } as OFCEvent
       );
     });
+
+    describe('backlog scheduling onto time slots and all-day bar', () => {
+      it('schedules backlog drops onto a concrete time slot with default 30-minute duration in dayPlanner format', async () => {
+        const file = { path: 'Daily.md' };
+        mockApp.getFileByPath.mockReturnValue(file);
+        let updatedMarkdown = '';
+        mockApp.rewrite.mockImplementation(
+          (_file: unknown, update: (content: string) => string) => {
+            updatedMarkdown = update('- [ ] Backlog task');
+            return Promise.resolve();
+          }
+        );
+        mockPlugin.settings.tasksIntegration = {
+          backlogDateTarget: 'scheduledDate',
+          calendarDisplayDateTarget: 'scheduledDate',
+          openEditModalAfterBacklogDrop: false,
+          taskDisplayFormat: 'dayPlanner'
+        };
+        mockPlugin.app.workspace.trigger.mockImplementation(
+          (eventName: string, callback: (data: unknown) => void) => {
+            if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+              callback({
+                state: 'Warm',
+                tasks: [
+                  {
+                    path: 'Daily.md',
+                    description: 'Backlog task',
+                    taskLocation: { lineNumber: 0 },
+                    originalMarkdown: '- [ ] Backlog task',
+                    isDone: false
+                  }
+                ]
+              });
+            }
+          }
+        );
+
+        await provider.getUndatedTasks();
+        await provider.scheduleTask('Daily.md::0', new Date('2026-11-17T22:00:00'), false);
+
+        expect(updatedMarkdown).toBe('- [ ] 22:00 - 22:30 Backlog task ⏳ 2026-11-17');
+        const events = await provider.getEvents();
+        expect(events).toEqual([
+          [
+            expect.objectContaining({
+              allDay: false,
+              startTime: '22:00',
+              endTime: '22:30',
+              date: '2026-11-17'
+            }),
+            expect.anything()
+          ]
+        ]);
+      });
+
+      it('schedules backlog drops onto a concrete time slot in standard format', async () => {
+        const file = { path: 'Daily.md' };
+        mockApp.getFileByPath.mockReturnValue(file);
+        let updatedMarkdown = '';
+        mockApp.rewrite.mockImplementation(
+          (_file: unknown, update: (content: string) => string) => {
+            updatedMarkdown = update('- [ ] Backlog task');
+            return Promise.resolve();
+          }
+        );
+        mockPlugin.settings.tasksIntegration = {
+          backlogDateTarget: 'scheduledDate',
+          calendarDisplayDateTarget: 'scheduledDate',
+          openEditModalAfterBacklogDrop: false,
+          taskDisplayFormat: 'standard'
+        };
+        mockPlugin.app.workspace.trigger.mockImplementation(
+          (eventName: string, callback: (data: unknown) => void) => {
+            if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+              callback({
+                state: 'Warm',
+                tasks: [
+                  {
+                    path: 'Daily.md',
+                    description: 'Backlog task',
+                    taskLocation: { lineNumber: 0 },
+                    originalMarkdown: '- [ ] Backlog task',
+                    isDone: false
+                  }
+                ]
+              });
+            }
+          }
+        );
+
+        await provider.getUndatedTasks();
+        await provider.scheduleTask('Daily.md::0', new Date('2026-11-17T22:00:00'), false);
+
+        expect(updatedMarkdown).toBe('- [ ] Backlog task (22:00-22:30) ⏳ 2026-11-17');
+        const events = await provider.getEvents();
+        expect(events).toEqual([
+          [
+            expect.objectContaining({
+              allDay: false,
+              startTime: '22:00',
+              endTime: '22:30',
+              date: '2026-11-17'
+            }),
+            expect.anything()
+          ]
+        ]);
+      });
+
+      it('preserves existing task duration when scheduling onto a time slot', async () => {
+        const file = { path: 'Daily.md' };
+        mockApp.getFileByPath.mockReturnValue(file);
+        let updatedMarkdown = '';
+        mockApp.rewrite.mockImplementation(
+          (_file: unknown, update: (content: string) => string) => {
+            updatedMarkdown = update('- [ ] Extended meeting (10:00-11:30)');
+            return Promise.resolve();
+          }
+        );
+        mockPlugin.settings.tasksIntegration = {
+          backlogDateTarget: 'scheduledDate',
+          calendarDisplayDateTarget: 'scheduledDate',
+          openEditModalAfterBacklogDrop: false,
+          taskDisplayFormat: 'standard'
+        };
+        mockPlugin.app.workspace.trigger.mockImplementation(
+          (eventName: string, callback: (data: unknown) => void) => {
+            if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+              callback({
+                state: 'Warm',
+                tasks: [
+                  {
+                    path: 'Daily.md',
+                    description: 'Extended meeting (10:00-11:30)',
+                    taskLocation: { lineNumber: 0 },
+                    originalMarkdown: '- [ ] Extended meeting (10:00-11:30)',
+                    isDone: false
+                  }
+                ]
+              });
+            }
+          }
+        );
+
+        await provider.getUndatedTasks();
+        // Dropped at 14:00. Prior duration was 90 minutes (10:00-11:30), so end time should be 15:30.
+        await provider.scheduleTask('Daily.md::0', new Date('2026-11-17T14:00:00'), false);
+
+        expect(updatedMarkdown).toBe('- [ ] Extended meeting (14:00-15:30) ⏳ 2026-11-17');
+        const events = await provider.getEvents();
+        expect(events).toEqual([
+          [
+            expect.objectContaining({
+              allDay: false,
+              startTime: '14:00',
+              endTime: '15:30',
+              date: '2026-11-17'
+            }),
+            expect.anything()
+          ]
+        ]);
+      });
+
+      it('schedules backlog drops onto all-day row keeping date-only format and stripping any prior time block', async () => {
+        const file = { path: 'Daily.md' };
+        mockApp.getFileByPath.mockReturnValue(file);
+        let updatedMarkdown = '';
+        mockApp.rewrite.mockImplementation(
+          (_file: unknown, update: (content: string) => string) => {
+            updatedMarkdown = update('- [ ] Task with old time (10:00)');
+            return Promise.resolve();
+          }
+        );
+        mockPlugin.settings.tasksIntegration = {
+          backlogDateTarget: 'scheduledDate',
+          calendarDisplayDateTarget: 'scheduledDate',
+          openEditModalAfterBacklogDrop: false,
+          taskDisplayFormat: 'standard'
+        };
+        mockPlugin.app.workspace.trigger.mockImplementation(
+          (eventName: string, callback: (data: unknown) => void) => {
+            if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+              callback({
+                state: 'Warm',
+                tasks: [
+                  {
+                    path: 'Daily.md',
+                    description: 'Task with old time (10:00)',
+                    taskLocation: { lineNumber: 0 },
+                    originalMarkdown: '- [ ] Task with old time (10:00)',
+                    isDone: false
+                  }
+                ]
+              });
+            }
+          }
+        );
+
+        await provider.getUndatedTasks();
+        await provider.scheduleTask('Daily.md::0', new Date('2026-11-17T00:00:00'), true);
+
+        expect(updatedMarkdown).toBe('- [ ] Task with old time ⏳ 2026-11-17');
+        const events = await provider.getEvents();
+        expect(events).toEqual([
+          [
+            expect.objectContaining({
+              allDay: true,
+              date: '2026-11-17'
+            }),
+            expect.anything()
+          ]
+        ]);
+      });
+
+      it('reverts in-memory state if file rewrite fails during scheduling', async () => {
+        const file = { path: 'Daily.md' };
+        mockApp.getFileByPath.mockReturnValue(file);
+        mockApp.rewrite.mockRejectedValue(new Error('Disk write failed'));
+        mockPlugin.settings.tasksIntegration = {
+          backlogDateTarget: 'scheduledDate',
+          calendarDisplayDateTarget: 'scheduledDate',
+          openEditModalAfterBacklogDrop: false,
+          taskDisplayFormat: 'standard'
+        };
+        mockPlugin.app.workspace.trigger.mockImplementation(
+          (eventName: string, callback: (data: unknown) => void) => {
+            if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+              callback({
+                state: 'Warm',
+                tasks: [
+                  {
+                    path: 'Daily.md',
+                    description: 'Backlog task',
+                    taskLocation: { lineNumber: 0 },
+                    originalMarkdown: '- [ ] Backlog task',
+                    isDone: false
+                  }
+                ]
+              });
+            }
+          }
+        );
+
+        await provider.getUndatedTasks();
+        await expect(
+          provider.scheduleTask('Daily.md::0', new Date('2026-11-17T22:00:00'), false)
+        ).rejects.toThrow('Disk write failed');
+
+        // Task should still be undated in provider
+        const undated = await provider.getUndatedTasks();
+        expect(undated).toHaveLength(1);
+        expect(undated[0].title).toBe('Backlog task');
+      });
+
+      it('schedules backlog drops onto a concrete time slot with 12h format when timeFormat24h is false', async () => {
+        const file = { path: 'Daily.md' };
+        mockApp.getFileByPath.mockReturnValue(file);
+        let updatedMarkdown = '';
+        mockApp.rewrite.mockImplementation(
+          (_file: unknown, update: (content: string) => string) => {
+            updatedMarkdown = update('- [ ] Backlog task');
+            return Promise.resolve();
+          }
+        );
+        mockPlugin.settings.timeFormat24h = false;
+        mockPlugin.settings.tasksIntegration = {
+          backlogDateTarget: 'scheduledDate',
+          calendarDisplayDateTarget: 'scheduledDate',
+          openEditModalAfterBacklogDrop: false,
+          taskDisplayFormat: 'standard'
+        };
+        mockPlugin.app.workspace.trigger.mockImplementation(
+          (eventName: string, callback: (data: unknown) => void) => {
+            if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+              callback({
+                state: 'Warm',
+                tasks: [
+                  {
+                    path: 'Daily.md',
+                    description: 'Backlog task',
+                    taskLocation: { lineNumber: 0 },
+                    originalMarkdown: '- [ ] Backlog task',
+                    isDone: false
+                  }
+                ]
+              });
+            }
+          }
+        );
+
+        await provider.getUndatedTasks();
+        await provider.scheduleTask('Daily.md::0', new Date('2026-11-17T14:00:00'), false);
+
+        expect(updatedMarkdown).toBe('- [ ] Backlog task (2:00 PM-2:30 PM) ⏳ 2026-11-17');
+        const events = await provider.getEvents();
+        expect(events).toEqual([
+          [
+            expect.objectContaining({
+              allDay: false,
+              startTime: '14:00',
+              endTime: '14:30',
+              date: '2026-11-17'
+            }),
+            expect.anything()
+          ]
+        ]);
+        // Reset 24h setting
+        mockPlugin.settings.timeFormat24h = true;
+      });
+
+      it('schedules backlog drops respecting displayTimezone when configured', async () => {
+        const file = { path: 'Daily.md' };
+        mockApp.getFileByPath.mockReturnValue(file);
+        let updatedMarkdown = '';
+        mockApp.rewrite.mockImplementation(
+          (_file: unknown, update: (content: string) => string) => {
+            updatedMarkdown = update('- [ ] Backlog task');
+            return Promise.resolve();
+          }
+        );
+        mockPlugin.settings.timeFormat24h = true;
+        mockPlugin.settings.displayTimezone = 'Asia/Tokyo';
+        mockPlugin.settings.tasksIntegration = {
+          backlogDateTarget: 'scheduledDate',
+          calendarDisplayDateTarget: 'scheduledDate',
+          openEditModalAfterBacklogDrop: false,
+          taskDisplayFormat: 'standard'
+        };
+        mockPlugin.app.workspace.trigger.mockImplementation(
+          (eventName: string, callback: (data: unknown) => void) => {
+            if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+              callback({
+                state: 'Warm',
+                tasks: [
+                  {
+                    path: 'Daily.md',
+                    description: 'Backlog task',
+                    taskLocation: { lineNumber: 0 },
+                    originalMarkdown: '- [ ] Backlog task',
+                    isDone: false
+                  }
+                ]
+              });
+            }
+          }
+        );
+
+        await provider.getUndatedTasks();
+        // 2026-05-02T23:30:00Z in Asia/Tokyo is 2026-05-03 08:30:00
+        await provider.scheduleTask('Daily.md::0', new Date('2026-05-02T23:30:00Z'), false);
+
+        expect(updatedMarkdown).toBe('- [ ] Backlog task (8:30-9:00) ⏳ 2026-05-03');
+        const events = await provider.getEvents();
+        expect(events).toEqual([
+          [
+            expect.objectContaining({
+              allDay: false,
+              startTime: '08:30',
+              endTime: '09:00',
+              date: '2026-05-03'
+            }),
+            expect.anything()
+          ]
+        ]);
+        // Reset displayTimezone
+        mockPlugin.settings.displayTimezone = null;
+      });
+
+      it('updates in-memory start and end times when editTaskLineModal modifies a timed task in dayPlanner format', async () => {
+        const file = { path: 'Daily.md' };
+        mockApp.getFileByPath.mockReturnValue(file);
+        mockApp.rewrite.mockResolvedValue(undefined);
+        const editTaskLineModal = jest
+          .fn()
+          .mockResolvedValue('- [ ] 15:00 - 16:30 Modified backlog task ⏳ 2026-11-17');
+        mockPlugin.app.plugins = {
+          plugins: {
+            'obsidian-tasks-plugin': {
+              apiV1: { editTaskLineModal }
+            }
+          }
+        };
+        mockPlugin.settings.tasksIntegration = {
+          backlogDateTarget: 'scheduledDate',
+          calendarDisplayDateTarget: 'scheduledDate',
+          openEditModalAfterBacklogDrop: true,
+          taskDisplayFormat: 'dayPlanner'
+        };
+        mockPlugin.app.workspace.trigger.mockImplementation(
+          (eventName: string, callback: (data: unknown) => void) => {
+            if (eventName === 'obsidian-tasks-plugin:request-cache-update') {
+              callback({
+                state: 'Warm',
+                tasks: [
+                  {
+                    path: 'Daily.md',
+                    description: 'Backlog task',
+                    taskLocation: { lineNumber: 0 },
+                    originalMarkdown: '- [ ] Backlog task',
+                    isDone: false
+                  }
+                ]
+              });
+            }
+          }
+        );
+
+        await provider.getUndatedTasks();
+        await provider.scheduleTask('Daily.md::0', new Date('2026-11-17T14:00:00'), false);
+
+        expect(editTaskLineModal).toHaveBeenCalledWith(
+          '- [ ] 14:00 - 14:30 Backlog task ⏳ 2026-11-17'
+        );
+        const events = await provider.getEvents();
+        expect(events).toEqual([
+          [
+            expect.objectContaining({
+              allDay: false,
+              startTime: '15:00',
+              endTime: '16:30',
+              date: '2026-11-17'
+            }),
+            expect.anything()
+          ]
+        ]);
+      });
+    });
   });
 
   describe('event handle generation', () => {

@@ -13,7 +13,10 @@ The integration revolves around two surfaces: the **Backlog** (where unscheduled
 
 1.  **Collect**: Write tasks in any markdown file using the Tasks plugin syntax.
 2.  **Queue**: Open the **Tasks Backlog** sidebar (via the **[Command Palette](../guides/commands-and-shortcuts.md)**) to see undated items.
-3.  **Schedule**: Drag a task from the backlog onto a calendar time slot. Full Calendar surgically updates the markdown file with the appropriate date emoji and time block.
+3.  **Schedule**: Drag a task from the backlog onto a calendar time slot or the all-day row:
+    - **Time Slot**: Scheduling onto a specific hour slot writes the date and time window (e.g. `14:00 - 14:30` in Day Planner mode or `(14:00-14:30)` in Standard mode, preserving existing task durations).
+    - **All-Day Bar**: Scheduling onto the all-day header row sets date-only scheduling and clears any preexisting time block.
+    Full Calendar surgically updates the markdown file and synchronizes the calendar cache immediately.
 
 <!-- Image missing: ../../assets/calendars/task-backlog.gif -->
 

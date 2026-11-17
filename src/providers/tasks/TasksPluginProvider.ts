@@ -37,6 +37,7 @@ import { DateTime } from 'luxon';
 import { t } from '../../features/i18n/i18n';
 import {
   CalendarTask,
+  extractTimeFromTitle,
   TasksCacheData,
   TasksPluginTask,
   tasksToCalendarTasks
@@ -45,7 +46,7 @@ import { TasksDateTarget, TasksDisplayFormat } from '../../types/settings';
 import { TasksQueryFilter } from './TasksQueryFilter';
 import { yieldIfFrameBudgetExceeded } from '../../utils/async';
 
-export { extractTimeFromTitle } from './taskPayloadAdapter';
+export { extractTimeFromTitle };
 
 // CHANGE: Define Scheduled emoji instead of Due
 const getScheduledDateEmoji = (): string => '⏳';
@@ -371,15 +372,38 @@ export class TasksPluginProvider
     return { retryDelayMs: TASKS_CACHE_RETRY_DELAY_MS };
   }
 
-  private getDefaultEndTime(startTime: string): string {
+  private parseTimeString(time: string): DateTime | null {
     const formats = ['H:mm', 'HH:mm', 'h:mm a'];
     for (const format of formats) {
-      const parsed = DateTime.fromFormat(startTime, format);
+      const parsed = DateTime.fromFormat(time, format);
       if (parsed.isValid) {
-        return parsed.plus({ minutes: DEFAULT_TIMED_TASK_DURATION_MINUTES }).toFormat('HH:mm');
+        return parsed;
       }
     }
-    return startTime;
+    return null;
+  }
+
+  private getDefaultEndTime(startTime: string): string {
+    const parsed = this.parseTimeString(startTime);
+    return parsed
+      ? parsed.plus({ minutes: DEFAULT_TIMED_TASK_DURATION_MINUTES }).toFormat('HH:mm')
+      : startTime;
+  }
+
+  private computeScheduledEndTime(
+    task: CalendarTask,
+    startTime: string,
+    dropInstant: DateTime
+  ): string {
+    if (task.startTime && task.endTime) {
+      const prevStart = this.parseTimeString(task.startTime);
+      const prevEnd = this.parseTimeString(task.endTime);
+      if (prevStart && prevEnd && prevEnd > prevStart) {
+        const durationMinutes = prevEnd.diff(prevStart, 'minutes').minutes;
+        return dropInstant.plus({ minutes: durationMinutes }).toFormat('HH:mm');
+      }
+    }
+    return this.getDefaultEndTime(startTime);
   }
 
   /**
@@ -884,7 +908,7 @@ export class TasksPluginProvider
 
   /**
    * Centralized helper for surgically updating a task line in a file.
-   * This is called by both updateEvent (for drags) and scheduleTask (for backlog drops).
+   * This is called by updateEvent (for drags and resizes).
    * @param taskId        The persistent ID of the task (filePath::lineNumber).
    * @param newDate       The new date to apply to the task.
    * @param startTime     New start time in HH:mm, null to clear, or undefined to leave unchanged.
@@ -954,15 +978,42 @@ export class TasksPluginProvider
     );
   }
 
-  public async scheduleTask(taskId: string, date: Date, _allDay = true): Promise<void> {
+  public async scheduleTask(taskId: string, date: Date, allDay = true): Promise<void> {
     const task = this.allTasks.find(t => t.id === taskId);
     if (!task) {
       throw new Error(`Cannot find original task to schedule at ${taskId}`);
     }
+    const settings = PluginState.getSettings();
+    const zone = settings.displayTimezone || DateTime.local().zoneName;
+    const droppedInstant = DateTime.fromJSDate(date).setZone(zone);
+    const scheduledDate =
+      droppedInstant.isValid && droppedInstant.toISODate()
+        ? DateTime.fromISO(droppedInstant.toISODate()!).toJSDate()
+        : date;
+
     const dateTargets = this.getTaskPlanningDateTargets();
-    const newLine = dateTargets.reduce(
-      (line, dateTarget) => this.updateTaskLine(line, date, dateTarget),
+    let newLine = dateTargets.reduce(
+      (line, dateTarget) => this.updateTaskLine(line, scheduledDate, dateTarget),
       task.originalMarkdown
+    );
+
+    const scheduledStartTime =
+      allDay || !droppedInstant.isValid ? null : droppedInstant.toFormat('HH:mm');
+    const scheduledEndTime =
+      allDay || !scheduledStartTime
+        ? null
+        : this.computeScheduledEndTime(task, scheduledStartTime, droppedInstant);
+
+    const calendarDisplayDateTarget = settings.tasksIntegration.calendarDisplayDateTarget;
+    const taskDisplayFormat = settings.tasksIntegration.taskDisplayFormat ?? 'dayPlanner';
+
+    newLine = updateTimeInLine(
+      newLine,
+      scheduledStartTime,
+      scheduledEndTime,
+      settings.timeFormat24h,
+      this.getDateTargetEmoji(calendarDisplayDateTarget),
+      taskDisplayFormat
     );
 
     // Update in-memory state BEFORE writing the file so that the Tasks plugin's
@@ -978,10 +1029,15 @@ export class TasksPluginProvider
       target: dt,
       value: this.getTaskDateValue(task, dt)
     }));
+    const previousStartTime = task.startTime;
+    const previousEndTime = task.endTime;
+
     task.originalMarkdown = newLine;
     for (const dateTarget of dateTargets) {
-      this.setTaskDate(task, dateTarget, date);
+      this.setTaskDate(task, dateTarget, scheduledDate);
     }
+    task.startTime = scheduledStartTime;
+    task.endTime = scheduledEndTime;
 
     try {
       await this.replaceTaskInFile(task.filePath, task.lineNumber, [newLine]);
@@ -992,6 +1048,8 @@ export class TasksPluginProvider
       for (const { target, value } of previousDates) {
         this.setTaskDate(task, target, value);
       }
+      task.startTime = previousStartTime;
+      task.endTime = previousEndTime;
       throw err;
     }
 
@@ -1005,16 +1063,18 @@ export class TasksPluginProvider
         };
       }
     ).plugins?.plugins?.['obsidian-tasks-plugin']?.apiV1;
-    if (tasksApi && PluginState.getSettings().tasksIntegration.openEditModalAfterBacklogDrop) {
+    if (tasksApi && settings.tasksIntegration.openEditModalAfterBacklogDrop) {
       const editedTaskLine = await tasksApi.editTaskLineModal(newLine);
       if (editedTaskLine !== undefined && editedTaskLine !== newLine) {
         await this.replaceTaskInFile(task.filePath, task.lineNumber, [editedTaskLine]);
         task.originalMarkdown = editedTaskLine;
+        const lineWithoutPrefix = editedTaskLine.replace(/^\s*[-*+]\s*\[[^\]]\]\s+/, '');
+        const { startTime: editedStart, endTime: editedEnd } =
+          extractTimeFromTitle(lineWithoutPrefix);
+        task.startTime = editedStart;
+        task.endTime = editedStart ? (editedEnd ?? this.getDefaultEndTime(editedStart)) : null;
       }
-    } else if (
-      !tasksApi &&
-      PluginState.getSettings().tasksIntegration.openEditModalAfterBacklogDrop
-    ) {
+    } else if (!tasksApi && settings.tasksIntegration.openEditModalAfterBacklogDrop) {
       showNotice(t('notices.tasks.scheduledNoModal'));
     }
   }

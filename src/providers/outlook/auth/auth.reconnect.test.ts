@@ -33,7 +33,7 @@ describe('Outlook Auth Reconnect Logic', () => {
   const mockSettings: Partial<FullCalendarSettings> = {
     useCustomMicrosoftClient: false,
     microsoftClientId: '',
-    microsoftProxyBaseUrl: 'https://gcal-proxy-server.vercel.app',
+    microsoftProxyBaseUrl: 'https://gcal-proxy-server.plugin-fcr.workers.dev',
     microsoftAccounts: []
   };
 

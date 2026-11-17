@@ -49,7 +49,7 @@ Calendar and task data is transmitted directly between the user’s device and t
 
 ### **Intermediary Server Usage**
 
-During OAuth authentication (when using the default client), a temporary intermediary server hosted on Vercel processes the authorization code solely to complete the OAuth flow. This data:
+During OAuth authentication (when using the default client), a temporary intermediary server hosted on a Cloudflare Worker processes the authorization code solely to complete the OAuth flow. This data:
 
 * Is processed in memory only
 * Is not logged or stored

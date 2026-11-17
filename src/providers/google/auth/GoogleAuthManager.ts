@@ -16,7 +16,7 @@ import { AccountMismatchError } from '../../utils/oauthSessionStore';
 import { CredentialStore } from '../../../features/credentials/CredentialStore';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const PROXY_REFRESH_URL = 'https://gcal-proxy-server.vercel.app/api/google/refresh';
+const PROXY_REFRESH_URL = 'https://gcal-proxy-server.plugin-fcr.workers.dev/api/google/refresh';
 const PUBLIC_CLIENT_ID = '272284435724-ltjbog78np5lnbjhgecudaqhsfba9voi.apps.googleusercontent.com';
 const USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
 
@@ -130,7 +130,7 @@ export class GoogleAuthManager {
 
       // Only permanently wipe credentials if the response body contains an explicit OAuth
       // revocation error code. Generic 400/401 responses can be caused by transient proxy
-      // failures (e.g. cold-start timeouts on gcal-proxy-server.vercel.app), captive portals,
+      // failures (e.g. cold-start timeouts on gcal-proxy-server.plugin-fcr.workers.dev), captive portals,
       // or temporary Google service disruptions — none of which should log the user out.
       const isPermanentRevocation = (() => {
         try {

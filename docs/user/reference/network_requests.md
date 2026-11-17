@@ -9,7 +9,7 @@ This page acts as a complete, audited registry of all network communications per
 
 ## Remote Calendar Integrations
 
-> Webworker (deployed on Vercel) for OAuth handshake is used for Google / Outlook Calendar Authentication.
+> Cloudflare Worker for OAuth handshake is used for Google / Outlook Calendar Authentication.
 
 ### Google Calendar & Google Tasks
 - **Connection:** Inbound & Outbound (Internet)

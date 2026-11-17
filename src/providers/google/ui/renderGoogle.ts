@@ -8,6 +8,8 @@ import { Setting } from 'obsidian';
 import { PluginState } from '../../../core/PluginState';
 import FullCalendarPlugin from '../../../main';
 import { GoogleAuthManager } from '../auth/GoogleAuthManager';
+import { startGoogleLogin } from '../auth/auth';
+import { CredentialStore } from '../../../features/credentials/CredentialStore';
 import { t } from '../../../features/i18n/i18n';
 import { createDescWithDocs } from '../../../ui/settings/docsLinks';
 import { SettingsModal } from '../../../ui/modals/SettingsModal';
@@ -86,18 +88,37 @@ export function renderGoogleSettingsContent(
   }
 
   accounts.forEach(account => {
-    new Setting(containerEl)
-      .setName(account.email)
-      .setDesc(t('google.accountDescription', { id: account.id }))
-      .addButton(button => {
-        button
-          .setButtonText(t('google.buttons.disconnect'))
-          .setClass('mod-warning')
-          .onClick(async () => {
-            await authManager.removeAccount(account.id);
-            rerender();
-          });
+    const hasToken = CredentialStore.hasGoogleRefreshToken(account.id);
+    const isTokenMissingOrExpired = !hasToken || account.expiryDate === null;
+    const displayName =
+      account.email + (hasToken ? '' : ` (${t('settings.credentials.keychainMissing')})`);
+    const setting = new Setting(containerEl)
+      .setName(displayName)
+      .setDesc(t('google.accountDescription', { id: account.id }));
+
+    setting.addButton(button => {
+      button.setButtonText(t('google.buttons.reconnect') || 'Reconnect').onClick(async () => {
+        await startGoogleLogin(plugin, 'calendar', {
+          isReconnect: true,
+          email: account.email
+        });
+        rerender();
       });
+
+      if (isTokenMissingOrExpired) {
+        button.setCta();
+      }
+    });
+
+    setting.addButton(button => {
+      button
+        .setButtonText(t('google.buttons.disconnect'))
+        .setClass('mod-warning')
+        .onClick(async () => {
+          await authManager.removeAccount(account.id);
+          rerender();
+        });
+    });
   });
 }
 

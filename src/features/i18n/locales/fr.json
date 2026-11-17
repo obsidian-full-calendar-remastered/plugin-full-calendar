@@ -1657,7 +1657,8 @@
       "copyModalCloseButton": "Close",
       "waitingModalTitle": "Waiting for Authentication",
       "waitingModalDesc": "Obsidian is waiting for you to complete the authentication in your browser. Once completed, this window will close automatically.",
-      "waitingModalCancel": "Cancel"
+      "waitingModalCancel": "Cancel",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Comptes Google",
     "customCredentials": {
@@ -1684,7 +1685,8 @@
       "addCalendars": "Ajouter {{count}} calendrier",
       "addCalendarsPlural": "Ajouter {{count}} calendriers",
       "selectTaskLists": "Select task lists",
-      "addTaskList": "Add Google Task List"
+      "addTaskList": "Add Google Task List",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "Connecter un compte Google"
@@ -1874,7 +1876,8 @@
       "success": "Compte Outlook connecté avec succès !",
       "failed": "Échec de la connexion du compte Outlook. Vérifiez la console développeur pour plus de détails.",
       "callbackSuccess": "Authentification réussie ! Revenez à Obsidian.",
-      "callbackFailed": "Échec de l'authentification. Vérifiez la console d'Obsidian et réessayez."
+      "callbackFailed": "Échec de l'authentification. Vérifiez la console d'Obsidian et réessayez.",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Comptes Outlook",
     "docs": {
@@ -1909,7 +1912,8 @@
       "connectAccount": "Connecter un compte Outlook",
       "backToAccounts": "Retour aux comptes",
       "addCalendars": "Ajouter {{count}} calendrier",
-      "addCalendarsPlural": "Ajouter {{count}} calendriers"
+      "addCalendarsPlural": "Ajouter {{count}} calendriers",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "Connecter un compte Outlook"
@@ -2125,7 +2129,10 @@
       "diagnosticsDesc": "Inspect the structured audit trail of all agent interactions, or clear stored chat history.",
       "viewAuditTrailBtn": "View audit trail",
       "clearHistoryBtn": "Clear history",
-      "historyClearedNotice": "Agent chat history cleared."
+      "historyClearedNotice": "Agent chat history cleared.",
+      "temperatureName": "Model temperature",
+      "temperatureDesc": "Sampling temperature (e.g. 0.2). Leave empty to use provider default (recommended for Claude, o1/o3, and reasoning models).",
+      "temperaturePlaceholder": "Provider default (recommended)"
     },
     "writeBar": {
       "openAgentPanel": "Ouvrir le panneau complet de l'agent de calendrier",

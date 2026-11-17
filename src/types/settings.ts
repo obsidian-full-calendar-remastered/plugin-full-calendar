@@ -264,7 +264,7 @@ export interface AgentSettings {
   endpointUrl: string;
   model: string;
   apiKey?: string;
-  temperature: number;
+  temperature?: number;
   specUrl: string;
   maxRetries: number;
   timeoutMs: number;
@@ -415,7 +415,6 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     endpointUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
     apiKey: '',
-    temperature: 0.2,
     specUrl:
       'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/architecture/api/agent-spec.md',
     maxRetries: 3,

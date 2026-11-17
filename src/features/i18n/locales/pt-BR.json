@@ -1662,7 +1662,8 @@
       "copyModalCloseButton": "Fechar",
       "waitingModalTitle": "Aguardando autenticação",
       "waitingModalDesc": "O Obsidian está aguardando a conclusão da autenticação no navegador. Depois de concluída, esta janela será fechada automaticamente.",
-      "waitingModalCancel": "Cancelar"
+      "waitingModalCancel": "Cancelar",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Contas do Google",
     "copyPasteAuth": {
@@ -1695,7 +1696,8 @@
       "addCalendars": "Adicionar {{count}} calendário",
       "addCalendarsPlural": "Adicionar {{count}} calendários",
       "selectTaskLists": "Selecionar listas de tarefas",
-      "addTaskList": "Adicionar lista do Google Tasks"
+      "addTaskList": "Adicionar lista do Google Tasks",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "Conectar uma conta do Google"
@@ -1729,7 +1731,8 @@
       "success": "Conta do Outlook conectada com sucesso!",
       "failed": "Falha ao conectar a conta do Outlook. Confira o console do desenvolvedor para mais detalhes.",
       "callbackSuccess": "Autenticação concluída! Volte ao Obsidian.",
-      "callbackFailed": "Falha na autenticação. Confira o console do Obsidian e tente novamente."
+      "callbackFailed": "Falha na autenticação. Confira o console do Obsidian e tente novamente.",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Contas do Outlook",
     "docs": {
@@ -1764,7 +1767,8 @@
       "connectAccount": "Conectar conta do Outlook",
       "backToAccounts": "Voltar às contas",
       "addCalendars": "Adicionar {{count}} calendário",
-      "addCalendarsPlural": "Adicionar {{count}} calendários"
+      "addCalendarsPlural": "Adicionar {{count}} calendários",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "Conectar uma conta do Outlook"
@@ -2125,7 +2129,10 @@
       "diagnosticsDesc": "Inspecione a trilha de auditoria estruturada de todas as interações do agente ou limpe o histórico de chat armazenado.",
       "viewAuditTrailBtn": "Visualizar trilha de auditoria",
       "clearHistoryBtn": "Limpar histórico",
-      "historyClearedNotice": "Histórico de chat do agente limpo."
+      "historyClearedNotice": "Histórico de chat do agente limpo.",
+      "temperatureName": "Model temperature",
+      "temperatureDesc": "Sampling temperature (e.g. 0.2). Leave empty to use provider default (recommended for Claude, o1/o3, and reasoning models).",
+      "temperaturePlaceholder": "Provider default (recommended)"
     },
     "writeBar": {
       "clearHistory": "Limpar histórico de chat",

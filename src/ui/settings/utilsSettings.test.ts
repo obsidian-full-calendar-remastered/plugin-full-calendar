@@ -357,6 +357,24 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
         currentSettings = reloadedSettings;
       }
     });
+
+    it('should allow temperature to be undefined and preserve it across serialization cycles', () => {
+      const rawSettings = {
+        ...DEFAULT_SETTINGS,
+        agent: {
+          ...DEFAULT_SETTINGS.agent,
+          temperature: undefined
+        }
+      };
+
+      const { settings: migrated } = migrateAndSanitizeSettings(rawSettings);
+      expect(migrated.agent.temperature).toBeUndefined();
+
+      const serialized = JSON.stringify(migrated);
+      const parsed = JSON.parse(serialized) as unknown;
+      const { settings: reloaded } = migrateAndSanitizeSettings(parsed);
+      expect(reloaded.agent.temperature).toBeUndefined();
+    });
   });
 
   it('should fallback to defaults when openDailyNoteOnDateClick is missing or preserve it when present', () => {

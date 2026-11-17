@@ -46,6 +46,7 @@ import {
   setupCalendarNavigationGestures
 } from './calendarInteractions';
 import { createWeatherDecorator } from './calendarWeather';
+import { resolveDateAnchor } from '../../../../features/common/date/DateAnchorResolver';
 
 export interface ExtraRenderProps {
   eventClick?: (info: EventClickArg) => void;
@@ -328,9 +329,10 @@ export async function renderCalendar(
     initialView:
       settings?.initialView?.[isNarrow ? 'mobile' : 'desktop'] ||
       (isNarrow ? 'timeGrid3Days' : 'timeGridWeek'),
-    ...(settings?.defaultDate && settings.defaultDate !== 'today'
-      ? { initialDate: settings.defaultDate }
-      : {}),
+    ...(() => {
+      const resolved = resolveDateAnchor(settings?.defaultDate);
+      return resolved ? { initialDate: resolved } : {};
+    })(),
     nowIndicator: true,
     scrollTimeReset: false,
     dayMaxEvents: settings?.dayMaxEvents !== undefined ? settings.dayMaxEvents : true,

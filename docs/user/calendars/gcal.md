@@ -21,6 +21,15 @@ Calendars automatically refresh every **5 minutes**. To manually refresh calenda
 4.  Follow the standard Google sign-in flow.
 5.  Once authorized, select the specific calendars you want to display in Obsidian.
 
+### Reconnecting an Existing Account
+
+If an account's authorization expires or credentials become unavailable:
+
+1. A **Reconnect** button appears directly next to the account in **Calendar Sources** setup and in **Settings → Integrations → Google Accounts**.
+2. Clicking **Reconnect** automatically targets that account using Google's `login_hint`, preventing accidental sign-ins to alternative Google browser profiles.
+3. The plugin flags the request as a reconnection (`reconnect: true`), ensuring the token handshake and proxy server track the re-authorization cleanly.
+4. If a different Google profile is selected in the browser during reconnect, the plugin detects the identity mismatch and protects existing account mappings from state corruption.
+
 ---
 
 

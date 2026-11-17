@@ -30,6 +30,15 @@ Current limitation:
 4. Click **Login with Microsoft** to connect your account.
 5. Return to **Calendar Sources** and add Outlook calendars from your connected account.
 
+### Reconnecting an Existing Account
+
+If your Microsoft authorization expires or credentials need to be revalidated:
+
+1. A **Reconnect** button appears next to the affected account in **Calendar Sources** and in **Settings → Integrations → Outlook Accounts**.
+2. Clicking **Reconnect** pre-fills the specific account via Microsoft's `login_hint` while adhering strictly to Entra ID prompt requirements (omitting `prompt=select_account` to prevent protocol conflicts).
+3. The plugin indicates reconnection (`reconnect: true`) to the token proxy during the authorization code exchange.
+4. If a different Microsoft user is authenticated during a reconnect attempt, the plugin halts execution with an account mismatch notice to safeguard data integrity.
+
 ## Naming and Account Differentiation
 
 When selecting calendars, Full Calendar stores source names as:

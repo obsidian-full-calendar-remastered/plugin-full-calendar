@@ -1657,7 +1657,8 @@
       "copyModalCloseButton": "Close",
       "waitingModalTitle": "Waiting for Authentication",
       "waitingModalDesc": "Obsidian is waiting for you to complete the authentication in your browser. Once completed, this window will close automatically.",
-      "waitingModalCancel": "Cancel"
+      "waitingModalCancel": "Cancel",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Google 账户",
     "customCredentials": {
@@ -1684,7 +1685,8 @@
       "addCalendars": "添加 {{count}} 个日历",
       "addCalendarsPlural": "添加 {{count}} 个日历",
       "selectTaskLists": "Select task lists",
-      "addTaskList": "Add Google Task List"
+      "addTaskList": "Add Google Task List",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "连接 Google 账户"
@@ -1874,7 +1876,8 @@
       "success": "已成功连接 Outlook 帐户！",
       "failed": "连接 Outlook 帐户失败。请检查开发者控制台以获取详细信息。",
       "callbackSuccess": "身份验证成功！请返回 Obsidian。",
-      "callbackFailed": "身份验证失败。请检查 Obsidian 控制台并重试。"
+      "callbackFailed": "身份验证失败。请检查 Obsidian 控制台并重试。",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Outlook 帐户",
     "docs": {
@@ -1909,7 +1912,8 @@
       "connectAccount": "连接 Outlook 帐户",
       "backToAccounts": "返回帐户",
       "addCalendars": "添加 {{count}} 个日历",
-      "addCalendarsPlural": "添加 {{count}} 个日历"
+      "addCalendarsPlural": "添加 {{count}} 个日历",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "连接 Outlook 帐户"
@@ -2125,7 +2129,10 @@
       "diagnosticsDesc": "Inspect the structured audit trail of all agent interactions, or clear stored chat history.",
       "viewAuditTrailBtn": "View audit trail",
       "clearHistoryBtn": "Clear history",
-      "historyClearedNotice": "Agent chat history cleared."
+      "historyClearedNotice": "Agent chat history cleared.",
+      "temperatureName": "Model temperature",
+      "temperatureDesc": "Sampling temperature (e.g. 0.2). Leave empty to use provider default (recommended for Claude, o1/o3, and reasoning models).",
+      "temperaturePlaceholder": "Provider default (recommended)"
     },
     "writeBar": {
       "openAgentPanel": "打开完整日历代理面板",

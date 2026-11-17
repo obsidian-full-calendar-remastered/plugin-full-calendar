@@ -59,6 +59,13 @@ export const TimeSchema = z.discriminatedUnion('allDay', [
   })
 ]);
 
+export const AlarmSchema = z.object({
+  minutesBefore: z.number().int().min(0),
+  action: z.enum(['DISPLAY', 'AUDIO', 'EMAIL']).default('DISPLAY')
+});
+
+export type OFCAlarm = z.infer<typeof AlarmSchema>;
+
 // MODIFICATION HAPPENS HERE
 export const CommonSchema = z.object({
   title: z.string(), // This will now store the CLEAN title.
@@ -107,14 +114,7 @@ export const CommonSchema = z.object({
       value: z.number().min(0).max(1440)
     })
     .optional(),
-  alarms: z
-    .array(
-      z.object({
-        minutesBefore: z.number().int().min(0).max(10080),
-        action: z.enum(['DISPLAY', 'AUDIO', 'EMAIL']).default('DISPLAY')
-      })
-    )
-    .optional(),
+  alarms: z.array(AlarmSchema).optional(),
   isTask: z.boolean().optional()
 });
 
@@ -240,7 +240,17 @@ export function validateEvent(obj: unknown): OFCEvent | null {
     return parseEvent(obj);
   } catch (e) {
     if (e instanceof ZodError) {
-      // Swallow validation errors and surface null to callers.
+      const safeContext =
+        typeof obj === 'object' && obj !== null
+          ? {
+              id: (obj as Record<string, unknown>).id,
+              uid: (obj as Record<string, unknown>).uid,
+              type: (obj as Record<string, unknown>).type
+            }
+          : undefined;
+      console.warn('Full Calendar: Event validation failed:', e.issues, safeContext);
+    } else {
+      console.warn('Full Calendar: Unexpected error during event validation:', e);
     }
     return null;
   }

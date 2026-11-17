@@ -1649,6 +1649,7 @@
   "google": {
     "auth": {
       "expired": "Google authentication expired. Please reconnect your account.",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}.",
       "authFailed": "Could not authenticate calendar. Please try re-adding it in settings.",
       "popupBlocked": "Popup blocked. Please allow popups for Obsidian.",
       "customCredsMissing": "Custom Google Client ID and Secret must be set in the plugin settings.",
@@ -1691,6 +1692,7 @@
     "accountDescription": "Connected account. ID: {{id}}",
     "buttons": {
       "disconnect": "Disconnect",
+      "reconnect": "Reconnect",
       "selectCalendars": "Select Calendars",
       "connectAccount": "Connect Google Account",
       "backToAccounts": "Back to Accounts",
@@ -1721,6 +1723,7 @@
   "outlook": {
     "auth": {
       "expired": "Outlook authentication expired. Please reconnect your account.",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}.",
       "authFailed": "Could not authenticate Outlook calendar. Please re-add it in settings.",
       "desktopOnly": "Outlook sign-in is currently available on desktop only.",
       "clientIdMissing": "Microsoft Client ID is required. Configure it in Integrations > Outlook.",
@@ -1762,6 +1765,7 @@
     "accountDescription": "Connected account. ID: {{id}}",
     "buttons": {
       "disconnect": "Disconnect",
+      "reconnect": "Reconnect",
       "selectCalendars": "Select Calendars",
       "connectAccount": "Connect Outlook Account",
       "backToAccounts": "Back to Accounts",
@@ -2104,6 +2108,9 @@
       "modelName": "Model name",
       "modelDesc": "Name of the model to query (e.g. GPT-4o-mini, llama3.1, deepseek-chat).",
       "modelPlaceholder": "Enter model name...",
+      "temperatureName": "Model temperature",
+      "temperatureDesc": "Sampling temperature (e.g. 0.2). Leave empty to use provider default (recommended for Claude, o1/o3, and reasoning models).",
+      "temperaturePlaceholder": "Provider default (recommended)",
       "apiKeyName": "Api key",
       "apiKeySecretDesc": "Stored securely in Obsidian SecretStorage (OS Keychain). Leave blank for local offline LLMs.",
       "apiKeyPlainDesc": "API Key for the provider. Leave blank for local offline LLMs.",

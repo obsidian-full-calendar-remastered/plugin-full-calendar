@@ -42,11 +42,81 @@ describe('AgentClient', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [callUrl, callInit] = mockFetch.mock.calls[0] as [
       string,
-      { headers: Record<string, string> }
+      { headers: Record<string, string>; body: string }
     ];
     expect(callUrl).toBe('https://api.openai.com/v1/chat/completions');
     expect(callInit.headers['Authorization']).toBe('Bearer test-key-123');
     expect(callInit.headers['Content-Type']).toBe('application/json');
+    const parsedPayload = JSON.parse(callInit.body) as { model?: string; temperature?: number };
+    expect(parsedPayload.model).toBe('gpt-4o-mini');
+    expect(parsedPayload.temperature).toBeUndefined();
+  });
+
+  it('should include temperature in payload when explicitly set', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'Explicit Temp OK' } }]
+      })
+    });
+
+    const client = new AgentClient({
+      endpointUrl: 'https://api.openai.com/v1',
+      apiKey: 'test-key-123',
+      model: 'gpt-4o-mini',
+      temperature: 0.7
+    });
+
+    await client.chatCompletion([{ role: 'user', content: 'Hi' }], [], { stream: false });
+
+    const [, callInit] = mockFetch.mock.calls[0] as [
+      string,
+      { headers: Record<string, string>; body: string }
+    ];
+    const parsedPayload = JSON.parse(callInit.body) as { temperature?: number };
+    expect(parsedPayload.temperature).toBe(0.7);
+  });
+
+  it('should auto-heal and retry chat completion without temperature if 400 rejects temperature', async () => {
+    // Attempt 1 fails with 400 rejection for temperature
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      text: async () =>
+        JSON.stringify({
+          error: { message: '`temperature` is deprecated for this model.' }
+        })
+    });
+
+    // Attempt 2 succeeds
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'Success on retry without temperature' } }]
+      })
+    });
+
+    const client = new AgentClient({
+      endpointUrl: 'https://api.anthropic.com/v1',
+      apiKey: 'anthropic-key',
+      model: 'claude-opus-5-5',
+      temperature: 0.2
+    });
+
+    const res = await client.chatCompletion([{ role: 'user', content: 'Hi' }], [], {
+      stream: false
+    });
+    expect(res.content).toBe('Success on retry without temperature');
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+
+    const [, firstInit] = mockFetch.mock.calls[0] as [string, { body: string }];
+    const [, secondInit] = mockFetch.mock.calls[1] as [string, { body: string }];
+
+    const firstPayload = JSON.parse(firstInit.body) as { temperature?: number };
+    const secondPayload = JSON.parse(secondInit.body) as { temperature?: number };
+
+    expect(firstPayload.temperature).toBe(0.2);
+    expect(secondPayload.temperature).toBeUndefined();
   });
 
   it('should not retry on 401 Unauthorized errors and throw AgentApiError', async () => {
@@ -173,5 +243,68 @@ describe('AgentClient', () => {
     const status = await client.testConnection();
     expect(status.success).toBe(false);
     expect(status.message).toContain('Incorrect API key provided');
+  });
+
+  it('testConnection should omit temperature when unset', async () => {
+    (requestUrl as unknown as jest.Mock).mockResolvedValueOnce({
+      status: 200,
+      text: JSON.stringify({ choices: [{ message: { content: 'OK' } }] }),
+      json: { choices: [{ message: { content: 'OK' } }] }
+    });
+
+    const client = new AgentClient({
+      endpointUrl: 'https://api.openai.com/v1',
+      apiKey: 'valid-key',
+      model: 'gpt-4o-mini'
+    });
+
+    const status = await client.testConnection();
+    expect(status.success).toBe(true);
+    expect(requestUrl).toHaveBeenCalledTimes(1);
+    const mockRequest = requestUrl as unknown as jest.Mock<Promise<unknown>, [{ body: string }]>;
+    const callArgs = mockRequest.mock.calls[0]?.[0];
+    const parsedPayload = JSON.parse(callArgs?.body ?? '{}') as { temperature?: number };
+    expect(parsedPayload.temperature).toBeUndefined();
+  });
+
+  it('testConnection should auto-heal if 400 rejects temperature and retry successfully', async () => {
+    // Attempt 1 fails with 400 temperature deprecation
+    (requestUrl as unknown as jest.Mock).mockResolvedValueOnce({
+      status: 400,
+      text: JSON.stringify({
+        error: { message: '`temperature` is deprecated for this model.' }
+      }),
+      json: {
+        error: { message: '`temperature` is deprecated for this model.' }
+      }
+    });
+
+    // Attempt 2 succeeds
+    (requestUrl as unknown as jest.Mock).mockResolvedValueOnce({
+      status: 200,
+      text: JSON.stringify({ choices: [{ message: { content: 'OK' } }] }),
+      json: { choices: [{ message: { content: 'OK' } }] }
+    });
+
+    const client = new AgentClient({
+      endpointUrl: 'https://api.anthropic.com/v1',
+      apiKey: 'anthropic-key',
+      model: 'claude-opus-5-5',
+      temperature: 0.2
+    });
+
+    const status = await client.testConnection();
+    expect(status.success).toBe(true);
+    expect(requestUrl).toHaveBeenCalledTimes(2);
+
+    const mockRequest = requestUrl as unknown as jest.Mock<Promise<unknown>, [{ body: string }]>;
+    const firstCallArgs = mockRequest.mock.calls[0]?.[0];
+    const secondCallArgs = mockRequest.mock.calls[1]?.[0];
+
+    const firstCallPayload = JSON.parse(firstCallArgs?.body ?? '{}') as { temperature?: number };
+    const secondCallPayload = JSON.parse(secondCallArgs?.body ?? '{}') as { temperature?: number };
+
+    expect(firstCallPayload.temperature).toBe(0.2);
+    expect(secondCallPayload.temperature).toBeUndefined();
   });
 });

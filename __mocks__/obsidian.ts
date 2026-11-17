@@ -243,4 +243,15 @@ export class MarkdownRenderer {
     }
 }
 
+export const Platform = {
+    isDesktop: true,
+    isMobile: false,
+    isMacOS: false,
+    isWin: true,
+    isLinux: false,
+    isIosApp: false,
+    isAndroidApp: false
+};
+
+
 

@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import { OFCEvent } from '../../../types/schema';
+import { OFCEvent, AlarmSchema } from '../../../types';
 import { constructTitle } from '../../../features/category/categoryParser';
 import { injectMeetingUrl } from '../../../utils/meetingUrl';
 import { resolveEffectiveTimezone } from '../../../features/timezone/Timezone';
@@ -92,6 +92,19 @@ const WEEK_TO_OUTLOOK_INDEX: Record<-1 | 1 | 2 | 3 | 4, string> = {
   [-1]: 'last'
 };
 
+function extractOutlookAlarm(event: OutlookEventLike): OFCEvent['alarms'] {
+  if (event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number') {
+    const parsed = AlarmSchema.safeParse({
+      minutesBefore: event.reminderMinutesBeforeStart,
+      action: 'DISPLAY'
+    });
+    if (parsed.success) {
+      return [parsed.data];
+    }
+  }
+  return undefined;
+}
+
 export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
   if (!event.id || !event.subject || !event.start || !event.end) {
     return null;
@@ -127,13 +140,7 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
       endDate: inclusiveEnd || null,
       location: locationVal,
       description: descriptionVal,
-      ...(event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number'
-        ? {
-            alarms: [
-              { minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' as const }
-            ]
-          }
-        : {})
+      ...(extractOutlookAlarm(event) ? { alarms: extractOutlookAlarm(event) } : {})
     };
   }
 
@@ -178,10 +185,9 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
       endTime: zonedEnd.toFormat('HH:mm'),
       timezone: targetZone
     };
-    if (event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number') {
-      recurringBase.alarms = [
-        { minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' }
-      ];
+    const outlookAlarms = extractOutlookAlarm(event);
+    if (outlookAlarms) {
+      recurringBase.alarms = outlookAlarms;
     }
 
     switch (pattern.type) {
@@ -248,11 +254,7 @@ export function fromOutlookEvent(event: OutlookEventLike): OFCEvent | null {
     timezone: targetZone,
     location: locationVal,
     description: descriptionVal,
-    ...(event.isReminderOn && typeof event.reminderMinutesBeforeStart === 'number'
-      ? {
-          alarms: [{ minutesBefore: event.reminderMinutesBeforeStart, action: 'DISPLAY' as const }]
-        }
-      : {})
+    ...(extractOutlookAlarm(event) ? { alarms: extractOutlookAlarm(event) } : {})
   };
 }
 

@@ -19,12 +19,14 @@ The provider uses OAuth Authorization Code with PKCE.
 
 Flow:
 
-1. Plugin generates PKCE verifier/challenge and state.
-2. Browser opens Microsoft authorize endpoint.
-3. Local callback listener receives `code` and `state`.
-4. Plugin calls proxy `/api/microsoft/token` with PKCE verifier.
-5. Tokens are persisted in `microsoftAccounts` settings.
-6. Refresh flow uses proxy `/api/microsoft/refresh`.
+1. Plugin generates PKCE verifier/challenge and state, persisting the session to `localStorage` to guard against process lifecycle interruptions.
+2. For initial connections, `prompt=select_account` is supplied; for reconnections, `login_hint=<email>` is supplied and `prompt=select_account` is omitted to conform with Microsoft Entra ID restrictions.
+3. Browser opens Microsoft authorize endpoint.
+4. Local callback listener receives `code` and `state`.
+5. Plugin calls proxy `/api/microsoft/token` with PKCE verifier and `reconnect: true/false` indicators in both query and body parameters.
+6. Identity is validated against expected email on reconnection to avoid account swapping.
+7. Tokens are persisted in `microsoftAccounts` settings.
+8. Refresh flow uses proxy `/api/microsoft/refresh`.
 
 Auth config resolution is centralized in `auth/config.ts` to avoid duplicated branching logic.
 

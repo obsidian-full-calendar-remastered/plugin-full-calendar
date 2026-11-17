@@ -610,7 +610,6 @@ export const EditEvent = ({
                   <input
                     type="number"
                     min="0"
-                    max="10080"
                     placeholder="Minutes before start"
                     value={providerNotifyValue}
                     onChange={e => {

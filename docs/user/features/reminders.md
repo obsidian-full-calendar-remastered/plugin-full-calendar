@@ -31,9 +31,9 @@ notify: 15  # Trigger 15 minutes before start
 
 Some remote calendars also have their own reminder model. Full Calendar maps those provider reminders into `alarms` event data:
 
-*   CalDAV reminders are stored as ICS `VALARM` entries.
-*   Google popup reminders are stored as Google reminder overrides.
-*   Outlook reminders are stored as Outlook reminder minutes.
+*   **CalDAV (Fastmail, Apple, Nextcloud)**: Reminders are stored as standard ICS `VALARM` components. Full Calendar supports unbounded lead-time triggers (e.g. weeks, months, or years in advance like `-P2W` for passport renewals, certifications, or annual filings) per RFC 5545. If an event contains an unsupported or non-standard alarm, it is isolated and dropped gracefully without discarding the parent event.
+*   **Google Calendar**: Popup and email reminders are stored as Google reminder overrides. Alarms are safely synchronized up to Google Calendar API's maximum of 4 weeks (40,320 minutes).
+*   **Outlook Calendar**: Reminders are synchronized as Outlook reminder minutes (up to 32-bit integer limits).
 
 When a calendar supports provider reminders, the event editor shows separate controls for the Obsidian reminder and the calendar-provider reminder. Recurring instance overrides inherit the parent reminder settings unless you explicitly change the override.
 

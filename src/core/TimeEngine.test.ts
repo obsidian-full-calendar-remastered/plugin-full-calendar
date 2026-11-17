@@ -19,6 +19,9 @@ async function buildState(
   events: { id: string; event: OFCEvent }[],
   nowIso: string
 ): Promise<TimeState> {
+  const targetNow = DateTime.fromISO(nowIso);
+  Settings.now = () => targetNow.toMillis();
+
   const engine = createTimeEngine(events);
   const internals = engine as unknown as {
     rebuildOccurrenceCache: () => Promise<void>;
@@ -26,7 +29,7 @@ async function buildState(
   };
 
   await internals.rebuildOccurrenceCache();
-  return internals.calculateCurrentState(DateTime.fromISO(nowIso));
+  return internals.calculateCurrentState(targetNow);
 }
 
 describe('TimeEngine', () => {
@@ -89,8 +92,6 @@ describe('TimeEngine', () => {
   });
 
   it('does not include all-day task events in current or upcoming time state', async () => {
-    Settings.now = () => Date.parse('2026-06-15T10:00:00.000Z');
-
     const allDayTask = {
       type: 'single',
       title: 'All-day task',
@@ -121,8 +122,6 @@ describe('TimeEngine', () => {
   });
 
   it('prefers a timed current event over an all-day current event', async () => {
-    Settings.now = () => Date.parse('2026-06-15T10:00:00.000Z');
-
     const allDayEvent = {
       type: 'single',
       title: 'All-day event',

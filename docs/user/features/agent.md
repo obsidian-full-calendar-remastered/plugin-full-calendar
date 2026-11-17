@@ -140,9 +140,16 @@ Open **Settings → Integrations → Calendar agent (BYOK)** to configure your m
 | **Api endpoint preset** | Quick presets for OpenAI, OpenRouter, Groq, DeepSeek, Ollama, and LM Studio. | `Custom endpoint` |
 | **Endpoint url** | Base URL for OpenAI-compatible chat completions. | `https://api.openai.com/v1` |
 | **Model name** | Model identifier for completions. | `gpt-4o-mini` |
+| **Model temperature** | Optional sampling temperature (e.g. `0.2`). Leave empty to use provider defaults (recommended for Claude, o1/o3, and reasoning models). | Empty (provider default) |
 | **Api key** | Provider authentication key (stored in OS Keychain). | `sk-...` |
 | **Test connection** | Pings the endpoint to verify authentication and reachability. | Click **Test connection** |
 | **Diagnostics & privacy** | Opens the audit log modal or clears all chat history. | Click **View audit trail** |
+
+### Anthropic Claude & Reasoning Models (o1 / o3)
+
+Modern reasoning architectures (OpenAI `o1`/`o3`, Claude Opus, Sonnet, and Anthropic API endpoints) deprecate or reject arbitrary sampling temperatures:
+* **Leave "Model temperature" blank**: When left unset, the plugin omits the `temperature` parameter entirely, allowing the endpoint to safely apply its model-specific default.
+* **Auto-Healing**: If an endpoint returns HTTP 400 stating `temperature is deprecated` or `unsupported parameter`, the agent client automatically strips the parameter and retries seamlessly.
 
 ### Connecting to Local Offline Models
 

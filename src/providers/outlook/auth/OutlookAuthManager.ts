@@ -6,6 +6,7 @@ import { CalendarInfo } from '../../../types';
 import { MicrosoftAccount } from '../../../types/settings';
 import { t } from '../../../features/i18n/i18n';
 import { resolveOutlookAuthConfig } from './config';
+import { AccountMismatchError } from '../../utils/oauthSessionStore';
 import { CredentialStore } from '../../../features/credentials/CredentialStore';
 
 const ME_URL = 'https://graph.microsoft.com/v1.0/me';
@@ -95,7 +96,9 @@ export class OutlookAuthManager {
     return this.refreshAccessToken(account);
   }
 
-  private async getUserIdentity(accessToken: string): Promise<{ email: string; id: string }> {
+  private async getUserIdentity(
+    accessToken: string
+  ): Promise<{ email: string; id: string; userPrincipalName?: string }> {
     const response = await requestUrl({
       url: ME_URL,
       headers: { Authorization: `Bearer ${accessToken}` }
@@ -109,15 +112,44 @@ export class OutlookAuthManager {
     };
 
     const email = json.mail || json.userPrincipalName || json.displayName || json.id;
-    return { email, id: json.id };
+    return { email, id: json.id, userPrincipalName: json.userPrincipalName };
   }
 
   public async addAccount(auth: {
     refreshToken: string;
     accessToken: string;
     expiryDate: number;
+    expectedEmail?: string;
   }): Promise<MicrosoftAccount> {
     const identity = await this.getUserIdentity(auth.accessToken);
+    if (!identity.email) {
+      throw new Error(
+        'Outlook OAuth failed: No email or identifier returned from Microsoft identity'
+      );
+    }
+
+    if (auth.expectedEmail) {
+      const expected = auth.expectedEmail.trim().toLowerCase();
+      const actualMail = identity.email ? identity.email.trim().toLowerCase() : '';
+      const actualUpn = identity.userPrincipalName
+        ? identity.userPrincipalName.trim().toLowerCase()
+        : '';
+
+      const matches = expected === actualMail || (actualUpn && expected === actualUpn);
+      if (!matches) {
+        const msg =
+          t('outlook.auth.emailMismatch', {
+            expected: auth.expectedEmail.trim(),
+            received: identity.email.trim()
+          }) ||
+          `Account mismatch: expected ${auth.expectedEmail.trim()}, but authenticated as ${identity.email.trim()}.`;
+        showNotice(msg);
+        throw new AccountMismatchError(
+          `Outlook OAuth account mismatch: expected ${auth.expectedEmail.trim()}, got ${identity.email.trim()}`
+        );
+      }
+    }
+
     const newAccount: MicrosoftAccount = {
       id: `ms_${identity.id}`,
       email: identity.email,

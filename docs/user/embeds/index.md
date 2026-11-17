@@ -1,7 +1,85 @@
 # Embedded Code Block
 
-!!! info "Power Dashboard Launcher"
-    Embed interactive calendar grids, weather forecasting panels, task backlogs, or productivity analyses directly inside any Obsidian note. Use this section to choose your widget layout, configure query parameters, and build beautiful multi-view layouts.
+Embed interactive calendar grids, weather forecasting panels, task backlogs, or productivity analyses directly inside any Obsidian note.
+
+---
+
+## Quickstart: Embed in 3 Steps
+
+If you are new to coding or Obsidian code blocks, embedding a calendar only takes a few seconds:
+
+### 1. Create a Code Block
+In any Obsidian note, type three backticks followed by `fc-calendar` on a new line, and close it with three backticks:
+
+````markdown
+```fc-calendar
+```
+````
+
+By default, an empty `fc-calendar` block will display your standard month calendar!
+
+### 2. Customize Common Settings
+You can customize the view, dimensions, or filters by typing simple YAML settings inside the block:
+
+````markdown
+```fc-calendar
+view: dayGridMonth
+height: 500px
+```
+````
+
+### 3. Copy-Paste Starter Recipes
+
+=== "Monthly Calendar"
+    Great for dashboard notes, project homepages, or central overviews.
+    ````markdown
+    ```fc-calendar
+    view: dayGridMonth
+    height: 550px
+    ```
+    ````
+
+=== "Weekly Planner"
+    Ideal for weekly review notes or planning your week ahead.
+    ````markdown
+    ```fc-calendar
+    view: timeGridWeek
+    height: 600px
+    ```
+    ````
+
+=== "Daily Note Schedule"
+    Locks dynamically to the current note's date using `defaultDate: auto`.
+    ````markdown
+    ```fc-calendar
+    view: timeGridDay
+    defaultDate: auto
+    height: 500px
+    ```
+    ````
+
+=== "Agenda / List View"
+    A clean, scrollable list of upcoming events for the week or month.
+    ````markdown
+    ```fc-calendar
+    view: listWeek
+    height: 400px
+    ```
+    ````
+
+=== "Filter by Calendar Source"
+    Display events only from specific configured calendar sources.
+    ````markdown
+    ```fc-calendar
+    view: timeGridWeek
+    calendars:
+      - "Work"
+      - "Personal"
+    height: 500px
+    ```
+    ````
+
+---
 
 ## QTLDR (Quick Too Long; Didn't Read) Router
 

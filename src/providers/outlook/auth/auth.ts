@@ -6,6 +6,11 @@ import { PluginState } from '../../../core/PluginState';
 import { t } from '../../../features/i18n/i18n';
 import { OutlookAuthManager } from './OutlookAuthManager';
 import { resolveOutlookAuthConfig } from './config';
+import {
+  BaseOAuthSession,
+  OAuthSessionStore,
+  AccountMismatchError
+} from '../../utils/oauthSessionStore';
 
 type DesktopRequest = { url?: string };
 type DesktopResponse = { writeHead: (status: number) => void; end: (body?: string) => void };
@@ -21,7 +26,22 @@ const AUTH_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize
 const DESKTOP_REDIRECT_URI = 'http://localhost:42813/callback';
 const SCOPES = 'offline_access Calendars.ReadWrite Calendars.ReadWrite.Shared User.Read';
 
-let pkce: { verifier: string; state: string } | null = null;
+export type OutlookOAuthSession = BaseOAuthSession;
+
+export interface OutlookLoginOptions {
+  isReconnect?: boolean;
+  email?: string;
+}
+
+export const outlookSessionStore = new OAuthSessionStore<OutlookOAuthSession>('outlook');
+
+export const saveOutlookOAuthSession = (session: OutlookOAuthSession): void =>
+  outlookSessionStore.save(session);
+export const consumeOutlookOAuthSession = (state: string): OutlookOAuthSession | null =>
+  outlookSessionStore.consume(state);
+export const clearExpiredOutlookOAuthSessions = (): void => outlookSessionStore.clearExpired();
+
+let pkce: OutlookOAuthSession | null = null;
 let server: DesktopServer | null = null;
 
 function generateRandomString(length: number): string {
@@ -104,11 +124,16 @@ function startDesktopLogin(plugin: FullCalendarPlugin, authUrl: string): void {
   });
 }
 
-export async function startOutlookLogin(plugin: FullCalendarPlugin): Promise<void> {
+export async function startOutlookLogin(
+  plugin: FullCalendarPlugin,
+  options: OutlookLoginOptions = {}
+): Promise<void> {
   if (Platform.isMobile) {
     showNotice(t('outlook.auth.desktopOnly'));
     return;
   }
+
+  outlookSessionStore.clearExpired();
 
   const settings = PluginState.getSettings();
   const { clientId, proxyBaseUrl, isCustom } = resolveOutlookAuthConfig(settings);
@@ -123,10 +148,22 @@ export async function startOutlookLogin(plugin: FullCalendarPlugin): Promise<voi
     return;
   }
 
+  const isReconnect = options.isReconnect ?? false;
+  const expectedEmail = options.email;
+
   const state = generateRandomString(16);
   const verifier = generateRandomString(128);
   const challenge = await generateCodeChallenge(verifier);
-  pkce = { verifier, state };
+
+  const session: OutlookOAuthSession = {
+    verifier,
+    state,
+    isReconnect,
+    expectedEmail,
+    timestamp: Date.now()
+  };
+  pkce = session;
+  saveOutlookOAuthSession(session);
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -139,6 +176,14 @@ export async function startOutlookLogin(plugin: FullCalendarPlugin): Promise<voi
     code_challenge_method: 'S256'
   });
 
+  // Microsoft Entra ID rule:
+  // When login_hint is present, DO NOT set prompt=select_account (causes AADSTS90014 error!)
+  if (isReconnect && expectedEmail) {
+    params.set('login_hint', expectedEmail);
+  } else {
+    params.set('prompt', 'select_account');
+  }
+
   startDesktopLogin(plugin, `${AUTH_URL}?${params.toString()}`);
 }
 
@@ -147,7 +192,14 @@ export async function exchangeCodeForToken(
   state: string,
   plugin: FullCalendarPlugin
 ): Promise<void> {
-  if (!pkce || state !== pkce.state) {
+  let session = pkce;
+  if (!outlookSessionStore.isValid(session) || session?.state !== state) {
+    session = outlookSessionStore.consume(state);
+  } else {
+    outlookSessionStore.consume(state);
+  }
+
+  if (!session || state !== session.state) {
     showNotice(t('outlook.auth.stateMismatch'));
     return;
   }
@@ -160,15 +212,23 @@ export async function exchangeCodeForToken(
     return;
   }
 
+  const isReconnect = session.isReconnect ?? false;
+  const tokenUrl = isReconnect
+    ? `${proxyBaseUrl}/api/microsoft/token?reconnect=true`
+    : `${proxyBaseUrl}/api/microsoft/token`;
+
+  const body: Record<string, unknown> = {
+    code,
+    code_verifier: session.verifier,
+    reconnect: isReconnect
+  };
+
   try {
     const response = await requestUrl({
       method: 'POST',
-      url: `${proxyBaseUrl}/api/microsoft/token`,
+      url: tokenUrl,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code,
-        code_verifier: pkce.verifier
-      }),
+      body: JSON.stringify(body),
       throw: false
     });
 
@@ -190,14 +250,18 @@ export async function exchangeCodeForToken(
     await authManager.addAccount({
       refreshToken: data.refresh_token,
       accessToken: data.access_token,
-      expiryDate: Date.now() + data.expires_in * 1000
+      expiryDate: Date.now() + data.expires_in * 1000,
+      expectedEmail: session.expectedEmail
     });
 
     showNotice(t('outlook.auth.success'));
   } catch (error) {
     console.error('Outlook token exchange error:', error);
-    showNotice(t('outlook.auth.failed'));
+    if (!(error instanceof AccountMismatchError)) {
+      showNotice(t('outlook.auth.failed'));
+    }
   } finally {
     pkce = null;
+    clearExpiredOutlookOAuthSessions();
   }
 }

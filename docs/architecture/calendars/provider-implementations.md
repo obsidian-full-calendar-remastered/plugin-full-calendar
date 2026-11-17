@@ -123,6 +123,11 @@ Uses OAuth-backed authenticated requests, handles recurrence exception/override 
 
 **Location & Description Mapping**: Directly maps the canonical `location` and `description` string properties to/from Google's native API event resource fields.
 
+**OAuth PKCE Session & Reconnect Architecture**:
+- **Persistence & Clock Skew**: OAuth session state (`code_verifier`, `state`, `scopes`, `isReconnect`, `expectedEmail`) is persisted in `localStorage` through `OAuthSessionStore` with a 15-minute TTL and clock-skew bounds validation (`0 <= delta <= TTL`), surviving mobile tab sleeping and process suspensions.
+- **Reconnect Signal & Identity Guard**: When reconnecting an existing account, `login_hint` pre-fills the user's email while preserving `prompt=consent` (required for Google refresh tokens). Reconnection exchanges pass `reconnect: true` in the JSON body and `?reconnect=true` in the proxy URL query parameters to `/api/google/token` for memoryless proxy telemetry. Custom Google OAuth client configurations bypass proxy metadata injection.
+- **Account Mismatch Defense**: Upon token exchange completion, the returned user info email is matched against `expectedEmail`. Any identity divergence aborts the exchange with `AccountMismatchError` to protect account mappings from corruption.
+
 For token and permission boundaries, see [API Architecture](../system/api-architecture.md).
 
 ### Google Tasks Provider
@@ -138,6 +143,13 @@ Integrates with the Google Tasks API for complete two-way synchronization of tas
 ### Outlook Provider
 
 Uses OAuth Authorization Code + PKCE with proxy-backed token and refresh exchange. Parsing and payload mapping are isolated in parser/auth modules similar to Google provider boundaries.
+
+**OAuth PKCE Session & Reconnect Architecture**:
+- **Entra ID Parameter Rule**: Initial connections supply `prompt=select_account`. Reconnection flows supply `login_hint=<email>` and omit `prompt=select_account` to prevent Microsoft Entra ID `AADSTS90014` invalid-combination errors.
+- **Proxy Telemetry**: Both the query string (`?reconnect=true`) and JSON body (`reconnect: true`) notify `/api/microsoft/token` of re-authorizations.
+- **Identity Matching**: The authenticated Microsoft Graph identity (`mail` or fallback `userPrincipalName`) is validated against `expectedEmail`, throwing `AccountMismatchError` if a different account is selected.
+
+Outlook provider intentionally normalizes nullable Graph recurrence linkage (`seriesMasterId`) into optional event fields expected by core validation.
 
 Outlook provider intentionally normalizes nullable Graph recurrence linkage (`seriesMasterId`) into optional event fields expected by core validation.
 

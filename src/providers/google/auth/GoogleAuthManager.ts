@@ -12,6 +12,7 @@ import { CalendarInfo } from '../../../types';
 import { GoogleAccount } from '../../../types/settings';
 // generateCalendarId import removed - was unused
 import { t } from '../../../features/i18n/i18n';
+import { AccountMismatchError } from '../../utils/oauthSessionStore';
 import { CredentialStore } from '../../../features/credentials/CredentialStore';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -215,8 +216,29 @@ export class GoogleAuthManager {
     accessToken: string;
     expiryDate: number;
     grantedScopes: string;
+    expectedEmail?: string;
   }): Promise<GoogleAccount> {
     const userEmail = await this.getUserEmail(auth.accessToken);
+    if (!userEmail) {
+      throw new Error('Google OAuth failed: No email returned from userinfo');
+    }
+
+    if (
+      auth.expectedEmail &&
+      auth.expectedEmail.trim().toLowerCase() !== userEmail.trim().toLowerCase()
+    ) {
+      const msg =
+        t('google.auth.emailMismatch', {
+          expected: auth.expectedEmail.trim(),
+          received: userEmail.trim()
+        }) ||
+        `Account mismatch: expected ${auth.expectedEmail.trim()}, but authenticated as ${userEmail.trim()}.`;
+      showNotice(msg);
+      throw new AccountMismatchError(
+        `Google OAuth account mismatch: expected ${auth.expectedEmail.trim()}, got ${userEmail.trim()}`
+      );
+    }
+
     const existingAccounts = PluginState.getSettings().googleAccounts || [];
     const existingAccount = existingAccounts.find(a => a.id === `gcal_${userEmail}`);
 

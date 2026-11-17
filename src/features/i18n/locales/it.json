@@ -1657,7 +1657,8 @@
       "copyModalCloseButton": "Close",
       "waitingModalTitle": "Waiting for Authentication",
       "waitingModalDesc": "Obsidian is waiting for you to complete the authentication in your browser. Once completed, this window will close automatically.",
-      "waitingModalCancel": "Cancel"
+      "waitingModalCancel": "Cancel",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Account Google",
     "customCredentials": {
@@ -1684,7 +1685,8 @@
       "addCalendars": "Aggiungi {{count}} calendario",
       "addCalendarsPlural": "Aggiungi {{count}} calendari",
       "selectTaskLists": "Select task lists",
-      "addTaskList": "Add Google Task List"
+      "addTaskList": "Add Google Task List",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "Collega un account Google"
@@ -1874,7 +1876,8 @@
       "success": "Account Outlook collegato con successo!",
       "failed": "Connessione dell'account Outlook non riuscita. Controlla la console di sviluppo per i dettagli.",
       "callbackSuccess": "Autenticazione riuscita! Torna a Obsidian.",
-      "callbackFailed": "Autenticazione fallita. Controlla la console di Obsidian e riprova."
+      "callbackFailed": "Autenticazione fallita. Controlla la console di Obsidian e riprova.",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Account Outlook",
     "docs": {
@@ -1909,7 +1912,8 @@
       "connectAccount": "Collega account Outlook",
       "backToAccounts": "Torna agli account",
       "addCalendars": "Aggiungi {{count}} calendario",
-      "addCalendarsPlural": "Aggiungi {{count}} calendari"
+      "addCalendarsPlural": "Aggiungi {{count}} calendari",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "Collega un account Outlook"

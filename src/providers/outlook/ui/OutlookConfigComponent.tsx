@@ -143,15 +143,30 @@ export const OutlookConfigComponent: React.FC<OutlookConfigComponentProps> = ({
 
     accounts.forEach(account => {
       const hasToken = CredentialStore.hasMicrosoftRefreshToken(account.id);
+      const isTokenMissingOrExpired = !hasToken || account.expiryDate === null;
       const displayName =
         account.email + (hasToken ? '' : ` (${t('settings.credentials.keychainMissing')})`);
-      new Setting(container)
-        .setName(displayName)
-        .addButton(button =>
+      const setting = new Setting(container).setName(displayName);
+
+      if (isTokenMissingOrExpired) {
+        setting.addButton(button =>
+          button
+            .setButtonText(t('outlook.buttons.reconnect') || 'Reconnect')
+            .setCta()
+            .onClick(() =>
+              startOutlookLogin(plugin, {
+                isReconnect: true,
+                email: account.email
+              })
+            )
+        );
+      } else {
+        setting.addButton(button =>
           button
             .setButtonText(t('outlook.buttons.selectCalendars'))
             .onClick(() => handleSelectAccount(account))
         );
+      }
     });
 
     new Setting(container).setName(t('outlook.selectAccount.title')).addButton(button =>

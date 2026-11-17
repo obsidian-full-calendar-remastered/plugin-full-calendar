@@ -8,6 +8,8 @@ import { Setting } from 'obsidian';
 import FullCalendarPlugin from '../../../main';
 import { PluginState } from '../../../core/PluginState';
 import { OutlookAuthManager } from '../auth/OutlookAuthManager';
+import { startOutlookLogin } from '../auth/auth';
+import { CredentialStore } from '../../../features/credentials/CredentialStore';
 import { t } from '../../../features/i18n/i18n';
 import { createDescWithDocs } from '../../../ui/settings/docsLinks';
 import { SettingsModal } from '../../../ui/modals/SettingsModal';
@@ -70,18 +72,37 @@ export function renderOutlookSettingsContent(
   }
 
   accounts.forEach(account => {
-    new Setting(containerEl)
-      .setName(account.email)
-      .setDesc(t('outlook.accountDescription', { id: account.id }))
-      .addButton(button => {
-        button
-          .setButtonText(t('outlook.buttons.disconnect'))
-          .setClass('mod-warning')
-          .onClick(async () => {
-            await authManager.removeAccount(account.id);
-            rerender();
-          });
+    const hasToken = CredentialStore.hasMicrosoftRefreshToken(account.id);
+    const isTokenMissingOrExpired = !hasToken || account.expiryDate === null;
+    const displayName =
+      account.email + (hasToken ? '' : ` (${t('settings.credentials.keychainMissing')})`);
+    const setting = new Setting(containerEl)
+      .setName(displayName)
+      .setDesc(t('outlook.accountDescription', { id: account.id }));
+
+    setting.addButton(button => {
+      button.setButtonText(t('outlook.buttons.reconnect') || 'Reconnect').onClick(async () => {
+        await startOutlookLogin(plugin, {
+          isReconnect: true,
+          email: account.email
+        });
+        rerender();
       });
+
+      if (isTokenMissingOrExpired) {
+        button.setCta();
+      }
+    });
+
+    setting.addButton(button => {
+      button
+        .setButtonText(t('outlook.buttons.disconnect'))
+        .setClass('mod-warning')
+        .onClick(async () => {
+          await authManager.removeAccount(account.id);
+          rerender();
+        });
+    });
   });
 }
 

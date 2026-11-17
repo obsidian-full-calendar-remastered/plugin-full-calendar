@@ -20,6 +20,11 @@ import { PluginState } from '../../../core/PluginState';
 import { CopyTextModal } from '../../../ui/modals/CopyTextModal';
 import { LoadingModal } from '../../../ui/modals/LoadingModal';
 import { CredentialStore } from '../../../features/credentials/CredentialStore';
+import {
+  BaseOAuthSession,
+  OAuthSessionStore,
+  AccountMismatchError
+} from '../../utils/oauthSessionStore';
 
 // =================================================================================================
 // CONSTANTS
@@ -53,8 +58,26 @@ type DesktopUrlModule = {
   parse: (input: string, parseQueryString?: boolean) => { query?: Record<string, unknown> };
 };
 
+export interface GoogleOAuthSession extends BaseOAuthSession {
+  scopes: string;
+}
+
+export interface GoogleLoginOptions {
+  flowType?: 'calendar' | 'tasks';
+  isReconnect?: boolean;
+  email?: string;
+}
+
+export const googleSessionStore = new OAuthSessionStore<GoogleOAuthSession>('google');
+
+export const saveGoogleOAuthSession = (session: GoogleOAuthSession): void =>
+  googleSessionStore.save(session);
+export const consumeGoogleOAuthSession = (state: string): GoogleOAuthSession | null =>
+  googleSessionStore.consume(state);
+export const clearExpiredGoogleOAuthSessions = (): void => googleSessionStore.clearExpired();
+
 interface GlobalAuthState {
-  pkce: { verifier: string; state: string; scopes: string } | null;
+  pkce: GoogleOAuthSession | null;
   server: DesktopServer | null;
   waitingModal: LoadingModal | null;
 }
@@ -125,8 +148,12 @@ function showAuthUI(
       onCloseCallback: () => {
         const onCancel = isMobile
           ? () => {
+              if (oauthState.pkce) {
+                googleSessionStore.consume(oauthState.pkce.state);
+              }
               oauthState.pkce = null;
               oauthState.waitingModal = null;
+              googleSessionStore.clearExpired();
             }
           : () => {
               if (oauthState.server) {
@@ -137,7 +164,11 @@ function showAuthUI(
                 }
                 oauthState.server = null;
               }
+              if (oauthState.pkce) {
+                googleSessionStore.consume(oauthState.pkce.state);
+              }
               oauthState.waitingModal = null;
+              googleSessionStore.clearExpired();
             };
 
         // If desktop and server was already closed by the callback, don't open the waiting modal
@@ -231,8 +262,19 @@ function startDesktopLogin(plugin: FullCalendarPlugin, authUrl: string): void {
  */
 export async function startGoogleLogin(
   plugin: FullCalendarPlugin,
-  flowType: 'calendar' | 'tasks' = 'calendar'
+  flowTypeOrOptions: 'calendar' | 'tasks' | GoogleLoginOptions = 'calendar',
+  rawOptions?: GoogleLoginOptions
 ): Promise<void> {
+  googleSessionStore.clearExpired();
+  const normalizedOptions: GoogleLoginOptions =
+    typeof flowTypeOrOptions === 'object' && flowTypeOrOptions !== null
+      ? flowTypeOrOptions
+      : { flowType: flowTypeOrOptions, ...rawOptions };
+
+  const flowType = normalizedOptions.flowType ?? 'calendar';
+  const isReconnect = normalizedOptions.isReconnect ?? false;
+  const expectedEmail = normalizedOptions.email;
+
   const settings = PluginState.getSettings();
   const isMobile = Platform.isMobile;
   const useCopyPaste = settings.googleUseCopyPasteAuth;
@@ -254,9 +296,6 @@ export async function startGoogleLogin(
   const state = generateRandomString(16);
   const verifier = generateRandomString(128);
   const challenge = await generateCodeChallenge(verifier);
-
-  // Store the verifier and state now; scopes will be added after computation below.
-  oauthState.pkce = { verifier, state, scopes: '' };
 
   const clientId = settings.useCustomGoogleClient ? settings.googleClientId : PUBLIC_CLIENT_ID;
   const redirectUri = isMobile ? MOBILE_REDIRECT_URI : DESKTOP_REDIRECT_URI;
@@ -288,8 +327,17 @@ export async function startGoogleLogin(
     new Set([...requestedScopes.split(' '), ...existingGrantedScopes])
   );
   const scopes = allScopeTokens.join(' ');
-  // Update pkce with the computed scopes so they are available in the callback.
-  oauthState.pkce.scopes = scopes;
+
+  const session: GoogleOAuthSession = {
+    verifier,
+    state,
+    scopes,
+    isReconnect,
+    expectedEmail,
+    timestamp: Date.now()
+  };
+  oauthState.pkce = session;
+  saveGoogleOAuthSession(session);
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -302,6 +350,10 @@ export async function startGoogleLogin(
     code_challenge: challenge,
     code_challenge_method: 'S256'
   });
+
+  if (isReconnect && expectedEmail) {
+    params.set('login_hint', expectedEmail);
+  }
 
   const authUrl = `${AUTH_URL}?${params.toString()}`;
   if (useCopyPaste) {
@@ -328,14 +380,21 @@ export async function exchangeCodeForToken(
   state: string,
   plugin: FullCalendarPlugin
 ): Promise<void> {
-  if (!oauthState.pkce || state !== oauthState.pkce.state) {
+  let session = oauthState.pkce;
+  if (!googleSessionStore.isValid(session) || session?.state !== state) {
+    session = googleSessionStore.consume(state);
+  } else {
+    googleSessionStore.consume(state);
+  }
+
+  if (!session || state !== session.state) {
     const modalToClose = oauthState.waitingModal;
     oauthState.waitingModal = null;
     if (modalToClose) {
       modalToClose.closeSuccess();
     }
     showNotice(t('google.auth.stateMismatch'));
-    console.error('State mismatch during OAuth callback.');
+    console.error('State mismatch or session expired during OAuth callback.');
     return;
   }
 
@@ -343,6 +402,7 @@ export async function exchangeCodeForToken(
   const isMobile = Platform.isMobile;
   const redirectUri = isMobile ? MOBILE_REDIRECT_URI : DESKTOP_REDIRECT_URI;
   const clientId = settings.useCustomGoogleClient ? settings.googleClientId : PUBLIC_CLIENT_ID;
+  const isReconnect = session.isReconnect ?? false;
 
   let tokenUrl: string;
   let requestBody: string;
@@ -350,6 +410,7 @@ export async function exchangeCodeForToken(
 
   if (settings.useCustomGoogleClient) {
     // Legacy path: User provides their own credentials, talk to Google directly.
+    // NEVER send custom reconnect metadata directly to Google.
     tokenUrl = GOOGLE_TOKEN_URL;
     const clientSecret = settings.useCustomGoogleClient
       ? CredentialStore.getGoogleClientSecret()
@@ -358,21 +419,22 @@ export async function exchangeCodeForToken(
       grant_type: 'authorization_code',
       client_id: clientId,
       code: code,
-      code_verifier: oauthState.pkce.verifier,
+      code_verifier: session.verifier,
       redirect_uri: redirectUri,
       client_secret: clientSecret
     });
     requestBody = body.toString();
     requestHeaders = { 'Content-Type': 'application/x-www-form-urlencoded' };
   } else {
-    // New default path: Use the public client ID and the proxy server.
-    tokenUrl = PROXY_TOKEN_URL;
+    // Proxy path: send reconnect in both URL query param and JSON body
+    tokenUrl = isReconnect ? `${PROXY_TOKEN_URL}?reconnect=true` : PROXY_TOKEN_URL;
     const body = {
       client_id: clientId,
       code: code,
-      code_verifier: oauthState.pkce.verifier,
+      code_verifier: session.verifier,
       state: state,
-      redirect_uri: redirectUri
+      redirect_uri: redirectUri,
+      reconnect: isReconnect
     };
     requestBody = JSON.stringify(body);
     requestHeaders = { 'Content-Type': 'application/json' };
@@ -403,20 +465,21 @@ export async function exchangeCodeForToken(
       );
     }
 
-    // --- REPLACEMENT BLOCK ---
     // Use GoogleAuthManager to add the account
     const authManager = new GoogleAuthManager(plugin);
     await authManager.addAccount({
       refreshToken: data.refresh_token,
       accessToken: data.access_token,
       expiryDate: Date.now() + data.expires_in * 1000,
-      grantedScopes: oauthState.pkce.scopes
+      grantedScopes: session.scopes,
+      expectedEmail: session.expectedEmail
     });
-    // --- END REPLACEMENT BLOCK ---
 
     showNotice(t('google.auth.success'));
   } catch (e) {
-    showNotice(t('google.auth.failed'));
+    if (!(e instanceof AccountMismatchError)) {
+      showNotice(t('google.auth.failed'));
+    }
     if (e instanceof Error) {
       console.error('Error during token exchange:', e.message);
     } else {
@@ -424,6 +487,7 @@ export async function exchangeCodeForToken(
     }
   } finally {
     oauthState.pkce = null;
+    clearExpiredGoogleOAuthSessions();
     const modalToClose = oauthState.waitingModal;
     oauthState.waitingModal = null;
     if (modalToClose) {

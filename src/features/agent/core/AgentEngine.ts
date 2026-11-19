@@ -31,6 +31,7 @@ import type { AgentStorage } from './AgentStorage';
 import type { AgentAuditLogger } from './AgentAuditLogger';
 import type { AgentCalendarBridge } from '../tools/AgentCalendarBridge';
 import type { SpecLoader } from './SpecLoader';
+import { generateRandomId } from '../domain/crypto/randomId';
 
 const MAX_TURNS = 5;
 
@@ -404,10 +405,7 @@ export class AgentEngine {
         ];
 
         // 3. Call LLM with a fresh per-turn idempotency key
-        const idempotencyKey =
-          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID()
-            : `turn_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        const idempotencyKey = generateRandomId('turn');
         callbacks?.onStatus?.('Generating response...');
         let completion: CompletionResult;
         try {

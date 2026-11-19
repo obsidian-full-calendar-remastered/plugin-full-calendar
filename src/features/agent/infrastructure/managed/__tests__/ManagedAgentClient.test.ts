@@ -109,7 +109,7 @@ describe('ManagedAgentClient & StreamingTransport', () => {
     const client = new ManagedAgentClient({
       getBaseUrl: () => 'https://staging-gateway.destyleer.in.net',
       signer,
-      licenseManager,
+      tokenProvider: licenseManager,
       usageCache,
       fetchFn
     });

@@ -5,13 +5,14 @@
  * @license See LICENSE.md
  */
 
-import { NormalizedAgentError } from '../../../domain/AgentError';
+import { isNormalizedAgentError, NormalizedAgentError } from '../../../domain/AgentError';
 import {
   type AccountUsageSnapshot,
   type AuthChallengeResponse,
   type IManagedActivationService,
   type IManagedUsageService,
   type LicenseActivateResponse,
+  type ManagedPlanTier,
   type ManagedSessionMetadata,
   type TokenRefreshResponse,
   type WireAccountUsage,
@@ -19,21 +20,40 @@ import {
 } from '../protocol/managedTypes';
 import type { DeviceKeyManager } from './DeviceKeyManager';
 import type { SecretStorageAdapter } from './SecretStorageAdapter';
-import type { RequestSigner } from '../client/RequestSigner';
+import type { IRequestSigner } from '../client/RequestSigner';
 import { type FetchLike, signedJsonRequest } from '../client/managedHttp';
 import type { UsageSnapshotCache } from '../state/UsageSnapshotCache';
+
+export interface IAccessTokenProvider {
+  getAccessToken(): string | null;
+  refreshAccessToken(): Promise<string>;
+  withAccessToken<T>(operation: (accessToken: string) => Promise<T>): Promise<T>;
+}
+
+export interface PersistSessionInput {
+  principalId: string;
+  activationId: string;
+  keyId: string;
+  planTier: ManagedPlanTier;
+  licenseKeyMasked?: string;
+  accessToken: string;
+  refreshToken: string;
+  wireUsage: WireAccountUsage;
+}
 
 export interface LicenseManagerDeps {
   getBaseUrl: () => string;
   keyManager: DeviceKeyManager;
   secretStorage: SecretStorageAdapter;
-  signer: RequestSigner;
+  signer: IRequestSigner;
   usageCache: UsageSnapshotCache;
   onSessionUpdated?: (session: ManagedSessionMetadata | null) => Promise<void> | void;
   fetchFn?: FetchLike;
 }
 
-export class LicenseManager implements IManagedActivationService, IManagedUsageService {
+export class LicenseManager
+  implements IManagedActivationService, IManagedUsageService, IAccessTokenProvider
+{
   private readonly deps: LicenseManagerDeps;
   private refreshPromise: Promise<string> | null = null;
 
@@ -59,6 +79,50 @@ export class LicenseManager implements IManagedActivationService, IManagedUsageS
 
   public subscribe(listener: (snapshot: AccountUsageSnapshot | null) => void): () => void {
     return this.deps.usageCache.subscribe(listener);
+  }
+
+  /**
+   * Single DRY persistence path shared by both LicenseManager and TrialManager.
+   */
+  public async persistSession(
+    input: PersistSessionInput
+  ): Promise<{ session: ManagedSessionMetadata; usage: AccountUsageSnapshot }> {
+    this.deps.secretStorage.setSecret('access-tok', input.accessToken);
+    this.deps.secretStorage.setSecret('refresh-tok', input.refreshToken);
+
+    const usage = mapWireUsageToSnapshot(input.wireUsage);
+    this.deps.usageCache.update(usage);
+
+    const session: ManagedSessionMetadata = {
+      principalId: input.principalId,
+      activationId: input.activationId,
+      keyId: input.keyId,
+      planTier: input.planTier,
+      licenseKeyMasked: input.licenseKeyMasked,
+      currentPeriodEnd: usage.periodEnd
+    };
+    await this.deps.onSessionUpdated?.(session);
+    return { session, usage };
+  }
+
+  /**
+   * Executes an authenticated gateway call with automatic single token refresh on 401.
+   */
+  public async withAccessToken<T>(operation: (accessToken: string) => Promise<T>): Promise<T> {
+    let token = this.getAccessToken();
+    if (!token) {
+      token = await this.refreshAccessToken();
+    }
+
+    try {
+      return await operation(token);
+    } catch (err) {
+      if (isNormalizedAgentError(err) && err.code === 'authentication_required') {
+        const refreshed = await this.refreshAccessToken();
+        return operation(refreshed);
+      }
+      throw err;
+    }
   }
 
   public async activateLicense(
@@ -98,21 +162,16 @@ export class LicenseManager implements IManagedActivationService, IManagedUsageS
       fetchFn: this.deps.fetchFn
     });
 
-    this.deps.secretStorage.setSecret('access-tok', activated.access_token);
-    this.deps.secretStorage.setSecret('refresh-tok', activated.refresh_token);
-
-    const usage = mapWireUsageToSnapshot(activated.usage);
-    this.deps.usageCache.update(usage);
-
-    const session: ManagedSessionMetadata = {
+    const { session } = await this.persistSession({
       principalId: activated.principal_id,
       activationId: activated.activation_id,
       keyId: activated.key_id,
       planTier: activated.plan_tier,
       licenseKeyMasked: activated.license_key_masked,
-      currentPeriodEnd: usage.periodEnd
-    };
-    await this.deps.onSessionUpdated?.(session);
+      accessToken: activated.access_token,
+      refreshToken: activated.refresh_token,
+      wireUsage: activated.usage
+    });
     return session;
   }
 
@@ -176,36 +235,16 @@ export class LicenseManager implements IManagedActivationService, IManagedUsageS
   }
 
   public async refreshUsage(): Promise<AccountUsageSnapshot> {
-    const token = this.deps.secretStorage.getSecret('access-tok');
-    if (!token) {
-      throw new NormalizedAgentError({
-        code: 'authentication_required',
-        status: 401,
-        message: 'No active Managed AI session.'
-      });
-    }
-
-    const fetchWithToken = async (tok: string) =>
+    const wire = await this.withAccessToken(accessToken =>
       signedJsonRequest<WireAccountUsage>({
         baseUrl: this.deps.getBaseUrl(),
         path: '/v1/account/usage',
         method: 'GET',
         signer: this.deps.signer,
-        accessToken: tok,
+        accessToken,
         fetchFn: this.deps.fetchFn
-      });
-
-    let wire: WireAccountUsage;
-    try {
-      wire = await fetchWithToken(token);
-    } catch (err) {
-      if (err instanceof NormalizedAgentError && err.code === 'authentication_required') {
-        const nextToken = await this.refreshAccessToken();
-        wire = await fetchWithToken(nextToken);
-      } else {
-        throw err;
-      }
-    }
+      })
+    );
 
     const snapshot = mapWireUsageToSnapshot(wire);
     this.deps.usageCache.update(snapshot);

@@ -269,6 +269,7 @@ export interface ManagedAgentSettings {
   licenseKeyMasked?: string;
   planTier?: 'trial' | 'pro' | 'power';
   currentPeriodEnd?: string;
+  onboardingAcknowledged?: boolean;
 }
 
 export interface AgentSettings {

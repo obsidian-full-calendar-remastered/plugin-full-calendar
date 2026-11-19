@@ -5,8 +5,8 @@
  * @description
  * Constructs strictly allowlisted stateless chat completion payloads (never sending
  * model, temperature, provider URL, or n), signs every request with ECDSA P-256,
- * rotates expired access tokens once preserving the idempotency key, and updates
- * the read-only UsageSnapshotCache from authoritative terminal fcr:usage events.
+ * delegates 401 token refresh to IAccessTokenProvider preserving the idempotency key,
+ * and updates the read-only UsageSnapshotCache from authoritative terminal fcr:usage events.
  *
  * @license See LICENSE.md
  */
@@ -19,48 +19,31 @@ import type {
   IAgentClient
 } from '../../../domain/contracts/IAgentClient';
 import { isNormalizedAgentError, NormalizedAgentError } from '../../../domain/AgentError';
+import { generateRandomId } from '../../../domain/crypto/randomId';
+import { sanitizeChatMessages } from '../../../domain/httpUtils';
 import type { ManagedUsageMetadata, TokenUsage } from '../../../domain/Usage';
-import type { LicenseManager } from '../identity/LicenseManager';
-import type { RequestSigner } from './RequestSigner';
-import { StreamingTransport } from './StreamingTransport';
+import type { IAccessTokenProvider } from '../identity/LicenseManager';
+import type { IRequestSigner } from './RequestSigner';
+import { type IStreamingTransport, StreamingTransport } from './StreamingTransport';
 import type { UsageSnapshotCache } from '../state/UsageSnapshotCache';
 import { type FetchLike, defaultFetch } from './managedHttp';
 
 export interface ManagedAgentClientDeps {
   getBaseUrl: () => string;
-  signer: RequestSigner;
-  licenseManager: LicenseManager;
+  signer: IRequestSigner;
+  tokenProvider: IAccessTokenProvider;
   usageCache: UsageSnapshotCache;
+  transport?: IStreamingTransport;
   fetchFn?: FetchLike;
-}
-
-function generateIdempotencyKey(): string {
-  if (typeof window !== 'undefined' && typeof window.crypto?.randomUUID === 'function') {
-    return window.crypto.randomUUID();
-  }
-  return `idem_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-}
-
-function sanitizeMessagesForGateway(messages: ChatMessage[]): Record<string, unknown>[] {
-  return messages.map(msg => {
-    const clean: Record<string, unknown> = {
-      role: msg.role,
-      content: msg.content
-    };
-    if (msg.name) clean.name = msg.name;
-    if (msg.tool_call_id) clean.tool_call_id = msg.tool_call_id;
-    if (msg.tool_calls && msg.tool_calls.length > 0) clean.tool_calls = msg.tool_calls;
-    return clean;
-  });
 }
 
 export class ManagedAgentClient implements IAgentClient {
   private readonly deps: ManagedAgentClientDeps;
-  private readonly transport: StreamingTransport;
+  private readonly transport: IStreamingTransport;
 
   constructor(deps: ManagedAgentClientDeps) {
     this.deps = deps;
-    this.transport = new StreamingTransport(deps.fetchFn);
+    this.transport = deps.transport ?? new StreamingTransport(deps.fetchFn);
   }
 
   public async testConnection(): Promise<ConnectionTestResult> {
@@ -88,12 +71,12 @@ export class ManagedAgentClient implements IAgentClient {
     config: ChatCompletionRequestConfig = {}
   ): Promise<CompletionResult> {
     const startTime = Date.now();
-    const idempotencyKey = config.idempotencyKey ?? generateIdempotencyKey();
+    const idempotencyKey = config.idempotencyKey ?? generateRandomId('idem');
     const path = '/v1/chat/completions';
 
     // Strict allowlisted body: never pass model, n, temperature, logprobs, or provider URLs
     const bodyObj: Record<string, unknown> = {
-      messages: sanitizeMessagesForGateway(messages),
+      messages: sanitizeChatMessages(messages),
       stream: config.stream ?? true
     };
     if (tools && tools.length > 0) {
@@ -101,49 +84,38 @@ export class ManagedAgentClient implements IAgentClient {
     }
     const bodyStr = JSON.stringify(bodyObj);
 
-    const dispatchOnce = async (accessToken: string) => {
-      const sigHeaders = await this.deps.signer.signRequest({
-        method: 'POST',
-        path,
-        body: bodyStr,
-        idempotencyKey
-      });
-
-      return this.transport.streamChatCompletions({
-        url: `${this.deps.getBaseUrl()}${path}`,
-        headers: {
-          ...sigHeaders,
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream'
-        },
-        body: bodyStr,
-        signal: config.signal,
-        callbacks: config.callbacks
-      });
-    };
-
-    let token = this.deps.licenseManager.getAccessToken();
-    if (!token) {
-      token = await this.deps.licenseManager.refreshAccessToken();
-    }
-
     let streamed;
     try {
-      streamed = await dispatchOnce(token);
-    } catch (err) {
-      if (isNormalizedAgentError(err) && err.code === 'authentication_required') {
-        const refreshedToken = await this.deps.licenseManager.refreshAccessToken();
-        streamed = await dispatchOnce(refreshedToken);
-      } else if (isNormalizedAgentError(err)) {
-        throw err;
-      } else {
-        throw new NormalizedAgentError({
-          code: 'unknown',
-          message: err instanceof Error ? err.message : String(err),
-          cause: err
+      streamed = await this.deps.tokenProvider.withAccessToken(async accessToken => {
+        const sigHeaders = await this.deps.signer.signRequest({
+          method: 'POST',
+          path,
+          body: bodyStr,
+          idempotencyKey
         });
+
+        return this.transport.streamChatCompletions({
+          url: `${this.deps.getBaseUrl()}${path}`,
+          headers: {
+            ...sigHeaders,
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream'
+          },
+          body: bodyStr,
+          signal: config.signal,
+          callbacks: config.callbacks
+        });
+      });
+    } catch (err) {
+      if (isNormalizedAgentError(err)) {
+        throw err;
       }
+      throw new NormalizedAgentError({
+        code: 'unknown',
+        message: err instanceof Error ? err.message : String(err),
+        cause: err
+      });
     }
 
     let tokenUsage: TokenUsage | undefined;

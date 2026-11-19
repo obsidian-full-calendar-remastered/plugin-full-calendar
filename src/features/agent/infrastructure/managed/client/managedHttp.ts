@@ -1,12 +1,13 @@
 /**
  * @file managedHttp.ts
- * @brief Shared gateway HTTP request, error normalization, and Retry-After parsing helpers.
+ * @brief Shared gateway HTTP request, signing dispatch, and error normalization helpers.
  *
  * @license See LICENSE.md
  */
 
 import { type AgentErrorCode, NormalizedAgentError } from '../../../domain/AgentError';
-import type { RequestSigner } from './RequestSigner';
+import { parseRetryAfterHeaderMs } from '../../../domain/httpUtils';
+import type { IRequestSigner } from './RequestSigner';
 import type { GatewayErrorBody } from '../protocol/managedTypes';
 
 export type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -24,19 +25,6 @@ const RETRYABLE_ERROR_CODES = new Set<AgentErrorCode>([
   'provider_timeout'
 ]);
 
-export function parseRetryAfterMs(headerVal: string | null | undefined): number | undefined {
-  if (!headerVal) return undefined;
-  const seconds = Number(headerVal);
-  if (!Number.isNaN(seconds) && seconds >= 0) {
-    return Math.ceil(seconds * 1000);
-  }
-  const dateMs = Date.parse(headerVal);
-  if (!Number.isNaN(dateMs)) {
-    return Math.max(0, dateMs - Date.now());
-  }
-  return undefined;
-}
-
 export function mapGatewayError(
   status: number,
   bodyText: string,
@@ -51,12 +39,12 @@ export function mapGatewayError(
     });
   }
 
-  let parsed: GatewayErrorBody | null = null;
+  let parsed: GatewayErrorBody | undefined;
   if (bodyText.trim().length > 0) {
     try {
       parsed = JSON.parse(bodyText) as GatewayErrorBody;
     } catch {
-      parsed = null;
+      // Non-JSON error body
     }
   }
 
@@ -82,7 +70,7 @@ export function mapGatewayError(
   const retryAfterMs =
     typeof errObj?.retry_after_sec === 'number'
       ? errObj.retry_after_sec * 1000
-      : parseRetryAfterMs(retryAfterHeader);
+      : parseRetryAfterHeaderMs(retryAfterHeader);
 
   return new NormalizedAgentError({
     code,
@@ -98,7 +86,7 @@ export interface SignedJsonRequestOptions {
   baseUrl: string;
   path: string;
   method: 'GET' | 'POST';
-  signer: RequestSigner;
+  signer: IRequestSigner;
   accessToken?: string | null;
   body?: unknown;
   idempotencyKey?: string;
@@ -106,7 +94,7 @@ export interface SignedJsonRequestOptions {
   fetchFn?: FetchLike;
 }
 
-export async function signedJsonRequest<T>(options: SignedJsonRequestOptions): Promise<T> {
+export async function signedFetch(options: SignedJsonRequestOptions): Promise<Response> {
   const fetchImpl = options.fetchFn ?? defaultFetch;
   const bodyStr = options.body !== undefined ? JSON.stringify(options.body) : '';
   const sigHeaders = await options.signer.signRequest({
@@ -127,18 +115,20 @@ export async function signedJsonRequest<T>(options: SignedJsonRequestOptions): P
     headers['Authorization'] = `Bearer ${options.accessToken}`;
   }
 
-  const response = await fetchImpl(`${options.baseUrl}${options.path}`, {
+  return fetchImpl(`${options.baseUrl}${options.path}`, {
     method: options.method,
     headers,
     body: options.method === 'POST' ? bodyStr : undefined,
     signal: options.signal
   });
+}
 
+export async function signedJsonRequest<T>(options: SignedJsonRequestOptions): Promise<T> {
+  const response = await signedFetch(options);
   const text = await response.text().catch(() => '');
   if (!response.ok) {
     throw mapGatewayError(response.status, text, response.headers?.get?.('retry-after'));
   }
-
   if (!text) {
     return {} as T;
   }

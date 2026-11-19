@@ -33,6 +33,7 @@ export type {
   TrialRegistrationOutcome
 } from './protocol/managedTypes';
 export { renderManagedSettingsSection } from './ui/ManagedSettingsSection';
+export { promptManagedOnboarding } from './ui/ManagedOnboardingModal';
 
 export interface ManagedSubsystemOptions {
   app?: App;
@@ -75,20 +76,18 @@ export function createManagedAgentSubsystem(
   const trialManager = new TrialManager({
     getBaseUrl,
     keyManager,
-    secretStorage,
     signer,
-    usageCache,
+    persistSession: input => licenseManager.persistSession(input),
     refreshSessionFn: async () => {
       await licenseManager.refreshAccessToken();
     },
-    onSessionUpdated: options.onSessionUpdated,
     fetchFn: options.fetchFn
   });
 
   const client = new ManagedAgentClient({
     getBaseUrl,
     signer,
-    licenseManager,
+    tokenProvider: licenseManager,
     usageCache,
     fetchFn: options.fetchFn
   });

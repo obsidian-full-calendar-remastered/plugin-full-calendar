@@ -7,11 +7,16 @@
 
 import type { AgentErrorCode } from '../../../domain/AgentError';
 
+declare const __FCR_BUILD_ENV__: 'production' | 'staging' | undefined;
+
 export const MANAGED_PROTOCOL_VERSION = '2026-11-16';
 export const PROD_GATEWAY_URL = 'https://gateway.destyleer.in.net';
 export const STAGING_GATEWAY_URL = 'https://staging-gateway.destyleer.in.net';
 
 export function getBuildEnvironment(): 'production' | 'staging' {
+  if (typeof __FCR_BUILD_ENV__ !== 'undefined') {
+    return __FCR_BUILD_ENV__;
+  }
   if (typeof process !== 'undefined' && process.env?.BUILD_ENV === 'production') {
     return 'production';
   }

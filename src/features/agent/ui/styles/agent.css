@@ -760,5 +760,18 @@
   line-height: 1.4;
 }
 
+.ofc-managed-onboarding-list {
+  margin: 12px 0 18px 0;
+  padding-left: 18px;
+  font-size: 0.9em;
+  line-height: 1.55;
+  color: var(--text-normal);
+}
+
+.ofc-managed-onboarding-list li {
+  margin-bottom: 6px;
+}
+
+
 
 

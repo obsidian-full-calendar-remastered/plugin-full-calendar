@@ -20,9 +20,9 @@ import type { AgentEngine } from '../core/AgentEngine';
 import type { AgentCalendarBridge } from '../tools/AgentCalendarBridge';
 import type { AgentAuditLogger } from '../core/AgentAuditLogger';
 import { ProposalApprovalCard } from './ProposalApprovalCard';
+import { openAgentSidebarLeaf } from './openAgentSidebar';
 import { showNotice } from '../../../utils/showNotice';
 import { t } from '../../i18n/i18n';
-import { FULL_CALENDAR_AGENT_VIEW } from '../types';
 
 export interface AgentChatComponentOptions {
   app: App;
@@ -36,6 +36,7 @@ export interface AgentChatComponentOptions {
   onEventMutated?: () => void;
   onOpenSidebar?: (initialPrompt?: string) => void;
   onSessionUpdated?: () => void;
+  beforeSend?: () => Promise<boolean>;
 }
 
 const setCssProps = (element: HTMLElement, props: Record<string, string>): void => {
@@ -342,6 +343,11 @@ export class AgentChatComponent extends Component {
     const text = this.inputEl.value.trim();
     if (!text) return;
 
+    if (this.options.beforeSend) {
+      const allowed = await this.options.beforeSend();
+      if (!allowed) return;
+    }
+
     this.inputEl.value = '';
     setCssProps(this.inputEl, { height: 'auto' });
 
@@ -438,28 +444,6 @@ export class AgentChatComponent extends Component {
       return;
     }
 
-    const workspace = this.options.app.workspace;
-    let leaf = workspace.getLeavesOfType(FULL_CALENDAR_AGENT_VIEW)[0];
-    if (!leaf) {
-      const rightLeaf = workspace.getRightLeaf(false);
-      if (rightLeaf) {
-        await rightLeaf.setViewState({
-          type: FULL_CALENDAR_AGENT_VIEW,
-          active: true
-        });
-        leaf = rightLeaf;
-      }
-    }
-
-    if (leaf) {
-      void workspace.revealLeaf(leaf);
-      const leafView = leaf.view as { setPrompt?: (p: string) => void; focus?: () => void };
-      if (typeof leafView?.setPrompt === 'function' && prompt) {
-        leafView.setPrompt(prompt);
-      }
-      if (typeof leafView?.focus === 'function') {
-        leafView.focus();
-      }
-    }
+    await openAgentSidebarLeaf(this.options.app, prompt);
   }
 }

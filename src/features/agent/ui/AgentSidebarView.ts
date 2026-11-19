@@ -35,6 +35,7 @@ export class AgentSidebarView extends ItemView {
   private sessionSelectEl!: HTMLSelectElement;
   private chatComponent!: AgentChatComponent;
   private onEventMutated?: () => void;
+  private beforeSend?: () => Promise<boolean>;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -42,7 +43,8 @@ export class AgentSidebarView extends ItemView {
     engine: AgentEngine,
     logger: AgentAuditLogger,
     bridge: AgentCalendarBridge,
-    onEventMutated?: () => void
+    onEventMutated?: () => void,
+    beforeSend?: () => Promise<boolean>
   ) {
     super(leaf);
     this.plugin = plugin;
@@ -50,6 +52,7 @@ export class AgentSidebarView extends ItemView {
     this.logger = logger;
     this.bridge = bridge;
     this.onEventMutated = onEventMutated;
+    this.beforeSend = beforeSend;
   }
 
   public getViewType(): string {
@@ -99,7 +102,8 @@ export class AgentSidebarView extends ItemView {
       parentComponent: this,
       compact: false,
       onEventMutated: this.onEventMutated,
-      onSessionUpdated: () => this.updateSessionDropdown()
+      onSessionUpdated: () => this.updateSessionDropdown(),
+      beforeSend: this.beforeSend
     });
   }
 

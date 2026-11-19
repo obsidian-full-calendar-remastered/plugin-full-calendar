@@ -7,6 +7,7 @@
 
 import { type App, Setting } from 'obsidian';
 import { microcreditsToWtc } from '../../../domain/Usage';
+import { bindAsyncButtonAction } from '../../../ui/uiButtonUtils';
 import { showNotice } from '../../../../../utils/showNotice';
 import type { ManagedAgentSettings } from '../../../../../types/settings';
 import {
@@ -16,7 +17,7 @@ import {
   type IManagedUsageService,
   getBuildEnvironment
 } from '../protocol/managedTypes';
-import { ExternalVerificationModal } from './ExternalVerificationModal';
+import { startTrialWithVerification } from './ExternalVerificationModal';
 
 export interface ManagedSettingsSectionDeps {
   app: App;
@@ -148,38 +149,23 @@ export function renderManagedSettingsSection(
     .setDesc('Activate your one-time 500,000-credit lifetime free trial on this device.')
     .addButton(btn => {
       btn.setCta();
-      btn.setButtonText('Start free trial');
-      btn.onClick(async () => {
-        btn.setDisabled(true);
-        btn.setButtonText('Registering...');
-        try {
-          const outcome = await deps.accountService.startAnonymousTrial();
-          if (outcome.status === 'active') {
-            showNotice('Free trial activated.');
-            renderSummary(outcome.usage);
+      bindAsyncButtonAction(
+        btn,
+        {
+          idleText: 'Start free trial',
+          busyText: 'Registering...',
+          fallbackError: 'Unable to start trial.'
+        },
+        async () => {
+          await startTrialWithVerification(deps.app, deps.accountService, usage => {
+            renderSummary(usage ?? deps.usageService.getUsageSnapshot());
             deps.onStateChanged?.();
-          } else {
-            new ExternalVerificationModal(
-              deps.app,
-              outcome.verificationUrl,
-              outcome.transactionId,
-              deps.accountService,
-              () => {
-                renderSummary(deps.usageService.getUsageSnapshot());
-                deps.onStateChanged?.();
-              }
-            ).open();
-          }
-        } catch (err) {
-          showNotice(err instanceof Error ? err.message : 'Unable to start trial.');
-        } finally {
-          btn.setDisabled(false);
-          btn.setButtonText('Start free trial');
+          });
         }
-      });
+      );
     });
 
-  // 4. License key activation (Pro $7 / Power $14)
+  // 4. License key activation (Pro $7 / Power $11)
   let rawLicenseInput = '';
   const currentMasked = deps.getManagedSettings().licenseKeyMasked;
   new Setting(containerEl)
@@ -196,27 +182,25 @@ export function renderManagedSettingsSection(
       });
     })
     .addButton(btn => {
-      btn.setButtonText('Activate key');
-      btn.onClick(async () => {
-        if (!rawLicenseInput) {
-          showNotice('Please enter your license key.');
-          return;
-        }
-        btn.setDisabled(true);
-        btn.setButtonText('Activating...');
-        try {
+      bindAsyncButtonAction(
+        btn,
+        {
+          idleText: 'Activate key',
+          busyText: 'Activating...',
+          fallbackError: 'Activation failed.'
+        },
+        async () => {
+          if (!rawLicenseInput) {
+            showNotice('Please enter your license key.');
+            return;
+          }
           await deps.activationService.activateLicense(rawLicenseInput);
           rawLicenseInput = '';
           showNotice('Device activated successfully.');
           renderSummary(deps.usageService.getUsageSnapshot());
           deps.onStateChanged?.();
-        } catch (err) {
-          showNotice(err instanceof Error ? err.message : 'Activation failed.');
-        } finally {
-          btn.setDisabled(false);
-          btn.setButtonText('Activate key');
         }
-      });
+      );
     });
 
   // 5. Usage sync & deactivation
@@ -224,36 +208,34 @@ export function renderManagedSettingsSection(
     .setName('Account synchronization')
     .setDesc('Refresh server-authoritative credit balance or release this device activation.')
     .addButton(btn => {
-      btn.setButtonText('Refresh balance');
-      btn.onClick(async () => {
-        btn.setDisabled(true);
-        try {
+      bindAsyncButtonAction(
+        btn,
+        {
+          idleText: 'Refresh balance',
+          fallbackError: 'Unable to refresh balance.'
+        },
+        async () => {
           const fresh = await deps.usageService.refreshUsage();
           renderSummary(fresh);
           showNotice('Balance refreshed.');
-        } catch (err) {
-          showNotice(err instanceof Error ? err.message : 'Unable to refresh balance.');
-        } finally {
-          btn.setDisabled(false);
         }
-      });
+      );
     })
     .addButton(btn => {
-      btn.setButtonText('Deactivate device');
       btn.setClass('mod-warning');
-      btn.onClick(async () => {
-        btn.setDisabled(true);
-        try {
+      bindAsyncButtonAction(
+        btn,
+        {
+          idleText: 'Deactivate device',
+          fallbackError: 'Deactivation failed.'
+        },
+        async () => {
           await deps.activationService.deactivateDevice();
           renderSummary(null);
           showNotice('Device deactivated and local credentials cleared.');
           deps.onStateChanged?.();
-        } catch (err) {
-          showNotice(err instanceof Error ? err.message : 'Deactivation failed.');
-        } finally {
-          btn.setDisabled(false);
         }
-      });
+      );
     });
 
   // 6. Non-production gateway override (hidden in production builds)

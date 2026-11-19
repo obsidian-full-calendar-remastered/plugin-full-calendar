@@ -27,6 +27,7 @@ import type {
 } from '../types';
 import type { AgentAuditLogger } from '../core/AgentAuditLogger';
 import { canonicalJson, computeProposalApprovalHash, sha256HexSync } from '../domain/crypto/sha256';
+import { generateRandomId } from '../domain/crypto/randomId';
 
 export const PROPOSAL_TTL_MS = 5 * 60 * 1000;
 const MUTATION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -42,7 +43,67 @@ export class AgentCalendarBridge {
   }
 
   private generateId(prefix: string): string {
-    return `${prefix}_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+    return generateRandomId(prefix);
+  }
+
+  private buildValidatedSingleEvent(params: {
+    cleanTitle: string;
+    category?: string;
+    subCategory?: string;
+    normDate: string;
+    normEndDate?: string | null;
+    allDay: boolean;
+    startTime?: string;
+    endTime?: string;
+    description?: string;
+    location?: string;
+  }): { fullTitle: string; eventData: OFCEvent } | null {
+    const fullTitle = this.constructFullTitle(
+      params.cleanTitle,
+      params.category,
+      params.subCategory
+    );
+    const normEndDate = params.normEndDate ?? null;
+
+    let eventData: OFCEvent;
+    if (params.allDay) {
+      eventData = {
+        title: fullTitle,
+        type: 'single',
+        date: params.normDate,
+        endDate: normEndDate,
+        allDay: true,
+        category: params.category,
+        subCategory: params.subCategory,
+        description: params.description,
+        location: params.location
+      };
+    } else {
+      const startTime = this.normalizeIsoTime(params.startTime, '09:00');
+      let endTime = this.normalizeIsoTime(params.endTime, '10:00');
+      if (startTime >= endTime && !normEndDate) {
+        const [h, m] = startTime.split(':').map(Number);
+        endTime = `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      }
+      eventData = {
+        title: fullTitle,
+        type: 'single',
+        date: params.normDate,
+        endDate: normEndDate,
+        allDay: false,
+        startTime,
+        endTime,
+        category: params.category,
+        subCategory: params.subCategory,
+        description: params.description,
+        location: params.location
+      };
+    }
+
+    if (!validateEvent(eventData)) {
+      return null;
+    }
+    return { fullTitle, eventData };
   }
 
   private finalizeProposalSecurity<T extends EventProposal>(proposal: T): T {
@@ -306,50 +367,22 @@ export class AgentCalendarBridge {
 
     const normDate = this.normalizeIsoDate(params.date);
     const normEndDate = params.endDate ? this.normalizeIsoDate(params.endDate) : null;
-    const fullTitle = this.constructFullTitle(cleanTitle, params.category, params.subCategory);
-
-    let eventData: OFCEvent;
-    if (params.allDay) {
-      eventData = {
-        title: fullTitle,
-        type: 'single',
-        date: normDate,
-        endDate: normEndDate,
-        allDay: true,
-        category: params.category,
-        subCategory: params.subCategory,
-        description: params.description,
-        location: params.location
-      };
-    } else {
-      const startTime = this.normalizeIsoTime(params.startTime, '09:00');
-      let endTime = this.normalizeIsoTime(params.endTime, '10:00');
-      if (startTime >= endTime && !normEndDate) {
-        // Automatically default end time to 1 hour after start time if invalid
-        const [h, m] = startTime.split(':').map(Number);
-        endTime = `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-      }
-
-      eventData = {
-        title: fullTitle,
-        type: 'single',
-        date: normDate,
-        endDate: normEndDate,
-        allDay: false,
-        startTime,
-        endTime,
-        category: params.category,
-        subCategory: params.subCategory,
-        description: params.description,
-        location: params.location
-      };
+    const built = this.buildValidatedSingleEvent({
+      cleanTitle,
+      category: params.category,
+      subCategory: params.subCategory,
+      normDate,
+      normEndDate,
+      allDay: params.allDay,
+      startTime: params.startTime,
+      endTime: params.endTime,
+      description: params.description,
+      location: params.location
+    });
+    if (!built) {
+      throw new Error(`Event validation failed for proposed event: ${cleanTitle}`);
     }
-
-    // Validate using Zod schema
-    const validation = validateEvent(eventData);
-    if (!validation) {
-      throw new Error(`Event validation failed for proposed event: ${fullTitle}`);
-    }
+    const { fullTitle, eventData } = built;
 
     const proposal: CreateEventProposal = this.finalizeProposalSecurity({
       id: this.generateId('prop_create'),
@@ -507,43 +540,17 @@ export class AgentCalendarBridge {
         continue;
       }
 
-      const fullTitle = this.constructFullTitle(cleanTitle, ev.category, ev.subCategory);
-
-      let eventData: OFCEvent;
-      if (ev.allDay) {
-        eventData = {
-          title: fullTitle,
-          type: 'single',
-          date: normDate,
-          endDate: null,
-          allDay: true,
-          category: ev.category,
-          subCategory: ev.subCategory,
-          description: ev.description
-        };
-      } else {
-        const startTime = this.normalizeIsoTime(ev.startTime, '09:00');
-        let endTime = this.normalizeIsoTime(ev.endTime, '10:00');
-        if (startTime >= endTime) {
-          const [h, m] = startTime.split(':').map(Number);
-          endTime = `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-        }
-        eventData = {
-          title: fullTitle,
-          type: 'single',
-          date: normDate,
-          endDate: null,
-          allDay: false,
-          startTime,
-          endTime,
-          category: ev.category,
-          subCategory: ev.subCategory,
-          description: ev.description
-        };
-      }
-
-      const validation = validateEvent(eventData);
-      if (!validation) continue;
+      const built = this.buildValidatedSingleEvent({
+        cleanTitle,
+        category: ev.category,
+        subCategory: ev.subCategory,
+        normDate,
+        allDay: ev.allDay,
+        startTime: ev.startTime,
+        endTime: ev.endTime,
+        description: ev.description
+      });
+      if (!built) continue;
 
       items.push({
         id: this.generateId('item'),
@@ -552,7 +559,7 @@ export class AgentCalendarBridge {
         cleanTitle,
         category: ev.category,
         subCategory: ev.subCategory,
-        eventData
+        eventData: built.eventData
       });
     }
 

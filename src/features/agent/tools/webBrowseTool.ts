@@ -58,17 +58,60 @@ function sanitizeHtmlToText(html: string): string {
   return cleaned;
 }
 
+function isPrivateIpv4(host: string): boolean {
+  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!match) return false;
+  const octets = [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4])];
+  if (octets.some(o => o < 0 || o > 255)) return true;
+  const [a, b] = octets;
+  if (a === 0 || a === 10 || a === 127) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  return false;
+}
+
+function isPrivateIpv6(host: string): boolean {
+  if (!host.includes(':')) return false;
+  const lower = host.toLowerCase();
+  if (lower === '::' || lower === '::1') return true;
+  // IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1 or ::ffff:7f00:1)
+  if (lower.startsWith('::ffff:')) {
+    const mapped = lower.slice(7);
+    if (isPrivateIpv4(mapped)) return true;
+    const hexParts = mapped.split(':');
+    if (hexParts.length === 2) {
+      const hi = parseInt(hexParts[0], 16);
+      const lo = parseInt(hexParts[1], 16);
+      if (!Number.isNaN(hi) && !Number.isNaN(lo)) {
+        const ipv4 = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+        if (isPrivateIpv4(ipv4)) return true;
+      }
+    }
+    return true;
+  }
+  // Link-local fe80::/10 and Unique Local fc00::/7
+  const firstGroup = parseInt(lower.split(':')[0] || '0', 16);
+  if (!Number.isNaN(firstGroup)) {
+    if ((firstGroup & 0xffc0) === 0xfe80) return true;
+    if ((firstGroup & 0xfe00) === 0xfc00) return true;
+  }
+  return false;
+}
+
 function isPrivateOrLocalHost(urlStr: string): boolean {
   try {
     const parsed = new URL(urlStr);
-    const host = parsed.hostname.toLowerCase();
+    const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
     if (
+      !host ||
       host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host === '::1' ||
-      host === '0.0.0.0' ||
-      host === '169.254.169.254' ||
-      host.endsWith('.local')
+      host.endsWith('.localhost') ||
+      host.endsWith('.local') ||
+      host.endsWith('.internal') ||
+      isPrivateIpv4(host) ||
+      isPrivateIpv6(host)
     ) {
       return true;
     }

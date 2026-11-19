@@ -28,7 +28,8 @@ export class AgentWriteBar {
     bridge: AgentCalendarBridge,
     onEventMutated?: () => void,
     onOpenSidebar?: (initialPrompt?: string) => void,
-    parentComponent?: Component
+    parentComponent?: Component,
+    beforeSend?: () => Promise<boolean>
   ) {
     this.containerEl = containerEl;
     this.chatComponent = new AgentChatComponent(this.containerEl, {
@@ -41,7 +42,8 @@ export class AgentWriteBar {
       showClearBtn: true,
       showOpenPanelBtn: true,
       onEventMutated,
-      onOpenSidebar
+      onOpenSidebar,
+      beforeSend
     });
   }
 

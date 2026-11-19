@@ -24,6 +24,7 @@ import type {
   IAgentClient,
   StreamCallbacks
 } from '../domain/contracts/IAgentClient';
+import { parseRetryAfterHeaderMs, sanitizeChatMessages } from '../domain/httpUtils';
 
 export type {
   StreamCallbacks,
@@ -106,17 +107,8 @@ export class AgentClient implements IAgentClient {
       const rec = headers as Record<string, string>;
       header = rec['retry-after'] || rec['Retry-After'] || null;
     }
-    if (!header) return null;
-    const seconds = parseInt(header, 10);
-    if (!isNaN(seconds) && seconds >= 0) {
-      return seconds * 1000;
-    }
-    const date = Date.parse(header);
-    if (!isNaN(date)) {
-      const diff = date - Date.now();
-      return diff > 0 ? diff : null;
-    }
-    return null;
+    const parsed = parseRetryAfterHeaderMs(header);
+    return parsed !== undefined ? parsed : null;
   }
 
   private calculateBackoff(attempt: number, retryAfterMs: number | null): number {
@@ -166,16 +158,7 @@ export class AgentClient implements IAgentClient {
   ): Record<string, unknown> {
     const payload: Record<string, unknown> = {
       model: this.options.model,
-      messages: messages.map(m => {
-        const base: Record<string, unknown> = {
-          role: m.role,
-          content: m.content
-        };
-        if (m.name) base.name = m.name;
-        if (m.tool_call_id) base.tool_call_id = m.tool_call_id;
-        if (m.tool_calls) base.tool_calls = m.tool_calls;
-        return base;
-      })
+      messages: sanitizeChatMessages(messages)
     };
 
     if (typeof this.options.temperature === 'number') {
@@ -192,31 +175,24 @@ export class AgentClient implements IAgentClient {
     return payload;
   }
 
-  private extractErrorMessage(status: number, text?: string, json?: unknown): string {
-    if (json && typeof json === 'object') {
-      const obj = json as Record<string, unknown>;
-      if (obj.error && typeof obj.error === 'object') {
-        const errObj = obj.error as Record<string, unknown>;
-        if (errObj.message && typeof errObj.message === 'string') {
-          return errObj.message;
-        }
-      }
-      if (obj.message && typeof obj.message === 'string') {
-        return obj.message;
-      }
+  private extractMessageFromObject(obj: unknown): string | null {
+    if (!obj || typeof obj !== 'object') return null;
+    const record = obj as Record<string, unknown>;
+    if (record.error && typeof record.error === 'object') {
+      const errObj = record.error as Record<string, unknown>;
+      if (typeof errObj.message === 'string') return errObj.message;
     }
+    return typeof record.message === 'string' ? record.message : null;
+  }
+
+  private extractErrorMessage(status: number, text?: string, json?: unknown): string {
+    const fromJson = this.extractMessageFromObject(json);
+    if (fromJson) return fromJson;
+
     if (text && text.trim().length > 0) {
       try {
-        const parsed = JSON.parse(text) as Record<string, unknown>;
-        if (parsed.error && typeof parsed.error === 'object') {
-          const errObj = parsed.error as Record<string, unknown>;
-          if (errObj.message && typeof errObj.message === 'string') {
-            return errObj.message;
-          }
-        }
-        if (parsed.message && typeof parsed.message === 'string') {
-          return parsed.message;
-        }
+        const fromParsed = this.extractMessageFromObject(JSON.parse(text));
+        if (fromParsed) return fromParsed;
       } catch {
         // Not JSON text
       }
@@ -230,6 +206,25 @@ export class AgentClient implements IAgentClient {
     return /temperature.*deprecated|deprecated.*temperature|unsupported.*temperature|temperature.*not supported|invalid.*temperature/i.test(
       message
     );
+  }
+
+  private tryHealTemperatureRejection(
+    status: number,
+    text: string | undefined,
+    json: unknown,
+    payload: Record<string, unknown>,
+    contextLabel: string
+  ): boolean {
+    if (status !== 400 || !('temperature' in payload)) return false;
+    const errorDetail = this.extractErrorMessage(status, text, json);
+    if (!this.isTemperatureRejection(status, errorDetail)) return false;
+    this.logger?.warn(
+      `Endpoint rejected temperature parameter. Retrying ${contextLabel} without temperature...`,
+      { model: this.options.model }
+    );
+    delete payload.temperature;
+    delete this.options.temperature;
+    return true;
   }
 
   private handleHttpError(
@@ -348,25 +343,17 @@ export class AgentClient implements IAgentClient {
       });
 
       // Auto-healing fallback: if 400 specifically rejects temperature, retry once without it
-      if (res && res.status === 400 && 'temperature' in payload) {
-        const text = res?.text ?? '';
-        const json: unknown = res?.json;
-        const errorDetail = this.extractErrorMessage(res.status, text, json);
-        if (this.isTemperatureRejection(res.status, errorDetail)) {
-          this.logger?.warn(
-            'Endpoint rejected temperature parameter. Retrying test ping without temperature...',
-            { model: this.options.model }
-          );
-          delete payload.temperature;
-          delete this.options.temperature;
-          res = await requestUrl({
-            url,
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload),
-            throw: false
-          });
-        }
+      if (
+        res &&
+        this.tryHealTemperatureRejection(res.status, res.text, res.json, payload, 'test ping')
+      ) {
+        res = await requestUrl({
+          url,
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          throw: false
+        });
       }
 
       if (res && res.status === 200) {
@@ -451,17 +438,16 @@ export class AgentClient implements IAgentClient {
         }
 
         // 3. Auto-healing fallback: if 400 specifically rejects temperature, retry once without it
-        if (res.status === 400 && 'temperature' in payload) {
-          const errorDetail = this.extractErrorMessage(res.status, res.text, res.json);
-          if (this.isTemperatureRejection(res.status, errorDetail)) {
-            this.logger?.warn(
-              'Endpoint rejected temperature parameter. Retrying chat completion without temperature...',
-              { model: this.options.model }
-            );
-            delete payload.temperature;
-            delete this.options.temperature;
-            continue;
-          }
+        if (
+          this.tryHealTemperatureRejection(
+            res.status,
+            res.text,
+            res.json,
+            payload,
+            'chat completion'
+          )
+        ) {
+          continue;
         }
 
         // 4. Non-retryable error

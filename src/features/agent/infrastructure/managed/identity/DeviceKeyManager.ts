@@ -60,6 +60,10 @@ export class DeviceKeyManager {
     return bytesToBase64Url(new Uint8Array(digest));
   }
 
+  private async importRuntimeSigningKey(subtle: SubtleCrypto, jwk: JsonWebKey): Promise<CryptoKey> {
+    return subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  }
+
   public async ensureKeyPair(): Promise<DeviceKeyMaterial> {
     if (this.cached) {
       return this.cached;
@@ -72,13 +76,7 @@ export class DeviceKeyManager {
     if (storedPrivJwk && storedPubSpki) {
       try {
         const jwk = JSON.parse(storedPrivJwk) as JsonWebKey;
-        const privateKey = await subtle.importKey(
-          'jwk',
-          jwk,
-          { name: 'ECDSA', namedCurve: 'P-256' },
-          false,
-          ['sign']
-        );
+        const privateKey = await this.importRuntimeSigningKey(subtle, jwk);
         const keyId = await this.computeKeyId(base64UrlToBytes(storedPubSpki));
         this.cached = {
           keyId,
@@ -107,13 +105,7 @@ export class DeviceKeyManager {
     this.secretStorage.setSecret('pub-spki', publicKeySpkiB64Url);
 
     // Re-import non-extractable runtime handle for signing operations
-    const runtimePrivKey = await subtle.importKey(
-      'jwk',
-      privJwk,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false,
-      ['sign']
-    );
+    const runtimePrivKey = await this.importRuntimeSigningKey(subtle, privJwk);
 
     this.cached = {
       keyId,

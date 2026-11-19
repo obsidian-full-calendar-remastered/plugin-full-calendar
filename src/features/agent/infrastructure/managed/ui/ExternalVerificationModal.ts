@@ -8,7 +8,34 @@
 import { type App, Modal } from 'obsidian';
 import { openExternalUrl } from '../../../../../utils/openExternalUrl';
 import { showNotice } from '../../../../../utils/showNotice';
-import type { IManagedAccountService } from '../protocol/managedTypes';
+import type { AccountUsageSnapshot, IManagedAccountService } from '../protocol/managedTypes';
+
+/**
+ * Shared trial registration + Turnstile verification orchestration used by
+ * both ManagedOnboardingModal and ManagedSettingsSection.
+ */
+export async function startTrialWithVerification(
+  app: App,
+  accountService: IManagedAccountService,
+  onActivated: (usage?: AccountUsageSnapshot) => void
+): Promise<void> {
+  const outcome = await accountService.startAnonymousTrial();
+  if (outcome.status === 'active') {
+    showNotice('Free trial activated (500,000 credits).');
+    onActivated(outcome.usage);
+    return;
+  }
+
+  new ExternalVerificationModal(
+    app,
+    outcome.verificationUrl,
+    outcome.transactionId,
+    accountService,
+    () => {
+      onActivated();
+    }
+  ).open();
+}
 
 export class ExternalVerificationModal extends Modal {
   private readonly verificationUrl: string;

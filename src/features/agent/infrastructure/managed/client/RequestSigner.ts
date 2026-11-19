@@ -5,6 +5,7 @@
  * @license See LICENSE.md
  */
 
+import { generateRandomId } from '../../../domain/crypto/randomId';
 import { sha256HexSync } from '../../../domain/crypto/sha256';
 import { MANAGED_PROTOCOL_VERSION } from '../protocol/managedTypes';
 import type { DeviceKeyManager } from '../identity/DeviceKeyManager';
@@ -29,13 +30,6 @@ export function buildCanonicalRequest(parts: CanonicalRequestParts): string {
   ].join('\n');
 }
 
-function generateNonce(): string {
-  if (typeof window !== 'undefined' && typeof window.crypto?.randomUUID === 'function') {
-    return window.crypto.randomUUID();
-  }
-  return `nonce_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-}
-
 export interface SignGatewayRequestParams {
   method: string;
   path: string;
@@ -45,7 +39,11 @@ export interface SignGatewayRequestParams {
   timestampMs?: number;
 }
 
-export class RequestSigner {
+export interface IRequestSigner {
+  signRequest(params: SignGatewayRequestParams): Promise<Record<string, string>>;
+}
+
+export class RequestSigner implements IRequestSigner {
   private readonly keyManager: DeviceKeyManager;
 
   constructor(keyManager: DeviceKeyManager) {
@@ -54,7 +52,7 @@ export class RequestSigner {
 
   public async signRequest(params: SignGatewayRequestParams): Promise<Record<string, string>> {
     const timestampMs = String(params.timestampMs ?? Date.now());
-    const nonce = params.nonce ?? generateNonce();
+    const nonce = params.nonce ?? generateRandomId('nonce');
     const bodySha256Hex = sha256HexSync(params.body ?? '');
 
     const canonical = buildCanonicalRequest({

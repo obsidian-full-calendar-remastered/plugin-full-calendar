@@ -22,27 +22,23 @@ declare const app: { secretStorage?: ISecretBackingStore } | undefined;
 
 export type ManagedSecretSlot = 'priv-jwk' | 'pub-spki' | 'access-tok' | 'refresh-tok';
 
+function isSecretBackingStore(candidate: unknown): candidate is ISecretBackingStore {
+  return (
+    Boolean(candidate) &&
+    typeof (candidate as ISecretBackingStore).getSecret === 'function' &&
+    typeof (candidate as ISecretBackingStore).setSecret === 'function'
+  );
+}
+
 export function resolveObsidianSecretStorage(
   appInstance?: unknown
 ): ISecretBackingStore | undefined {
-  const fromArg = (appInstance as { secretStorage?: ISecretBackingStore } | undefined)
-    ?.secretStorage;
-  if (
-    fromArg &&
-    typeof fromArg.getSecret === 'function' &&
-    typeof fromArg.setSecret === 'function'
-  ) {
+  const fromArg = (appInstance as { secretStorage?: unknown } | undefined)?.secretStorage;
+  if (isSecretBackingStore(fromArg)) {
     return fromArg;
   }
   const fromGlobal = typeof app !== 'undefined' ? app?.secretStorage : undefined;
-  if (
-    fromGlobal &&
-    typeof fromGlobal.getSecret === 'function' &&
-    typeof fromGlobal.setSecret === 'function'
-  ) {
-    return fromGlobal;
-  }
-  return undefined;
+  return isSecretBackingStore(fromGlobal) ? fromGlobal : undefined;
 }
 
 export class SecretStorageAdapter {

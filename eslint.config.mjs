@@ -20,7 +20,8 @@ export default tseslint.config(
             'docs/**',
             'coverage/**',
             'obsidian-dev-vault/**',
-            'tools/**'
+            'tools/**',
+            'externals/**'
         ]
     },
     {

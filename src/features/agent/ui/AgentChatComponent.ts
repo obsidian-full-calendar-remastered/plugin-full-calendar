@@ -271,9 +271,17 @@ export class AgentChatComponent extends Component {
 
   private getProposalCardCallbacks() {
     return {
-      onApprove: async (proposalId: string, overrideCalendarId?: string) => {
+      onApprove: async (
+        proposalId: string,
+        overrideCalendarId?: string,
+        expectedApprovalHash?: string
+      ) => {
         try {
-          const res = await this.options.bridge.commitProposal(proposalId, overrideCalendarId);
+          const res = await this.options.bridge.commitProposal(
+            proposalId,
+            overrideCalendarId,
+            expectedApprovalHash
+          );
           if (res.success) {
             showNotice(t('agent.notices.eventApplied'));
             await this.options.engine.saveCurrentSession();

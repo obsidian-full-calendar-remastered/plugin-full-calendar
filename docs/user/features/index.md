@@ -21,12 +21,12 @@
 | CLI & Automations | [Developer API & CLI](api.md) | Access your calendar programmatically via REST API and PATs |
 | Wellness Break Reminders | [Break Timer](break-timer.md) | Periodically remind yourself to take a break with a fullscreen, video-backed wellness overlay and desktop notification |
 | Export Event Cache | [ICS Export](ics-export.md) | Export your calendar events and tasks as a standard .ics file for use elsewhere |
-| Chat with your schedule | [Calendar Agent (BYOK)](agent.md) | AI assistant for querying events, drafting meetings, and scraping web schedules |
+| Chat with your schedule | [Calendar Agent (Managed AI & BYOK)](agent.md) | GDPR-compliant Zero Data Retention AI assistant (500k-credit free trial, Pro/Power plans, or BYOK) for querying events, drafting meetings, and scraping web schedules |
 
 ## Feature Directory
 
 - **Power Tool**: [FCR Command (NLP)](nlp.md)
-- Agentic AI: [Calendar Agent (BYOK)](agent.md)
+- Agentic AI: [Calendar Agent (Managed AI & BYOK)](agent.md)
 - Interaction: [Interactions and Gestures](interactions.md)
 - Progression: [Milestones and Progress](milestones.md)
 - Alerting: [Reminders and Notifications](reminders.md), [FCR Reminder Companion](fcr-reminder.md) & [Break Timer](break-timer.md)

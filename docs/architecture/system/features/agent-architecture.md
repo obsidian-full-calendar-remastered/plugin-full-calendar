@@ -1,12 +1,15 @@
 # Calendar Agent Architecture
 
-This document details the architectural layout, security constraints, data flow, and components of the **Bring-Your-Own-Key (BYOK) Calendar Agent** subsystem in Full Calendar Remastered.
+This document details the architectural layout, security constraints, data flow, and components of the **Calendar Agent (Managed AI & BYOK)** subsystem in Full Calendar Remastered.
 
 ---
 
 ## Architectural Workflow & Topology
 
-The agent subsystem is decoupled into a presentation layer, an orchestration engine, a transport client, a sandboxed calendar bridge, and an isolated local storage manager:
+The agent subsystem follows strict Dependency Inversion (`IAgentClient`), decoupling the conversation orchestration engine (`AgentEngine`) and shared calendar write-approval safety (`AgentCalendarBridge`) from the active transport provider:
+
+* **Managed AI Transport (`src/features/agent/infrastructure/managed/`)** — Default out-of-the-box mode communicating with the GDPR-compliant, Zero Data Retention Cloudflare Worker + Durable Object gateway (`gateway.destyleer.in.net`) using Web Crypto **ECDSA P-256** request signatures, activate-once Paddle licensing, and read-only server balance projections (`UsageSnapshotCache`).
+* **BYOK Transport (`src/features/agent/core/AgentClient.ts`)** — Direct OpenAI-compatible client supporting OpenAI, OpenRouter, Groq, DeepSeek, Ollama, and LM Studio.
 
 ```mermaid
 flowchart TD

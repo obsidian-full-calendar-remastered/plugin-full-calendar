@@ -259,8 +259,21 @@ export interface FullCalendarSettings {
   sidebarConfig: SidebarSettings;
 }
 
+export type AgentMode = 'byok' | 'managed';
+
+export interface ManagedAgentSettings {
+  gatewayUrl?: string;
+  principalId?: string;
+  activationId?: string;
+  keyId?: string;
+  licenseKeyMasked?: string;
+  planTier?: 'trial' | 'pro' | 'power';
+  currentPeriodEnd?: string;
+}
+
 export interface AgentSettings {
   enabled: boolean;
+  mode?: AgentMode;
   endpointUrl: string;
   model: string;
   apiKey?: string;
@@ -268,6 +281,7 @@ export interface AgentSettings {
   specUrl: string;
   maxRetries: number;
   timeoutMs: number;
+  managed?: ManagedAgentSettings;
 }
 
 export interface SidebarSettings {
@@ -412,6 +426,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   },
   agent: {
     enabled: true,
+    mode: 'managed',
     endpointUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
     apiKey: '',

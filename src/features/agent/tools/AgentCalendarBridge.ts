@@ -26,9 +26,15 @@ import type {
   CurrentTimeInfo
 } from '../types';
 import type { AgentAuditLogger } from '../core/AgentAuditLogger';
+import { canonicalJson, computeProposalApprovalHash, sha256HexSync } from '../domain/crypto/sha256';
+
+export const PROPOSAL_TTL_MS = 5 * 60 * 1000;
+const MUTATION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_MUTATION_HISTORY = 500;
 
 export class AgentCalendarBridge {
   private pendingProposals: Map<string, EventProposal> = new Map();
+  private appliedMutationKeys: Map<string, number> = new Map();
   private logger?: AgentAuditLogger;
 
   constructor(logger?: AgentAuditLogger) {
@@ -37,6 +43,26 @@ export class AgentCalendarBridge {
 
   private generateId(prefix: string): string {
     return `${prefix}_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+  }
+
+  private finalizeProposalSecurity<T extends EventProposal>(proposal: T): T {
+    proposal.expiresAt = proposal.createdAt + PROPOSAL_TTL_MS;
+    proposal.mutationIdempotencyKey = this.generateId('mut');
+    proposal.approvalHash = computeProposalApprovalHash(proposal);
+    return proposal;
+  }
+
+  private recordMutationKey(key: string): void {
+    const now = Date.now();
+    this.appliedMutationKeys.set(key, now);
+    if (this.appliedMutationKeys.size > MAX_MUTATION_HISTORY) {
+      const cutoff = now - MUTATION_RETENTION_MS;
+      for (const [k, ts] of this.appliedMutationKeys.entries()) {
+        if (ts < cutoff || this.appliedMutationKeys.size > MAX_MUTATION_HISTORY) {
+          this.appliedMutationKeys.delete(k);
+        }
+      }
+    }
   }
 
   public getPendingProposals(): EventProposal[] {
@@ -325,7 +351,7 @@ export class AgentCalendarBridge {
       throw new Error(`Event validation failed for proposed event: ${fullTitle}`);
     }
 
-    const proposal: CreateEventProposal = {
+    const proposal: CreateEventProposal = this.finalizeProposalSecurity({
       id: this.generateId('prop_create'),
       type: 'CREATE',
       status: 'PENDING',
@@ -336,7 +362,7 @@ export class AgentCalendarBridge {
       category: params.category,
       subCategory: params.subCategory,
       eventData
-    };
+    });
 
     this.pendingProposals.set(proposal.id, proposal);
     this.logger?.proposal('Created proposal', 'CREATE', {
@@ -405,18 +431,20 @@ export class AgentCalendarBridge {
       updated.description = updates.description;
     }
 
-    const proposal: UpdateEventProposal = {
+    const proposal: UpdateEventProposal = this.finalizeProposalSecurity({
       id: this.generateId('prop_update'),
       type: 'UPDATE',
       status: 'PENDING',
       createdAt: Date.now(),
+      sourceSnapshotHash: sha256HexSync(canonicalJson(original)),
+      recurrenceScope: original.type === 'rrule' ? 'entire_series' : 'single',
       calendarId: calId,
       calendarName: calName,
       eventId,
       originalEvent: original,
       updatedEvent: updated,
       changedFields
-    };
+    });
 
     this.pendingProposals.set(proposal.id, proposal);
     this.logger?.proposal('Created proposal', 'UPDATE', { proposalId: proposal.id, eventId });
@@ -433,17 +461,19 @@ export class AgentCalendarBridge {
     const calId = details?.calendarId || '';
     const calName = this.getCalendarSources().find(s => s.id === calId)?.name || 'Calendar';
 
-    const proposal: DeleteEventProposal = {
+    const proposal: DeleteEventProposal = this.finalizeProposalSecurity({
       id: this.generateId('prop_delete'),
       type: 'DELETE',
       status: 'PENDING',
       createdAt: Date.now(),
+      sourceSnapshotHash: sha256HexSync(canonicalJson(event)),
+      recurrenceScope: event.type === 'rrule' ? 'entire_series' : 'single',
       calendarId: calId,
       calendarName: calName,
       eventId,
       eventTitle: event.title,
       reason
-    };
+    });
 
     this.pendingProposals.set(proposal.id, proposal);
     this.logger?.proposal('Created proposal', 'DELETE', { proposalId: proposal.id, eventId });
@@ -530,7 +560,7 @@ export class AgentCalendarBridge {
       throw new Error('No valid events could be staged from the provided batch data.');
     }
 
-    const proposal: BatchCreateProposal = {
+    const proposal: BatchCreateProposal = this.finalizeProposalSecurity({
       id: this.generateId('prop_batch'),
       type: 'BATCH_CREATE',
       status: 'PENDING',
@@ -538,7 +568,7 @@ export class AgentCalendarBridge {
       calendarId: cal.id,
       calendarName: cal.name,
       items
-    };
+    });
 
     this.pendingProposals.set(proposal.id, proposal);
     this.logger?.proposal('Created proposal', 'BATCH_CREATE', {
@@ -558,7 +588,8 @@ export class AgentCalendarBridge {
 
   public async commitProposal(
     proposalId: string,
-    overrideCalendarId?: string
+    overrideCalendarId?: string,
+    expectedApprovalHash?: string
   ): Promise<{ success: boolean; message: string }> {
     const proposal = this.pendingProposals.get(proposalId);
     if (!proposal) {
@@ -568,8 +599,69 @@ export class AgentCalendarBridge {
       return { success: false, message: `Proposal is already in status: ${proposal.status}` };
     }
 
+    if (
+      proposal.mutationIdempotencyKey &&
+      this.appliedMutationKeys.has(proposal.mutationIdempotencyKey)
+    ) {
+      return {
+        success: false,
+        message: 'Mutation was already executed (duplicate idempotency key).'
+      };
+    }
+
+    if (proposal.expiresAt !== undefined && Date.now() > proposal.expiresAt) {
+      proposal.status = 'FAILED';
+      this.pendingProposals.delete(proposalId);
+      return {
+        success: false,
+        message:
+          'Proposal expired (5-minute limit). Please re-run the request to preview fresh changes.'
+      };
+    }
+
+    const liveHash = computeProposalApprovalHash(proposal, overrideCalendarId);
+    if (expectedApprovalHash !== undefined) {
+      if (expectedApprovalHash !== liveHash) {
+        return {
+          success: false,
+          message: 'Proposal arguments changed after preview. Approval invalidated for safety.'
+        };
+      }
+    } else if (
+      !overrideCalendarId &&
+      proposal.type !== 'BATCH_CREATE' &&
+      proposal.approvalHash &&
+      proposal.approvalHash !== liveHash
+    ) {
+      return {
+        success: false,
+        message: 'Proposal arguments changed after preview. Approval invalidated for safety.'
+      };
+    }
+
     const cache = PluginState.getCache();
     const targetCalendarId = overrideCalendarId || proposal.calendarId;
+
+    if (proposal.type === 'UPDATE' || proposal.type === 'DELETE') {
+      const currentEvent = cache.getEventById(proposal.eventId);
+      if (!currentEvent) {
+        proposal.status = 'FAILED';
+        this.pendingProposals.delete(proposalId);
+        return { success: false, message: 'Target event no longer exists.' };
+      }
+      if (
+        proposal.sourceSnapshotHash &&
+        sha256HexSync(canonicalJson(currentEvent)) !== proposal.sourceSnapshotHash
+      ) {
+        proposal.status = 'FAILED';
+        this.pendingProposals.delete(proposalId);
+        return {
+          success: false,
+          message:
+            'Target event changed since preview. Please request a fresh preview before applying.'
+        };
+      }
+    }
 
     try {
       if (proposal.type === 'CREATE') {
@@ -591,6 +683,9 @@ export class AgentCalendarBridge {
       }
 
       proposal.status = 'APPROVED';
+      if (proposal.mutationIdempotencyKey) {
+        this.recordMutationKey(proposal.mutationIdempotencyKey);
+      }
       this.pendingProposals.delete(proposalId);
       this.logger?.proposal('Proposal approved and applied', proposal.type, { proposalId });
       return { success: true, message: 'Event action applied successfully.' };

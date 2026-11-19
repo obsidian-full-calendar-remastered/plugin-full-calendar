@@ -103,11 +103,18 @@ export interface ChatCompletionChunk {
 export type ProposalType = 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH_CREATE';
 export type ProposalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'FAILED';
 
+export type RecurrenceMutationScope = 'single' | 'this_and_future' | 'entire_series';
+
 export interface BaseProposal {
   id: string;
   type: ProposalType;
   status: ProposalStatus;
   createdAt: number;
+  expiresAt?: number;
+  approvalHash?: string;
+  mutationIdempotencyKey?: string;
+  sourceSnapshotHash?: string;
+  recurrenceScope?: RecurrenceMutationScope;
   calendarId: string;
   calendarName: string;
 }

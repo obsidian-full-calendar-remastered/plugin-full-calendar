@@ -17,6 +17,20 @@
 import { requestUrl } from 'obsidian';
 import type { ChatMessage, ToolDefinition, ChatToolCall } from '../types';
 import type { AgentAuditLogger } from './AgentAuditLogger';
+import type {
+  ChatCompletionRequestConfig,
+  CompletionResult,
+  ConnectionTestResult,
+  IAgentClient,
+  StreamCallbacks
+} from '../domain/contracts/IAgentClient';
+
+export type {
+  StreamCallbacks,
+  CompletionResult,
+  ChatCompletionRequestConfig,
+  ConnectionTestResult
+};
 
 export class AgentApiError extends Error {
   public status: number;
@@ -45,20 +59,7 @@ export interface AgentClientOptions {
   timeoutMs?: number;
 }
 
-export interface StreamCallbacks {
-  onChunk?: (contentDelta: string) => void;
-  onToolCallDelta?: (toolCalls: ChatToolCall[]) => void;
-  onRetry?: (attempt: number, maxRetries: number, delayMs: number, reason: string) => void;
-}
-
-export interface CompletionResult {
-  content: string;
-  toolCalls: ChatToolCall[];
-  durationMs: number;
-  tokenUsage?: { prompt: number; completion: number; total: number };
-}
-
-export class AgentClient {
+export class AgentClient implements IAgentClient {
   private options: AgentClientOptions;
   private logger?: AgentAuditLogger;
 
@@ -396,12 +397,7 @@ export class AgentClient {
   public async chatCompletion(
     messages: ChatMessage[],
     tools: ToolDefinition[],
-    config: {
-      stream?: boolean;
-      maxTokens?: number;
-      signal?: AbortSignal;
-      callbacks?: StreamCallbacks;
-    } = {}
+    config: ChatCompletionRequestConfig = {}
   ): Promise<CompletionResult> {
     const url = this.normalizeUrl(this.options.endpointUrl);
     const maxRetries = this.options.maxRetries ?? 3;

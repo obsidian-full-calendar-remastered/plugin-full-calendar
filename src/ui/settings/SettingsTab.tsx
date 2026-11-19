@@ -815,6 +815,10 @@ export class FullCalendarSettingTab {
           import('../../features/availability/ui/AvailabilitySettings')
         ]);
 
+        if (this.plugin.agentManager) {
+          this.plugin.agentManager.renderSettings(containerEl);
+        }
+
         renderCredentialsSettings(containerEl, () => {
           this.renderSettings();
         });
@@ -843,9 +847,6 @@ export class FullCalendarSettingTab {
         renderApiAccessSettings(containerEl, this.plugin, () => {
           this.renderSettings();
         });
-        if (this.plugin.agentManager) {
-          this.plugin.agentManager.renderSettings(containerEl);
-        }
         break;
       }
     }

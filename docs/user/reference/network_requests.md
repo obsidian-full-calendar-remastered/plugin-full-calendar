@@ -89,3 +89,22 @@ This page acts as a complete, audited registry of all network communications per
 - **Endpoints:** User-configured local daemon API port (default: `http://127.0.0.1:45677`).
 - **Purpose:** Probing daemon status (`/status`) and pushing notification payloads (`/sync`) to trigger desktop notifications.
 - **Trigger:** Background timer pinging and sync cycles when reminders are enabled.
+
+---
+
+## Calendar Agent (Managed AI & BYOK)
+
+### Managed AI Cloud Gateway (Default — GDPR & Zero Data Retention)
+- **Connection:** Outbound (Internet, HTTPS/SSE)
+- **Related Guides:** [Calendar Agent Guide](../features/agent.md) | [Privacy Policy](../legal/privacy-policy.md)
+- **Endpoints:**
+    - `gateway.destyleer.in.net` (`/v1/trials/register`, `/v1/licenses/activate`, `/v1/account/usage`, `/v1/chat/completions`)
+- **Purpose:** Cryptographically signed (ECDSA P-256) stateless chat completion streaming and Weighted Token Credit (WTC) accounting via EU-hosted Zero Data Retention (ZDR) inference. Zero prompts or calendar event contents are persisted on the gateway or AI provider.
+- **Trigger:** User-initiated prompts, trial activation, license activation, or balance refreshes when the Calendar Agent is enabled in **Free trial and managed plans** mode.
+
+### Bring-Your-Own-Key (BYOK) AI Endpoints (Optional)
+- **Connection:** Outbound (Internet or Localhost, depending on user preset)
+- **Related Guides:** [Calendar Agent Guide](../features/agent.md)
+- **Endpoints:** User-configured OpenAI-compatible `/v1/chat/completions` endpoint (e.g., `api.openai.com`, `openrouter.ai`, `api.groq.com`, `api.deepseek.com`, or local `http://localhost:11434/v1` for Ollama / `http://localhost:1234/v1` for LM Studio).
+- **Purpose:** Direct LLM completions and tool calls using the user's own API key or local offline inference server.
+- **Trigger:** User-initiated agent chat turns or connection tests when **Provider mode** is switched to **Bring your own key (byok)**.

@@ -145,4 +145,98 @@ describe('AgentCalendarBridge', () => {
     expect(mockCache.addEvent).toHaveBeenCalledTimes(1);
     expect(mockCache.addEvent).toHaveBeenCalledWith('work-cal', proposal.items[0].eventData);
   });
+
+  it('should reject expired proposals after the 5-minute TTL without touching cache', async () => {
+    const bridge = new AgentCalendarBridge();
+    const proposal = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Stale Meeting',
+      date: '2026-09-21',
+      allDay: true
+    });
+
+    proposal.expiresAt = Date.now() - 1000;
+    const res = await bridge.commitProposal(proposal.id, undefined, proposal.approvalHash);
+
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('expired');
+    expect(mockCache.addEvent).not.toHaveBeenCalled();
+  });
+
+  it('should reject argument tampering after staging via approval hash mismatch', async () => {
+    const bridge = new AgentCalendarBridge();
+    const proposal = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Original Meeting',
+      date: '2026-09-22',
+      allDay: true
+    });
+    const previewHash = proposal.approvalHash;
+
+    // Simulate tampering after preview
+    proposal.eventData.title = 'Malicious hijacked meeting';
+
+    const res = await bridge.commitProposal(proposal.id, undefined, previewHash);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('changed after preview');
+    expect(mockCache.addEvent).not.toHaveBeenCalled();
+  });
+
+  it('should reject update/delete if source event changed between preview and commit', async () => {
+    const initialEvent = {
+      id: 'ev-1',
+      title: 'Team Sync',
+      type: 'single' as const,
+      date: '2026-09-23',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00'
+    };
+    mockCache.getEventById.mockReturnValue(initialEvent);
+    mockCache.store.getEventDetails.mockReturnValue({
+      calendarId: 'work-cal',
+      event: initialEvent
+    });
+
+    const bridge = new AgentCalendarBridge();
+    const proposal = bridge.stageUpdateEvent('ev-1', { title: 'Updated Sync' });
+
+    // Source event changes externally before user clicks approve
+    mockCache.getEventById.mockReturnValue({
+      ...initialEvent,
+      startTime: '12:00',
+      endTime: '13:00'
+    });
+
+    const res = await bridge.commitProposal(proposal.id, undefined, proposal.approvalHash);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('Target event changed');
+    expect(mockCache.updateEventWithId).not.toHaveBeenCalled();
+  });
+
+  it('should block duplicate mutation execution even if proposal is re-submitted', async () => {
+    const bridge = new AgentCalendarBridge();
+    const proposal = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Idempotent Meeting',
+      date: '2026-09-24',
+      allDay: true
+    });
+    const hash = proposal.approvalHash;
+    const first = await bridge.commitProposal(proposal.id, undefined, hash);
+    expect(first.success).toBe(true);
+
+    // Simulate re-inserting same mutation key into pending map
+    proposal.status = 'PENDING';
+    (bridge as unknown as { pendingProposals: Map<string, unknown> }).pendingProposals.set(
+      proposal.id,
+      proposal
+    );
+
+    const second = await bridge.commitProposal(proposal.id, undefined, hash);
+    expect(second.success).toBe(false);
+    expect(second.message).toContain('duplicate idempotency key');
+    expect(mockCache.addEvent).toHaveBeenCalledTimes(1);
+  });
 });

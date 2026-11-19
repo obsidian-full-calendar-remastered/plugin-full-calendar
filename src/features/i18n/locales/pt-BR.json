@@ -2095,8 +2095,8 @@
       "payloadDetails": "Payload / detalhes"
     },
     "settings": {
-      "title": "Automações com agente (byok)",
-      "description": "Configure seu agente com chave própria (byok, bring-your-own-key) para automações de calendário. Funciona com qualquer endpoint de API compatível com OpenAI. Todo acesso de escrita fica estritamente condicionado à aprovação do usuário.",
+      "title": "Automações com agente",
+      "description": "Use o teste gratuito integrado e os planos gerenciados (estritamente em conformidade com o GDPR e retenção zero de dados) ou sua própria chave (byok). Todo acesso de escrita fica estritamente condicionado à aprovação do usuário.",
       "enableName": "Ativar barra de escrita do agente",
       "enableDesc": "Mostra a barra de escrita de automação do agente na visualização do calendário e ativa os comandos do agente.",
       "presetName": "Predefinição de endpoint da API",

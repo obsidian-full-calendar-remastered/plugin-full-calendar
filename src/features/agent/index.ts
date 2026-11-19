@@ -14,6 +14,8 @@ import { AgentCalendarBridge } from './tools/AgentCalendarBridge';
 import { SpecLoader } from './core/SpecLoader';
 import { AgentClient } from './core/AgentClient';
 import { AgentEngine } from './core/AgentEngine';
+import type { IAgentClient } from './domain/contracts/IAgentClient';
+import { type ManagedAgentSubsystem, createManagedAgentSubsystem } from './infrastructure/managed';
 import { AgentWriteBar } from './ui/AgentWriteBar';
 import { AgentCommandModal } from './ui/AgentCommandModal';
 import { AgentSidebarView, FULL_CALENDAR_AGENT_VIEW } from './ui/AgentSidebarView';
@@ -30,6 +32,7 @@ export class AgentManager {
   public specLoader: SpecLoader;
   public client: AgentClient;
   public engine: AgentEngine;
+  private managedSubsystem: ManagedAgentSubsystem | null = null;
 
   constructor(plugin: FullCalendarPlugin) {
     this.plugin = plugin;
@@ -54,12 +57,50 @@ export class AgentManager {
     );
 
     this.engine = new AgentEngine(
-      this.client,
+      this.resolveActiveClient(),
       this.storage,
       this.logger,
       this.bridge,
       this.specLoader
     );
+  }
+
+  public getManagedSubsystem(): ManagedAgentSubsystem {
+    if (!this.managedSubsystem) {
+      this.managedSubsystem = createManagedAgentSubsystem({
+        app: this.plugin.app,
+        getGatewayUrl: () => PluginState.getSettings().agent?.managed?.gatewayUrl,
+        onSessionUpdated: async session => {
+          const all = PluginState.getSettings();
+          if (!all.agent) return;
+          if (!session) {
+            all.agent.managed = all.agent.managed?.gatewayUrl
+              ? { gatewayUrl: all.agent.managed.gatewayUrl }
+              : undefined;
+          } else {
+            all.agent.managed = {
+              gatewayUrl: all.agent.managed?.gatewayUrl,
+              principalId: session.principalId,
+              activationId: session.activationId,
+              keyId: session.keyId,
+              licenseKeyMasked: session.licenseKeyMasked,
+              planTier: session.planTier,
+              currentPeriodEnd: session.currentPeriodEnd
+            };
+          }
+          await PluginState.saveSettings();
+        }
+      });
+    }
+    return this.managedSubsystem;
+  }
+
+  private resolveActiveClient(): IAgentClient {
+    const mode = PluginState.getSettings().agent?.mode ?? 'managed';
+    if (mode === 'managed') {
+      return this.getManagedSubsystem().client;
+    }
+    return this.client;
   }
 
   public async init(): Promise<void> {
@@ -116,6 +157,8 @@ export class AgentManager {
       maxRetries: settings?.maxRetries ?? 3,
       timeoutMs: settings?.timeoutMs ?? 60000
     });
+
+    this.engine.setClient(this.resolveActiveClient());
   }
 
   public createWriteBar(
@@ -182,6 +225,17 @@ export {
   AgentChatComponent,
   FULL_CALENDAR_AGENT_VIEW
 };
+export { NormalizedAgentError, isNormalizedAgentError } from './domain/AgentError';
+export type { AgentErrorCode } from './domain/AgentError';
+export { computeWeightedMicrocredits, microcreditsToWtc } from './domain/Usage';
+export type { TokenUsage, ManagedUsageMetadata } from './domain/Usage';
+export type {
+  IAgentClient,
+  StreamCallbacks,
+  CompletionResult,
+  ChatCompletionRequestConfig,
+  ConnectionTestResult
+} from './domain/contracts/IAgentClient';
 export type {
   ChatMessage,
   EventProposal,

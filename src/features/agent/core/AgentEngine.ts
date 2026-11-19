@@ -22,7 +22,11 @@ import type {
   AgentSession,
   AgentSessionSummary
 } from '../types';
-import type { AgentClient, StreamCallbacks, CompletionResult } from './AgentClient';
+import type {
+  CompletionResult,
+  IAgentClient,
+  StreamCallbacks
+} from '../domain/contracts/IAgentClient';
 import type { AgentStorage } from './AgentStorage';
 import type { AgentAuditLogger } from './AgentAuditLogger';
 import type { AgentCalendarBridge } from '../tools/AgentCalendarBridge';
@@ -39,7 +43,7 @@ export interface EngineCallbacks extends StreamCallbacks {
 }
 
 export class AgentEngine {
-  private client: AgentClient;
+  private client: IAgentClient;
   private storage: AgentStorage;
   private logger: AgentAuditLogger;
   private bridge: AgentCalendarBridge;
@@ -49,7 +53,7 @@ export class AgentEngine {
   private isProcessing = false;
 
   constructor(
-    client: AgentClient,
+    client: IAgentClient,
     storage: AgentStorage,
     logger: AgentAuditLogger,
     bridge: AgentCalendarBridge,
@@ -60,6 +64,10 @@ export class AgentEngine {
     this.logger = logger;
     this.bridge = bridge;
     this.specLoader = specLoader;
+  }
+
+  public setClient(client: IAgentClient): void {
+    this.client = client;
   }
 
   public getMessages(): ChatMessage[] {
@@ -395,13 +403,18 @@ export class AgentEngine {
           ...this.messages
         ];
 
-        // 3. Call LLM
+        // 3. Call LLM with a fresh per-turn idempotency key
+        const idempotencyKey =
+          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `turn_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
         callbacks?.onStatus?.('Generating response...');
         let completion: CompletionResult;
         try {
           completion = await this.client.chatCompletion(fullMessages, AGENT_TOOLS, {
             stream: true,
             signal,
+            idempotencyKey,
             callbacks: {
               onChunk: callbacks?.onChunk,
               onRetry: callbacks?.onRetry

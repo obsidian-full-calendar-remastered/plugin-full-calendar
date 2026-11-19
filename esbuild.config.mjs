@@ -61,6 +61,7 @@ async function build() {
     drop: prod ? ['debugger'] : [],
     define: {
       "process.env.BUILD_LEAN": JSON.stringify(isLean ? "true" : "false"),
+      "process.env.BUILD_ENV": JSON.stringify(prod ? "production" : "development"),
     },
     alias: {
       'react': 'preact/compat',

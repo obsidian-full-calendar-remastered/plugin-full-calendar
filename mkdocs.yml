@@ -172,7 +172,7 @@ nav:
                 - Live Preview Decorators: user/features/live-preview.md
                 - Developer API & CLI: user/features/api.md
                 - Share Availability: user/features/availability.md
-                - Calendar Agent (BYOK): user/features/agent.md
+                - Calendar Agent (Managed AI & BYOK): user/features/agent.md
           - Embedded Calendars:
                   - user/embeds/index.md
                   - Deep Dive Specs: user/embeds/deep_dive.md

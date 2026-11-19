@@ -17,13 +17,18 @@ import type {
   DeleteEventProposal,
   BatchCreateProposal
 } from '../types';
+import { computeProposalApprovalHash } from '../domain/crypto/sha256';
 import { t } from '../../i18n/i18n';
 
 export class ProposalApprovalCard {
   private containerEl: HTMLElement;
   private cardEl: HTMLElement;
   private proposal: EventProposal;
-  private onApprove: (proposalId: string, overrideCalendarId?: string) => Promise<void>;
+  private onApprove: (
+    proposalId: string,
+    overrideCalendarId?: string,
+    expectedApprovalHash?: string
+  ) => Promise<void>;
   private onReject: (proposalId: string) => void;
   private onEditInModal?: (proposal: EventProposal) => void;
 
@@ -31,7 +36,11 @@ export class ProposalApprovalCard {
     containerEl: HTMLElement,
     proposal: EventProposal,
     callbacks: {
-      onApprove: (proposalId: string, overrideCalendarId?: string) => Promise<void>;
+      onApprove: (
+        proposalId: string,
+        overrideCalendarId?: string,
+        expectedApprovalHash?: string
+      ) => Promise<void>;
       onReject: (proposalId: string) => void;
       onEditInModal?: (proposal: EventProposal) => void;
     }
@@ -119,6 +128,13 @@ export class ProposalApprovalCard {
   private renderUpdateBody(body: HTMLElement, proposal: UpdateEventProposal): void {
     body.createDiv({ cls: 'ofc-proposal-title', text: proposal.updatedEvent.title });
 
+    if (proposal.recurrenceScope === 'entire_series') {
+      body.createDiv({
+        cls: 'ofc-proposal-warning',
+        text: 'Scope: Entire recurring series'
+      });
+    }
+
     const diffContainer = body.createDiv({ cls: 'ofc-proposal-diff' });
     diffContainer.createEl('strong', { text: t('agent.proposals.changes') });
     const list = diffContainer.createEl('ul');
@@ -146,6 +162,12 @@ export class ProposalApprovalCard {
 
   private renderDeleteBody(body: HTMLElement, proposal: DeleteEventProposal): void {
     body.createDiv({ cls: 'ofc-proposal-title', text: `Delete: "${proposal.eventTitle}"` });
+    if (proposal.recurrenceScope === 'entire_series') {
+      body.createDiv({
+        cls: 'ofc-proposal-warning',
+        text: 'Scope: Entire recurring series'
+      });
+    }
     if (proposal.reason) {
       body.createDiv({ text: `Reason: ${proposal.reason}` });
     }
@@ -172,6 +194,7 @@ export class ProposalApprovalCard {
       cb.checked = item.selected;
       cb.addEventListener('change', () => {
         item.selected = cb.checked;
+        this.proposal.approvalHash = computeProposalApprovalHash(this.proposal);
         this.updateBatchApproveBtn();
       });
 
@@ -262,7 +285,7 @@ export class ProposalApprovalCard {
           this.approveBtn.setText(t('agent.proposals.applying'));
         }
         try {
-          await this.onApprove(this.proposal.id);
+          await this.onApprove(this.proposal.id, undefined, this.proposal.approvalHash);
           this.proposal.status = 'APPROVED';
           this.cardEl.remove();
         } catch {

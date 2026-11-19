@@ -245,7 +245,7 @@ export function renderManagedSettingsSection(
       .setDesc('Non-production builds only. Production builds always use the official gateway.')
       .addText(text => {
         text
-          .setPlaceholder('https://staging-gateway.destyleer.in.net')
+          .setPlaceholder('https://staging-gateway.full-calendar-remastered.in')
           .setValue(deps.getManagedSettings().gatewayUrl || '')
           .onChange(async val => {
             deps.getManagedSettings().gatewayUrl = val.trim();

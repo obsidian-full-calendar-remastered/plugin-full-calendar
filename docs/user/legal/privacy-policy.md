@@ -57,7 +57,7 @@ During OAuth authentication (when using the default client), a temporary interme
 
 ### **Managed AI Service (Strictly GDPR Compliant & Zero Data Retention)**
 
-When you use the optional **Calendar Agent** in its default **Free trial and managed plans** mode (`https://gateway.destyleer.in.net`), the service operates under strict European **GDPR** data minimization and **Zero Data Retention (ZDR)** guarantees:
+When you use the optional **Calendar Agent** in its default **Free trial and managed plans** mode (`https://gateway.full-calendar-remastered.in`), the service operates under strict European **GDPR** data minimization and **Zero Data Retention (ZDR)** guarantees:
 
 * **Zero Prompt & Calendar Content Storage:** Prompts, assistant responses, and calendar event details sent during a generation turn are processed strictly transiently in memory and forwarded to our stateless EU-hosted AI inference endpoint (`/v1/chat/completions`) with **Zero Data Retention** active and **API model training disabled**. No prompt text, response text, or calendar event content is ever logged or persisted in our databases.
 * **Local-Only Conversation Transcripts:** Your conversation history and staged event proposals remain stored 100% locally inside your vault's plugin directory (`.obsidian/plugins/full-calendar-remastered/agent/`).

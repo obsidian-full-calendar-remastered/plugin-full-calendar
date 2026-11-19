@@ -10,8 +10,8 @@ import type { AgentErrorCode } from '../../../domain/AgentError';
 declare const __FCR_BUILD_ENV__: 'production' | 'staging' | undefined;
 
 export const MANAGED_PROTOCOL_VERSION = '2026-11-16';
-export const PROD_GATEWAY_URL = 'https://gateway.destyleer.in.net';
-export const STAGING_GATEWAY_URL = 'https://staging-gateway.destyleer.in.net';
+export const PROD_GATEWAY_URL = 'https://gateway.full-calendar-remastered.in';
+export const STAGING_GATEWAY_URL = 'https://staging-gateway.full-calendar-remastered.in';
 
 export function getBuildEnvironment(): 'production' | 'staging' {
   if (typeof __FCR_BUILD_ENV__ !== 'undefined') {

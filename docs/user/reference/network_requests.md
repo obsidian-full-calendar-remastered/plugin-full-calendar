@@ -98,7 +98,7 @@ This page acts as a complete, audited registry of all network communications per
 - **Connection:** Outbound (Internet, HTTPS/SSE)
 - **Related Guides:** [Calendar Agent Guide](../features/agent.md) | [Privacy Policy](../legal/privacy-policy.md)
 - **Endpoints:**
-    - `gateway.destyleer.in.net` (`/v1/trials/register`, `/v1/licenses/activate`, `/v1/account/usage`, `/v1/chat/completions`)
+    - `gateway.full-calendar-remastered.in` (`/v1/trials/register`, `/v1/licenses/activate`, `/v1/account/usage`, `/v1/chat/completions`)
 - **Purpose:** Cryptographically signed (ECDSA P-256) stateless chat completion streaming and Weighted Token Credit (WTC) accounting via EU-hosted Zero Data Retention (ZDR) inference. Zero prompts or calendar event contents are persisted on the gateway or AI provider.
 - **Trigger:** User-initiated prompts, trial activation, license activation, or balance refreshes when the Calendar Agent is enabled in **Free trial and managed plans** mode.
 

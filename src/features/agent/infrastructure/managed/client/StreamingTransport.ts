@@ -154,16 +154,18 @@ class SseChunkParser {
     }
 
     if (Array.isArray(delta.tool_calls) && delta.tool_calls.length > 0) {
-      for (const tc of delta.tool_calls) {
-        const existing = this.toolMap.get(tc.index) ?? {
-          id: tc.id || `call_${tc.index}`,
+      for (let i = 0; i < delta.tool_calls.length; i++) {
+        const tc = delta.tool_calls[i];
+        const idx = typeof tc.index === 'number' ? tc.index : i;
+        const existing = this.toolMap.get(idx) ?? {
+          id: tc.id || `call_${idx}`,
           name: '',
           arguments: ''
         };
         if (tc.id) existing.id = tc.id;
         if (tc.function?.name) existing.name += tc.function.name;
         if (tc.function?.arguments) existing.arguments += tc.function.arguments;
-        this.toolMap.set(tc.index, existing);
+        this.toolMap.set(idx, existing);
       }
 
       this.callbacks?.onToolCallDelta?.(this.materializeToolCalls());

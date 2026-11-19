@@ -44,7 +44,7 @@ Instead of arbitrary "chat count" limits that penalize short questions, Managed 
 2.  Click the **gear icon (⚙️)** on **Agentic automations** (the top item in Integrations).
 3.  Ensure **Provider mode** is set to **Free trial and managed plans**:
     *   **Free Trial (No Signup Required)**: Click **Start free trial** to immediately generate a device keypair and activate your 500,000 lifetime credits.
-    *   **Paid Plans (Pro $7/mo · Power $11/mo)**: Paste the `fcr_live_...` license key delivered to your email after checkout into **License key activation** and click **Activate key**. The raw key is exchanged once for a hardware-bound P-256 device session and immediately discarded from memory.
+    *   **Paid Plans (Pro $7/mo · Power $11/mo)**: Subscribe at [full-calendar-remastered.in/pricing](https://full-calendar-remastered.in/pricing/). Your `fcr_live_...` license key is displayed immediately on the confirmation page and emailed from `no-reply@full-calendar-remastered.in` (along with subscription management links). Paste it into **License key activation** and click **Activate key**. The raw key is exchanged once for a hardware-bound P-256 device session and immediately discarded from memory.
     *   **Device Management**: Click **Refresh balance** at any time to sync your authoritative server balance, or click **Deactivate device** to release your activation slot when moving to a new computer or mobile device.
 
 ---

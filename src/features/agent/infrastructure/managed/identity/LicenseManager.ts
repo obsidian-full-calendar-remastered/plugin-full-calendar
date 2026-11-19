@@ -176,18 +176,19 @@ export class LicenseManager
   }
 
   public async deactivateDevice(): Promise<void> {
-    const accessToken = this.deps.secretStorage.getSecret('access-tok');
-    if (accessToken) {
+    if (this.hasActiveSession()) {
       try {
-        await signedJsonRequest<{ deactivated: boolean }>({
-          baseUrl: this.deps.getBaseUrl(),
-          path: '/v1/licenses/deactivate',
-          method: 'POST',
-          signer: this.deps.signer,
-          accessToken,
-          body: {},
-          fetchFn: this.deps.fetchFn
-        });
+        await this.withAccessToken(accessToken =>
+          signedJsonRequest<{ deactivated: boolean }>({
+            baseUrl: this.deps.getBaseUrl(),
+            path: '/v1/licenses/deactivate',
+            method: 'POST',
+            signer: this.deps.signer,
+            accessToken,
+            body: {},
+            fetchFn: this.deps.fetchFn
+          })
+        );
       } catch {
         // Proceed with local cleanup even if server session was already revoked.
       }

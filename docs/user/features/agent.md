@@ -1,7 +1,7 @@
 # Calendar Agent (Managed AI & BYOK)
 
 !!! abstract "Feature Overview"
-    Transform how you manage your schedule with an AI calendar agent docked right inside Obsidian. Start immediately with the default **500,000-credit signup-free trial** and **Managed Plans** (**strictly GDPR-compliant with Zero Data Retention**), or switch seamlessly at any time to **Bring-Your-Own-Key (BYOK)** for OpenAI, OpenRouter, Groq, DeepSeek, or 100% offline local models (**Ollama** / **LM Studio**).
+    Transform how you manage your schedule with an AI calendar agent docked right inside Obsidian. Start immediately with the default **1,000,000-credit signup-free trial** and **Managed Plans** (**strictly GDPR-compliant with Zero Data Retention**), or switch seamlessly at any time to **Bring-Your-Own-Key (BYOK)** for OpenAI, OpenRouter, Groq, DeepSeek, or 100% offline local models (**Ollama** / **LM Studio**).
 
 ---
 
@@ -34,7 +34,7 @@ Instead of arbitrary "chat count" limits that penalize short questions, Managed 
 
 | Plan | Price | Credit Allowance | Single-Dimension Token Equivalents | Active Devices | Context Window |
 | :--- | :---: | :---: | :--- | :---: | :---: |
-| **Free trial** | **$0** | **500,000 credits** *(lifetime)* | Up to **500k** input, **5M** cached, or **125k** output tokens | 1 device | 16,000 tokens |
+| **Free trial** | **$0** | **1,000,000 credits** *(lifetime)* | Up to **1M** input, **10M** cached, or **250k** output tokens | 1 device | 16,000 tokens |
 | **Pro** | **$7 / month** | **10,000,000 credits** / month | Up to **10M** input, **100M** cached, or **2.5M** output tokens | 3 devices | 32,000 tokens |
 | **Power** | **$11 / month** | **24,000,000 credits** / month | Up to **24M** input, **240M** cached, or **6M** output tokens | 5 devices | 32,000 tokens |
 
@@ -43,7 +43,7 @@ Instead of arbitrary "chat count" limits that penalize short questions, Managed 
 1.  Open **Settings → Full Calendar Remastered → Integrations**.
 2.  Click the **gear icon (⚙️)** on **Agentic automations** (the top item in Integrations).
 3.  Ensure **Provider mode** is set to **Free trial and managed plans**:
-    *   **Free Trial (No Signup Required)**: Click **Start free trial** to immediately generate a device keypair and activate your 500,000 lifetime credits.
+    *   **Free Trial (No Signup Required)**: Click **Start free trial** to immediately generate a device keypair and activate your 1,000,000 lifetime credits.
     *   **Paid Plans (Pro $7/mo · Power $11/mo)**: Subscribe at [full-calendar-remastered.in/pricing](https://full-calendar-remastered.in/pricing/). Your `fcr_live_...` license key is displayed immediately on the confirmation page and emailed from `no-reply@full-calendar-remastered.in` (along with subscription management links). Paste it into **License key activation** and click **Activate key**. The raw key is exchanged once for a hardware-bound P-256 device session and immediately discarded from memory.
     *   **Device Management**: Click **Refresh balance** at any time to sync your authoritative server balance, or click **Deactivate device** to release your activation slot when moving to a new computer or mobile device.
 

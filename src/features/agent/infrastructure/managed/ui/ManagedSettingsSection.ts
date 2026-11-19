@@ -15,6 +15,8 @@ import {
   type IManagedAccountService,
   type IManagedActivationService,
   type IManagedUsageService,
+  MANAGED_PLAN_CATALOG,
+  type ManagedPlanSpec,
   getBuildEnvironment
 } from '../protocol/managedTypes';
 import { startTrialWithVerification } from './ExternalVerificationModal';
@@ -29,48 +31,10 @@ export interface ManagedSettingsSectionDeps {
   onStateChanged?: () => void;
 }
 
-interface PlanCardSpec {
-  id: 'trial' | 'pro' | 'power';
-  title: string;
-  price: string;
-  allowance: string;
-  details: string[];
-}
-
-const PLAN_CARDS: PlanCardSpec[] = [
-  {
-    id: 'trial',
-    title: 'Free trial',
-    price: '$0',
-    allowance: '500,000 credits (lifetime)',
-    details: [
-      'Up to 500k input, 5M cached, or 125k output tokens',
-      '1 active device · 16k token context',
-      'No signup required'
-    ]
-  },
-  {
-    id: 'pro',
-    title: 'Pro',
-    price: '$7 / month',
-    allowance: '10,000,000 credits / month',
-    details: [
-      'Up to 10M input, 100M cached, or 2.5M output tokens',
-      '3 active devices · 32k token context',
-      'Resets every billing cycle'
-    ]
-  },
-  {
-    id: 'power',
-    title: 'Power',
-    price: '$11 / month',
-    allowance: '24,000,000 credits / month',
-    details: [
-      'Up to 24M input, 240M cached, or 6M output tokens',
-      '5 active devices · 32k token context',
-      'High-volume allowance with prorated upgrades'
-    ]
-  }
+const PLAN_CARDS: ManagedPlanSpec[] = [
+  MANAGED_PLAN_CATALOG.trial,
+  MANAGED_PLAN_CATALOG.pro,
+  MANAGED_PLAN_CATALOG.power
 ];
 
 function formatNumber(n: number): string {
@@ -98,9 +62,9 @@ export function renderManagedSettingsSection(
 
     const header = card.createDiv({ cls: 'ofc-managed-plan-header' });
     header.createSpan({ cls: 'ofc-managed-plan-title', text: plan.title });
-    header.createSpan({ cls: 'ofc-managed-plan-price', text: plan.price });
+    header.createSpan({ cls: 'ofc-managed-plan-price', text: plan.priceLabel });
 
-    card.createDiv({ cls: 'ofc-managed-plan-allowance', text: plan.allowance });
+    card.createDiv({ cls: 'ofc-managed-plan-allowance', text: plan.allowanceSummary });
 
     const list = card.createEl('ul', { cls: 'ofc-managed-plan-features' });
     for (const item of plan.details) {
@@ -115,11 +79,12 @@ export function renderManagedSettingsSection(
     const meta = deps.getManagedSettings();
 
     if (!deps.activationService.hasActiveSession() || !snapshot) {
+      const trialCreditsStr = formatNumber(MANAGED_PLAN_CATALOG.trial.grantWtc);
       statusContainer.createEl('p', {
         cls: 'ofc-managed-status-line',
         text: meta.planTier
           ? `Configured plan: ${meta.planTier}. Click "Refresh balance" or activate a license key below.`
-          : 'No active session yet. Click "Start free trial" below for 500,000 free credits or paste a license key.'
+          : `No active session yet. Click "Start free trial" below for ${trialCreditsStr} free credits or paste a license key.`
       });
       statusContainer.createEl('p', {
         cls: 'ofc-managed-status-sub',
@@ -143,27 +108,36 @@ export function renderManagedSettingsSection(
 
   renderSummary(deps.usageService.getUsageSnapshot());
 
-  // 3. Free trial registration
-  new Setting(containerEl)
-    .setName('Free trial')
-    .setDesc('Activate your one-time 500,000-credit lifetime free trial on this device.')
-    .addButton(btn => {
-      btn.setCta();
-      bindAsyncButtonAction(
-        btn,
-        {
-          idleText: 'Start free trial',
-          busyText: 'Registering...',
-          fallbackError: 'Unable to start trial.'
-        },
-        async () => {
-          await startTrialWithVerification(deps.app, deps.accountService, usage => {
-            renderSummary(usage ?? deps.usageService.getUsageSnapshot());
-            deps.onStateChanged?.();
-          });
-        }
-      );
-    });
+  // 3. Free trial registration (hidden when a trial or paid license session is already active)
+  if (!deps.activationService.hasActiveSession()) {
+    new Setting(containerEl)
+      .setName('Free trial')
+      .setDesc(
+        `Activate your one-time ${formatNumber(MANAGED_PLAN_CATALOG.trial.grantWtc)}-credit lifetime free trial on this device.`
+      )
+      .addButton(btn => {
+        btn.setCta();
+        bindAsyncButtonAction(
+          btn,
+          {
+            idleText: 'Start free trial',
+            busyText: 'Registering...',
+            fallbackError: 'Unable to start trial.'
+          },
+          async () => {
+            const activated = await startTrialWithVerification(
+              deps.app,
+              deps.accountService,
+              () => undefined
+            );
+            if (activated) {
+              deps.onStateChanged?.();
+              renderManagedSettingsSection(containerEl, deps);
+            }
+          }
+        );
+      });
+  }
 
   // 4. License key activation (Pro $7 / Power $11)
   let rawLicenseInput = '';
@@ -197,8 +171,8 @@ export function renderManagedSettingsSection(
           await deps.activationService.activateLicense(rawLicenseInput);
           rawLicenseInput = '';
           showNotice('Device activated successfully.');
-          renderSummary(deps.usageService.getUsageSnapshot());
           deps.onStateChanged?.();
+          renderManagedSettingsSection(containerEl, deps);
         }
       );
     });
@@ -231,9 +205,9 @@ export function renderManagedSettingsSection(
         },
         async () => {
           await deps.activationService.deactivateDevice();
-          renderSummary(null);
           showNotice('Device deactivated and local credentials cleared.');
           deps.onStateChanged?.();
+          renderManagedSettingsSection(containerEl, deps);
         }
       );
     });

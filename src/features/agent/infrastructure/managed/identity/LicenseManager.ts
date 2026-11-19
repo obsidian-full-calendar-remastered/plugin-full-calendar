@@ -194,7 +194,7 @@ export class LicenseManager
       }
     }
 
-    this.deps.keyManager.clear();
+    this.deps.secretStorage.clearTokens();
     this.deps.usageCache.clear();
     await this.deps.onSessionUpdated?.(null);
   }

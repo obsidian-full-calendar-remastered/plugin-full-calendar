@@ -114,7 +114,7 @@ describe('ManagedAgentClient & StreamingTransport', () => {
       fetchFn
     });
 
-    return { client, usageCache, secretStorage };
+    return { client, usageCache, secretStorage, licenseManager, keyManager };
   }
 
   it('decodes split multi-byte UTF-8 SSE frames, tool-call deltas, and terminal fcr:usage', async () => {
@@ -265,5 +265,28 @@ describe('ManagedAgentClient & StreamingTransport', () => {
     } finally {
       process.env.BUILD_ENV = prevEnv;
     }
+  });
+
+  it('preserves device ECDSA keypair across deactivateDevice while clearing session tokens', async () => {
+    const fetchFn: FetchLike = async () =>
+      ({
+        ok: true,
+        status: 200,
+        headers: { get: () => 'application/json' },
+        text: async () => JSON.stringify({ deactivated: true })
+      }) as unknown as Response;
+
+    const { licenseManager, keyManager, secretStorage } = setupHarness(fetchFn);
+    const before = await keyManager.ensureKeyPair();
+    expect(secretStorage.getSecret('access-tok')).toBe('tok_initial');
+
+    await licenseManager.deactivateDevice();
+
+    expect(secretStorage.getSecret('access-tok')).toBeNull();
+    expect(secretStorage.getSecret('refresh-tok')).toBeNull();
+    expect(secretStorage.getSecret('priv-jwk')).not.toBeNull();
+    expect(secretStorage.getSecret('pub-spki')).not.toBeNull();
+    const after = await keyManager.ensureKeyPair();
+    expect(after.keyId).toBe(before.keyId);
   });
 });

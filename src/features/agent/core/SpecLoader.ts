@@ -18,6 +18,27 @@ import type { AgentStorage } from './AgentStorage';
 import type { AgentCalendarBridge } from '../tools/AgentCalendarBridge';
 import type { AgentAuditLogger } from './AgentAuditLogger';
 
+const COMPACT_TOOLS_SECTION = `## 3. Available Tools (Provided via OpenAI \`tools\` Parameter)
+
+- **Read Tools (Silent)**: \`get_events\`, \`get_event_by_id\`, \`get_calendar_sources\`, \`get_user_categories\`, \`get_current_time\` (only if exact seconds/ISO needed), \`browse_schedule_online\` (public \`http\`/\`https\` schedules).
+- **Staged Proposal Tools (User Approval Required)**: \`propose_create_event\`, \`propose_update_event\`, \`propose_delete_event\`, \`propose_batch_create_events\`.`;
+
+/**
+ * Strips legacy duplicated JSON tool schema blocks and redundant get_current_time
+ * few-shot guidance so cached or remote specs stay compact and token-efficient.
+ */
+export function sanitizeAgentSpec(rawSpec: string): string {
+  let cleaned = rawSpec.replace(
+    /##\s*3\.\s*Tool Schemas[^\n]*[\r\n]+[\s\S]*?```json[\s\S]*?```/i,
+    COMPACT_TOOLS_SECTION
+  );
+  cleaned = cleaned.replace(
+    /1\.\s*Calls\s+`get_current_time\(\)`\s*->/g,
+    '1. Uses injected `[Current Local Time]` ->'
+  );
+  return cleaned;
+}
+
 export class SpecLoader {
   private storage: AgentStorage;
   private bridge: AgentCalendarBridge;
@@ -39,7 +60,11 @@ export class SpecLoader {
     if (!forceRefresh) {
       const cached = await this.storage.loadCachedSpec();
       if (cached && cached.trim().length > 0) {
-        return cached;
+        const sanitized = sanitizeAgentSpec(cached);
+        if (sanitized !== cached) {
+          await this.storage.saveCachedSpec(sanitized);
+        }
+        return sanitized;
       }
     }
 
@@ -54,7 +79,7 @@ export class SpecLoader {
         });
 
         if (response.status === 200 && response.text && response.text.trim().length > 0) {
-          const content = response.text;
+          const content = sanitizeAgentSpec(response.text);
           await this.storage.saveCachedSpec(content);
           this.logger?.info('Loaded and cached agent spec from GitHub docs', { url: specUrl });
           return content;
@@ -69,7 +94,13 @@ export class SpecLoader {
 
     // Fallback to cached copy if available
     const existingCache = await this.storage.loadCachedSpec();
-    if (existingCache) return existingCache;
+    if (existingCache) {
+      const sanitized = sanitizeAgentSpec(existingCache);
+      if (sanitized !== existingCache) {
+        await this.storage.saveCachedSpec(sanitized);
+      }
+      return sanitized;
+    }
 
     // Fallback to bundled offline spec
     await this.storage.saveCachedSpec(DEFAULT_AGENT_SPEC);
@@ -101,10 +132,9 @@ export class SpecLoader {
     const contextSection = `
 ---
 
-## REAL-TIME USER ENVIRONMENT CONTEXT
+## FULL CALENDAR REMASTERED — REAL-TIME USER ENVIRONMENT CONTEXT
 
 - **Current Date**: ${timeInfo.currentDate} (${timeInfo.dayOfWeek})
-- **Current Time**: ${timeInfo.currentTime24h} (24-hour format)
 - **Active Timezone**: ${timeInfo.displayTimezone}
 - **Time Format**: ${timeInfo.timeFormat24h ? '24-hour' : '12-hour AM/PM'}
 - **Default Calendar**: "${defaultCal ? defaultCal.name : 'None'}" (id: "${defaultCal ? defaultCal.id : ''}")
@@ -116,8 +146,7 @@ ${calendarListStr}
 ${categoryListStr}
 
 **IMPORTANT FORMATTING RULE**:
-When proposing events, you MUST format the title following the user's category taxonomy:
-\`Category - SubCategory - Title\` or \`Category - Title\`.
+When proposing events, pass a clean event title in \`title\` and the matching category in \`category\` (and optional \`subCategory\`); the bridge formats them as \`Category - SubCategory - Title\` or \`Category - Title\`.
 Never invent non-existent categories when a configured category fits.
 `;
 

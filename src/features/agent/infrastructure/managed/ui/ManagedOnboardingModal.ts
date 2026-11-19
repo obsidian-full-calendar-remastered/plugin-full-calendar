@@ -7,19 +7,24 @@
 
 import { type App, Modal } from 'obsidian';
 import { showNotice } from '../../../../../utils/showNotice';
-import type { IManagedAccountService } from '../protocol/managedTypes';
+import {
+  type IManagedAccountService,
+  type IManagedActivationService,
+  MANAGED_PLAN_CATALOG
+} from '../protocol/managedTypes';
 import { startTrialWithVerification } from './ExternalVerificationModal';
 
 export interface ManagedOnboardingModalOptions {
   app: App;
   accountService: IManagedAccountService;
+  activationService?: IManagedActivationService;
   onAcknowledgeTrial: () => Promise<void>;
   onSwitchToByok: () => Promise<void>;
 }
 
 /**
  * Displays a one-time onboarding modal on the user's first Managed AI prompt,
- * clearly disclosing GDPR compliance, Zero Data Retention (ZDR), the 500k-credit
+ * clearly disclosing GDPR compliance, Zero Data Retention (ZDR), the
  * free trial, paid plan options ($7 Pro / $11 Power), and the BYOK alternative.
  */
 export function promptManagedOnboarding(options: ManagedOnboardingModalOptions): Promise<boolean> {
@@ -64,9 +69,10 @@ class ManagedOnboardingModal extends Modal {
       text: 'Requests run transiently over stateless eu inference endpoints with model training disabled. Neither your prompts nor your calendar events are ever logged or stored on any server. Chat history stays locally in your vault and every calendar edit requires your explicit approval.'
     });
 
+    const trialCredits = MANAGED_PLAN_CATALOG.trial.grantWtc.toLocaleString('en-US');
     const detailsList = contentEl.createEl('ul', { cls: 'ofc-managed-onboarding-list' });
     detailsList.createEl('li', {
-      text: 'Free trial ($0): Includes 500,000 lifetime credits with no signup required.'
+      text: `Free trial ($0): Includes ${trialCredits} lifetime credits with no signup required.`
     });
     detailsList.createEl('li', {
       text: 'Paid plans (optional): Upgrade anytime to pro ($7/month · 10m credits · 3 devices) or power ($11/month · 24m credits · 5 devices).'
@@ -74,6 +80,42 @@ class ManagedOnboardingModal extends Modal {
     detailsList.createEl('li', {
       text: 'Bring your own key (byok): Switch anytime in settings to use your own OpenAI, Anthropic, groq, ollama, or lm studio endpoint.'
     });
+
+    const activationService = this.options.activationService;
+    if (activationService) {
+      const licenseRow = contentEl.createDiv({ cls: 'ofc-managed-onboarding-license' });
+      const licenseInput = licenseRow.createEl('input', {
+        attr: {
+          type: 'password',
+          placeholder: 'Already have a license key? Paste it here'
+        }
+      });
+      const activateBtn = licenseRow.createEl('button', {
+        text: 'Activate key and continue'
+      });
+      activateBtn.addEventListener('click', () => {
+        void (async () => {
+          const rawKey = licenseInput.value.trim();
+          if (!rawKey) {
+            showNotice('Please enter a license key.');
+            return;
+          }
+          activateBtn.disabled = true;
+          activateBtn.setText('Activating key...');
+          try {
+            await activationService.activateLicense(rawKey);
+            await this.options.onAcknowledgeTrial();
+            showNotice('License activated.');
+            this.finish(true);
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Unable to activate license key.';
+            showNotice(msg);
+            activateBtn.disabled = false;
+            activateBtn.setText('Activate key and continue');
+          }
+        })();
+      });
+    }
 
     const btnRow = contentEl.createDiv({ cls: 'modal-button-container' });
 
@@ -86,10 +128,18 @@ class ManagedOnboardingModal extends Modal {
         trialBtn.disabled = true;
         trialBtn.setText('Activating free trial...');
         try {
-          await this.options.onAcknowledgeTrial();
-          await startTrialWithVerification(this.app, this.options.accountService, () => {
+          const activated = await startTrialWithVerification(
+            this.app,
+            this.options.accountService,
+            () => undefined
+          );
+          if (activated) {
+            await this.options.onAcknowledgeTrial();
             this.finish(true);
-          });
+            return;
+          }
+          trialBtn.disabled = false;
+          trialBtn.setText('Start free trial and continue');
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Unable to start free trial.';
           showNotice(msg);

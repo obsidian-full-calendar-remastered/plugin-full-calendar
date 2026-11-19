@@ -87,16 +87,14 @@ export class AgentManager {
     }
 
     const subsystem = this.getManagedSubsystem();
-    if (
-      subsystem.activationService.hasActiveSession() ||
-      allSettings.agent?.managed?.onboardingAcknowledged
-    ) {
+    if (subsystem.activationService.hasActiveSession()) {
       return true;
     }
 
     return promptManagedOnboarding({
       app: this.plugin.app,
       accountService: subsystem.accountService,
+      activationService: subsystem.activationService,
       onAcknowledgeTrial: async () => {
         const ag = ensureAgentSettings();
         ag.managed = { ...ag.managed, onboardingAcknowledged: true };

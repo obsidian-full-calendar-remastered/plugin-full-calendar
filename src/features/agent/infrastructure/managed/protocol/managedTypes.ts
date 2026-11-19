@@ -38,6 +38,66 @@ export function resolveGatewayBaseUrl(configuredUrl?: string): string {
 export type ManagedPlanTier = 'trial' | 'pro' | 'power';
 export type ManagedEntitlementStatus = 'active' | 'past_due' | 'paused' | 'canceled' | 'revoked';
 
+export interface ManagedPlanSpec {
+  id: ManagedPlanTier;
+  title: string;
+  priceLabel: string;
+  grantWtc: number;
+  grantMicrocredits: number;
+  maxActivations: number;
+  maxInputTokens: number;
+  allowanceSummary: string;
+  details: string[];
+}
+
+export const MANAGED_PLAN_CATALOG: Record<ManagedPlanTier, ManagedPlanSpec> = {
+  trial: {
+    id: 'trial',
+    title: 'Free trial',
+    priceLabel: '$0',
+    grantWtc: 1_000_000,
+    grantMicrocredits: 10_000_000,
+    maxActivations: 1,
+    maxInputTokens: 16_000,
+    allowanceSummary: '1,000,000 credits (lifetime)',
+    details: [
+      'Up to 1m input, 10m cached, or 250k output tokens',
+      '1 active device · 16k token context',
+      'No signup required'
+    ]
+  },
+  pro: {
+    id: 'pro',
+    title: 'Pro',
+    priceLabel: '$7 / month',
+    grantWtc: 10_000_000,
+    grantMicrocredits: 100_000_000,
+    maxActivations: 3,
+    maxInputTokens: 32_000,
+    allowanceSummary: '10,000,000 credits / month',
+    details: [
+      'Up to 10m input, 100m cached, or 2.5m output tokens',
+      '3 active devices · 32k token context',
+      'Resets every billing cycle'
+    ]
+  },
+  power: {
+    id: 'power',
+    title: 'Power',
+    priceLabel: '$11 / month',
+    grantWtc: 24_000_000,
+    grantMicrocredits: 240_000_000,
+    maxActivations: 5,
+    maxInputTokens: 32_000,
+    allowanceSummary: '24,000,000 credits / month',
+    details: [
+      'Up to 24m input, 240m cached, or 6m output tokens',
+      '5 active devices · 32k token context',
+      'High-volume allowance with prorated upgrades'
+    ]
+  }
+};
+
 export interface WireAccountUsage {
   principal_id: string;
   plan_tier: ManagedPlanTier;

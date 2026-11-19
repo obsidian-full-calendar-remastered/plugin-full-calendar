@@ -8,33 +8,50 @@
 import { type App, Modal } from 'obsidian';
 import { openExternalUrl } from '../../../../../utils/openExternalUrl';
 import { showNotice } from '../../../../../utils/showNotice';
-import type { AccountUsageSnapshot, IManagedAccountService } from '../protocol/managedTypes';
+import {
+  type AccountUsageSnapshot,
+  type IManagedAccountService,
+  MANAGED_PLAN_CATALOG
+} from '../protocol/managedTypes';
 
 /**
  * Shared trial registration + Turnstile verification orchestration used by
  * both ManagedOnboardingModal and ManagedSettingsSection.
+ * Resolves true if trial was activated, false if browser verification was cancelled.
  */
 export async function startTrialWithVerification(
   app: App,
   accountService: IManagedAccountService,
   onActivated: (usage?: AccountUsageSnapshot) => void
-): Promise<void> {
+): Promise<boolean> {
   const outcome = await accountService.startAnonymousTrial();
   if (outcome.status === 'active') {
-    showNotice('Free trial activated (500,000 credits).');
+    const creditsFormatted = MANAGED_PLAN_CATALOG.trial.grantWtc.toLocaleString('en-US');
+    showNotice(`Free trial activated (${creditsFormatted} credits).`);
     onActivated(outcome.usage);
-    return;
+    return true;
   }
 
-  new ExternalVerificationModal(
-    app,
-    outcome.verificationUrl,
-    outcome.transactionId,
-    accountService,
-    () => {
-      onActivated();
-    }
-  ).open();
+  return new Promise<boolean>(resolve => {
+    let verified = false;
+    const modal = new ExternalVerificationModal(
+      app,
+      outcome.verificationUrl,
+      outcome.transactionId,
+      accountService,
+      () => {
+        verified = true;
+        onActivated();
+        resolve(true);
+      },
+      () => {
+        if (!verified) {
+          resolve(false);
+        }
+      }
+    );
+    modal.open();
+  });
 }
 
 export class ExternalVerificationModal extends Modal {
@@ -42,6 +59,7 @@ export class ExternalVerificationModal extends Modal {
   private readonly transactionId: string;
   private readonly accountService: IManagedAccountService;
   private readonly onVerified: () => void;
+  private readonly onDismissed?: () => void;
   private abortController: AbortController | null = null;
 
   constructor(
@@ -49,13 +67,15 @@ export class ExternalVerificationModal extends Modal {
     verificationUrl: string,
     transactionId: string,
     accountService: IManagedAccountService,
-    onVerified: () => void
+    onVerified: () => void,
+    onDismissed?: () => void
   ) {
     super(app);
     this.verificationUrl = verificationUrl;
     this.transactionId = transactionId;
     this.accountService = accountService;
     this.onVerified = onVerified;
+    this.onDismissed = onDismissed;
   }
 
   onOpen(): void {
@@ -104,5 +124,6 @@ export class ExternalVerificationModal extends Modal {
     this.abortController?.abort();
     this.abortController = null;
     this.contentEl.empty();
+    this.onDismissed?.();
   }
 }

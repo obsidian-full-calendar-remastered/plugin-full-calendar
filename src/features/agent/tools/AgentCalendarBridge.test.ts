@@ -48,13 +48,19 @@ describe('AgentCalendarBridge', () => {
     });
   });
 
-  it('should return current time and timezone correctly in read API', () => {
+  it('should return current time and timezone accurately including midnight h23 and explicit timestamps', () => {
     const bridge = new AgentCalendarBridge();
     const timeInfo = bridge.getCurrentTime();
 
     expect(timeInfo.displayTimezone).toBe('America/New_York');
     expect(typeof timeInfo.currentDate).toBe('string');
     expect(typeof timeInfo.currentTime24h).toBe('string');
+
+    // 2026-11-19T05:05:00Z is 00:05 in America/New_York (EST, UTC-5) — must format as 00:05, never 24:05
+    const midnightInfo = bridge.getCurrentTime(Date.UTC(2026, 10, 19, 5, 5, 0));
+    expect(midnightInfo.currentDate).toBe('2026-11-19');
+    expect(midnightInfo.currentTime24h).toBe('00:05');
+    expect(midnightInfo.dayOfWeek).toBe('Thursday');
   });
 
   it('should return user categories accurately', () => {
@@ -238,5 +244,64 @@ describe('AgentCalendarBridge', () => {
     expect(second.success).toBe(false);
     expect(second.message).toContain('duplicate idempotency key');
     expect(mockCache.addEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('should deduplicate category prefixes in constructFullTitle and validate/track updates accurately in stageUpdateEvent', () => {
+    const bridge = new AgentCalendarBridge();
+
+    // LLM supplies "Work - Standup" along with category: "Work" -> must NOT become "Work - Work - Standup"
+    const createProp = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Work - Standup',
+      category: 'Work',
+      date: '2026-09-25',
+      allDay: true
+    });
+    expect(createProp.eventData.title).toBe('Work - Standup');
+
+    const subCatProp = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Work - Dev - API Review',
+      category: 'Work',
+      subCategory: 'Dev',
+      date: '2026-09-25',
+      allDay: true
+    });
+    expect(subCatProp.eventData.title).toBe('Work - Dev - API Review');
+
+    const originalEvent = {
+      id: 'ev-upd-1',
+      title: 'Work - Old Sync',
+      category: 'Work',
+      type: 'single' as const,
+      date: '2026-09-25',
+      endDate: null,
+      allDay: false,
+      startTime: '10:00',
+      endTime: '11:00'
+    };
+    mockCache.getEventById.mockReturnValue(originalEvent);
+    mockCache.store.getEventDetails.mockReturnValue({
+      calendarId: 'work-cal',
+      event: originalEvent
+    });
+
+    // Invalid date in stageUpdateEvent must throw
+    expect(() => bridge.stageUpdateEvent('ev-upd-1', { date: '2026-02-30' })).toThrow(
+      /does not exist/i
+    );
+
+    // Valid update strips duplicate prefix and records full new title in changedFields
+    const updProp = bridge.stageUpdateEvent('ev-upd-1', {
+      title: 'Work - New Sync',
+      date: '2026-09-26',
+      startTime: '9:30'
+    });
+    expect(updProp.updatedEvent.title).toBe('Work - New Sync');
+    expect(updProp.changedFields.title).toEqual({
+      old: 'Work - Old Sync',
+      new: 'Work - New Sync'
+    });
+    expect(updProp.changedFields.startTime).toEqual({ old: '10:00', new: '09:30' });
   });
 });

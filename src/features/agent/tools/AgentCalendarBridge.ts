@@ -134,21 +134,46 @@ export class AgentCalendarBridge {
   // UNLIMITED READ API (SILENT EXECUTION)
   // ==========================================================================
 
-  public getCurrentTime(): CurrentTimeInfo {
-    const now = new Date();
+  public getCurrentTime(atMs: number = Date.now()): CurrentTimeInfo {
+    const now = new Date(atMs);
     const settings = PluginState.getSettings();
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const pad = (n: number) => String(n).padStart(2, '0');
+    const systemTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const desiredTz = settings.displayTimezone || systemTz;
 
-    const isoDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    let activeTz = desiredTz;
+    let parts: Intl.DateTimeFormatPart[];
+    const formatWithTz = (tz: string) =>
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hourCycle: 'h23',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        weekday: 'long'
+      }).formatToParts(now);
+
+    try {
+      parts = formatWithTz(desiredTz);
+    } catch {
+      activeTz = systemTz;
+      parts = formatWithTz(systemTz);
+    }
+
+    const partValue = (type: Intl.DateTimeFormatPartTypes): string =>
+      parts.find(p => p.type === type)?.value ?? '';
+    const hourRaw = partValue('hour');
+    const hour = hourRaw === '24' ? '00' : hourRaw;
+    const isoDate = `${partValue('year')}-${partValue('month')}-${partValue('day')}`;
+    const timeStr = `${hour}:${partValue('minute')}`;
 
     return {
       currentIsoTimestamp: now.toISOString(),
       currentDate: isoDate,
       currentTime24h: timeStr,
-      dayOfWeek: days[now.getDay()],
-      displayTimezone: settings.displayTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      dayOfWeek: partValue('weekday'),
+      displayTimezone: activeTz,
       timeFormat24h: settings.timeFormat24h
     };
   }
@@ -334,7 +359,26 @@ export class AgentCalendarBridge {
     return { id: defaultCal.id, name: defaultCal.name };
   }
 
+  private stripCategoryPrefix(rawTitle: string, category?: string, subCategory?: string): string {
+    let cleaned = rawTitle.trim();
+    const cat = category?.trim();
+    const sub = subCategory?.trim();
+    if (cat) {
+      const fullPrefix = sub
+        ? `${cat}${CATEGORY_TITLE_DELIMITER}${sub}${CATEGORY_TITLE_DELIMITER}`
+        : `${cat}${CATEGORY_TITLE_DELIMITER}`;
+      const catOnlyPrefix = `${cat}${CATEGORY_TITLE_DELIMITER}`;
+      if (cleaned.toLowerCase().startsWith(fullPrefix.toLowerCase())) {
+        cleaned = cleaned.slice(fullPrefix.length).trim();
+      } else if (cleaned.toLowerCase().startsWith(catOnlyPrefix.toLowerCase())) {
+        cleaned = cleaned.slice(catOnlyPrefix.length).trim();
+      }
+    }
+    return cleaned;
+  }
+
   private constructFullTitle(cleanTitle: string, category?: string, subCategory?: string): string {
+    const strippedTitle = this.stripCategoryPrefix(cleanTitle, category, subCategory);
     const parts: string[] = [];
     if (category && category.trim().length > 0) {
       parts.push(category.trim());
@@ -342,7 +386,7 @@ export class AgentCalendarBridge {
         parts.push(subCategory.trim());
       }
     }
-    parts.push(cleanTitle.trim());
+    parts.push(strippedTitle || cleanTitle.trim());
     return parts.join(CATEGORY_TITLE_DELIMITER);
   }
 
@@ -440,24 +484,35 @@ export class AgentCalendarBridge {
       updated.subCategory = updates.subCategory;
     }
     if (updates.title !== undefined) {
-      changedFields['title'] = { old: updated.title, new: updates.title };
-      updated.title = this.constructFullTitle(updates.title, updated.category, updated.subCategory);
+      const nextFullTitle = this.constructFullTitle(
+        updates.title,
+        updated.category,
+        updated.subCategory
+      );
+      changedFields['title'] = { old: original.title, new: nextFullTitle };
+      updated.title = nextFullTitle;
     }
     if (updates.date !== undefined && updated.type === 'single') {
-      changedFields['date'] = { old: updated.date, new: updates.date };
-      updated.date = updates.date;
+      const normDate = this.normalizeIsoDate(updates.date);
+      changedFields['date'] = {
+        old: original.type === 'single' ? original.date : undefined,
+        new: normDate
+      };
+      updated.date = normDate;
     }
     if (updates.allDay !== undefined) {
       changedFields['allDay'] = { old: updated.allDay, new: updates.allDay };
       updated.allDay = updates.allDay;
     }
     if (updates.startTime !== undefined && !updated.allDay) {
-      changedFields['startTime'] = { old: updated.startTime, new: updates.startTime };
-      updated.startTime = updates.startTime;
+      const normStart = this.normalizeIsoTime(updates.startTime, updated.startTime || '09:00');
+      changedFields['startTime'] = { old: updated.startTime, new: normStart };
+      updated.startTime = normStart;
     }
     if (updates.endTime !== undefined && !updated.allDay) {
-      changedFields['endTime'] = { old: updated.endTime, new: updates.endTime };
-      updated.endTime = updates.endTime;
+      const normEnd = this.normalizeIsoTime(updates.endTime, updated.endTime || '10:00');
+      changedFields['endTime'] = { old: updated.endTime, new: normEnd };
+      updated.endTime = normEnd;
     }
     if (updates.description !== undefined) {
       changedFields['description'] = { old: updated.description, new: updates.description };

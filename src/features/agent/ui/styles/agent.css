@@ -772,6 +772,17 @@
   margin-bottom: 6px;
 }
 
+.ofc-managed-onboarding-license {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.ofc-managed-onboarding-license input {
+  flex: 1;
+}
+
 
 
 

@@ -31,6 +31,7 @@ import type { AgentStorage } from './AgentStorage';
 import type { AgentAuditLogger } from './AgentAuditLogger';
 import type { AgentCalendarBridge } from '../tools/AgentCalendarBridge';
 import type { SpecLoader } from './SpecLoader';
+import { buildContextWindowMessages } from './contextWindowBuilder';
 import { generateRandomId } from '../domain/crypto/randomId';
 
 const MAX_TURNS = 5;
@@ -397,11 +398,12 @@ export class AgentEngine {
       while (turns < MAX_TURNS) {
         turns++;
 
-        // 2. Build system prompt with dynamic real-time context
+        // 2. Build system prompt with dynamic real-time context and prefix-cache-safe wire messages
         const systemPrompt = await this.specLoader.buildSystemPrompt();
+        const windowedMessages = buildContextWindowMessages(this.messages, this.bridge);
         const fullMessages: ChatMessage[] = [
           { role: 'system', content: systemPrompt },
-          ...this.messages
+          ...windowedMessages
         ];
 
         // 3. Call LLM with a fresh per-turn idempotency key

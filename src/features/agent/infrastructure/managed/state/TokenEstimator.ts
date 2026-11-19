@@ -24,7 +24,7 @@ export class TokenEstimator {
   public estimateInputTokens(messages: ChatMessage[], tools: ToolDefinition[]): number {
     const payloadString = JSON.stringify({ messages, tools });
     const bytes = encodeUtf8Bytes(payloadString).byteLength;
-    return Math.ceil(bytes / 3.0) + messages.length * 4;
+    return Math.ceil(bytes / 2.2) + messages.length * 4 + 64;
   }
 
   public estimateWorstCaseWtc(
@@ -38,7 +38,7 @@ export class TokenEstimator {
       0,
       maxOutputTokens
     );
-    const worstCaseMicrocredits = Math.ceil(rawWorstMicrocredits * 1.05);
+    const worstCaseMicrocredits = Math.ceil(rawWorstMicrocredits * 1.1);
     return {
       estimatedInputTokens,
       maxOutputTokens,

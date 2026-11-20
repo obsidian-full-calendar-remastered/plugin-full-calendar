@@ -2038,8 +2038,6 @@
   "agent": {
     "sidebar": {
       "viewTitle": "Agente de calendário",
-      "emptyTitle": "Agente de calendário pronto",
-      "emptyDesc": "Faça perguntas sobre seu calendário, encontre horários livres, rascunhe novos eventos ou importe programações da web.",
       "inputPlaceholder": "Pergunte ao agente ou automatize a agenda...",
       "stop": "Parar",
       "sendAria": "Enviar prompt",
@@ -2081,7 +2079,15 @@
       "changes": "Alterações:",
       "notes": "Descrição: {{notes}}",
       "deleteWarning": "⚠️ Isso removerá permanentemente o evento do seu calendário.",
-      "foundBatch": "Eventos encontrados para o calendário {{calendar}}: {{count}}"
+      "foundBatch": "Eventos encontrados para o calendário {{calendar}}: {{count}}",
+      "expired": "Expired",
+      "pendingCount": "{{count}} pending proposals",
+      "approveAll": "Approve all ({{count}})",
+      "rejectAll": "Reject all",
+      "applyingProgress": "Applying {{current}}/{{total}}...",
+      "bulkAppliedSummary": "Applied {{applied}} of {{total}} proposals.",
+      "bulkAppliedPartial": "Applied {{applied}} of {{total}} proposals ({{failed}} failed).",
+      "bulkRejectedSummary": "Rejected {{count}} pending proposals."
     },
     "audit": {
       "title": "Agente do Full Calendar: trilha de auditoria e diagnóstico",
@@ -2140,6 +2146,24 @@
       "eventApplied": "Evento aplicado ao calendário com sucesso.",
       "failedToApply": "Falha ao aplicar a proposta: {{error}}",
       "proposalRejected": "Proposta de evento rejeitada."
+    },
+    "welcome": {
+      "greeting": "Hi, how can I help?",
+      "subtitle": "Tell me what you need with your schedule, and we can get started.",
+      "addEventPrefix": "Schedule an event: ",
+      "addEventPlaceholder": "details",
+      "importUrlPrefix": "Import schedule from URL: ",
+      "importUrlPlaceholder": "url",
+      "cleanupPrefix": "Review and clean up events from ",
+      "cleanupPlaceholder": "date range",
+      "starterCleanupPrompt": "Review and clean up my event titles and categories from "
+    },
+    "trace": {
+      "working": "Working...",
+      "usedTools": "Completed {{count}} steps in {{seconds}}s",
+      "cancelled": "Cancelled after {{seconds}}s",
+      "failed": "Failed after {{seconds}}s",
+      "stepsRecorded": "{{count}} steps"
     }
   }
 }

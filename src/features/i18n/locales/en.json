@@ -2038,8 +2038,6 @@
   "agent": {
     "sidebar": {
       "viewTitle": "Calendar agent",
-      "emptyTitle": "Calendar agent ready",
-      "emptyDesc": "Ask questions about your calendar, find free slots, draft new events, or import schedules from the web.",
       "inputPlaceholder": "Ask agent or automate schedule...",
       "stop": "Stop",
       "sendAria": "Send prompt",
@@ -2064,6 +2062,24 @@
       "importUrl": "Import from URL...",
       "importUrlPrompt": "Browse the schedule at this URL and extract the events: "
     },
+    "welcome": {
+      "greeting": "Hi, how can I help?",
+      "subtitle": "Tell me what you need with your schedule, and we can get started.",
+      "addEventPrefix": "Schedule an event: ",
+      "addEventPlaceholder": "details",
+      "importUrlPrefix": "Import schedule from URL: ",
+      "importUrlPlaceholder": "url",
+      "cleanupPrefix": "Review and clean up events from ",
+      "cleanupPlaceholder": "date range",
+      "starterCleanupPrompt": "Review and clean up my event titles and categories from "
+    },
+    "trace": {
+      "working": "Working...",
+      "usedTools": "Completed {{count}} steps in {{seconds}}s",
+      "cancelled": "Cancelled after {{seconds}}s",
+      "failed": "Failed after {{seconds}}s",
+      "stepsRecorded": "{{count}} steps"
+    },
     "proposals": {
       "createTitle": "Proposal: create event",
       "updateTitle": "Proposal: update event",
@@ -2077,6 +2093,14 @@
       "reject": "Reject",
       "applied": "Applied",
       "rejected": "Rejected",
+      "expired": "Expired",
+      "pendingCount": "{{count}} pending proposals",
+      "approveAll": "Approve all ({{count}})",
+      "rejectAll": "Reject all",
+      "applyingProgress": "Applying {{current}}/{{total}}...",
+      "bulkAppliedSummary": "Applied {{applied}} of {{total}} proposals.",
+      "bulkAppliedPartial": "Applied {{applied}} of {{total}} proposals ({{failed}} failed).",
+      "bulkRejectedSummary": "Rejected {{count}} pending proposals.",
       "editInModal": "Edit in modal",
       "changes": "Changes:",
       "notes": "Notes: {{notes}}",

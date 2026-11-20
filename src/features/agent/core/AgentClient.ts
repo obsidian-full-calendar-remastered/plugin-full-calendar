@@ -25,6 +25,7 @@ import type {
   StreamCallbacks
 } from '../domain/contracts/IAgentClient';
 import { parseRetryAfterHeaderMs, sanitizeChatMessages } from '../domain/httpUtils';
+import { type ParsedSseResult, SseChunkParser } from '../domain/sseParser';
 
 export type {
   StreamCallbacks,
@@ -154,7 +155,8 @@ export class AgentClient implements IAgentClient {
   private buildPayload(
     messages: ChatMessage[],
     tools: ToolDefinition[],
-    maxTokens?: number
+    maxTokens?: number,
+    stream?: boolean
   ): Record<string, unknown> {
     const payload: Record<string, unknown> = {
       model: this.options.model,
@@ -171,6 +173,9 @@ export class AgentClient implements IAgentClient {
     }
     if (maxTokens) {
       payload.max_tokens = maxTokens;
+    }
+    if (stream === true) {
+      payload.stream = true;
     }
     return payload;
   }
@@ -257,25 +262,117 @@ export class AgentClient implements IAgentClient {
     );
   }
 
+  private async readSseStream(
+    body: ReadableStream<Uint8Array>,
+    callbacks?: StreamCallbacks,
+    signal?: AbortSignal
+  ): Promise<ParsedSseResult> {
+    const reader = body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    const parser = new SseChunkParser({ callbacks });
+
+    try {
+      while (true) {
+        if (signal?.aborted) {
+          throw new Error('Agent request was cancelled by user.');
+        }
+
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        if (value && value.byteLength > 0) {
+          parser.feed(decoder.decode(value, { stream: true }));
+        }
+      }
+
+      const tail = decoder.decode();
+      if (tail) {
+        parser.feed(tail);
+      }
+      parser.flush();
+      return parser.getResult();
+    } catch (err) {
+      await reader.cancel().catch(() => undefined);
+      throw err;
+    }
+  }
+
+  private parseBufferedSse(text: string, callbacks?: StreamCallbacks): ParsedSseResult {
+    const parser = new SseChunkParser({ callbacks });
+    parser.feed(text);
+    parser.flush();
+    return parser.getResult();
+  }
+
   private async executeHttp(
     url: string,
     headers: Record<string, string>,
     payload: Record<string, unknown>,
-    signal?: AbortSignal
-  ): Promise<{ status: number; text: string; json?: unknown; headers?: Record<string, string> }> {
+    options: {
+      signal?: AbortSignal;
+      callbacks?: StreamCallbacks;
+      hasEmitted?: () => boolean;
+    } = {}
+  ): Promise<{
+    status: number;
+    text: string;
+    json?: unknown;
+    headers?: Record<string, string>;
+    streamResult?: ParsedSseResult;
+  }> {
+    const { signal, callbacks, hasEmitted } = options;
+
     if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
       try {
+        const fetchHeaders =
+          payload.stream === true
+            ? { ...headers, Accept: 'text/event-stream, application/json' }
+            : headers;
         const response = await window.fetch(url, {
           method: 'POST',
-          headers,
+          headers: fetchHeaders,
           body: JSON.stringify(payload),
           signal
         });
         if (response) {
+          const respHeaders: Record<string, string> = {};
+          if (response.headers && typeof response.headers.forEach === 'function') {
+            response.headers.forEach((val, key) => {
+              respHeaders[key.toLowerCase()] = val;
+              respHeaders[key] = val;
+            });
+          }
+          const headerContentType =
+            typeof response.headers?.get === 'function'
+              ? response.headers.get('content-type') || ''
+              : respHeaders['content-type'] || '';
+          const contentType = headerContentType.toLowerCase();
+          const status =
+            typeof response.status === 'number' ? response.status : response.ok ? 200 : 500;
+
+          if (
+            status === 200 &&
+            response.body &&
+            typeof response.body.getReader === 'function' &&
+            contentType.includes('text/event-stream')
+          ) {
+            const streamResult = await this.readSseStream(response.body, callbacks, signal);
+            return { status, text: '', headers: respHeaders, streamResult };
+          }
+
           let text = '';
           let json: unknown = null;
           if (typeof response.text === 'function') {
             text = await response.text().catch(() => '');
+            if (
+              status === 200 &&
+              text &&
+              (contentType.includes('text/event-stream') || text.trimStart().startsWith('data:'))
+            ) {
+              const streamResult = this.parseBufferedSse(text, callbacks);
+              return { status, text, headers: respHeaders, streamResult };
+            }
             if (text) {
               try {
                 json = JSON.parse(text);
@@ -291,35 +388,39 @@ export class AgentClient implements IAgentClient {
               /* ignore json parse failure */
             }
           }
-          const respHeaders: Record<string, string> = {};
-          if (response.headers && typeof response.headers.forEach === 'function') {
-            response.headers.forEach((val, key) => {
-              respHeaders[key.toLowerCase()] = val;
-              respHeaders[key] = val;
-            });
-          }
-          const status =
-            typeof response.status === 'number' ? response.status : response.ok ? 200 : 500;
+
           return { status, text, json, headers: respHeaders };
         }
       } catch (err) {
-        if (signal?.aborted) throw err;
+        if (signal?.aborted || hasEmitted?.()) {
+          throw err;
+        }
+        if (!(err instanceof TypeError)) {
+          throw err;
+        }
         this.logger?.warn('Fetch encountered CORS or network error, falling back to requestUrl', {
           url
         });
       }
     }
 
+    const fallbackPayload = payload.stream === true ? { ...payload, stream: false } : payload;
     const res = await requestUrl({
       url,
       method: 'POST',
       headers,
-      body: JSON.stringify(payload),
+      body: JSON.stringify(fallbackPayload),
       throw: false
     });
+    const status = res?.status ?? 200;
+    const text = res?.text ?? '';
+    if (status === 200 && text.trimStart().startsWith('data:')) {
+      const streamResult = this.parseBufferedSse(text, callbacks);
+      return { status, text, headers: res?.headers ?? {}, streamResult };
+    }
     return {
-      status: res?.status ?? 200,
-      text: res?.text ?? '',
+      status,
+      text,
       json: res?.json ?? null,
       headers: res?.headers ?? {}
     };
@@ -388,7 +489,7 @@ export class AgentClient implements IAgentClient {
   ): Promise<CompletionResult> {
     const url = this.normalizeUrl(this.options.endpointUrl);
     const maxRetries = this.options.maxRetries ?? 3;
-    const payload = this.buildPayload(messages, tools, config.maxTokens);
+    const payload = this.buildPayload(messages, tools, config.maxTokens, config.stream === true);
     const headers = this.buildHeaders();
     const startTime = Date.now();
     let attempt = 0;
@@ -398,16 +499,43 @@ export class AgentClient implements IAgentClient {
         throw new Error('Agent request was cancelled by user.');
       }
 
+      let hasEmittedChunk = false;
+      const wrappedCallbacks: StreamCallbacks = {
+        onChunk: delta => {
+          hasEmittedChunk = true;
+          config.callbacks?.onChunk?.(delta);
+        },
+        onToolCallDelta: toolCalls => {
+          hasEmittedChunk = true;
+          config.callbacks?.onToolCallDelta?.(toolCalls);
+        },
+        onRetry: config.callbacks?.onRetry
+      };
+
       try {
-        const res = await this.executeHttp(url, headers, payload, config.signal);
+        const res = await this.executeHttp(url, headers, payload, {
+          signal: config.signal,
+          callbacks: wrappedCallbacks,
+          hasEmitted: () => hasEmittedChunk
+        });
 
         // 1. Success (200)
         if (res.status === 200) {
+          const durationMs = Date.now() - startTime;
+          if (res.streamResult) {
+            return {
+              content: res.streamResult.content,
+              toolCalls: res.streamResult.toolCalls,
+              durationMs,
+              finishReason: res.streamResult.finishReason,
+              ...(res.streamResult.tokenUsage ? { tokenUsage: res.streamResult.tokenUsage } : {})
+            };
+          }
+
           const json = (res.json ?? (res.text ? JSON.parse(res.text) : {})) as Record<
             string,
             unknown
           >;
-          const durationMs = Date.now() - startTime;
           const result = this.parseStandardResponse(json, durationMs);
           if (config.callbacks?.onChunk && result.content) {
             config.callbacks.onChunk(result.content);
@@ -454,7 +582,7 @@ export class AgentClient implements IAgentClient {
         const errorDetail = this.extractErrorMessage(res.status, res.text, res.json);
         this.handleHttpError(res.status, url, res.text, errorDetail);
       } catch (err) {
-        if (config.signal?.aborted || err instanceof AgentApiError) {
+        if (config.signal?.aborted || err instanceof AgentApiError || hasEmittedChunk) {
           throw err;
         }
 

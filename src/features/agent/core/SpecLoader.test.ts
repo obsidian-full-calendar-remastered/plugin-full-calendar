@@ -79,7 +79,40 @@ describe('SpecLoader & sanitizeAgentSpec', () => {
     expect(saveCachedSpec).toHaveBeenCalledTimes(1);
     expect(prompt).toContain('FULL CALENDAR REMASTERED');
     expect(prompt).toContain('**Current Date**: 2026-11-19 (Thursday)');
+    expect(prompt).toContain('<suggestions>');
     expect(prompt).not.toContain('Current Time');
     expect(prompt).not.toContain('14:35');
+  });
+
+  it('gates category taxonomy rules on enableAdvancedCategorization setting', async () => {
+    const mockStorage = {
+      loadCachedSpec: jest.fn().mockResolvedValue('# Spec'),
+      saveCachedSpec: jest.fn().mockResolvedValue(undefined)
+    } as unknown as AgentStorage;
+
+    const mockBridge = {
+      getCurrentTime: () => ({
+        currentIsoTimestamp: '2026-11-19T14:35:00.000Z',
+        currentDate: '2026-11-19',
+        currentTime24h: '14:35',
+        dayOfWeek: 'Thursday',
+        displayTimezone: 'UTC',
+        timeFormat24h: true
+      }),
+      getUserCategories: () => [{ name: 'Work', color: '#ff0000' }],
+      getCalendarSources: () => []
+    } as unknown as AgentCalendarBridge;
+
+    const loader = new SpecLoader(mockStorage, mockBridge);
+
+    PluginState.setSettings({ ...DEFAULT_SETTINGS, enableAdvancedCategorization: false });
+    const disabledPrompt = await loader.buildSystemPrompt();
+    expect(disabledPrompt).toContain('Advanced categorization is currently disabled');
+    expect(disabledPrompt).not.toContain('User Defined Categories');
+
+    PluginState.setSettings({ ...DEFAULT_SETTINGS, enableAdvancedCategorization: true });
+    const enabledPrompt = await loader.buildSystemPrompt();
+    expect(enabledPrompt).toContain('User Defined Categories');
+    expect(enabledPrompt).toContain('never prepend `Category - `');
   });
 });

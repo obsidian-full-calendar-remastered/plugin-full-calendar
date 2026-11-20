@@ -16,6 +16,7 @@
 import { AGENT_TOOLS } from '../tools/toolDefinitions';
 import { browseScheduleOnline } from '../tools/webBrowseTool';
 import type {
+  AgentToolStepRecord,
   ChatMessage,
   ChatToolCall,
   EventProposal,
@@ -33,15 +34,106 @@ import type { AgentCalendarBridge } from '../tools/AgentCalendarBridge';
 import type { SpecLoader } from './SpecLoader';
 import { buildContextWindowMessages } from './contextWindowBuilder';
 import { generateRandomId } from '../domain/crypto/randomId';
+import { extractFollowUpSuggestions } from '../domain/suggestionsParser';
 
 const MAX_TURNS = 5;
 
 export interface EngineCallbacks extends StreamCallbacks {
   onStatus?: (statusText: string) => void;
+  onUserMessageRecorded?: () => void;
+  onTurnStart?: (turn: number, maxTurns: number) => void;
+  onTurnComplete?: (turn: number, cleanContent: string, suggestions: string[]) => void;
+  onToolCallStart?: (info: { id: string; name: string; label: string }) => void;
+  onToolCallEnd?: (step: AgentToolStepRecord) => void;
   onProposal?: (proposal: EventProposal) => void;
   onError?: (error: string) => void;
   onDone?: () => void;
   onSessionChanged?: (session: AgentSession) => void;
+}
+
+function formatToolStartLabel(fnName: string, args: Record<string, unknown>): string {
+  switch (fnName) {
+    case 'get_events': {
+      const start = typeof args.startDate === 'string' ? args.startDate : '';
+      const end = typeof args.endDate === 'string' ? args.endDate : '';
+      return start && end ? `Reading events (${start} to ${end})` : 'Reading calendar events';
+    }
+    case 'get_event_by_id':
+      return 'Inspecting event details';
+    case 'get_calendar_sources':
+      return 'Listing calendar sources';
+    case 'get_user_categories':
+      return 'Loading configured categories';
+    case 'get_current_time':
+      return 'Checking local time';
+    case 'browse_schedule_online': {
+      const url = typeof args.url === 'string' ? args.url : 'URL';
+      return `Fetching schedule from ${url.slice(0, 48)}`;
+    }
+    case 'propose_create_event':
+      return typeof args.title === 'string' && args.title.trim()
+        ? `Staging new event: ${args.title.trim().slice(0, 40)}`
+        : 'Staging new event';
+    case 'propose_update_event':
+      return typeof args.title === 'string' && args.title.trim()
+        ? `Staging update: ${args.title.trim().slice(0, 40)}`
+        : 'Staging event update';
+    case 'propose_delete_event':
+      return 'Staging event deletion';
+    case 'propose_batch_create_events': {
+      const count = Array.isArray(args.events) ? args.events.length : 0;
+      return `Staging batch import (${count} items)`;
+    }
+    default:
+      return `Running ${fnName}`;
+  }
+}
+
+function formatToolResultSummary(
+  fnName: string,
+  resultJson: string,
+  proposal?: EventProposal
+): { summary: string; ok: boolean } {
+  try {
+    const parsed = JSON.parse(resultJson) as Record<string, unknown>;
+    if (parsed && typeof parsed === 'object' && typeof parsed.error === 'string') {
+      return { summary: parsed.error.slice(0, 60), ok: false };
+    }
+    if (fnName === 'get_events' && typeof parsed?.count === 'number') {
+      return {
+        summary: `${parsed.count} event${parsed.count === 1 ? '' : 's'}`,
+        ok: true
+      };
+    }
+    if (fnName === 'get_calendar_sources' && Array.isArray(parsed)) {
+      return { summary: `${parsed.length} calendars`, ok: true };
+    }
+    if (fnName === 'get_user_categories' && Array.isArray(parsed)) {
+      return { summary: `${parsed.length} categories`, ok: true };
+    }
+    if (fnName === 'get_event_by_id') {
+      return { summary: parsed?.id ? 'Loaded event' : 'Not found', ok: Boolean(parsed?.id) };
+    }
+  } catch {
+    // Non-JSON result (e.g. browse_schedule_online text)
+  }
+
+  if (fnName === 'browse_schedule_online') {
+    const failed = resultJson.startsWith('Failed') || resultJson.startsWith('Error');
+    return { summary: failed ? 'Fetch failed' : 'Page fetched', ok: !failed };
+  }
+  if (fnName === 'propose_batch_create_events') {
+    const count = proposal?.type === 'BATCH_CREATE' ? proposal.items.length : 0;
+    return { summary: `${count} items staged`, ok: true };
+  }
+  if (
+    fnName === 'propose_create_event' ||
+    fnName === 'propose_update_event' ||
+    fnName === 'propose_delete_event'
+  ) {
+    return { summary: 'Staged for approval', ok: true };
+  }
+  return { summary: 'Done', ok: true };
 }
 
 export class AgentEngine {
@@ -171,9 +263,10 @@ export class AgentEngine {
   private async executeTool(
     toolCall: ChatToolCall,
     callbacks?: EngineCallbacks
-  ): Promise<{ result: string; proposal?: EventProposal }> {
+  ): Promise<{ result: string; proposal?: EventProposal; step: AgentToolStepRecord }> {
     const fnName = toolCall.function.name;
     const rawArgs = toolCall.function.arguments;
+    const startedAt = Date.now();
     let args: Record<string, unknown>;
 
     try {
@@ -181,9 +274,21 @@ export class AgentEngine {
       args = JSON.parse(repaired || '{}') as Record<string, unknown>;
     } catch (parseErr) {
       const errStr = `Malformed tool arguments from LLM: ${String(parseErr)}. Raw: ${rawArgs}`;
+      const label = formatToolStartLabel(fnName, {});
+      callbacks?.onToolCallStart?.({ id: toolCall.id, name: fnName, label });
+      const step: AgentToolStepRecord = {
+        id: toolCall.id,
+        name: fnName,
+        label,
+        summary: 'Invalid tool arguments',
+        ok: false,
+        durationMs: Date.now() - startedAt
+      };
+      callbacks?.onToolCallEnd?.(step);
       this.logger.warn('Failed to parse tool call JSON', { fnName, rawArgs }, errStr);
       return {
-        result: JSON.stringify({ error: errStr })
+        result: JSON.stringify({ error: errStr }),
+        step
       };
     }
 
@@ -215,24 +320,43 @@ export class AgentEngine {
       return typeof val === 'boolean' ? val : undefined;
     };
 
-    callbacks?.onStatus?.(`Executing: ${fnName}...`);
+    const label = formatToolStartLabel(fnName, args);
+    callbacks?.onToolCallStart?.({ id: toolCall.id, name: fnName, label });
+    callbacks?.onStatus?.(label);
     this.logger.info(`Tool invocation: ${fnName}`, { args });
+
+    const emitFinished = (
+      result: string,
+      proposal?: EventProposal
+    ): { result: string; proposal?: EventProposal; step: AgentToolStepRecord } => {
+      const { summary, ok } = formatToolResultSummary(fnName, result, proposal);
+      const step: AgentToolStepRecord = {
+        id: toolCall.id,
+        name: fnName,
+        label,
+        summary,
+        ok,
+        durationMs: Date.now() - startedAt
+      };
+      callbacks?.onToolCallEnd?.(step);
+      return { result, proposal, step };
+    };
 
     try {
       switch (fnName) {
         case 'get_current_time': {
           const res = this.bridge.getCurrentTime();
-          return { result: JSON.stringify(res) };
+          return emitFinished(JSON.stringify(res));
         }
 
         case 'get_calendar_sources': {
           const res = this.bridge.getCalendarSources();
-          return { result: JSON.stringify(res) };
+          return emitFinished(JSON.stringify(res));
         }
 
         case 'get_user_categories': {
           const res = this.bridge.getUserCategories();
-          return { result: JSON.stringify(res) };
+          return emitFinished(JSON.stringify(res));
         }
 
         case 'get_events': {
@@ -241,20 +365,19 @@ export class AgentEngine {
           const calId = asOptionalString(args.calendarId);
           const cat = asOptionalString(args.category);
           const res = this.bridge.getEvents(start, end, calId, cat);
-          return { result: JSON.stringify({ count: res.length, events: res }) };
+          return emitFinished(JSON.stringify({ count: res.length, events: res }));
         }
 
         case 'get_event_by_id': {
           const id = asString(args.eventId);
           const res = this.bridge.getEventById(id);
-          return { result: JSON.stringify(res || { error: 'Event not found' }) };
+          return emitFinished(JSON.stringify(res || { error: 'Event not found' }));
         }
 
         case 'browse_schedule_online': {
           const url = asString(args.url);
-          callbacks?.onStatus?.(`Fetching schedule from ${url}...`);
           const text = await browseScheduleOnline(url);
-          return { result: text };
+          return emitFinished(text);
         }
 
         // ====================================================================
@@ -275,15 +398,15 @@ export class AgentEngine {
             location: asOptionalString(args.location)
           });
           callbacks?.onProposal?.(proposal);
-          return {
-            result: JSON.stringify({
+          return emitFinished(
+            JSON.stringify({
               status: 'PROPOSAL_STAGED',
               proposalId: proposal.id,
               message:
                 'Proposal created and displayed to the user in the write bar. Awaiting user approval.'
             }),
             proposal
-          };
+          );
         }
 
         case 'propose_update_event': {
@@ -298,14 +421,14 @@ export class AgentEngine {
             description: asOptionalString(args.description)
           });
           callbacks?.onProposal?.(proposal);
-          return {
-            result: JSON.stringify({
+          return emitFinished(
+            JSON.stringify({
               status: 'PROPOSAL_STAGED',
               proposalId: proposal.id,
               message: 'Update proposal displayed for user approval.'
             }),
             proposal
-          };
+          );
         }
 
         case 'propose_delete_event': {
@@ -314,14 +437,14 @@ export class AgentEngine {
             asOptionalString(args.reason)
           );
           callbacks?.onProposal?.(proposal);
-          return {
-            result: JSON.stringify({
+          return emitFinished(
+            JSON.stringify({
               status: 'PROPOSAL_STAGED',
               proposalId: proposal.id,
               message: 'Delete proposal displayed for user approval.'
             }),
             proposal
-          };
+          );
         }
 
         case 'propose_batch_create_events': {
@@ -340,28 +463,24 @@ export class AgentEngine {
             }))
           );
           callbacks?.onProposal?.(proposal);
-          return {
-            result: JSON.stringify({
+          return emitFinished(
+            JSON.stringify({
               status: 'PROPOSAL_STAGED',
               proposalId: proposal.id,
               count: proposal.items.length,
               message: `Batch proposal created with ${proposal.items.length} items. Displayed for user approval.`
             }),
             proposal
-          };
+          );
         }
 
         default:
-          return {
-            result: JSON.stringify({ error: `Unknown tool function: ${fnName}` })
-          };
+          return emitFinished(JSON.stringify({ error: `Unknown tool function: ${fnName}` }));
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       this.logger.error(`Error executing tool ${fnName}`, err as Error);
-      return {
-        result: JSON.stringify({ error: `Tool execution failed: ${msg}` })
-      };
+      return emitFinished(JSON.stringify({ error: `Tool execution failed: ${msg}` }));
     }
   }
 
@@ -391,12 +510,15 @@ export class AgentEngine {
         timestamp: Date.now()
       };
       this.messages.push(userMsg);
+      callbacks?.onUserMessageRecorded?.();
 
       let turns = 0;
-      let stagedAnyProposal = false;
+      let firstProposalTurn: number | null = null;
+      const sessionToolSteps: AgentToolStepRecord[] = [];
 
-      while (turns < MAX_TURNS) {
+      while (turns < MAX_TURNS || (firstProposalTurn !== null && turns === firstProposalTurn)) {
         turns++;
+        callbacks?.onTurnStart?.(turns, MAX_TURNS);
 
         // 2. Build system prompt with dynamic real-time context and prefix-cache-safe wire messages
         const systemPrompt = await this.specLoader.buildSystemPrompt();
@@ -408,10 +530,12 @@ export class AgentEngine {
 
         // 3. Call LLM with a fresh per-turn idempotency key
         const idempotencyKey = generateRandomId('turn');
+        const isForcedSummaryTurn = firstProposalTurn !== null && turns > MAX_TURNS;
+        const toolsForTurn = isForcedSummaryTurn ? [] : AGENT_TOOLS;
         callbacks?.onStatus?.('Generating response...');
         let completion: CompletionResult;
         try {
-          completion = await this.client.chatCompletion(fullMessages, AGENT_TOOLS, {
+          completion = await this.client.chatCompletion(fullMessages, toolsForTurn, {
             stream: true,
             signal,
             idempotencyKey,
@@ -431,25 +555,43 @@ export class AgentEngine {
         // Response received: immediately clear status indicator
         callbacks?.onStatus?.('');
 
+        const hasToolCalls = Boolean(completion.toolCalls && completion.toolCalls.length > 0);
+        const parsedReply = extractFollowUpSuggestions(completion.content || '');
+        const cleanContent = parsedReply.cleanText;
+        const suggestions = hasToolCalls ? [] : parsedReply.suggestions;
+
         // 4. Append assistant response
         const assistantMsg: ChatMessage = {
           role: 'assistant',
-          content: completion.content || null,
-          tool_calls: completion.toolCalls.length > 0 ? completion.toolCalls : undefined,
-          timestamp: Date.now()
+          content: cleanContent || null,
+          tool_calls: hasToolCalls ? completion.toolCalls : undefined,
+          timestamp: Date.now(),
+          ...(suggestions.length > 0 ? { suggestions } : {}),
+          ...(!hasToolCalls && sessionToolSteps.length > 0
+            ? { toolSteps: [...sessionToolSteps] }
+            : {})
         };
         this.messages.push(assistantMsg);
+        callbacks?.onTurnComplete?.(turns, cleanContent, suggestions);
 
         // 5. If no tools were invoked, we are done
-        if (!completion.toolCalls || completion.toolCalls.length === 0) {
+        if (!hasToolCalls) {
           break;
         }
 
         // 6. Execute tool calls
         for (const tc of completion.toolCalls) {
-          const { result, proposal } = await this.executeTool(tc, callbacks);
+          if (signal?.aborted) {
+            callbacks?.onStatus?.('Cancelled');
+            return;
+          }
+
+          const { result, proposal, step } = await this.executeTool(tc, callbacks);
+          sessionToolSteps.push(step);
           if (proposal) {
-            stagedAnyProposal = true;
+            if (firstProposalTurn === null) {
+              firstProposalTurn = turns;
+            }
             if (this.currentSession) {
               if (!this.currentSession.proposals) this.currentSession.proposals = [];
               this.currentSession.proposals.push(proposal);
@@ -465,8 +607,8 @@ export class AgentEngine {
           this.messages.push(toolMsg);
         }
 
-        // If proposals were staged, give the assistant a chance to explain the proposals
-        if (stagedAnyProposal && turns >= 2) {
+        // Allow one follow-up turn after proposals are first staged so the assistant can summarize & suggest next steps
+        if (firstProposalTurn !== null && turns > firstProposalTurn) {
           break;
         }
       }

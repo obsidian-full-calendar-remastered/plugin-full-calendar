@@ -4,8 +4,7 @@
  *
  * @description
  * Enforces the write-approval gate by presenting proposed event changes to the user.
- * The user can inspect details, select target calendars, toggle batch items,
- * and explicitly approve or reject before any changes touch the calendar.
+ * Updates card state strictly in-place so multi-proposal approvals never cause scroll jumps.
  *
  * @license See LICENSE.md
  */
@@ -15,10 +14,28 @@ import type {
   CreateEventProposal,
   UpdateEventProposal,
   DeleteEventProposal,
-  BatchCreateProposal
+  BatchCreateProposal,
+  ProposalStatus
 } from '../types';
 import { computeProposalApprovalHash } from '../domain/crypto/sha256';
 import { t } from '../../i18n/i18n';
+
+export interface ProposalApproveResult {
+  success: boolean;
+  message?: string;
+}
+
+export interface ProposalApprovalCardCallbacks {
+  onApprove: (
+    proposalId: string,
+    overrideCalendarId?: string,
+    expectedApprovalHash?: string
+  ) => Promise<ProposalApproveResult>;
+  onReject: (proposalId: string) => void;
+  onEditInModal?: (proposal: EventProposal) => void;
+  onStatusChange?: () => void;
+  actionable?: boolean;
+}
 
 export class ProposalApprovalCard {
   private containerEl: HTMLElement;
@@ -28,34 +45,81 @@ export class ProposalApprovalCard {
     proposalId: string,
     overrideCalendarId?: string,
     expectedApprovalHash?: string
-  ) => Promise<void>;
+  ) => Promise<ProposalApproveResult>;
   private onReject: (proposalId: string) => void;
   private onEditInModal?: (proposal: EventProposal) => void;
+  private onStatusChange?: () => void;
+  private actionable: boolean;
+  private errorMessage?: string;
+  private approveBtn?: HTMLButtonElement;
 
   constructor(
     containerEl: HTMLElement,
     proposal: EventProposal,
-    callbacks: {
-      onApprove: (
-        proposalId: string,
-        overrideCalendarId?: string,
-        expectedApprovalHash?: string
-      ) => Promise<void>;
-      onReject: (proposalId: string) => void;
-      onEditInModal?: (proposal: EventProposal) => void;
-    }
+    callbacks: ProposalApprovalCardCallbacks
   ) {
     this.containerEl = containerEl;
     this.proposal = proposal;
     this.onApprove = callbacks.onApprove;
     this.onReject = callbacks.onReject;
     this.onEditInModal = callbacks.onEditInModal;
+    this.onStatusChange = callbacks.onStatusChange;
+    this.actionable = callbacks.actionable ?? proposal.status === 'PENDING';
     this.cardEl = this.containerEl.createDiv({ cls: 'ofc-proposal-card' });
     this.render();
   }
 
+  public getProposal(): EventProposal {
+    return this.proposal;
+  }
+
+  public isActionablePending(): boolean {
+    return this.actionable && this.proposal.status === 'PENDING';
+  }
+
+  public syncStatus(status?: ProposalStatus, errorMessage?: string, actionable?: boolean): void {
+    if (status !== undefined) {
+      this.proposal.status = status;
+    }
+    if (actionable !== undefined) {
+      this.actionable = actionable;
+    } else if (status === 'APPROVED' || status === 'REJECTED') {
+      this.actionable = false;
+    }
+    this.errorMessage = errorMessage;
+    this.render();
+    this.onStatusChange?.();
+  }
+
+  private getSummaryTitle(): string {
+    if (this.proposal.type === 'CREATE') {
+      return this.proposal.eventData.title;
+    }
+    if (this.proposal.type === 'UPDATE') {
+      return this.proposal.updatedEvent.title;
+    }
+    if (this.proposal.type === 'DELETE') {
+      return this.proposal.eventTitle;
+    }
+    return t('agent.proposals.foundBatch', {
+      count: this.proposal.items.length,
+      calendar: this.proposal.calendarName
+    });
+  }
+
+  private isResolvedOrStale(): boolean {
+    if (this.proposal.status === 'APPROVED' || this.proposal.status === 'REJECTED') {
+      return true;
+    }
+    return this.proposal.status === 'PENDING' && !this.actionable;
+  }
+
   private render(): void {
     this.cardEl.empty();
+    this.approveBtn = undefined;
+
+    const resolvedOrStale = this.isResolvedOrStale();
+    this.cardEl.toggleClass('ofc-proposal-card-resolved', resolvedOrStale);
 
     // 1. Header
     const header = this.cardEl.createDiv({ cls: 'ofc-proposal-header' });
@@ -74,6 +138,12 @@ export class ProposalApprovalCard {
       badge.setText(t('agent.proposals.batchTitle', { count: this.proposal.items.length }));
     }
 
+    if (resolvedOrStale) {
+      this.renderCompactResolvedBody();
+      this.renderFooter();
+      return;
+    }
+
     // 2. Body
     const body = this.cardEl.createDiv({ cls: 'ofc-proposal-body' });
 
@@ -87,8 +157,20 @@ export class ProposalApprovalCard {
       this.renderBatchBody(body, this.proposal);
     }
 
+    if (this.errorMessage) {
+      this.cardEl.createDiv({ cls: 'ofc-proposal-error', text: this.errorMessage });
+    }
+
     // 3. Footer Action Buttons
     this.renderFooter();
+  }
+
+  private renderCompactResolvedBody(): void {
+    const body = this.cardEl.createDiv({ cls: 'ofc-proposal-body' });
+    body.createDiv({ cls: 'ofc-proposal-title', text: this.getSummaryTitle() });
+    if (this.errorMessage) {
+      body.createDiv({ cls: 'ofc-proposal-error', text: this.errorMessage });
+    }
   }
 
   private renderCreateBody(body: HTMLElement, proposal: CreateEventProposal): void {
@@ -127,6 +209,16 @@ export class ProposalApprovalCard {
 
   private renderUpdateBody(body: HTMLElement, proposal: UpdateEventProposal): void {
     body.createDiv({ cls: 'ofc-proposal-title', text: proposal.updatedEvent.title });
+
+    if (proposal.updatedEvent.category) {
+      const chips = body.createDiv({ cls: 'ofc-proposal-chips' });
+      chips.createSpan({
+        cls: 'ofc-proposal-chip ofc-proposal-chip-category',
+        text: proposal.updatedEvent.subCategory
+          ? `${proposal.updatedEvent.category} / ${proposal.updatedEvent.subCategory}`
+          : proposal.updatedEvent.category
+      });
+    }
 
     if (proposal.recurrenceScope === 'entire_series') {
       body.createDiv({
@@ -211,13 +303,11 @@ export class ProposalApprovalCard {
       if (item.category) {
         row.createSpan({
           cls: 'ofc-proposal-chip ofc-proposal-chip-category',
-          text: item.category
+          text: item.subCategory ? `${item.category} / ${item.subCategory}` : item.category
         });
       }
     }
   }
-
-  private approveBtn?: HTMLButtonElement;
 
   private updateBatchApproveBtn(): void {
     if (this.proposal.type === 'BATCH_CREATE' && this.approveBtn) {
@@ -247,22 +337,31 @@ export class ProposalApprovalCard {
       return;
     }
 
+    if (this.proposal.status === 'PENDING' && !this.actionable) {
+      footer.createSpan({
+        cls: 'ofc-proposal-status-tag ofc-proposal-status-expired',
+        text: t('agent.proposals.expired')
+      });
+      return;
+    }
+
     // Reject button
     const rejectBtn = footer.createEl('button', {
       cls: 'ofc-agent-btn ofc-agent-btn-danger',
-      text: t('agent.proposals.reject')
+      text: t('agent.proposals.reject'),
+      attr: { type: 'button' }
     });
     rejectBtn.addEventListener('click', () => {
-      this.proposal.status = 'REJECTED';
       this.onReject(this.proposal.id);
-      this.cardEl.remove();
+      this.syncStatus('REJECTED');
     });
 
     // Optional: Edit in Modal button
     if (this.proposal.type === 'CREATE' && this.onEditInModal) {
       const editBtn = footer.createEl('button', {
         cls: 'ofc-agent-btn',
-        text: t('agent.proposals.editInModal')
+        text: t('agent.proposals.editInModal'),
+        attr: { type: 'button' }
       });
       editBtn.addEventListener('click', () => {
         this.onEditInModal?.(this.proposal);
@@ -270,12 +369,20 @@ export class ProposalApprovalCard {
     }
 
     // Approve button
+    const isRetry = this.proposal.status === 'FAILED' || Boolean(this.errorMessage);
+    const defaultApproveText =
+      this.proposal.type === 'BATCH_CREATE'
+        ? t('agent.proposals.approveSelected', {
+            count: this.proposal.items.filter(i => i.selected).length
+          })
+        : isRetry
+          ? t('agent.proposals.retryApply')
+          : t('agent.proposals.approveApply');
+
     this.approveBtn = footer.createEl('button', {
       cls: 'ofc-agent-btn ofc-agent-btn-primary',
-      text:
-        this.proposal.type === 'BATCH_CREATE'
-          ? t('agent.proposals.approveSelected', { count: this.proposal.items.length })
-          : t('agent.proposals.approveApply')
+      text: defaultApproveText,
+      attr: { type: 'button' }
     });
 
     this.approveBtn.addEventListener('click', () => {
@@ -285,14 +392,28 @@ export class ProposalApprovalCard {
           this.approveBtn.setText(t('agent.proposals.applying'));
         }
         try {
-          await this.onApprove(this.proposal.id, undefined, this.proposal.approvalHash);
-          this.proposal.status = 'APPROVED';
-          this.cardEl.remove();
-        } catch {
-          if (this.approveBtn) {
-            this.approveBtn.disabled = false;
-            this.approveBtn.setText(t('agent.proposals.retryApply'));
+          const res = await this.onApprove(this.proposal.id, undefined, this.proposal.approvalHash);
+          if (res.success) {
+            this.syncStatus('APPROVED');
+            return;
           }
+
+          const msg = res.message || '';
+          const isStaleOrMissing =
+            msg.includes('expired') ||
+            msg.includes('not found') ||
+            msg.includes('no longer exists') ||
+            msg.includes('changed since preview');
+          if (isStaleOrMissing) {
+            this.syncStatus(this.proposal.status, msg, false);
+          } else {
+            const nextStatus: ProposalStatus =
+              this.proposal.status === 'FAILED' ? 'FAILED' : 'PENDING';
+            this.syncStatus(nextStatus, msg || 'Failed to apply proposal.');
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.syncStatus('FAILED', msg);
         }
       })();
     });

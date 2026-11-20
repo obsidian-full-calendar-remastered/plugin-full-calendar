@@ -120,6 +120,7 @@ export class AgentSidebarView extends ItemView {
       const selectedId = this.sessionSelectEl.value;
       if (selectedId) {
         void (async () => {
+          this.chatComponent?.cancelActiveRequest();
           await this.engine.switchSession(selectedId);
           this.chatComponent?.renderMessages();
         })();
@@ -136,6 +137,7 @@ export class AgentSidebarView extends ItemView {
     setIcon(newSessionBtn, 'plus');
     newSessionBtn.addEventListener('click', () => {
       void (async () => {
+        this.chatComponent?.cancelActiveRequest();
         await this.engine.createNewSession();
         this.updateSessionDropdown();
         this.chatComponent?.renderMessages();
@@ -158,6 +160,7 @@ export class AgentSidebarView extends ItemView {
           t('agent.sidebar.confirmDeleteBody'),
           () => {
             void (async () => {
+              this.chatComponent?.cancelActiveRequest();
               await this.engine.deleteSession(active.id);
               this.updateSessionDropdown();
               this.chatComponent?.renderMessages();

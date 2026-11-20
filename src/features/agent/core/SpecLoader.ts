@@ -113,6 +113,7 @@ export class SpecLoader {
   public async buildSystemPrompt(forceRefresh = false): Promise<string> {
     const specBase = await this.loadSpec(forceRefresh);
     const timeInfo = this.bridge.getCurrentTime();
+    const enableCat = PluginState.getSettings().enableAdvancedCategorization;
     const categories = this.bridge.getUserCategories();
     const calendars = this.bridge.getCalendarSources().filter(c => c.canCreate);
     const defaultCal = calendars.find(c => c.isDefault) || calendars[0];
@@ -129,6 +130,16 @@ export class SpecLoader {
             .join('\n')
         : '- (No writable calendars configured)';
 
+    const categorySection = enableCat
+      ? `### User Defined Categories
+${categoryListStr}
+
+**IMPORTANT FORMATTING RULE**:
+When proposing events, pass ONLY the bare clean event title in \`title\` (never prepend \`Category - \` or \`SubCategory - \`) and pass the matching category in \`category\` (and optional \`subCategory\`); the host formats \`Category - SubCategory - Title\` automatically on save.
+Never invent non-existent categories when a configured category fits.`
+      : `**TITLE RULE**:
+Advanced categorization is currently disabled. Pass literal event titles in \`title\` and omit \`category\` and \`subCategory\`.`;
+
     const contextSection = `
 ---
 
@@ -142,12 +153,10 @@ export class SpecLoader {
 ### Writable Calendars
 ${calendarListStr}
 
-### User Defined Categories
-${categoryListStr}
+${categorySection}
 
-**IMPORTANT FORMATTING RULE**:
-When proposing events, pass a clean event title in \`title\` and the matching category in \`category\` (and optional \`subCategory\`); the bridge formats them as \`Category - SubCategory - Title\` or \`Category - Title\`.
-Never invent non-existent categories when a configured category fits.
+### Follow-Up Suggestions
+At the very end of a final user-facing reply (never during tool-calling turns), you may optionally append 2-3 short, contextual next steps the user might want to take next inside \`<suggestions>["...", "..."]</suggestions>\` tags (under 60 characters each). Omit the tag if no follow-up is helpful.
 `;
 
     return `${specBase}\n${contextSection}`;

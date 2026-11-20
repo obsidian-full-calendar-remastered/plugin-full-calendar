@@ -5,7 +5,9 @@
 
 import { AgentCalendarBridge } from './AgentCalendarBridge';
 import { PluginState } from '../../../core/PluginState';
+import { EventEnhancer } from '../../../core/EventEnhancer';
 import { DEFAULT_SETTINGS } from '../../../types/settings';
+import type { OFCEvent } from '../../../types';
 import type EventCache from '../../../core/EventCache';
 import type { ProviderRegistry } from '../../../providers/ProviderRegistry';
 
@@ -40,10 +42,12 @@ describe('AgentCalendarBridge', () => {
     PluginState.setProviderRegistry(mockRegistry as unknown as ProviderRegistry);
     PluginState.setSettings({
       ...DEFAULT_SETTINGS,
+      enableAdvancedCategorization: true,
       displayTimezone: 'America/New_York',
       categorySettings: [
         { name: 'Work', color: '#ff0000' },
-        { name: 'Personal', color: '#0000ff' }
+        { name: 'Personal', color: '#0000ff' },
+        { name: 'Wellness', color: '#00aa00' }
       ]
     });
   });
@@ -69,11 +73,12 @@ describe('AgentCalendarBridge', () => {
 
     expect(categories).toEqual([
       { name: 'Work', color: '#ff0000' },
-      { name: 'Personal', color: '#0000ff' }
+      { name: 'Personal', color: '#0000ff' },
+      { name: 'Wellness', color: '#00aa00' }
     ]);
   });
 
-  it('should stage create event as proposal WITHOUT touching cache directly', () => {
+  it('should stage create event as structured proposal WITHOUT pre-concatenating categories or touching cache', () => {
     const bridge = new AgentCalendarBridge();
 
     const proposal = bridge.stageCreateEvent({
@@ -90,7 +95,9 @@ describe('AgentCalendarBridge', () => {
     expect(proposal.type).toBe('CREATE');
     expect(proposal.status).toBe('PENDING');
     expect(proposal.cleanTitle).toBe('Project Sync');
-    expect(proposal.eventData.title).toBe('Work - Dev - Project Sync');
+    expect(proposal.eventData.title).toBe('Project Sync');
+    expect(proposal.eventData.category).toBe('Work');
+    expect(proposal.eventData.subCategory).toBe('Dev');
     expect(mockCache.addEvent).not.toHaveBeenCalled(); // Cache untouched!
   });
 
@@ -246,10 +253,10 @@ describe('AgentCalendarBridge', () => {
     expect(mockCache.addEvent).toHaveBeenCalledTimes(1);
   });
 
-  it('should deduplicate category prefixes in constructFullTitle and validate/track updates accurately in stageUpdateEvent', () => {
+  it('should strip redundant category/subcategory prefixes into clean structured fields and validate updates accurately', () => {
     const bridge = new AgentCalendarBridge();
 
-    // LLM supplies "Work - Standup" along with category: "Work" -> must NOT become "Work - Work - Standup"
+    // LLM supplies "Work - Standup" along with category: "Work" -> clean title "Standup" + category "Work"
     const createProp = bridge.stageCreateEvent({
       calendarId: 'work-cal',
       title: 'Work - Standup',
@@ -257,7 +264,8 @@ describe('AgentCalendarBridge', () => {
       date: '2026-09-25',
       allDay: true
     });
-    expect(createProp.eventData.title).toBe('Work - Standup');
+    expect(createProp.eventData.title).toBe('Standup');
+    expect(createProp.eventData.category).toBe('Work');
 
     const subCatProp = bridge.stageCreateEvent({
       calendarId: 'work-cal',
@@ -267,11 +275,13 @@ describe('AgentCalendarBridge', () => {
       date: '2026-09-25',
       allDay: true
     });
-    expect(subCatProp.eventData.title).toBe('Work - Dev - API Review');
+    expect(subCatProp.eventData.title).toBe('API Review');
+    expect(subCatProp.eventData.category).toBe('Work');
+    expect(subCatProp.eventData.subCategory).toBe('Dev');
 
     const originalEvent = {
       id: 'ev-upd-1',
-      title: 'Work - Old Sync',
+      title: 'Old Sync',
       category: 'Work',
       type: 'single' as const,
       date: '2026-09-25',
@@ -291,17 +301,203 @@ describe('AgentCalendarBridge', () => {
       /does not exist/i
     );
 
-    // Valid update strips duplicate prefix and records full new title in changedFields
+    // Valid update strips duplicate prefix and records clean title diff
     const updProp = bridge.stageUpdateEvent('ev-upd-1', {
       title: 'Work - New Sync',
       date: '2026-09-26',
       startTime: '9:30'
     });
-    expect(updProp.updatedEvent.title).toBe('Work - New Sync');
+    expect(updProp.updatedEvent.title).toBe('New Sync');
+    expect(updProp.updatedEvent.category).toBe('Work');
     expect(updProp.changedFields.title).toEqual({
-      old: 'Work - Old Sync',
-      new: 'Work - New Sync'
+      old: 'Old Sync',
+      new: 'New Sync'
     });
     expect(updProp.changedFields.startTime).toEqual({ old: '10:00', new: '09:30' });
+  });
+
+  it('should round-trip Wellness/YouTube events through EventEnhancer without duplicating category or subCategory', async () => {
+    const enhancer = new EventEnhancer(PluginState.getSettings());
+    const storedRaw = {
+      title: 'Wellness - YouTube - Watch - AI News: Things Will Never Be The Same - YouTube',
+      type: 'single' as const,
+      date: '2026-11-16',
+      endDate: null,
+      allDay: false,
+      startTime: '14:00',
+      endTime: '15:00'
+    };
+    const cachedEnhanced = enhancer.enhance(storedRaw);
+    expect(cachedEnhanced.category).toBe('Wellness');
+    expect(cachedEnhanced.subCategory).toBe('YouTube');
+    expect(cachedEnhanced.title).toBe(
+      'YouTube - Watch - AI News: Things Will Never Be The Same - YouTube'
+    );
+
+    mockCache.getAllEvents.mockReturnValue([
+      { id: 'work-cal', editable: true, events: [{ id: 'ev-yt-1', event: cachedEnhanced }] }
+    ]);
+    mockCache.getEventById.mockReturnValue(cachedEnhanced);
+    mockCache.store.getEventDetails.mockReturnValue({
+      calendarId: 'work-cal',
+      event: cachedEnhanced
+    });
+
+    const bridge = new AgentCalendarBridge();
+
+    // Read API returns clean title without mutating live cached object
+    const listed = bridge.getEvents('2026-11-15', '2026-11-20');
+    expect(listed[0].title).toBe('Watch - AI News: Things Will Never Be The Same - YouTube');
+    const byId = bridge.getEventById('ev-yt-1') as { event: { title: string } };
+    expect(byId.event.title).toBe('Watch - AI News: Things Will Never Be The Same - YouTube');
+    expect(cachedEnhanced.title).toBe(
+      'YouTube - Watch - AI News: Things Will Never Be The Same - YouTube'
+    );
+
+    // Stage update where LLM passes "YouTube - Watch - AI News: Things Will Never Be The Same"
+    const proposal = bridge.stageUpdateEvent('ev-yt-1', {
+      title: 'YouTube - Watch - AI News: Things Will Never Be The Same'
+    });
+    expect(proposal.updatedEvent.title).toBe('Watch - AI News: Things Will Never Be The Same');
+    expect(proposal.updatedEvent.category).toBe('Wellness');
+    expect(proposal.updatedEvent.subCategory).toBe('YouTube');
+
+    const commitRes = await bridge.commitProposal(proposal.id, undefined, proposal.approvalHash);
+    expect(commitRes.success).toBe(true);
+
+    const updateCall = mockCache.updateEventWithId.mock.calls[0] as [string, OFCEvent];
+    const committedEvent = updateCall[1];
+    const forDisk = enhancer.prepareForStorage(committedEvent);
+    expect(forDisk.title).toBe(
+      'Wellness - YouTube - Watch - AI News: Things Will Never Be The Same'
+    );
+    expect(forDisk.category).toBeUndefined();
+    expect(forDisk.subCategory).toBeUndefined();
+
+    const reEnhanced = enhancer.enhance(forDisk);
+    expect(reEnhanced.title).toBe('YouTube - Watch - AI News: Things Will Never Be The Same');
+    expect(reEnhanced.category).toBe('Wellness');
+    expect(reEnhanced.subCategory).toBe('YouTube');
+  });
+
+  it('should handle partial subCategory rename/clear and CREATE/BATCH round-trips cleanly', () => {
+    const enhancer = new EventEnhancer(PluginState.getSettings());
+    const cachedEnhanced = enhancer.enhance({
+      title: 'Wellness - YouTube - Watch',
+      type: 'single',
+      date: '2026-11-16',
+      endDate: null,
+      allDay: true
+    });
+    mockCache.getEventById.mockReturnValue(cachedEnhanced);
+    mockCache.store.getEventDetails.mockReturnValue({
+      calendarId: 'work-cal',
+      event: cachedEnhanced
+    });
+
+    const bridge = new AgentCalendarBridge();
+
+    // Rename only subCategory without passing title
+    const renameSub = bridge.stageUpdateEvent('ev-1', { subCategory: 'Podcast' });
+    expect(renameSub.updatedEvent.title).toBe('Watch');
+    expect(enhancer.prepareForStorage(renameSub.updatedEvent).title).toBe(
+      'Wellness - Podcast - Watch'
+    );
+
+    // Clear subCategory
+    const clearSub = bridge.stageUpdateEvent('ev-1', { subCategory: '' });
+    expect(clearSub.updatedEvent.title).toBe('Watch');
+    expect(clearSub.updatedEvent.subCategory).toBeUndefined();
+    expect(enhancer.prepareForStorage(clearSub.updatedEvent).title).toBe('Wellness - Watch');
+
+    // Create + Batch Create round-trips
+    const createProp = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Watch - Documentary',
+      category: 'Wellness',
+      subCategory: 'YouTube',
+      date: '2026-11-18',
+      allDay: true
+    });
+    expect(enhancer.prepareForStorage(createProp.eventData).title).toBe(
+      'Wellness - YouTube - Watch - Documentary'
+    );
+
+    const batchProp = bridge.stageBatchCreateEvents('work-cal', [
+      {
+        title: 'Wellness - YouTube - Watch - Talk',
+        category: 'Wellness',
+        subCategory: 'YouTube',
+        date: '2026-11-19',
+        allDay: true
+      }
+    ]);
+    expect(enhancer.prepareForStorage(batchProp.items[0].eventData).title).toBe(
+      'Wellness - YouTube - Watch - Talk'
+    );
+  });
+
+  it('should keep titles literal and omit category/subCategory when advanced categorization is disabled', () => {
+    PluginState.setSettings({
+      ...PluginState.getSettings(),
+      enableAdvancedCategorization: false
+    });
+    const enhancer = new EventEnhancer(PluginState.getSettings());
+    const bridge = new AgentCalendarBridge();
+
+    const createProp = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Work - Meeting',
+      category: 'Work',
+      subCategory: 'Dev',
+      date: '2026-11-20',
+      allDay: true
+    });
+    expect(createProp.eventData.title).toBe('Work - Meeting');
+    expect(createProp.eventData.category).toBeUndefined();
+    expect(createProp.eventData.subCategory).toBeUndefined();
+    const prepared = enhancer.prepareForStorage(createProp.eventData);
+    expect(prepared.category).toBeUndefined();
+    expect(prepared.subCategory).toBeUndefined();
+  });
+
+  it('should prevent TOCTOU duplicate execution on concurrent commitProposal calls and report actionability accurately', async () => {
+    let resolveAdd!: (val: boolean) => void;
+    mockCache.addEvent.mockImplementationOnce(
+      () =>
+        new Promise<boolean>(resolve => {
+          resolveAdd = resolve;
+        })
+    );
+
+    const bridge = new AgentCalendarBridge();
+    const proposal = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Race Guard Meeting',
+      date: '2026-09-28',
+      allDay: true
+    });
+
+    expect(bridge.isProposalActionable(proposal)).toBe(true);
+
+    const firstCommit = bridge.commitProposal(proposal.id, undefined, proposal.approvalHash);
+    expect(bridge.isProposalActionable(proposal)).toBe(false);
+
+    const secondCommit = await bridge.commitProposal(proposal.id, undefined, proposal.approvalHash);
+    expect(secondCommit.success).toBe(false);
+    expect(secondCommit.message).toContain('already being applied');
+
+    resolveAdd(true);
+    const firstRes = await firstCommit;
+    expect(firstRes.success).toBe(true);
+    expect(mockCache.addEvent).toHaveBeenCalledTimes(1);
+    expect(bridge.isProposalActionable(proposal)).toBe(false);
+
+    const staleProposal = {
+      ...proposal,
+      id: 'prop_stale',
+      status: 'PENDING' as const
+    };
+    expect(bridge.isProposalActionable(staleProposal)).toBe(false);
   });
 });

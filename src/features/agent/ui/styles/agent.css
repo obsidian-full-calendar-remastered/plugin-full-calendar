@@ -31,6 +31,7 @@
 }
 
 .ofc-agent-sidebar-view .is-hidden,
+.ofc-agent-chat-view .is-hidden,
 .ofc-agent-drawer.is-hidden,
 .ofc-agent-status-indicator.is-hidden,
 .ofc-agent-btn-stop.is-hidden,
@@ -781,6 +782,316 @@
 
 .ofc-managed-onboarding-license input {
   flex: 1;
+}
+
+/* ==========================================================================
+   COPILOT WELCOME SCREEN, STEP TRACE, BULK BAR & FOLLOW-UP CHIPS
+   ========================================================================== */
+
+.ofc-agent-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  margin: auto 0;
+  padding: 20px 14px;
+  gap: 10px;
+}
+
+.ofc-agent-welcome-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ofc-agent-welcome-icon {
+  color: var(--interactive-accent);
+  display: inline-flex;
+  align-items: center;
+}
+
+.ofc-agent-welcome-title {
+  margin: 0;
+  font-size: 1.4em;
+  font-weight: 600;
+  color: var(--text-normal);
+  letter-spacing: -0.01em;
+}
+
+.ofc-agent-welcome-subtitle {
+  margin: 0 0 6px 0;
+  font-size: 0.9em;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.ofc-agent-welcome-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.ofc-agent-welcome-card {
+  text-align: left;
+  max-width: 100%;
+  height: auto;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: 0.88em;
+  line-height: 1.35;
+  cursor: pointer;
+  white-space: normal;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ofc-agent-welcome-card:hover {
+  background-color: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+}
+
+.ofc-agent-welcome-placeholder {
+  color: var(--text-muted);
+  font-weight: 600;
+  background-color: var(--background-primary);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px dashed var(--background-modifier-border);
+}
+
+.ofc-agent-welcome-compact {
+  padding: 4px 2px;
+  gap: 6px;
+  margin: 0;
+}
+
+.ofc-agent-welcome-compact-title {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-agent-welcome-compact-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Live Process & Collapsible Step Trace */
+.ofc-agent-trace {
+  align-self: flex-start;
+  max-width: 92%;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  font-size: 0.82em;
+  color: var(--text-muted);
+  overflow: hidden;
+}
+
+.ofc-agent-trace-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.ofc-agent-trace-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ofc-agent-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--interactive-accent);
+  flex-shrink: 0;
+  animation: ofc-agent-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ofc-agent-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+.ofc-agent-trace-status-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.ofc-agent-trace.is-done .ofc-agent-trace-status-icon {
+  color: #67c23a;
+}
+
+.ofc-agent-trace.is-error .ofc-agent-trace-status-icon {
+  color: var(--text-error);
+}
+
+.ofc-agent-trace-phase {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.ofc-agent-trace-timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.ofc-agent-trace-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px 8px 10px;
+  border-top: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+}
+
+.ofc-agent-trace-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.92em;
+  line-height: 1.35;
+}
+
+.ofc-agent-trace-step-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.ofc-agent-trace-step.is-done .ofc-agent-trace-step-icon {
+  color: #67c23a;
+}
+
+.ofc-agent-trace-step.is-error .ofc-agent-trace-step-icon {
+  color: var(--text-error);
+}
+
+.ofc-agent-trace-step-label {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-normal);
+}
+
+.ofc-agent-trace-step-meta {
+  font-size: 0.88em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Bulk Proposal Bar */
+.ofc-agent-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary-alt);
+  flex-shrink: 0;
+}
+
+.ofc-agent-bulk-count {
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-agent-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ofc-agent-bulk-btn {
+  padding: 4px 10px;
+  font-size: 0.8em;
+}
+
+/* Dynamic Follow-Up Chips */
+.ofc-agent-followups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-self: flex-start;
+  max-width: 95%;
+  margin-top: 2px;
+}
+
+.ofc-agent-followup-chip {
+  font-size: 0.8em;
+  height: auto;
+  padding: 5px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  text-align: left;
+  white-space: normal;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ofc-agent-followup-chip:hover {
+  border-color: var(--interactive-accent);
+  background-color: var(--background-modifier-hover);
+}
+
+/* In-Place Resolved / Expired / Error Proposal States */
+.ofc-proposal-card-resolved {
+  border-color: var(--background-modifier-border);
+  opacity: 0.85;
+  padding: 8px 12px;
+  gap: 4px;
+  box-shadow: none;
+}
+
+.ofc-proposal-card-resolved .ofc-proposal-title {
+  font-size: 0.92em;
+}
+
+.ofc-proposal-card-resolved .ofc-proposal-footer {
+  margin-top: 2px;
+  padding-top: 4px;
+}
+
+.ofc-proposal-error {
+  font-size: 0.82em;
+  color: var(--text-error);
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.ofc-proposal-status-expired {
+  background-color: var(--background-secondary-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
 }
 
 

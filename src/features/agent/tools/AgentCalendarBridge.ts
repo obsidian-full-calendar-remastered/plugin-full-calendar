@@ -15,7 +15,11 @@
 import { PluginState } from '../../../core/PluginState';
 import type { OFCEvent } from '../../../types';
 import { validateEvent } from '../../../types/schema';
-import { CATEGORY_TITLE_DELIMITER } from '../../category/categoryParser';
+import {
+  extractCleanTitle,
+  normalizeEventTitleFields,
+  normalizeOptionalField
+} from '../domain/eventTitleNormalizer';
 import type {
   EventProposal,
   CreateEventProposal,
@@ -35,6 +39,7 @@ const MAX_MUTATION_HISTORY = 500;
 
 export class AgentCalendarBridge {
   private pendingProposals: Map<string, EventProposal> = new Map();
+  private inFlightProposalIds: Set<string> = new Set();
   private appliedMutationKeys: Map<string, number> = new Map();
   private logger?: AgentAuditLogger;
 
@@ -44,6 +49,19 @@ export class AgentCalendarBridge {
 
   private generateId(prefix: string): string {
     return generateRandomId(prefix);
+  }
+
+  public isProposalActionable(proposal: EventProposal): boolean {
+    if (proposal.status !== 'PENDING') {
+      return false;
+    }
+    if (!this.pendingProposals.has(proposal.id) || this.inFlightProposalIds.has(proposal.id)) {
+      return false;
+    }
+    if (proposal.expiresAt !== undefined && Date.now() > proposal.expiresAt) {
+      return false;
+    }
+    return true;
   }
 
   private buildValidatedSingleEvent(params: {
@@ -57,24 +75,35 @@ export class AgentCalendarBridge {
     endTime?: string;
     description?: string;
     location?: string;
-  }): { fullTitle: string; eventData: OFCEvent } | null {
-    const fullTitle = this.constructFullTitle(
-      params.cleanTitle,
-      params.category,
-      params.subCategory
-    );
+  }): {
+    cleanTitle: string;
+    category?: string;
+    subCategory?: string;
+    eventData: OFCEvent;
+  } | null {
+    const enableCat = PluginState.getSettings().enableAdvancedCategorization;
+    const normalized = normalizeEventTitleFields({
+      rawTitle: params.cleanTitle,
+      category: params.category,
+      subCategory: params.subCategory,
+      enableAdvancedCategorization: enableCat
+    });
+    if (!normalized.title) {
+      return null;
+    }
+
     const normEndDate = params.normEndDate ?? null;
 
     let eventData: OFCEvent;
     if (params.allDay) {
       eventData = {
-        title: fullTitle,
+        title: normalized.title,
         type: 'single',
         date: params.normDate,
         endDate: normEndDate,
         allDay: true,
-        category: params.category,
-        subCategory: params.subCategory,
+        category: normalized.category,
+        subCategory: normalized.subCategory,
         description: params.description,
         location: params.location
       };
@@ -86,15 +115,15 @@ export class AgentCalendarBridge {
         endTime = `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       }
       eventData = {
-        title: fullTitle,
+        title: normalized.title,
         type: 'single',
         date: params.normDate,
         endDate: normEndDate,
         allDay: false,
         startTime,
         endTime,
-        category: params.category,
-        subCategory: params.subCategory,
+        category: normalized.category,
+        subCategory: normalized.subCategory,
         description: params.description,
         location: params.location
       };
@@ -103,7 +132,12 @@ export class AgentCalendarBridge {
     if (!validateEvent(eventData)) {
       return null;
     }
-    return { fullTitle, eventData };
+    return {
+      cleanTitle: normalized.title,
+      category: normalized.category,
+      subCategory: normalized.subCategory,
+      eventData
+    };
   }
 
   private finalizeProposalSecurity<T extends EventProposal>(proposal: T): T {
@@ -254,6 +288,7 @@ export class AgentCalendarBridge {
           }
         }
 
+        const enableCat = PluginState.getSettings().enableAdvancedCategorization;
         const calSources = PluginState.getSettings().calendarSources;
         const calName = calSources.find(s => s.id === source.id)?.name || 'Unnamed';
 
@@ -261,7 +296,9 @@ export class AgentCalendarBridge {
           id: event.id,
           calendarId: source.id,
           calendarName: calName,
-          title: eventData.title,
+          title: enableCat
+            ? extractCleanTitle(eventData.title, eventData.category, eventData.subCategory)
+            : eventData.title,
           category: eventData.category,
           subCategory: eventData.subCategory,
           type: eventData.type,
@@ -287,11 +324,18 @@ export class AgentCalendarBridge {
     const event = cache.getEventById(eventId);
     if (!event) return null;
     const details = cache.store.getEventDetails(eventId);
+    const enableCat = PluginState.getSettings().enableAdvancedCategorization;
+    const sanitizedEvent: OFCEvent = enableCat
+      ? {
+          ...event,
+          title: extractCleanTitle(event.title, event.category, event.subCategory)
+        }
+      : { ...event };
 
     return {
       id: eventId,
       calendarId: details?.calendarId,
-      event
+      event: sanitizedEvent
     };
   }
 
@@ -359,37 +403,6 @@ export class AgentCalendarBridge {
     return { id: defaultCal.id, name: defaultCal.name };
   }
 
-  private stripCategoryPrefix(rawTitle: string, category?: string, subCategory?: string): string {
-    let cleaned = rawTitle.trim();
-    const cat = category?.trim();
-    const sub = subCategory?.trim();
-    if (cat) {
-      const fullPrefix = sub
-        ? `${cat}${CATEGORY_TITLE_DELIMITER}${sub}${CATEGORY_TITLE_DELIMITER}`
-        : `${cat}${CATEGORY_TITLE_DELIMITER}`;
-      const catOnlyPrefix = `${cat}${CATEGORY_TITLE_DELIMITER}`;
-      if (cleaned.toLowerCase().startsWith(fullPrefix.toLowerCase())) {
-        cleaned = cleaned.slice(fullPrefix.length).trim();
-      } else if (cleaned.toLowerCase().startsWith(catOnlyPrefix.toLowerCase())) {
-        cleaned = cleaned.slice(catOnlyPrefix.length).trim();
-      }
-    }
-    return cleaned;
-  }
-
-  private constructFullTitle(cleanTitle: string, category?: string, subCategory?: string): string {
-    const strippedTitle = this.stripCategoryPrefix(cleanTitle, category, subCategory);
-    const parts: string[] = [];
-    if (category && category.trim().length > 0) {
-      parts.push(category.trim());
-      if (subCategory && subCategory.trim().length > 0) {
-        parts.push(subCategory.trim());
-      }
-    }
-    parts.push(strippedTitle || cleanTitle.trim());
-    return parts.join(CATEGORY_TITLE_DELIMITER);
-  }
-
   public stageCreateEvent(params: {
     calendarId: string;
     title: string;
@@ -426,7 +439,12 @@ export class AgentCalendarBridge {
     if (!built) {
       throw new Error(`Event validation failed for proposed event: ${cleanTitle}`);
     }
-    const { fullTitle, eventData } = built;
+    const {
+      cleanTitle: normalizedTitle,
+      category: normalizedCategory,
+      subCategory: normalizedSubCategory,
+      eventData
+    } = built;
 
     const proposal: CreateEventProposal = this.finalizeProposalSecurity({
       id: this.generateId('prop_create'),
@@ -435,16 +453,16 @@ export class AgentCalendarBridge {
       createdAt: Date.now(),
       calendarId: cal.id,
       calendarName: cal.name,
-      cleanTitle,
-      category: params.category,
-      subCategory: params.subCategory,
+      cleanTitle: normalizedTitle,
+      category: normalizedCategory,
+      subCategory: normalizedSubCategory,
       eventData
     });
 
     this.pendingProposals.set(proposal.id, proposal);
     this.logger?.proposal('Created proposal', 'CREATE', {
       proposalId: proposal.id,
-      title: fullTitle
+      title: eventData.title
     });
     return proposal;
   }
@@ -474,24 +492,65 @@ export class AgentCalendarBridge {
 
     const updated = JSON.parse(JSON.stringify(original)) as OFCEvent;
     const changedFields: Record<string, { old: unknown; new: unknown }> = {};
+    const enableCat = PluginState.getSettings().enableAdvancedCategorization;
 
-    if (updates.category !== undefined) {
-      changedFields['category'] = { old: updated.category, new: updates.category };
-      updated.category = updates.category;
-    }
-    if (updates.subCategory !== undefined) {
-      changedFields['subCategory'] = { old: updated.subCategory, new: updates.subCategory };
-      updated.subCategory = updates.subCategory;
-    }
-    if (updates.title !== undefined) {
-      const nextFullTitle = this.constructFullTitle(
-        updates.title,
-        updated.category,
-        updated.subCategory
+    if (enableCat) {
+      const originalCleanTitle = extractCleanTitle(
+        original.title,
+        original.category,
+        original.subCategory
       );
-      changedFields['title'] = { old: original.title, new: nextFullTitle };
-      updated.title = nextFullTitle;
+      const nextCategory =
+        updates.category !== undefined
+          ? normalizeOptionalField(updates.category)
+          : normalizeOptionalField(original.category);
+      const nextSubCategory = nextCategory
+        ? updates.subCategory !== undefined
+          ? normalizeOptionalField(updates.subCategory)
+          : normalizeOptionalField(original.subCategory)
+        : undefined;
+
+      if (nextCategory !== original.category) {
+        changedFields['category'] = { old: original.category, new: nextCategory };
+      }
+      if (nextSubCategory !== original.subCategory) {
+        changedFields['subCategory'] = { old: original.subCategory, new: nextSubCategory };
+      }
+
+      updated.category = nextCategory;
+      updated.subCategory = nextSubCategory;
+
+      let nextCleanTitle = originalCleanTitle;
+      if (updates.title !== undefined) {
+        const trimmedTitle = updates.title.trim();
+        if (!trimmedTitle) {
+          throw new Error('Event title cannot be empty.');
+        }
+        nextCleanTitle = extractCleanTitle(trimmedTitle, nextCategory, nextSubCategory);
+        if (!nextCleanTitle) {
+          throw new Error('Event title cannot be empty.');
+        }
+      }
+
+      updated.title = nextCleanTitle;
+      if (updates.title !== undefined && nextCleanTitle !== originalCleanTitle) {
+        changedFields['title'] = { old: originalCleanTitle, new: nextCleanTitle };
+      }
+    } else {
+      updated.category = undefined;
+      updated.subCategory = undefined;
+      if (updates.title !== undefined) {
+        const trimmedTitle = updates.title.trim();
+        if (!trimmedTitle) {
+          throw new Error('Event title cannot be empty.');
+        }
+        updated.title = trimmedTitle;
+        if (trimmedTitle !== original.title) {
+          changedFields['title'] = { old: original.title, new: trimmedTitle };
+        }
+      }
     }
+
     if (updates.date !== undefined && updated.type === 'single') {
       const normDate = this.normalizeIsoDate(updates.date);
       changedFields['date'] = {
@@ -611,9 +670,9 @@ export class AgentCalendarBridge {
         id: this.generateId('item'),
         selected: true,
         calendarId: cal.id,
-        cleanTitle,
-        category: ev.category,
-        subCategory: ev.subCategory,
+        cleanTitle: built.cleanTitle,
+        category: built.category,
+        subCategory: built.subCategory,
         eventData: built.eventData
       });
     }
@@ -653,109 +712,118 @@ export class AgentCalendarBridge {
     overrideCalendarId?: string,
     expectedApprovalHash?: string
   ): Promise<{ success: boolean; message: string }> {
+    if (this.inFlightProposalIds.has(proposalId)) {
+      return { success: false, message: 'Proposal is already being applied.' };
+    }
+
     const proposal = this.pendingProposals.get(proposalId);
     if (!proposal) {
       return { success: false, message: 'Proposal not found or already processed.' };
     }
-    if (proposal.status !== 'PENDING') {
+    if (proposal.status !== 'PENDING' && proposal.status !== 'FAILED') {
       return { success: false, message: `Proposal is already in status: ${proposal.status}` };
     }
 
-    if (
-      proposal.mutationIdempotencyKey &&
-      this.appliedMutationKeys.has(proposal.mutationIdempotencyKey)
-    ) {
-      return {
-        success: false,
-        message: 'Mutation was already executed (duplicate idempotency key).'
-      };
-    }
-
-    if (proposal.expiresAt !== undefined && Date.now() > proposal.expiresAt) {
-      proposal.status = 'FAILED';
-      this.pendingProposals.delete(proposalId);
-      return {
-        success: false,
-        message:
-          'Proposal expired (5-minute limit). Please re-run the request to preview fresh changes.'
-      };
-    }
-
-    const liveHash = computeProposalApprovalHash(proposal, overrideCalendarId);
-    if (expectedApprovalHash !== undefined) {
-      if (expectedApprovalHash !== liveHash) {
+    this.inFlightProposalIds.add(proposalId);
+    try {
+      if (
+        proposal.mutationIdempotencyKey &&
+        this.appliedMutationKeys.has(proposal.mutationIdempotencyKey)
+      ) {
         return {
           success: false,
-          message: 'Proposal arguments changed after preview. Approval invalidated for safety.'
+          message: 'Mutation was already executed (duplicate idempotency key).'
         };
       }
-    } else if (
-      !overrideCalendarId &&
-      proposal.type !== 'BATCH_CREATE' &&
-      proposal.approvalHash &&
-      proposal.approvalHash !== liveHash
-    ) {
-      return {
-        success: false,
-        message: 'Proposal arguments changed after preview. Approval invalidated for safety.'
-      };
-    }
 
-    const cache = PluginState.getCache();
-    const targetCalendarId = overrideCalendarId || proposal.calendarId;
-
-    if (proposal.type === 'UPDATE' || proposal.type === 'DELETE') {
-      const currentEvent = cache.getEventById(proposal.eventId);
-      if (!currentEvent) {
-        proposal.status = 'FAILED';
-        this.pendingProposals.delete(proposalId);
-        return { success: false, message: 'Target event no longer exists.' };
-      }
-      if (
-        proposal.sourceSnapshotHash &&
-        sha256HexSync(canonicalJson(currentEvent)) !== proposal.sourceSnapshotHash
-      ) {
+      if (proposal.expiresAt !== undefined && Date.now() > proposal.expiresAt) {
         proposal.status = 'FAILED';
         this.pendingProposals.delete(proposalId);
         return {
           success: false,
           message:
-            'Target event changed since preview. Please request a fresh preview before applying.'
+            'Proposal expired (5-minute limit). Please re-run the request to preview fresh changes.'
         };
       }
-    }
 
-    try {
-      if (proposal.type === 'CREATE') {
-        const ok = await cache.addEvent(targetCalendarId, proposal.eventData);
-        if (!ok) throw new Error('Cache refused to add event.');
-      } else if (proposal.type === 'UPDATE') {
-        const ok = await cache.updateEventWithId(proposal.eventId, proposal.updatedEvent);
-        if (!ok) throw new Error('Cache refused to update event.');
-      } else if (proposal.type === 'DELETE') {
-        await cache.deleteEvent(proposal.eventId);
-      } else if (proposal.type === 'BATCH_CREATE') {
-        const selected = proposal.items.filter(i => i.selected);
-        if (selected.length === 0) {
-          return { success: false, message: 'No items selected to import.' };
+      const liveHash = computeProposalApprovalHash(proposal, overrideCalendarId);
+      if (expectedApprovalHash !== undefined) {
+        if (expectedApprovalHash !== liveHash) {
+          return {
+            success: false,
+            message: 'Proposal arguments changed after preview. Approval invalidated for safety.'
+          };
         }
-        for (const item of selected) {
-          await cache.addEvent(targetCalendarId, item.eventData);
+      } else if (
+        !overrideCalendarId &&
+        proposal.type !== 'BATCH_CREATE' &&
+        proposal.approvalHash &&
+        proposal.approvalHash !== liveHash
+      ) {
+        return {
+          success: false,
+          message: 'Proposal arguments changed after preview. Approval invalidated for safety.'
+        };
+      }
+
+      const cache = PluginState.getCache();
+      const targetCalendarId = overrideCalendarId || proposal.calendarId;
+
+      if (proposal.type === 'UPDATE' || proposal.type === 'DELETE') {
+        const currentEvent = cache.getEventById(proposal.eventId);
+        if (!currentEvent) {
+          proposal.status = 'FAILED';
+          this.pendingProposals.delete(proposalId);
+          return { success: false, message: 'Target event no longer exists.' };
+        }
+        if (
+          proposal.sourceSnapshotHash &&
+          sha256HexSync(canonicalJson(currentEvent)) !== proposal.sourceSnapshotHash
+        ) {
+          proposal.status = 'FAILED';
+          this.pendingProposals.delete(proposalId);
+          return {
+            success: false,
+            message:
+              'Target event changed since preview. Please request a fresh preview before applying.'
+          };
         }
       }
 
-      proposal.status = 'APPROVED';
-      if (proposal.mutationIdempotencyKey) {
-        this.recordMutationKey(proposal.mutationIdempotencyKey);
+      try {
+        if (proposal.type === 'CREATE') {
+          const ok = await cache.addEvent(targetCalendarId, proposal.eventData);
+          if (!ok) throw new Error('Cache refused to add event.');
+        } else if (proposal.type === 'UPDATE') {
+          const ok = await cache.updateEventWithId(proposal.eventId, proposal.updatedEvent);
+          if (!ok) throw new Error('Cache refused to update event.');
+        } else if (proposal.type === 'DELETE') {
+          await cache.deleteEvent(proposal.eventId);
+        } else if (proposal.type === 'BATCH_CREATE') {
+          const selected = proposal.items.filter(i => i.selected);
+          if (selected.length === 0) {
+            return { success: false, message: 'No items selected to import.' };
+          }
+          for (const item of selected) {
+            await cache.addEvent(targetCalendarId, item.eventData);
+          }
+        }
+
+        proposal.status = 'APPROVED';
+        if (proposal.mutationIdempotencyKey) {
+          this.recordMutationKey(proposal.mutationIdempotencyKey);
+        }
+        this.pendingProposals.delete(proposalId);
+        this.logger?.proposal('Proposal approved and applied', proposal.type, { proposalId });
+        return { success: true, message: 'Event action applied successfully.' };
+      } catch (err) {
+        proposal.status = 'FAILED';
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger?.error('Failed to apply proposal', err as Error, { proposalId });
+        return { success: false, message: `Failed to apply: ${msg}` };
       }
-      this.pendingProposals.delete(proposalId);
-      this.logger?.proposal('Proposal approved and applied', proposal.type, { proposalId });
-      return { success: true, message: 'Event action applied successfully.' };
-    } catch (err) {
-      proposal.status = 'FAILED';
-      const msg = err instanceof Error ? err.message : String(err);
-      this.logger?.error('Failed to apply proposal', err as Error, { proposalId });
-      return { success: false, message: `Failed to apply: ${msg}` };
+    } finally {
+      this.inFlightProposalIds.delete(proposalId);
     }
   }
 

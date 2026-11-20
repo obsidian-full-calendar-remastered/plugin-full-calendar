@@ -2038,8 +2038,6 @@
   "agent": {
     "sidebar": {
       "viewTitle": "Агент календаря",
-      "emptyTitle": "Агент календаря готов",
-      "emptyDesc": "Задавайте вопросы о календаре, находите свободные слоты, черновики новых событий или импортируйте расписания из интернета.",
       "inputPlaceholder": "Спросите агента или автоматизируйте расписание...",
       "stop": "Стоп",
       "sendAria": "Отправить запрос",
@@ -2081,7 +2079,15 @@
       "changes": "Изменения:",
       "notes": "Примечания: {{notes}}",
       "deleteWarning": "⚠️ Это безвозвратно удалит событие из вашего календаря.",
-      "foundBatch": "Найдено {{count}} событий для календаря: {{calendar}}"
+      "foundBatch": "Найдено {{count}} событий для календаря: {{calendar}}",
+      "expired": "Expired",
+      "pendingCount": "{{count}} pending proposals",
+      "approveAll": "Approve all ({{count}})",
+      "rejectAll": "Reject all",
+      "applyingProgress": "Applying {{current}}/{{total}}...",
+      "bulkAppliedSummary": "Applied {{applied}} of {{total}} proposals.",
+      "bulkAppliedPartial": "Applied {{applied}} of {{total}} proposals ({{failed}} failed).",
+      "bulkRejectedSummary": "Rejected {{count}} pending proposals."
     },
     "audit": {
       "title": "Агент Full Calendar: журнал аудита и диагностика",
@@ -2140,6 +2146,24 @@
       "eventApplied": "Событие успешно применено к календарю.",
       "failedToApply": "Не удалось применить предложение: {{error}}",
       "proposalRejected": "Предложение события отклонено."
+    },
+    "welcome": {
+      "greeting": "Hi, how can I help?",
+      "subtitle": "Tell me what you need with your schedule, and we can get started.",
+      "addEventPrefix": "Schedule an event: ",
+      "addEventPlaceholder": "details",
+      "importUrlPrefix": "Import schedule from URL: ",
+      "importUrlPlaceholder": "url",
+      "cleanupPrefix": "Review and clean up events from ",
+      "cleanupPlaceholder": "date range",
+      "starterCleanupPrompt": "Review and clean up my event titles and categories from "
+    },
+    "trace": {
+      "working": "Working...",
+      "usedTools": "Completed {{count}} steps in {{seconds}}s",
+      "cancelled": "Cancelled after {{seconds}}s",
+      "failed": "Failed after {{seconds}}s",
+      "stepsRecorded": "{{count}} steps"
     }
   }
 }

@@ -33,6 +33,15 @@ export interface ChatToolCall {
   function: ToolCallFunction;
 }
 
+export interface AgentToolStepRecord {
+  id: string;
+  name: string;
+  label: string;
+  summary: string;
+  ok: boolean;
+  durationMs: number;
+}
+
 export interface ChatMessage {
   id?: string;
   role: ChatRole;
@@ -41,6 +50,8 @@ export interface ChatMessage {
   tool_call_id?: string;
   tool_calls?: ChatToolCall[];
   timestamp?: number;
+  suggestions?: string[];
+  toolSteps?: AgentToolStepRecord[];
 }
 
 export interface ToolParameterProperty {

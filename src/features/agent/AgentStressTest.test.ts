@@ -507,6 +507,10 @@ describe('Agentic Write Bar: Comprehensive Stress Tests', () => {
     });
 
     it('should parse and preserve multi-delimiter titles robustly', () => {
+      PluginState.setSettings({
+        ...PluginState.getSettings(),
+        enableAdvancedCategorization: true
+      });
       const proposal = bridge.stageCreateEvent({
         calendarId: 'work-cal',
         title: 'Urgent - Bugfix - Meeting',
@@ -516,7 +520,7 @@ describe('Agentic Write Bar: Comprehensive Stress Tests', () => {
         allDay: true
       });
 
-      expect(proposal.eventData.title).toBe('Work - Core - Urgent - Bugfix - Meeting');
+      expect(proposal.eventData.title).toBe('Urgent - Bugfix - Meeting');
       expect(proposal.category).toBe('Work');
       expect(proposal.subCategory).toBe('Core');
     });

@@ -52,7 +52,7 @@ export class AgentCalendarBridge {
   }
 
   public isProposalActionable(proposal: EventProposal): boolean {
-    if (proposal.status !== 'PENDING') {
+    if (proposal.status !== 'PENDING' && proposal.status !== 'FAILED') {
       return false;
     }
     if (!this.pendingProposals.has(proposal.id) || this.inFlightProposalIds.has(proposal.id)) {
@@ -608,6 +608,26 @@ export class AgentCalendarBridge {
     const calId = details?.calendarId || '';
     const calName = this.getCalendarSources().find(s => s.id === calId)?.name || 'Calendar';
 
+    let enableCat: boolean;
+    try {
+      enableCat = Boolean(PluginState.getSettings().enableAdvancedCategorization);
+    } catch {
+      enableCat = false;
+    }
+
+    const eventDate =
+      event.type === 'single'
+        ? event.date
+        : event.type === 'rrule'
+          ? event.startDate
+          : event.startRecur;
+    const eventCategory = enableCat ? normalizeOptionalField(event.category) : undefined;
+    const eventSubCategory =
+      enableCat && eventCategory ? normalizeOptionalField(event.subCategory) : undefined;
+    const displayTitle = enableCat
+      ? extractCleanTitle(event.title, eventCategory, eventSubCategory) || event.title
+      : event.title;
+
     const proposal: DeleteEventProposal = this.finalizeProposalSecurity({
       id: this.generateId('prop_delete'),
       type: 'DELETE',
@@ -618,7 +638,15 @@ export class AgentCalendarBridge {
       calendarId: calId,
       calendarName: calName,
       eventId,
-      eventTitle: event.title,
+      eventTitle: displayTitle,
+      eventDate,
+      eventEndDate: event.endDate ?? undefined,
+      eventAllDay: event.allDay,
+      eventStartTime: event.allDay ? undefined : event.startTime,
+      eventEndTime: event.allDay ? undefined : (event.endTime ?? undefined),
+      eventRecurring: event.type === 'recurring' || event.type === 'rrule',
+      eventCategory,
+      eventSubCategory,
       reason
     });
 
@@ -790,12 +818,48 @@ export class AgentCalendarBridge {
         }
       }
 
+      let enableCat: boolean;
+      try {
+        enableCat = Boolean(PluginState.getSettings().enableAdvancedCategorization);
+      } catch {
+        enableCat = false;
+      }
+
+      const sanitizeEventForSetting = (ev: OFCEvent): OFCEvent => {
+        if (enableCat) {
+          return ev;
+        }
+        const clone: OFCEvent = { ...ev };
+        delete clone.category;
+        delete clone.subCategory;
+        return clone;
+      };
+
       try {
         if (proposal.type === 'CREATE') {
-          const ok = await cache.addEvent(targetCalendarId, proposal.eventData);
+          const ok = await cache.addEvent(
+            targetCalendarId,
+            sanitizeEventForSetting(proposal.eventData)
+          );
           if (!ok) throw new Error('Cache refused to add event.');
         } else if (proposal.type === 'UPDATE') {
-          const ok = await cache.updateEventWithId(proposal.eventId, proposal.updatedEvent);
+          const changedKeys = Object.keys(proposal.changedFields || {});
+          if (
+            !enableCat &&
+            changedKeys.length > 0 &&
+            changedKeys.every(f => f === 'category' || f === 'subCategory')
+          ) {
+            proposal.status = 'FAILED';
+            this.pendingProposals.delete(proposalId);
+            return {
+              success: false,
+              message: 'Advanced categorization is disabled; no remaining fields to update.'
+            };
+          }
+          const ok = await cache.updateEventWithId(
+            proposal.eventId,
+            sanitizeEventForSetting(proposal.updatedEvent)
+          );
           if (!ok) throw new Error('Cache refused to update event.');
         } else if (proposal.type === 'DELETE') {
           await cache.deleteEvent(proposal.eventId);
@@ -805,7 +869,7 @@ export class AgentCalendarBridge {
             return { success: false, message: 'No items selected to import.' };
           }
           for (const item of selected) {
-            await cache.addEvent(targetCalendarId, item.eventData);
+            await cache.addEvent(targetCalendarId, sanitizeEventForSetting(item.eventData));
           }
         }
 

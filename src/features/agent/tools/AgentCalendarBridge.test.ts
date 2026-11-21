@@ -500,4 +500,86 @@ describe('AgentCalendarBridge', () => {
     };
     expect(bridge.isProposalActionable(staleProposal)).toBe(false);
   });
+
+  it('captures delete metadata across ON/OFF toggles, strips category if toggled OFF before commit, and keeps transient FAILED retryable', async () => {
+    const enhancer = new EventEnhancer(PluginState.getSettings());
+    const enhanced = enhancer.enhance({
+      id: 'ev-del-1',
+      title: 'Wellness - YouTube - Old Session',
+      type: 'single',
+      date: '2026-11-20',
+      endDate: '2026-11-21',
+      allDay: false,
+      startTime: '09:15',
+      endTime: '10:30'
+    });
+    mockCache.getEventById.mockReturnValue(enhanced);
+    mockCache.store.getEventDetails.mockReturnValue({ calendarId: 'work-cal', event: enhanced });
+
+    const bridge = new AgentCalendarBridge();
+
+    // 1. Delete proposal with categorization ON captures schedule and strips category prefix
+    const delOn = bridge.stageDeleteEvent('ev-del-1', 'Duplicate');
+    expect(delOn.eventTitle).toBe('Old Session');
+    expect(delOn.eventDate).toBe('2026-11-20');
+    expect(delOn.eventEndDate).toBe('2026-11-21');
+    expect(delOn.eventAllDay).toBe(false);
+    expect(delOn.eventStartTime).toBe('09:15');
+    expect(delOn.eventEndTime).toBe('10:30');
+    expect(delOn.eventCategory).toBe('Wellness');
+    expect(delOn.eventSubCategory).toBe('YouTube');
+    expect(delOn.eventRecurring).toBe(false);
+
+    // 2. Stage CREATE + category-only UPDATE while ON, then toggle categorization OFF before commit
+    const createOn = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Focus Block',
+      category: 'Work',
+      subCategory: 'Deep',
+      date: '2026-11-22',
+      allDay: true
+    });
+    const catOnlyUpdate = bridge.stageUpdateEvent('ev-del-1', { category: 'Work' });
+
+    PluginState.setSettings({
+      ...PluginState.getSettings(),
+      enableAdvancedCategorization: false
+    });
+
+    const delOff = bridge.stageDeleteEvent('ev-del-1');
+    expect(delOff.eventCategory).toBeUndefined();
+    expect(delOff.eventSubCategory).toBeUndefined();
+
+    const createCommit = await bridge.commitProposal(createOn.id, undefined, createOn.approvalHash);
+    expect(createCommit.success).toBe(true);
+    const addedEv = (mockCache.addEvent.mock.calls as [string, OFCEvent][])[0][1];
+    expect(addedEv.category).toBeUndefined();
+    expect(addedEv.subCategory).toBeUndefined();
+
+    const catOnlyCommit = await bridge.commitProposal(
+      catOnlyUpdate.id,
+      undefined,
+      catOnlyUpdate.approvalHash
+    );
+    expect(catOnlyCommit.success).toBe(false);
+    expect(catOnlyCommit.message).toContain('disabled');
+    expect(mockCache.updateEventWithId).not.toHaveBeenCalled();
+
+    // 3. Transient FAILED proposal stays actionable while present in pendingProposals
+    PluginState.setSettings({
+      ...PluginState.getSettings(),
+      enableAdvancedCategorization: true
+    });
+    mockCache.addEvent.mockRejectedValueOnce(new Error('Disk busy'));
+    const failCreate = bridge.stageCreateEvent({
+      calendarId: 'work-cal',
+      title: 'Retryable',
+      date: '2026-11-22',
+      allDay: true
+    });
+    const failRes = await bridge.commitProposal(failCreate.id, undefined, failCreate.approvalHash);
+    expect(failRes.success).toBe(false);
+    expect(failCreate.status).toBe('FAILED');
+    expect(bridge.isProposalActionable(failCreate)).toBe(true);
+  });
 });

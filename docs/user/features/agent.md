@@ -51,38 +51,55 @@ Instead of arbitrary "chat count" limits that penalize short questions, Managed 
 
 ## Getting Started & Accessing the Agent
 
-The Calendar Agent can be accessed in two coordinated ways:
+The Calendar Agent can be accessed in three coordinated entry points backed by **real-time dual-panel synchronization**:
 
 ### A. Calendar Cockpit HUD (Left Panel)
-If the [Calendar Cockpit](../views/calendar-cockpit.md) is open, the agent is embedded directly as an accordion card (**`AgentHudModule`**):
-*   Provides quick prompt entry, suggestion pills, and proposal approvals right beside your calendar grid.
-*   Features a one-click **Open Panel** launcher button in its card header to immediately pop open the full Right Sidebar Leaf.
+If the [Calendar Cockpit](../views/calendar-cockpit.md) is open, the agent is embedded directly as a collapsible accordion card (**`AgentHudModule`**):
+*   Provides quick prompt entry, compact starter pills, dynamic follow-up chips, a docked live activity strip, and in-place proposal cards right beside your calendar grid.
+*   Features a one-click **Open Panel** launcher button in the composer bar to pop open the full Right Sidebar Leaf (carrying over any draft text).
 
-### B. Right Sidebar Leaf
-The full-featured Calendar Agent lives in Obsidian's persistent **Right Sidebar Leaf**, ideal for deep conversational planning, multi-session management, and reviewing full audit trails:
-1.  **Cockpit Launcher**: Click the open panel icon in the Cockpit Agent HUD header.
+### B. Right Sidebar Leaf & Command Modal
+The full-featured Calendar Agent lives in Obsidian's persistent **Right Sidebar Leaf** (and can also be summoned anywhere via the **Agent Command Modal**):
+1.  **Cockpit Launcher**: Click the **Open panel** icon (`panel-right-open`) in the Cockpit Agent HUD composer bar.
 2.  **Ribbon Icon**: Click the **robot** (`bot`) icon on Obsidian's left ribbon.
 3.  **Command Palette**: Press ++ctrl+p++ (or ++cmd+p++ on macOS) and search for `Full Calendar: Open calendar agent`.
 
+### Real-Time Dual-Panel Synchronization
+All mounted Calendar Agent surfaces (Left Cockpit HUD, Right Sidebar Leaf, and Command Modal) share one live `AgentEngine` stream:
+*   **Mid-Stream Hydration**: Opening the Right Sidebar (or switching to a tab with the Cockpit) while a run is already in progress immediately reconstructs the live step trace, streamed text, and docked timer.
+*   **Cross-Panel Actions**: Sending a prompt, clicking **Stop**, switching/creating/deleting sessions, toggling batch checklist checkboxes, or approving/rejecting proposals synchronizes instantaneously across every open panel without jumping your scroll position.
+
 ```text
-+--------------------------------------------------------+
-| [Default Session (3 msgs) v]  [+]  [Trash]  [Logs]     |
-+--------------------------------------------------------+
-| User: What's my schedule for today?                    |
-| Assistant: You have 3 events scheduled:                |
-|   * 09:00 AM - 10:00 AM: Team Standup                  |
-|   * 01:30 PM - 02:30 PM: Project Review                |
-|   * 04:00 PM - 05:00 PM: Deep Work Block               |
-|                                                        |
-| [Proposal: create event]                               |
-| Title: Meeting with Alice                              |
-| 📅 2026-09-10 ⏰ 14:00 - 15:00                        |
-| [Reject]                             [Approve & apply] |
-+--------------------------------------------------------+
-| (What's my schedule today?) (Events this week) (...)   |
-+--------------------------------------------------------+
-| [ Ask agent or automate schedule...           ] [Send] |
-+--------------------------------------------------------+
++----------------------------------------------------------+
+| [Default Session (3 msgs) v]    [+]    [Trash]   [Logs]  |
++----------------------------------------------------------+
+| User: Move Thursday standup to Friday at 11 AM           |
+|                                                          |
+| > [✓ Completed 2 steps in 2.4s]                          |
+| Assistant: I've staged the update for your review:       |
+|                                                          |
+| | [UPDATE]  Work       Thu, Sep 10 · 10:00 AM – 10:30 AM |
+| | Team Standup                                           |
+| | ● Work › Engineering                                   |
+| | Date:                                                  |
+| |   − 2026-09-10                                         |
+| |   + 2026-09-11                                         |
+| | Start time:                                            |
+| |   − 10:00 AM                                           |
+| |   + 11:00 AM                                           |
+| | End time:                                              |
+| |   − 10:30 AM                                           |
+| |   + 11:30 AM                                           |
+| |                            [Reject]  [Approve & apply] |
+|                                                          |
+| (Check for conflicts on Friday)  (Add agenda notes)      |
++----------------------------------------------------------+
+| [ 2 pending proposals ]  [Reject all]  [Approve all (2)] |
++----------------------------------------------------------+
+| ● Preparing event update...               2 steps · 3.4s |
++----------------------------------------------------------+
+| [ Ask agent or automate schedule...         ] [Send/Stop]|
++----------------------------------------------------------+
 ```
 
 ---
@@ -91,55 +108,72 @@ The full-featured Calendar Agent lives in Obsidian's persistent **Right Sidebar 
 
 Manage multiple independent conversation threads locally without losing past context:
 
-*   **Session Selector**: Click the dropdown at the top of the sidebar to switch between past conversations. Each entry displays the thread title and message count.
+*   **Session Selector**: Click the dropdown at the top of the Right Sidebar Leaf to switch between past conversations. Each entry displays the thread title and message count.
 *   **New Session (`+`)**: Click the plus icon to start a fresh conversation thread. The agent automatically generates a descriptive title from your first prompt.
 *   **Delete Session (`Trash`)**: Delete the active conversation thread when you are done.
-*   **Persistent Staged Proposals**: Any unapproved or pending proposals stay attached to their respective conversation session.
+*   **Persistent Staged Proposals**: Unapproved proposals remain attached to their session thread; switching or clearing sessions while a generation is active cleanly detaches the in-flight run so no response leaks into the newly opened thread.
+
+---
+
+## Live Progress & Cancellation
+
+When running multi-step tool calls or waiting on slower reasoning models, progress remains transparent across two coordinated layers:
+
+*   **Collapsible Step Trace**: Each assistant turn renders a compact `<details>` trace above its reply showing reasoning status, tool preparation previews (e.g., *Preparing event update...*), and per-step execution results (such as event counts loaded) alongside exact durations. Finished traces fold neatly into a single clickable summary bar.
+*   **Docked Live Activity Bar**: Anchored permanently between the scroll area and the composer (above **Send** / **Stop**), the live strip shows a pulsing indicator, the current phase, an active step count badge, and a live `0.0s` elapsed timer—remaining visible even when scrolled far up in a long thread. Clicking the bar jumps directly to the bottom progress trace.
+*   **Instant Stop**: Clicking **Stop** in any panel immediately aborts active SSE streams, in-flight CORS fallback requests, or online schedule fetches (`browse_schedule_online`) and discards partial uncompleted fragments cleanly.
 
 ---
 
 ## Natural Language Scheduling & Suggestions
 
-You can interact with the agent using natural phrasing. Quick suggestion pills are provided just above the write bar for instant queries:
+You can interact with the agent using natural phrasing, backed by Copilot-style empty-state starters and dynamic per-reply follow-up chips:
 
-| Quick Pill | Example Prompt | Action |
+### Welcome Starter Cards & Dynamic Follow-Up Chips
+*   **Empty-Session Starters**: New conversations display clickable starters (full prompt cards in the Right Sidebar Leaf; compact starter pills in the Cockpit HUD). Schedule queries (`What's my schedule today?`, `Summarize my events for the next 7 days`) send automatically, while creation/import/cleanup templates pre-fill the composer so you can customize details before sending:
+
+| Starter Template | Interaction | Purpose |
 |---|---|---|
-| **What's my schedule today?** | *"What events do I have scheduled for today?"* | Summarizes all timed and all-day events for today. |
-| **Events this week** | *"Summarize my events for the next 7 days."* | Provides an overview grouped by day. |
-| **Add event...** | *"Add a meeting with Sarah on Thursday from 3 PM to 4 PM in Work calendar."* | Stages a new event proposal. |
-| **Import from URL...** | *"Browse the schedule at https://example.com/syllabus and extract the exam dates into Study calendar."* | Scrapes the page, extracts dates, and stages a batch proposal. |
+| **What's my schedule today?** | Auto-sends immediately | Summarizes all timed and all-day events for today. |
+| **Summarize my events for the next 7 days.** | Auto-sends immediately | Provides a day-by-day overview of your upcoming week. |
+| **Add an event...** | Pre-fills composer | Drafts a new event with custom date, time, calendar, and optional category. |
+| **Import from a URL...** | Pre-fills composer | Fetches a public syllabus, conference schedule, or `.ics` feed and stages a batch checklist. |
+| **Clean up or reschedule...** | Pre-fills composer | Helps batch-rename, re-time, or clean up events over a chosen date range. |
+
+*   **Dynamic Follow-Up Chips**: After completing a reply, the agent may surface up to 3 contextual next-step chips right beneath the assistant bubble (for example, rescheduling follow-ups or adding notes). Clicking a chip sends it immediately.
 
 ### Smart Category & Taxonomy Enforcement
 
-The agent enforces Full Calendar's `Category - SubCategory - Title` standard:
+The agent adapts dynamically to Full Calendar's **Advanced Categorization** setting (**Settings → Full Calendar Remastered → Categories**):
 
-*   When you prompt: *"Schedule a design sprint for Project Phoenix tomorrow at 10 AM"*, the agent automatically formats the title as `Work - Phoenix - Design Sprint` and assigns the matching color category.
-*   The agent queries your active user categories dynamically to ensure full consistency with your existing color coding.
+*   **When Advanced Categorization is Enabled**: You do not need to type manual `Category - SubCategory - ` prefixes. Pass clean natural descriptions; the agent queries your configured categories, picks matching `category` / `subCategory` fields, displays them on proposal cards as a color-coded dot breadcrumb (`● Category › SubCategory`), and lets Full Calendar's core enhancer format `Category - SubCategory - Title` automatically on save without ever duplicating prefixes.
+*   **When Advanced Categorization is Disabled**: Event titles stay strictly literal without injected category prefixes or category breadcrumbs, and category-only update proposals are rejected for safety. Toggling this setting immediately refreshes all visible proposal cards in place across open panels.
 
 ---
 
 ## The Write-Approval Gatekeeper
 
-To guarantee complete safety, the agent cannot write directly to your calendars or files. All mutations are returned as **Interactive Proposal Cards** protected by cryptographic hash verification, a 5-minute TTL, and optimistic concurrency checks:
+To guarantee complete safety, the agent cannot write directly to your calendars or files. All mutations are returned as **Interactive Proposal Cards** protected by SHA-256 hash verification, a 5-minute TTL, and optimistic concurrency checks. Cards render with a subtle type-colored left accent rail, calendar badge, and full schedule date/time (honoring your `12h`/`24h` setting, multi-day spans, cross-year dates, and recurring indicators):
+
+*   **In-Place Updates Without Scroll Jump**: Approving or rejecting a card transforms that card in place into a sleek **single-line compact resolved row** (showing status icon, title, applied schedule, and `Applied` / `Rejected` pill) without wiping the DOM or throwing your scrollbar to the bottom.
+*   **Sticky Bulk Action Bar**: Whenever 2 or more actionable pending proposals exist in a thread, a sticky footer bar appears with **Reject all** and **Approve all (N)** (updating live with `Applying X/Y...` progress).
+*   **Transient Error Recovery**: If writing to a remote/disk calendar fails due to a transient error (e.g., offline CalDAV or rate limit), the card stays unlocked with an inline error notice and a **Retry apply** button instead of permanently discarding the proposal. Permanent errors (expired 5-minute TTL, missing target event, or external event edits detected since preview) lock safely with a clear diagnostic message.
 
 === "Create Event Proposal"
-    Displays the event title, category chip, start and end dates/times, target calendar, and optional notes.
-    *   Click **Approve & apply** to commit the event to your calendar cache and write to disk.
+    Displays the `CREATE` badge, target calendar, formatted date/time schedule, clean event title, optional `● Category › SubCategory` breadcrumb (when Advanced Categorization is enabled), location, and notes.
+    *   Click **Approve & apply** to commit the event to your calendar cache and write to storage.
     *   Click **Reject** to discard the proposal.
 
 === "Update Event Proposal"
-    Shows a clear visual diff of modified fields (and a scope warning if targeting an entire recurring series) before any existing event is changed:
-    *   `Title: Old Title → New Title`
-    *   `Start: 10:00 → 11:00`
-    *   `End: 11:00 → 12:00`
+    Displays the `UPDATE` badge, calendar, existing/updated schedule in the header, event title, optional category breadcrumb, and stacked **`−` old / `+` new** inset diff rows for every modified field (`Title`, `Date`, `Start time`, `End time`, `All day`, `Category`, `SubCategory`, `Description`).
     *   If the underlying event changed externally after the preview was generated, approval is blocked automatically and a fresh preview is requested.
 
 === "Delete Event Proposal"
-    Displays a warning card indicating that the event (or recurring series) will be removed, showing the event title and the reason for deletion.
+    Displays the `DELETE` badge alongside a snapshot of the target event's date, time window (or `All day`), recurrence status, optional category breadcrumb, deletion reason, and a confirmation warning before removal.
 
 === "Batch Import Checklist"
-    When scraping schedules or adding multiple events at once, the agent produces an interactive batch card with individual checkboxes:
-    *   Check or uncheck individual items in the list (dynamically updating the approval hash).
+    When scraping schedules or adding multiple events at once, the agent produces an interactive batch card with individual checkboxes showing each item's schedule and optional category dot tag:
+    *   Check or uncheck individual items in the list (dynamically recomputing the approval hash and syncing checkboxes across all open agent panels).
     *   Click **Approve selected (N)** to import only the chosen events.
 
 ---

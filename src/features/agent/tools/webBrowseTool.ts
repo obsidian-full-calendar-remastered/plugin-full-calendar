@@ -11,6 +11,7 @@
  */
 
 import { requestUrl } from 'obsidian';
+import { raceWithAbort } from '../domain/abortUtils';
 
 const MAX_OUTPUT_CHARS = 15000;
 
@@ -124,7 +125,7 @@ function isPrivateOrLocalHost(urlStr: string): boolean {
 /**
  * Browses an online schedule URL and extracts content text.
  */
-export async function browseScheduleOnline(url: string): Promise<string> {
+export async function browseScheduleOnline(url: string, signal?: AbortSignal): Promise<string> {
   try {
     const trimmed = url.trim();
     if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
@@ -135,13 +136,16 @@ export async function browseScheduleOnline(url: string): Promise<string> {
       return `Error: Access to private or internal network addresses is blocked for security: ${trimmed}`;
     }
 
-    const response = await requestUrl({
-      url: trimmed,
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Obsidian-FullCalendar-Remastered/Agent'
-      }
-    });
+    const response = await raceWithAbort(
+      requestUrl({
+        url: trimmed,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Obsidian-FullCalendar-Remastered/Agent'
+        }
+      }),
+      signal
+    );
 
     if (response.status >= 400) {
       return `Failed to fetch URL (${response.status}): ${response.text?.slice(0, 200) || 'Unknown error'}`;
@@ -173,6 +177,9 @@ export async function browseScheduleOnline(url: string): Promise<string> {
 
     return extracted;
   } catch (err) {
+    if (signal?.aborted) {
+      throw err instanceof Error ? err : new Error('Agent request was cancelled by user.');
+    }
     const msg = err instanceof Error ? err.message : String(err);
     return `Error fetching schedule from URL "${url}": ${msg}`;
   }

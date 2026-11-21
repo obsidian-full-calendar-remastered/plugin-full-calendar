@@ -160,6 +160,7 @@ export class AgentManager {
   public updateSettings(): void {
     this.byokClient.updateOptions(buildByokClientOptions());
     this.engine.setClient(this.resolveActiveClient());
+    this.engine.notifySettingsUpdated();
   }
 
   public createWriteBar(

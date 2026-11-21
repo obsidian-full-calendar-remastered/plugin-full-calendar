@@ -51,6 +51,55 @@ export interface EngineCallbacks extends StreamCallbacks {
   onSessionChanged?: (session: AgentSession) => void;
 }
 
+export interface AgentActiveRunSnapshot {
+  runId: string;
+  sessionId: string | null;
+  startedAt: number;
+  statusText: string;
+  streamingText: string;
+  steps: AgentToolStepRecord[];
+  inFlightTools: { id: string; name: string; label: string }[];
+}
+
+export type AgentEngineEvent =
+  | { type: 'run-start'; runId: string; startedAt: number; userMessage: ChatMessage }
+  | { type: 'status'; runId: string; statusText: string }
+  | { type: 'turn-start'; runId: string; turn: number; maxTurns: number }
+  | { type: 'chunk'; runId: string; chunk: string }
+  | {
+      type: 'turn-complete';
+      runId: string;
+      turn: number;
+      cleanContent: string;
+      suggestions: string[];
+    }
+  | { type: 'tool-start'; runId: string; info: { id: string; name: string; label: string } }
+  | { type: 'tool-end'; runId: string; step: AgentToolStepRecord }
+  | { type: 'proposal-staged'; runId: string; proposal: EventProposal }
+  | {
+      type: 'proposal-updated';
+      proposalId: string;
+      status: EventProposal['status'];
+      errorMessage?: string;
+      originPanelId?: string;
+    }
+  | {
+      type: 'proposal-selection-changed';
+      proposalId: string;
+      originPanelId?: string;
+    }
+  | { type: 'settings-changed' }
+  | {
+      type: 'retry';
+      runId: string;
+      attempt: number;
+      maxRetries: number;
+      delayMs: number;
+      reason: string;
+    }
+  | { type: 'session-changed'; sessionId: string | null }
+  | { type: 'run-end'; runId: string; outcome: 'done' | 'cancelled' | 'error'; error?: string };
+
 function formatToolStartLabel(fnName: string, args: Record<string, unknown>): string {
   switch (fnName) {
     case 'get_events': {
@@ -86,6 +135,37 @@ function formatToolStartLabel(fnName: string, args: Record<string, unknown>): st
     }
     default:
       return `Running ${fnName}`;
+  }
+}
+
+function formatPreparingToolCallsStatus(toolCalls: ChatToolCall[]): string {
+  const count = toolCalls.length;
+  let latestName = '';
+  for (let i = toolCalls.length - 1; i >= 0; i--) {
+    const candidate = toolCalls[i]?.function?.name?.trim();
+    if (candidate) {
+      latestName = candidate;
+      break;
+    }
+  }
+
+  switch (latestName) {
+    case 'propose_update_event':
+      return count > 1 ? `Preparing ${count} event updates...` : 'Preparing event update...';
+    case 'propose_create_event':
+      return count > 1 ? `Preparing ${count} new events...` : 'Preparing new event...';
+    case 'propose_delete_event':
+      return count > 1 ? `Preparing ${count} deletions...` : 'Preparing event deletion...';
+    case 'propose_batch_create_events':
+      return 'Preparing batch import...';
+    case 'get_events':
+      return 'Preparing calendar query...';
+    case 'get_event_by_id':
+      return 'Preparing event inspection...';
+    case 'browse_schedule_online':
+      return 'Preparing web schedule fetch...';
+    default:
+      return latestName ? `Preparing ${latestName}...` : 'Preparing tool call...';
   }
 }
 
@@ -145,6 +225,11 @@ export class AgentEngine {
   private currentSession: AgentSession | null = null;
   private messages: ChatMessage[] = [];
   private isProcessing = false;
+  private initPromise: Promise<void> | null = null;
+  private listeners = new Set<(event: AgentEngineEvent) => void>();
+  private activeRunId: string | null = null;
+  private activeRunController: AbortController | null = null;
+  private activeRunSnapshot: AgentActiveRunSnapshot | null = null;
 
   constructor(
     client: IAgentClient,
@@ -160,6 +245,104 @@ export class AgentEngine {
     this.specLoader = specLoader;
   }
 
+  /**
+   * Subscribes a view or observer to live run, session, and proposal events.
+   */
+  public subscribe(listener: (event: AgentEngineEvent) => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private emit(event: AgentEngineEvent): void {
+    for (const listener of [...this.listeners]) {
+      try {
+        listener(event);
+      } catch (err) {
+        this.logger.warn(
+          'Engine subscriber listener failed',
+          { eventType: event.type },
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+    }
+  }
+
+  public isRunning(): boolean {
+    return this.isProcessing;
+  }
+
+  public getActiveRunSnapshot(): AgentActiveRunSnapshot | null {
+    const currentSessionId = this.currentSession?.id ?? null;
+    if (!this.activeRunSnapshot || this.activeRunSnapshot.sessionId !== currentSessionId) {
+      return null;
+    }
+    return {
+      ...this.activeRunSnapshot,
+      steps: [...this.activeRunSnapshot.steps],
+      inFlightTools: [...this.activeRunSnapshot.inFlightTools]
+    };
+  }
+
+  /**
+   * Aborts whichever run is currently in flight regardless of which UI panel started it.
+   */
+  public abortActiveRun(): void {
+    if (this.activeRunController && !this.activeRunController.signal.aborted) {
+      this.activeRunController.abort();
+    }
+  }
+
+  /**
+   * Aborts and immediately detaches the active run before switching or clearing sessions
+   * so stale run state/snapshots never leak into the new session.
+   */
+  private detachActiveRun(): void {
+    const prevRunId = this.activeRunId;
+    if (this.activeRunController && !this.activeRunController.signal.aborted) {
+      this.activeRunController.abort();
+    }
+    this.isProcessing = false;
+    this.activeRunId = null;
+    this.activeRunController = null;
+    this.activeRunSnapshot = null;
+    if (prevRunId) {
+      this.emit({ type: 'status', runId: prevRunId, statusText: '' });
+      this.emit({ type: 'run-end', runId: prevRunId, outcome: 'cancelled' });
+    }
+  }
+
+  /**
+   * Broadcasts an interactive proposal decision across all mounted panels.
+   */
+  public notifyProposalUpdated(
+    proposalId: string,
+    status: EventProposal['status'],
+    errorMessage?: string,
+    originPanelId?: string
+  ): void {
+    const stored = this.currentSession?.proposals?.find(p => p.id === proposalId);
+    if (stored) {
+      stored.status = status;
+    }
+    this.emit({ type: 'proposal-updated', proposalId, status, errorMessage, originPanelId });
+  }
+
+  /**
+   * Broadcasts a batch item checkbox selection change across mounted panels.
+   */
+  public notifyProposalSelectionChanged(proposalId: string, originPanelId?: string): void {
+    this.emit({ type: 'proposal-selection-changed', proposalId, originPanelId });
+  }
+
+  /**
+   * Broadcasts settings updates (e.g., time format or advanced categorization toggles).
+   */
+  public notifySettingsUpdated(): void {
+    this.emit({ type: 'settings-changed' });
+  }
+
   public setClient(client: IAgentClient): void {
     this.client = client;
   }
@@ -173,8 +356,25 @@ export class AgentEngine {
   }
 
   public async init(): Promise<void> {
-    this.currentSession = await this.storage.getActiveSession();
-    this.messages = this.currentSession.messages;
+    if (this.isProcessing || this.currentSession) {
+      return;
+    }
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+    this.initPromise = (async () => {
+      try {
+        const session = await this.storage.getActiveSession();
+        if (!this.isProcessing && !this.currentSession) {
+          this.currentSession = session;
+          this.messages = session.messages;
+          this.emit({ type: 'session-changed', sessionId: this.currentSession?.id ?? null });
+        }
+      } finally {
+        this.initPromise = null;
+      }
+    })();
+    return this.initPromise;
   }
 
   public async listSessions(): Promise<AgentSessionSummary[]> {
@@ -197,28 +397,34 @@ export class AgentEngine {
   }
 
   public async createNewSession(title?: string): Promise<AgentSession> {
+    this.detachActiveRun();
     const session = await this.storage.createSession(title);
     this.currentSession = session;
     this.messages = session.messages;
     this.logger.info(`Created new session: ${session.id} (${session.title})`);
+    this.emit({ type: 'session-changed', sessionId: session.id });
     return session;
   }
 
   public async switchSession(sessionId: string): Promise<AgentSession | null> {
     const session = await this.storage.setActiveSessionId(sessionId);
     if (session) {
+      this.detachActiveRun();
       this.currentSession = session;
       this.messages = session.messages;
       this.logger.info(`Switched to session: ${session.id} (${session.title})`);
+      this.emit({ type: 'session-changed', sessionId: session.id });
     }
     return session;
   }
 
   public async deleteSession(sessionId: string): Promise<AgentSession> {
+    this.detachActiveRun();
     const newActive = await this.storage.deleteSession(sessionId);
     this.currentSession = newActive;
     this.messages = newActive.messages;
     this.logger.info(`Deleted session: ${sessionId}, now on: ${newActive.id}`);
+    this.emit({ type: 'session-changed', sessionId: newActive.id });
     return newActive;
   }
 
@@ -229,6 +435,7 @@ export class AgentEngine {
   }
 
   public async clearHistory(): Promise<void> {
+    this.detachActiveRun();
     this.messages = [];
     if (this.currentSession) {
       this.currentSession.messages = [];
@@ -238,6 +445,7 @@ export class AgentEngine {
       await this.storage.clearHistory();
     }
     this.logger.info('Conversation history cleared by user');
+    this.emit({ type: 'session-changed', sessionId: this.currentSession?.id ?? null });
   }
 
   /**
@@ -257,11 +465,74 @@ export class AgentEngine {
     return clean;
   }
 
+  private isRunCurrent(runId: string): boolean {
+    return (
+      this.activeRunId === runId &&
+      Boolean(this.activeRunController && !this.activeRunController.signal.aborted)
+    );
+  }
+
+  private notifyToolStart(
+    runId: string,
+    info: { id: string; name: string; label: string },
+    callbacks?: EngineCallbacks
+  ): void {
+    if (!this.isRunCurrent(runId)) {
+      return;
+    }
+    if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
+      this.activeRunSnapshot.inFlightTools.push(info);
+      this.activeRunSnapshot.statusText = info.label;
+    }
+    this.emit({ type: 'tool-start', runId, info });
+    this.emit({ type: 'status', runId, statusText: info.label });
+    callbacks?.onToolCallStart?.(info);
+    callbacks?.onStatus?.(info.label);
+  }
+
+  private notifyToolEnd(
+    runId: string,
+    step: AgentToolStepRecord,
+    callbacks?: EngineCallbacks
+  ): void {
+    if (!this.isRunCurrent(runId)) {
+      return;
+    }
+    if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
+      this.activeRunSnapshot.inFlightTools = this.activeRunSnapshot.inFlightTools.filter(
+        t => t.id !== step.id
+      );
+      this.activeRunSnapshot.steps.push(step);
+    }
+    this.emit({ type: 'tool-end', runId, step });
+    callbacks?.onToolCallEnd?.(step);
+  }
+
+  private recordStagedProposal(
+    runId: string,
+    proposal: EventProposal,
+    callbacks?: EngineCallbacks
+  ): void {
+    if (!this.isRunCurrent(runId)) {
+      return;
+    }
+    if (this.currentSession) {
+      if (!this.currentSession.proposals) {
+        this.currentSession.proposals = [];
+      }
+      this.currentSession.proposals.push(proposal);
+    }
+    this.emit({ type: 'proposal-staged', runId, proposal });
+    callbacks?.onProposal?.(proposal);
+  }
+
   /**
    * Executes a tool called by the LLM against the calendar bridge or web tool.
    */
   private async executeTool(
     toolCall: ChatToolCall,
+    runId: string,
+    signal: AbortSignal,
     callbacks?: EngineCallbacks
   ): Promise<{ result: string; proposal?: EventProposal; step: AgentToolStepRecord }> {
     const fnName = toolCall.function.name;
@@ -275,7 +546,7 @@ export class AgentEngine {
     } catch (parseErr) {
       const errStr = `Malformed tool arguments from LLM: ${String(parseErr)}. Raw: ${rawArgs}`;
       const label = formatToolStartLabel(fnName, {});
-      callbacks?.onToolCallStart?.({ id: toolCall.id, name: fnName, label });
+      this.notifyToolStart(runId, { id: toolCall.id, name: fnName, label }, callbacks);
       const step: AgentToolStepRecord = {
         id: toolCall.id,
         name: fnName,
@@ -284,7 +555,7 @@ export class AgentEngine {
         ok: false,
         durationMs: Date.now() - startedAt
       };
-      callbacks?.onToolCallEnd?.(step);
+      this.notifyToolEnd(runId, step, callbacks);
       this.logger.warn('Failed to parse tool call JSON', { fnName, rawArgs }, errStr);
       return {
         result: JSON.stringify({ error: errStr }),
@@ -321,8 +592,7 @@ export class AgentEngine {
     };
 
     const label = formatToolStartLabel(fnName, args);
-    callbacks?.onToolCallStart?.({ id: toolCall.id, name: fnName, label });
-    callbacks?.onStatus?.(label);
+    this.notifyToolStart(runId, { id: toolCall.id, name: fnName, label }, callbacks);
     this.logger.info(`Tool invocation: ${fnName}`, { args });
 
     const emitFinished = (
@@ -338,7 +608,7 @@ export class AgentEngine {
         ok,
         durationMs: Date.now() - startedAt
       };
-      callbacks?.onToolCallEnd?.(step);
+      this.notifyToolEnd(runId, step, callbacks);
       return { result, proposal, step };
     };
 
@@ -376,7 +646,10 @@ export class AgentEngine {
 
         case 'browse_schedule_online': {
           const url = asString(args.url);
-          const text = await browseScheduleOnline(url);
+          const text = await browseScheduleOnline(url, signal);
+          if (signal.aborted) {
+            throw new Error('Agent request was cancelled by user.');
+          }
           return emitFinished(text);
         }
 
@@ -397,7 +670,7 @@ export class AgentEngine {
             description: asOptionalString(args.description),
             location: asOptionalString(args.location)
           });
-          callbacks?.onProposal?.(proposal);
+          this.recordStagedProposal(runId, proposal, callbacks);
           return emitFinished(
             JSON.stringify({
               status: 'PROPOSAL_STAGED',
@@ -420,7 +693,7 @@ export class AgentEngine {
             endTime: asOptionalString(args.endTime),
             description: asOptionalString(args.description)
           });
-          callbacks?.onProposal?.(proposal);
+          this.recordStagedProposal(runId, proposal, callbacks);
           return emitFinished(
             JSON.stringify({
               status: 'PROPOSAL_STAGED',
@@ -436,7 +709,7 @@ export class AgentEngine {
             asString(args.eventId),
             asOptionalString(args.reason)
           );
-          callbacks?.onProposal?.(proposal);
+          this.recordStagedProposal(runId, proposal, callbacks);
           return emitFinished(
             JSON.stringify({
               status: 'PROPOSAL_STAGED',
@@ -462,7 +735,7 @@ export class AgentEngine {
               description: asOptionalString(e.description)
             }))
           );
-          callbacks?.onProposal?.(proposal);
+          this.recordStagedProposal(runId, proposal, callbacks);
           return emitFinished(
             JSON.stringify({
               status: 'PROPOSAL_STAGED',
@@ -500,7 +773,40 @@ export class AgentEngine {
     if (!trimmedInput) return;
 
     this.isProcessing = true;
-    callbacks?.onStatus?.('Thinking...');
+    const runId = generateRandomId('run');
+    const startedAt = Date.now();
+    const runController = new AbortController();
+    this.activeRunId = runId;
+    this.activeRunController = runController;
+    const onExternalAbort = (): void => {
+      runController.abort();
+    };
+    if (signal) {
+      if (signal.aborted) {
+        runController.abort();
+      } else {
+        signal.addEventListener('abort', onExternalAbort, { once: true });
+      }
+    }
+    const runSignal = runController.signal;
+    const activeSessionAtStart = this.currentSession;
+
+    this.activeRunSnapshot = {
+      runId,
+      sessionId: activeSessionAtStart?.id ?? null,
+      startedAt,
+      statusText: 'Thinking...',
+      streamingText: '',
+      steps: [],
+      inFlightTools: []
+    };
+
+    let outcome: 'done' | 'cancelled' | 'error' = 'done';
+    let runError: string | undefined;
+    const isRunActive = (): boolean =>
+      !runSignal.aborted &&
+      this.activeRunId === runId &&
+      this.currentSession === activeSessionAtStart;
 
     try {
       // 1. Append user message
@@ -510,18 +816,41 @@ export class AgentEngine {
         timestamp: Date.now()
       };
       this.messages.push(userMsg);
+      this.emit({ type: 'run-start', runId, startedAt, userMessage: userMsg });
+      this.emit({ type: 'status', runId, statusText: 'Thinking...' });
       callbacks?.onUserMessageRecorded?.();
+      callbacks?.onStatus?.('Thinking...');
 
       let turns = 0;
       let firstProposalTurn: number | null = null;
       const sessionToolSteps: AgentToolStepRecord[] = [];
 
       while (turns < MAX_TURNS || (firstProposalTurn !== null && turns === firstProposalTurn)) {
+        if (!isRunActive()) {
+          outcome = 'cancelled';
+          if (this.activeRunId === runId) {
+            callbacks?.onStatus?.('Cancelled');
+          }
+          return;
+        }
+
         turns++;
+        if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
+          this.activeRunSnapshot.streamingText = '';
+        }
+        this.emit({ type: 'turn-start', runId, turn: turns, maxTurns: MAX_TURNS });
         callbacks?.onTurnStart?.(turns, MAX_TURNS);
 
         // 2. Build system prompt with dynamic real-time context and prefix-cache-safe wire messages
         const systemPrompt = await this.specLoader.buildSystemPrompt();
+        if (!isRunActive()) {
+          outcome = 'cancelled';
+          if (this.activeRunId === runId) {
+            callbacks?.onStatus?.('Cancelled');
+          }
+          return;
+        }
+
         const windowedMessages = buildContextWindowMessages(this.messages, this.bridge);
         const fullMessages: ChatMessage[] = [
           { role: 'system', content: systemPrompt },
@@ -532,27 +861,102 @@ export class AgentEngine {
         const idempotencyKey = generateRandomId('turn');
         const isForcedSummaryTurn = firstProposalTurn !== null && turns > MAX_TURNS;
         const toolsForTurn = isForcedSummaryTurn ? [] : AGENT_TOOLS;
+        if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
+          this.activeRunSnapshot.statusText = 'Generating response...';
+        }
+        this.emit({ type: 'status', runId, statusText: 'Generating response...' });
         callbacks?.onStatus?.('Generating response...');
+
+        let lastStreamingStatus = '';
+        const updateStreamingStatus = (nextStatus: string): void => {
+          if (!isRunActive() || !nextStatus || nextStatus === lastStreamingStatus) {
+            return;
+          }
+          lastStreamingStatus = nextStatus;
+          if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
+            this.activeRunSnapshot.statusText = nextStatus;
+          }
+          this.emit({ type: 'status', runId, statusText: nextStatus });
+          callbacks?.onStatus?.(nextStatus);
+        };
+
         let completion: CompletionResult;
         try {
           completion = await this.client.chatCompletion(fullMessages, toolsForTurn, {
             stream: true,
-            signal,
+            signal: runSignal,
             idempotencyKey,
             callbacks: {
-              onChunk: callbacks?.onChunk,
-              onRetry: callbacks?.onRetry
+              onChunk: (chunk: string) => {
+                if (!isRunActive()) {
+                  return;
+                }
+                lastStreamingStatus = '';
+                if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
+                  this.activeRunSnapshot.streamingText += chunk;
+                  this.activeRunSnapshot.statusText = '';
+                }
+                this.emit({ type: 'chunk', runId, chunk });
+                callbacks?.onChunk?.(chunk);
+              },
+              onReasoningDelta: (delta: string) => {
+                if (!isRunActive()) {
+                  return;
+                }
+                updateStreamingStatus('Reasoning...');
+                callbacks?.onReasoningDelta?.(delta);
+              },
+              onToolCallDelta: (toolCalls: ChatToolCall[]) => {
+                if (!isRunActive()) {
+                  return;
+                }
+                updateStreamingStatus(formatPreparingToolCallsStatus(toolCalls));
+                callbacks?.onToolCallDelta?.(toolCalls);
+              },
+              onRetry: (attempt: number, maxRetries: number, delayMs: number, reason: string) => {
+                if (!isRunActive()) {
+                  return;
+                }
+                const lowerReason = (reason || '').toLowerCase();
+                const isRateLimit = lowerReason.includes('429') || lowerReason.includes('rate');
+                const retryStatus = isRateLimit
+                  ? `Rate limited - retrying (${attempt}/${maxRetries})...`
+                  : `Retrying request (${attempt}/${maxRetries})...`;
+                lastStreamingStatus = retryStatus;
+                if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
+                  this.activeRunSnapshot.statusText = retryStatus;
+                }
+                this.emit({ type: 'retry', runId, attempt, maxRetries, delayMs, reason });
+                this.emit({ type: 'status', runId, statusText: retryStatus });
+                callbacks?.onRetry?.(attempt, maxRetries, delayMs, reason);
+              }
             }
           });
         } catch (callErr) {
-          if (signal?.aborted) {
-            callbacks?.onStatus?.('Cancelled');
+          if (runSignal.aborted || this.activeRunId !== runId) {
+            outcome = 'cancelled';
+            if (this.activeRunId === runId) {
+              callbacks?.onStatus?.('Cancelled');
+            }
             return;
           }
           throw callErr;
         }
 
+        if (!isRunActive()) {
+          outcome = 'cancelled';
+          if (this.activeRunId === runId) {
+            callbacks?.onStatus?.('Cancelled');
+          }
+          return;
+        }
+
         // Response received: immediately clear status indicator
+        if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
+          this.activeRunSnapshot.statusText = '';
+          this.activeRunSnapshot.streamingText = '';
+        }
+        this.emit({ type: 'status', runId, statusText: '' });
         callbacks?.onStatus?.('');
 
         const hasToolCalls = Boolean(completion.toolCalls && completion.toolCalls.length > 0);
@@ -572,6 +976,13 @@ export class AgentEngine {
             : {})
         };
         this.messages.push(assistantMsg);
+        this.emit({
+          type: 'turn-complete',
+          runId,
+          turn: turns,
+          cleanContent,
+          suggestions
+        });
         callbacks?.onTurnComplete?.(turns, cleanContent, suggestions);
 
         // 5. If no tools were invoked, we are done
@@ -581,21 +992,31 @@ export class AgentEngine {
 
         // 6. Execute tool calls
         for (const tc of completion.toolCalls) {
-          if (signal?.aborted) {
-            callbacks?.onStatus?.('Cancelled');
+          if (!isRunActive()) {
+            outcome = 'cancelled';
+            if (this.activeRunId === runId) {
+              callbacks?.onStatus?.('Cancelled');
+            }
             return;
           }
 
-          const { result, proposal, step } = await this.executeTool(tc, callbacks);
+          const { result, proposal, step } = await this.executeTool(
+            tc,
+            runId,
+            runSignal,
+            callbacks
+          );
           sessionToolSteps.push(step);
-          if (proposal) {
-            if (firstProposalTurn === null) {
-              firstProposalTurn = turns;
+          if (proposal && firstProposalTurn === null) {
+            firstProposalTurn = turns;
+          }
+
+          if (!isRunActive()) {
+            outcome = 'cancelled';
+            if (this.activeRunId === runId) {
+              callbacks?.onStatus?.('Cancelled');
             }
-            if (this.currentSession) {
-              if (!this.currentSession.proposals) this.currentSession.proposals = [];
-              this.currentSession.proposals.push(proposal);
-            }
+            return;
           }
 
           const toolMsg: ChatMessage = {
@@ -613,6 +1034,11 @@ export class AgentEngine {
         }
       }
 
+      if (!isRunActive()) {
+        outcome = 'cancelled';
+        return;
+      }
+
       // Persist conversation history to active session
       if (this.currentSession) {
         this.currentSession.messages = this.messages;
@@ -626,15 +1052,40 @@ export class AgentEngine {
       } else {
         await this.storage.saveHistory(this.messages);
       }
+      if (!isRunActive()) {
+        outcome = 'cancelled';
+        return;
+      }
       callbacks?.onDone?.();
     } catch (err) {
+      if (
+        runSignal.aborted ||
+        this.activeRunId !== runId ||
+        this.currentSession !== activeSessionAtStart
+      ) {
+        outcome = 'cancelled';
+        if (this.activeRunId === runId) {
+          callbacks?.onStatus?.('Cancelled');
+        }
+        return;
+      }
+      outcome = 'error';
       const msg = err instanceof Error ? err.message : String(err);
+      runError = msg;
       this.logger.error('Agent Engine failed', err as Error);
       callbacks?.onError?.(msg);
       throw err;
     } finally {
-      this.isProcessing = false;
-      callbacks?.onStatus?.('');
+      signal?.removeEventListener('abort', onExternalAbort);
+      if (this.activeRunId === runId) {
+        this.isProcessing = false;
+        this.activeRunId = null;
+        this.activeRunController = null;
+        this.activeRunSnapshot = null;
+        callbacks?.onStatus?.('');
+        this.emit({ type: 'status', runId, statusText: '' });
+        this.emit({ type: 'run-end', runId, outcome, error: runError });
+      }
     }
   }
 }

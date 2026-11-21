@@ -2063,10 +2063,6 @@
       "importUrlPrompt": "Browse the schedule at this URL and extract the events: "
     },
     "proposals": {
-      "createTitle": "Proposal: create event",
-      "updateTitle": "Proposal: update event",
-      "deleteTitle": "Proposal: delete event",
-      "batchTitle": "Proposal: batch import ({{count}})",
       "allDay": "All Day",
       "approveApply": "Approve & apply",
       "approveSelected": "Approve selected ({{count}})",
@@ -2074,9 +2070,8 @@
       "retryApply": "Retry apply",
       "reject": "Reject",
       "editInModal": "Edit in modal",
-      "changes": "Changes:",
       "notes": "Notes: {{notes}}",
-      "deleteWarning": "⚠️ This will permanently remove the event from your calendar.",
+      "deleteWarning": "This will permanently remove the event from your calendar.",
       "foundBatch": "Found {{count}} events for calendar: {{calendar}}",
       "applied": "Applied",
       "rejected": "Rejected",
@@ -2087,7 +2082,24 @@
       "applyingProgress": "Applying {{current}}/{{total}}...",
       "bulkAppliedSummary": "Applied {{applied}} of {{total}} proposals.",
       "bulkAppliedPartial": "Applied {{applied}} of {{total}} proposals ({{failed}} failed).",
-      "bulkRejectedSummary": "Rejected {{count}} pending proposals."
+      "bulkRejectedSummary": "Rejected {{count}} pending proposals.",
+      "createBadge": "New event",
+      "updateBadge": "Update",
+      "deleteBadge": "Delete",
+      "batchBadge": "Batch import ({{count}})",
+      "recurring": "Recurring",
+      "timedEvent": "Timed",
+      "noneValue": "None",
+      "failedStatus": "Failed",
+      "fieldTitle": "Title",
+      "fieldDate": "Date",
+      "fieldStartTime": "Start time",
+      "fieldEndTime": "End time",
+      "fieldAllDay": "All day",
+      "fieldCategory": "Category",
+      "fieldSubCategory": "Subcategory",
+      "fieldDescription": "Description",
+      "categorizationDisabledNotice": "Advanced categorization is disabled; no remaining fields to update."
     },
     "audit": {
       "title": "Full calendar agent: Audit trail & diagnostics",
@@ -2160,10 +2172,13 @@
     },
     "trace": {
       "working": "Working...",
-      "usedTools": "Completed {{count}} steps in {{seconds}}s",
-      "cancelled": "Cancelled after {{seconds}}s",
-      "failed": "Failed after {{seconds}}s",
-      "stepsRecorded": "{{count}} steps"
+      "usedTools": "Completed {{count}} steps",
+      "cancelled": "Cancelled",
+      "failed": "Failed",
+      "stepsRecorded": "{{count}} steps",
+      "usedToolSingle": "Completed {{count}} step",
+      "stepRecordedSingle": "{{count}} step",
+      "jumpToProgress": "Jump to live progress"
     }
   }
 }

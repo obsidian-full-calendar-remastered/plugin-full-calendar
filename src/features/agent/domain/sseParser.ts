@@ -174,6 +174,17 @@ export class SseChunkParser {
       return;
     }
 
+    const rawDelta = delta as Record<string, unknown>;
+    const reasoningChunk =
+      typeof rawDelta.reasoning_content === 'string' && rawDelta.reasoning_content.length > 0
+        ? rawDelta.reasoning_content
+        : typeof rawDelta.reasoning === 'string' && rawDelta.reasoning.length > 0
+          ? rawDelta.reasoning
+          : '';
+    if (reasoningChunk) {
+      this.callbacks?.onReasoningDelta?.(reasoningChunk);
+    }
+
     if (typeof delta.content === 'string' && delta.content.length > 0) {
       this.content += delta.content;
       this.callbacks?.onChunk?.(delta.content);

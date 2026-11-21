@@ -101,4 +101,26 @@ describe('SseChunkParser', () => {
 
     expect(customEvents).toEqual([{ name: 'fcr:usage', data: '{"tokens":42}' }]);
   });
+
+  it('emits onReasoningDelta for reasoning_content and reasoning SSE frames without polluting content', () => {
+    const reasoningDeltas: string[] = [];
+    const contentDeltas: string[] = [];
+    const parser = new SseChunkParser({
+      callbacks: {
+        onReasoningDelta: d => reasoningDeltas.push(d),
+        onChunk: d => contentDeltas.push(d)
+      }
+    });
+
+    parser.feed(
+      'data: {"choices":[{"delta":{"reasoning_content":"Thinking "},"finish_reason":null}]}\n\n'
+    );
+    parser.feed('data: {"choices":[{"delta":{"reasoning":"more"},"finish_reason":null}]}\n\n');
+    parser.feed('data: {"choices":[{"delta":{"content":"Done."},"finish_reason":"stop"}]}\n\n');
+    parser.flush();
+
+    expect(reasoningDeltas).toEqual(['Thinking ', 'more']);
+    expect(contentDeltas).toEqual(['Done.']);
+    expect(parser.getResult().content).toBe('Done.');
+  });
 });

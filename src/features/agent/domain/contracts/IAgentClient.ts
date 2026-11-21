@@ -13,6 +13,7 @@ export type CompletionFinishReason =
 
 export interface StreamCallbacks {
   onChunk?: (contentDelta: string) => void;
+  onReasoningDelta?: (reasoningDelta: string) => void;
   onToolCallDelta?: (toolCalls: ChatToolCall[]) => void;
   onRetry?: (attempt: number, maxRetries: number, delayMs: number, reason: string) => void;
 }

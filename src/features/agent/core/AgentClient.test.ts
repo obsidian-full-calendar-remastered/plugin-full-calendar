@@ -499,4 +499,98 @@ describe('AgentClient', () => {
     const mockReq = requestUrl as unknown as jest.Mock<Promise<unknown>, [{ body: string }]>;
     expect(JSON.parse(mockReq.mock.calls[0][0].body)).toMatchObject({ stream: false });
   });
+
+  it('forwards onReasoningDelta during SSE streaming', async () => {
+    const encoder = new TextEncoder();
+    let reads = 0;
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/event-stream' }),
+      body: {
+        getReader: () => ({
+          read: async () => {
+            reads++;
+            if (reads === 1) {
+              return {
+                done: false,
+                value: encoder.encode(
+                  'data: {"choices":[{"delta":{"reasoning_content":"Checking "},"finish_reason":null}]}\n\n'
+                )
+              };
+            }
+            if (reads === 2) {
+              return {
+                done: false,
+                value: encoder.encode(
+                  'data: {"choices":[{"delta":{"content":"Ready."},"finish_reason":"stop"}]}\n\n'
+                )
+              };
+            }
+            return { done: true, value: undefined };
+          },
+          cancel: async () => undefined
+        })
+      }
+    });
+
+    const client = new AgentClient({
+      endpointUrl: 'http://localhost:39090/v1',
+      apiKey: '',
+      model: 'local-reasoning'
+    });
+
+    const reasoning: string[] = [];
+    const chunks: string[] = [];
+    const res = await client.chatCompletion([{ role: 'user', content: 'Plan week' }], [], {
+      stream: true,
+      callbacks: {
+        onReasoningDelta: d => reasoning.push(d),
+        onChunk: c => chunks.push(c)
+      }
+    });
+
+    expect(reasoning).toEqual(['Checking ']);
+    expect(chunks).toEqual(['Ready.']);
+    expect(res.content).toBe('Ready.');
+  });
+
+  it('aborts promptly while awaiting non-cancellable requestUrl fallback and suppresses late callbacks', async () => {
+    mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    let resolveReq!: (val: unknown) => void;
+    (requestUrl as unknown as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveReq = resolve;
+        })
+    );
+
+    const client = new AgentClient({
+      endpointUrl: 'http://localhost:39090/v1',
+      apiKey: '',
+      model: 'local-model',
+      maxRetries: 2
+    });
+
+    const controller = new AbortController();
+    const chunks: string[] = [];
+    const pending = client.chatCompletion([{ role: 'user', content: 'Hi' }], [], {
+      stream: true,
+      signal: controller.signal,
+      callbacks: { onChunk: c => chunks.push(c) }
+    });
+
+    await new Promise(r => window.setTimeout(r, 10));
+    controller.abort();
+
+    await expect(pending).rejects.toThrow('cancelled by user');
+    resolveReq({
+      status: 200,
+      text: JSON.stringify({ choices: [{ message: { content: 'Ghost reply' } }] }),
+      json: { choices: [{ message: { content: 'Ghost reply' } }] }
+    });
+    await Promise.resolve();
+    expect(chunks).toEqual([]);
+  });
 });

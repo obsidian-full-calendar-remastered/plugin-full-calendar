@@ -23,13 +23,14 @@ export class AgentStepTraceView {
   private timerEl: HTMLElement;
   private stepsListEl: HTMLElement;
 
-  private readonly startedAt = Date.now();
+  private readonly startedAt: number;
   private timerHandle: number | null = null;
   private stepRows = new Map<string, StepRowRefs>();
   private stepCount = 0;
   private finished = false;
 
-  constructor(containerEl: HTMLElement) {
+  constructor(containerEl: HTMLElement, startedAt = Date.now()) {
+    this.startedAt = startedAt;
     this.detailsEl = containerEl.createEl('details', {
       cls: 'ofc-agent-trace is-running'
     });
@@ -47,6 +48,7 @@ export class AgentStepTraceView {
       cls: 'ofc-agent-trace-timer',
       text: '0.0s'
     });
+    this.updateTimer();
 
     this.stepsListEl = this.detailsEl.createDiv({ cls: 'ofc-agent-trace-steps is-hidden' });
 
@@ -133,19 +135,21 @@ export class AgentStepTraceView {
         return;
       }
       this.phaseEl.setText(
-        t('agent.trace.usedTools', { count: this.stepCount, seconds: elapsedSec })
+        t(this.stepCount === 1 ? 'agent.trace.usedToolSingle' : 'agent.trace.usedTools', {
+          count: this.stepCount
+        })
       );
       this.detailsEl.open = false;
       return;
     }
 
     if (state === 'cancelled') {
-      this.phaseEl.setText(t('agent.trace.cancelled', { seconds: elapsedSec }));
+      this.phaseEl.setText(t('agent.trace.cancelled'));
       this.detailsEl.open = false;
       return;
     }
 
-    this.phaseEl.setText(t('agent.trace.failed', { seconds: elapsedSec }));
+    this.phaseEl.setText(t('agent.trace.failed'));
     this.detailsEl.open = this.stepCount > 0;
   }
 
@@ -181,7 +185,9 @@ export class AgentStepTraceView {
     setIcon(iconEl, 'check');
     summaryEl.createSpan({
       cls: 'ofc-agent-trace-phase',
-      text: t('agent.trace.stepsRecorded', { count: steps.length })
+      text: t(steps.length === 1 ? 'agent.trace.stepRecordedSingle' : 'agent.trace.stepsRecorded', {
+        count: steps.length
+      })
     });
 
     const totalMs = steps.reduce((acc, s) => acc + (s.durationMs || 0), 0);

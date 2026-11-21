@@ -194,78 +194,216 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid var(--interactive-accent);
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--interactive-accent);
   background-color: var(--background-secondary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ofc-proposal-type-create {
+  border-left-color: var(--interactive-accent);
+}
+
+.ofc-proposal-type-update {
+  border-left-color: #d99026;
+}
+
+.ofc-proposal-type-delete {
+  border-left-color: var(--text-error);
+}
+
+.ofc-proposal-type-batch {
+  border-left-color: #4ea832;
 }
 
 .ofc-proposal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ofc-proposal-header-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .ofc-proposal-badge {
-  font-size: 0.75em;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  padding: 2px 6px;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 2px 7px;
   border-radius: 4px;
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
+  background-color: rgba(120, 120, 220, 0.14);
+  color: var(--interactive-accent);
 }
 
-.ofc-proposal-badge-update {
-  background-color: #e6a23c;
-  color: #fff;
+.ofc-proposal-type-update .ofc-proposal-badge {
+  background-color: rgba(217, 144, 38, 0.16);
+  color: #e6a23c;
 }
 
-.ofc-proposal-badge-delete {
-  background-color: #f56c6c;
-  color: #fff;
+.ofc-proposal-type-delete .ofc-proposal-badge {
+  background-color: rgba(239, 68, 68, 0.14);
+  color: var(--text-error);
 }
 
-.ofc-proposal-badge-batch {
-  background-color: #67c23a;
-  color: #fff;
+.ofc-proposal-type-batch .ofc-proposal-badge {
+  background-color: rgba(78, 168, 50, 0.16);
+  color: #67c23a;
+}
+
+.ofc-proposal-cal {
+  font-size: 0.75em;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ofc-proposal-schedule {
+  font-size: 0.76em;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .ofc-proposal-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-size: 0.9em;
 }
 
 .ofc-proposal-title {
   font-weight: 600;
-  font-size: 1.05em;
+  font-size: 1em;
+  line-height: 1.35;
+  color: var(--text-normal);
+  overflow-wrap: anywhere;
+}
+
+.ofc-proposal-cat-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+
+.ofc-proposal-cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: var(--ofc-cat-color, var(--interactive-accent));
+}
+
+.ofc-proposal-cat-name {
+  font-weight: 600;
   color: var(--text-normal);
 }
 
-.ofc-proposal-chips {
+.ofc-proposal-cat-sep {
+  color: var(--text-faint);
+}
+
+.ofc-proposal-subcat-name {
+  color: var(--text-muted);
+}
+
+.ofc-proposal-meta-line {
+  font-size: 0.84em;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.ofc-proposal-delete-warn {
+  font-size: 0.82em;
+  color: var(--text-error);
+  background-color: rgba(239, 68, 68, 0.08);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+/* Stacked inset diff rows for UPDATE proposals */
+.ofc-proposal-diff-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
   margin-top: 2px;
 }
 
-.ofc-proposal-chip {
-  font-size: 0.8em;
-  padding: 2px 6px;
-  border-radius: 4px;
+.ofc-proposal-diff-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
   background-color: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
+}
+
+.ofc-proposal-diff-field {
+  font-size: 0.74em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
   color: var(--text-muted);
 }
 
-.ofc-proposal-chip-category {
-  font-weight: 600;
+.ofc-proposal-diff-values {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.86em;
+  line-height: 1.35;
+}
+
+.ofc-proposal-diff-old,
+.ofc-proposal-diff-new {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.ofc-proposal-diff-old {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.ofc-proposal-diff-new {
+  background-color: rgba(78, 168, 50, 0.12);
   color: var(--text-normal);
-  border-left-width: 3px;
+  font-weight: 500;
+}
+
+.ofc-proposal-diff-sign {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-family: var(--font-monospace);
+}
+
+.ofc-proposal-diff-old .ofc-proposal-diff-sign {
+  color: var(--text-error);
+}
+
+.ofc-proposal-diff-new .ofc-proposal-diff-sign {
+  color: #67c23a;
+}
+
+.ofc-proposal-diff-text {
+  min-width: 0;
+  flex: 1;
 }
 
 /* Batch item list */
@@ -294,23 +432,57 @@
   background-color: var(--background-modifier-hover);
 }
 
+.ofc-proposal-batch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ofc-proposal-batch-title {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.ofc-proposal-batch-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.86em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ofc-proposal-batch-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+}
+
 .ofc-proposal-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--background-modifier-border);
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.ofc-proposal-btn-ghost {
+  margin-right: auto;
 }
 
 .ofc-proposal-status-tag {
-  font-size: 0.8em;
+  font-size: 0.78em;
   font-weight: 600;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .ofc-proposal-status-approved {
@@ -424,10 +596,18 @@
   padding: 2px 0 6px 0;
 }
 
+.ofc-agent-chat-view-compact .ofc-agent-live-bar {
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
 .ofc-agent-chat-view-compact .ofc-agent-input-wrapper {
   padding: 4px 6px;
 }
 
+.workspace-leaf-content[data-type='full-calendar-agent-view'] .view-content,
 .ofc-agent-sidebar-view {
   display: flex;
   flex-direction: column;
@@ -489,11 +669,16 @@
 
 .ofc-agent-sidebar-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.ofc-agent-sidebar-messages > * {
+  flex-shrink: 0;
 }
 
 .ofc-agent-msg-content {
@@ -881,10 +1066,57 @@
   gap: 6px;
 }
 
+/* Docked Live Activity Bar (anchored above input & Stop button) */
+.ofc-agent-live-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  font-size: 0.8em;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ofc-agent-live-bar.is-hidden {
+  display: none;
+}
+
+.ofc-agent-live-bar:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.ofc-agent-live-bar-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-normal);
+  font-weight: 500;
+}
+
+.ofc-agent-live-bar-steps {
+  font-size: 0.9em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.ofc-agent-live-bar-timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
 /* Live Process & Collapsible Step Trace */
 .ofc-agent-trace {
   align-self: flex-start;
-  max-width: 92%;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   background-color: var(--background-secondary);
@@ -1065,18 +1297,50 @@
 .ofc-proposal-card-resolved {
   border-color: var(--background-modifier-border);
   opacity: 0.85;
-  padding: 8px 12px;
-  gap: 4px;
-  box-shadow: none;
+  padding: 7px 10px;
+  gap: 0;
 }
 
-.ofc-proposal-card-resolved .ofc-proposal-title {
-  font-size: 0.92em;
+.ofc-proposal-resolved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
-.ofc-proposal-card-resolved .ofc-proposal-footer {
-  margin-top: 2px;
-  padding-top: 4px;
+.ofc-proposal-resolved-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.ofc-proposal-card-resolved.is-approved .ofc-proposal-resolved-icon,
+.ofc-proposal-card-resolved.is-applied .ofc-proposal-resolved-icon {
+  color: #67c23a;
+}
+
+.ofc-proposal-card-resolved.is-rejected .ofc-proposal-resolved-icon {
+  color: var(--text-error);
+}
+
+.ofc-proposal-resolved-title {
+  font-size: 0.88em;
+  font-weight: 500;
+  color: var(--text-normal);
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ofc-proposal-resolved-schedule {
+  font-size: 0.76em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .ofc-proposal-error {

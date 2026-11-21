@@ -34,6 +34,9 @@ export class AgentSidebarView extends ItemView {
   private headerEl!: HTMLElement;
   private sessionSelectEl!: HTMLSelectElement;
   private chatComponent!: AgentChatComponent;
+  private unsubscribeEngine: (() => void) | null = null;
+  private dropdownRefreshSeq = 0;
+  private isViewClosed = false;
   private onEventMutated?: () => void;
   private beforeSend?: () => Promise<boolean>;
 
@@ -68,11 +71,17 @@ export class AgentSidebarView extends ItemView {
   }
 
   public async onOpen(): Promise<void> {
+    this.isViewClosed = false;
     await this.engine.init();
-    this.render();
+    if (!this.isViewClosed) {
+      this.render();
+    }
   }
 
   public async onClose(): Promise<void> {
+    this.isViewClosed = true;
+    this.unsubscribeEngine?.();
+    this.unsubscribeEngine = null;
     this.chatComponent?.unload();
     this.contentEl.empty();
   }
@@ -86,6 +95,9 @@ export class AgentSidebarView extends ItemView {
   }
 
   private render(): void {
+    this.unsubscribeEngine?.();
+    this.unsubscribeEngine = null;
+    this.chatComponent?.unload();
     this.contentEl.empty();
     this.contentEl.addClass('ofc-agent-sidebar-view');
 
@@ -94,6 +106,7 @@ export class AgentSidebarView extends ItemView {
     this.renderHeader();
 
     // 2. Chat Component (Messages, suggestions, input, streaming, markdown)
+    const hasObservableEngine = typeof this.engine.subscribe === 'function';
     this.chatComponent = new AgentChatComponent(this.contentEl, {
       app: this.plugin.app,
       engine: this.engine,
@@ -102,9 +115,20 @@ export class AgentSidebarView extends ItemView {
       parentComponent: this,
       compact: false,
       onEventMutated: this.onEventMutated,
-      onSessionUpdated: () => this.updateSessionDropdown(),
+      onSessionUpdated: hasObservableEngine ? undefined : () => this.updateSessionDropdown(),
       beforeSend: this.beforeSend
     });
+
+    this.unsubscribeEngine =
+      this.engine.subscribe?.(event => {
+        if (
+          event.type === 'session-changed' ||
+          event.type === 'run-start' ||
+          event.type === 'run-end'
+        ) {
+          this.updateSessionDropdown();
+        }
+      }) ?? null;
   }
 
   private renderHeader(): void {
@@ -120,9 +144,13 @@ export class AgentSidebarView extends ItemView {
       const selectedId = this.sessionSelectEl.value;
       if (selectedId) {
         void (async () => {
-          this.chatComponent?.cancelActiveRequest();
+          if (!this.engine.subscribe) {
+            this.chatComponent?.cancelActiveRequest();
+          }
           await this.engine.switchSession(selectedId);
-          this.chatComponent?.renderMessages();
+          if (!this.engine.subscribe) {
+            this.chatComponent?.renderMessages();
+          }
         })();
       }
     });
@@ -137,10 +165,14 @@ export class AgentSidebarView extends ItemView {
     setIcon(newSessionBtn, 'plus');
     newSessionBtn.addEventListener('click', () => {
       void (async () => {
-        this.chatComponent?.cancelActiveRequest();
+        if (!this.engine.subscribe) {
+          this.chatComponent?.cancelActiveRequest();
+        }
         await this.engine.createNewSession();
-        this.updateSessionDropdown();
-        this.chatComponent?.renderMessages();
+        if (!this.engine.subscribe) {
+          this.updateSessionDropdown();
+          this.chatComponent?.renderMessages();
+        }
         this.chatComponent?.focus();
       })();
     });
@@ -160,10 +192,14 @@ export class AgentSidebarView extends ItemView {
           t('agent.sidebar.confirmDeleteBody'),
           () => {
             void (async () => {
-              this.chatComponent?.cancelActiveRequest();
+              if (!this.engine.subscribe) {
+                this.chatComponent?.cancelActiveRequest();
+              }
               await this.engine.deleteSession(active.id);
-              this.updateSessionDropdown();
-              this.chatComponent?.renderMessages();
+              if (!this.engine.subscribe) {
+                this.updateSessionDropdown();
+                this.chatComponent?.renderMessages();
+              }
             })();
           },
           t('agent.sidebar.confirmDeleteBtn'),
@@ -185,9 +221,13 @@ export class AgentSidebarView extends ItemView {
   }
 
   private updateSessionDropdown(): void {
+    const seq = ++this.dropdownRefreshSeq;
     void (async () => {
       const sessions = await this.engine.listSessions();
       const active = await this.engine.getActiveSession();
+      if (this.isViewClosed || seq !== this.dropdownRefreshSeq || !this.sessionSelectEl) {
+        return;
+      }
 
       this.sessionSelectEl.empty();
       for (const s of sessions) {

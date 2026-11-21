@@ -150,6 +150,14 @@ export interface DeleteEventProposal extends BaseProposal {
   type: 'DELETE';
   eventId: string;
   eventTitle: string;
+  eventDate?: string;
+  eventEndDate?: string;
+  eventAllDay?: boolean;
+  eventStartTime?: string;
+  eventEndTime?: string;
+  eventRecurring?: boolean;
+  eventCategory?: string;
+  eventSubCategory?: string;
   reason?: string;
 }
 

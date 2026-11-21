@@ -24,6 +24,7 @@ import type {
   IAgentClient,
   StreamCallbacks
 } from '../domain/contracts/IAgentClient';
+import { AGENT_ABORT_ERROR_MESSAGE, raceWithAbort } from '../domain/abortUtils';
 import { parseRetryAfterHeaderMs, sanitizeChatMessages } from '../domain/httpUtils';
 import { type ParsedSseResult, SseChunkParser } from '../domain/sseParser';
 
@@ -405,13 +406,19 @@ export class AgentClient implements IAgentClient {
     }
 
     const fallbackPayload = payload.stream === true ? { ...payload, stream: false } : payload;
-    const res = await requestUrl({
-      url,
-      method: 'POST',
-      headers,
-      body: JSON.stringify(fallbackPayload),
-      throw: false
-    });
+    const res = await raceWithAbort(
+      requestUrl({
+        url,
+        method: 'POST',
+        headers,
+        body: JSON.stringify(fallbackPayload),
+        throw: false
+      }),
+      signal
+    );
+    if (signal?.aborted) {
+      throw new Error(AGENT_ABORT_ERROR_MESSAGE);
+    }
     const status = res?.status ?? 200;
     const text = res?.text ?? '';
     if (status === 200 && text.trimStart().startsWith('data:')) {
@@ -496,7 +503,7 @@ export class AgentClient implements IAgentClient {
 
     while (attempt <= maxRetries) {
       if (config.signal?.aborted) {
-        throw new Error('Agent request was cancelled by user.');
+        throw new Error(AGENT_ABORT_ERROR_MESSAGE);
       }
 
       let hasEmittedChunk = false;
@@ -504,6 +511,10 @@ export class AgentClient implements IAgentClient {
         onChunk: delta => {
           hasEmittedChunk = true;
           config.callbacks?.onChunk?.(delta);
+        },
+        onReasoningDelta: delta => {
+          hasEmittedChunk = true;
+          config.callbacks?.onReasoningDelta?.(delta);
         },
         onToolCallDelta: toolCalls => {
           hasEmittedChunk = true;
@@ -521,6 +532,9 @@ export class AgentClient implements IAgentClient {
 
         // 1. Success (200)
         if (res.status === 200) {
+          if (config.signal?.aborted) {
+            throw new Error(AGENT_ABORT_ERROR_MESSAGE);
+          }
           const durationMs = Date.now() - startTime;
           if (res.streamResult) {
             return {

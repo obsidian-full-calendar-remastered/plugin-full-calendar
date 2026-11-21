@@ -21,8 +21,8 @@ Styling is modularized across the codebase to group presentation rules with thei
 | [src/features/task-backlogs/task-backlog.css](file:///d:/Codes/plugin-full-calendar/src/features/task-backlogs/task-backlog.css) | ~10.9 KB | Layouts, item cards, list groupings, and dragging animations for the standalone Task Backlog sidebar view. |
 | [src/ui/settings/changelogs/changelog.css](file:///d:/Codes/plugin-full-calendar/src/ui/settings/changelogs/changelog.css) | ~9.2 KB | Version logs, what's new modals, and tab settings inside the plugin settings pane. |
 | [src/features/codeblock/codeblock.css](file:///d:/Codes/plugin-full-calendar/src/features/codeblock/codeblock.css) | ~1.6 KB | Layout systems for embedded codeblocks/widgets (`.ofc-layout-horizontal`, `.ofc-layout-vertical`, `.ofc-layout-view-item`) and backlog borders. |
-| [src/features/calendar-sidebar/styles/calendar-sidebar.css](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/styles/calendar-sidebar.css) | ~8.4 KB | Calendar Cockpit left panel layouts, mini month 7x6 calendar, activity heatmap indicator dots, upcoming events stream, countdown pills, and resizer splitter controls. |
-| [src/features/agent/ui/styles/agent.css](file:///d:/Codes/plugin-full-calendar/src/features/agent/ui/styles/agent.css) | ~12.2 KB | Calendar Agent chat messages, user/assistant bubbles, proposal approval cards, batch checklist styling, suggestion pills, and sticky section headers. |
+| [src/features/calendar-sidebar/styles/calendar-sidebar.css](file:///d:/Codes/plugin-full-calendar/src/features/calendar-sidebar/styles/calendar-sidebar.css) | ~15.2 KB | Calendar Cockpit left panel layouts, mini month 7x6 calendar, activity heatmap indicator dots, upcoming events stream, countdown pills, and resizer splitter controls. |
+| [src/features/agent/ui/styles/agent.css](file:///d:/Codes/plugin-full-calendar/src/features/agent/ui/styles/agent.css) | ~27.8 KB | Calendar Agent chat messages, Copilot welcome screen, collapsible step trace, docked live activity bar, sticky bulk action bar, redesigned proposal cards & stacked diffs, and leaf scroll-containment rules. |
 
 ---
 
@@ -57,6 +57,14 @@ When calendars are embedded in notes or displayed inside Obsidian leaves, Obsidi
 To guarantee sub-pixel alignment and clean borders:
 * Elements inside `.ofc-calendar-shell` and `.ofc-embedded-calendar-container` reset `table`, `tr`, `th`, and `td` to `margin: 0; padding: 0; border: none; background: transparent;`.
 * `border-collapse: collapse;` is enforced on table structures, and borders are strictly controlled via FullCalendar's CSS variables.
+
+### 5. Agent Scroll-Containment & Flex-Shrink Invariants
+In Obsidian's Right Sidebar leaf (`data-type='full-calendar-agent-view'`), the native `.view-content` wrapper can expand with long threads instead of scrolling unless its flex container establishes a bounded viewport height, and flex children inside `.ofc-agent-sidebar-messages` default to `flex-shrink: 1`, which can visually crush collapsible step traces (`<details class="ofc-agent-trace">`) to zero height when messages overflow.
+
+To guarantee bounded scrolling and non-collapsing live progress traces:
+* `.workspace-leaf-content[data-type='full-calendar-agent-view'] .view-content` and `.ofc-agent-sidebar-view` enforce `display: flex; flex-direction: column; height: 100%; overflow: hidden;`.
+* Scroll containers (`.ofc-agent-sidebar-messages`) use `flex: 1; min-height: 0; overflow-y: auto;`.
+* Direct message, trace, and proposal children enforce `.ofc-agent-sidebar-messages > * { flex-shrink: 0; }` (and explicit `flex-shrink: 0` on `.ofc-agent-trace`, `.ofc-agent-live-bar`, and `.ofc-agent-bulk-bar`).
 
 ---
 

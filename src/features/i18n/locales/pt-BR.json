@@ -2063,10 +2063,6 @@
       "importUrlPrompt": "Acesse a programação nesta URL e extraia os eventos: "
     },
     "proposals": {
-      "createTitle": "Proposta: criar evento",
-      "updateTitle": "Proposta: atualizar evento",
-      "deleteTitle": "Proposta: excluir evento",
-      "batchTitle": "Proposta: importação em lote ({{count}})",
       "allDay": "Dia inteiro",
       "approveApply": "Aprovar e aplicar",
       "approveSelected": "Aprovar selecionados ({{count}})",
@@ -2076,9 +2072,8 @@
       "applied": "Aplicada",
       "rejected": "Rejeitada",
       "editInModal": "Editar na janela",
-      "changes": "Alterações:",
       "notes": "Descrição: {{notes}}",
-      "deleteWarning": "⚠️ Isso removerá permanentemente o evento do seu calendário.",
+      "deleteWarning": "Isso removerá permanentemente o evento do seu calendário.",
       "foundBatch": "Eventos encontrados para o calendário {{calendar}}: {{count}}",
       "expired": "Expired",
       "pendingCount": "{{count}} pending proposals",
@@ -2087,7 +2082,24 @@
       "applyingProgress": "Applying {{current}}/{{total}}...",
       "bulkAppliedSummary": "Applied {{applied}} of {{total}} proposals.",
       "bulkAppliedPartial": "Applied {{applied}} of {{total}} proposals ({{failed}} failed).",
-      "bulkRejectedSummary": "Rejected {{count}} pending proposals."
+      "bulkRejectedSummary": "Rejected {{count}} pending proposals.",
+      "createBadge": "New event",
+      "updateBadge": "Update",
+      "deleteBadge": "Delete",
+      "batchBadge": "Batch import ({{count}})",
+      "recurring": "Recurring",
+      "timedEvent": "Timed",
+      "noneValue": "None",
+      "failedStatus": "Failed",
+      "fieldTitle": "Title",
+      "fieldDate": "Date",
+      "fieldStartTime": "Start time",
+      "fieldEndTime": "End time",
+      "fieldAllDay": "All day",
+      "fieldCategory": "Category",
+      "fieldSubCategory": "Subcategory",
+      "fieldDescription": "Description",
+      "categorizationDisabledNotice": "Advanced categorization is disabled; no remaining fields to update."
     },
     "audit": {
       "title": "Agente do Full Calendar: trilha de auditoria e diagnóstico",
@@ -2160,10 +2172,13 @@
     },
     "trace": {
       "working": "Working...",
-      "usedTools": "Completed {{count}} steps in {{seconds}}s",
-      "cancelled": "Cancelled after {{seconds}}s",
-      "failed": "Failed after {{seconds}}s",
-      "stepsRecorded": "{{count}} steps"
+      "usedTools": "Completed {{count}} steps",
+      "cancelled": "Cancelled",
+      "failed": "Failed",
+      "stepsRecorded": "{{count}} steps",
+      "usedToolSingle": "Completed {{count}} step",
+      "stepRecordedSingle": "{{count}} step",
+      "jumpToProgress": "Jump to live progress"
     }
   }
 }

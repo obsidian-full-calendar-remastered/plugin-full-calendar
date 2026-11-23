@@ -28,6 +28,7 @@ let _displaySettingsTab: (() => void) | null = null;
 let _showChangelog: (() => void) | null = null;
 let _showMilestones: (() => void) | null = null;
 let _isMobile: (() => boolean) | null = null;
+const _cleanups = new Set<() => void>();
 
 function syncProviderSources(): void {
   const updateSources = (
@@ -220,5 +221,17 @@ export const PluginState = {
     _showChangelog = null;
     _showMilestones = null;
     _isMobile = null;
+    for (const cleanup of Array.from(_cleanups)) {
+      try {
+        cleanup();
+      } catch (err) {
+        console.error('[PluginState] Cleanup error:', err);
+      }
+    }
+    _cleanups.clear();
+  },
+
+  registerCleanup(fn: () => void) {
+    _cleanups.add(fn);
   }
 };

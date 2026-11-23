@@ -46,8 +46,13 @@ export class AgentWelcomeView {
         autoSend: true
       },
       {
-        label: t('agent.suggestions.thisWeekPrompt'),
+        label: t('agent.suggestions.thisWeek'),
         prompt: t('agent.suggestions.thisWeekPrompt'),
+        autoSend: true
+      },
+      {
+        label: t('agent.suggestions.analyzeTime'),
+        prompt: t('agent.suggestions.analyzeTimePrompt'),
         autoSend: true
       },
       {
@@ -81,6 +86,11 @@ export class AgentWelcomeView {
       {
         label: t('agent.suggestions.thisWeek'),
         prompt: t('agent.suggestions.thisWeekPrompt'),
+        autoSend: true
+      },
+      {
+        label: t('agent.suggestions.analyzeTime'),
+        prompt: t('agent.suggestions.analyzeTimePrompt'),
         autoSend: true
       },
       {

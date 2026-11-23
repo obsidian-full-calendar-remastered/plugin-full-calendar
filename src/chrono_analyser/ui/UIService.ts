@@ -94,6 +94,7 @@ type PersistedUIState = {
  */
 export class UIService {
   private flatpickrInstance: FlatpickrInstance | null = null;
+  private loadDateTimeoutId: number | null = null;
   private detailPopup: DetailPopup;
   private uiStateKey = 'ChronoAnalyzerUIState_v5';
   public insightsConfig: InsightsConfig | null = null;
@@ -145,6 +146,11 @@ export class UIService {
   }
 
   public setControlPanelState(payload: FilterPayload) {
+    if (this.loadDateTimeoutId !== null) {
+      window.clearTimeout(this.loadDateTimeoutId);
+      this.loadDateTimeoutId = null;
+    }
+    this.flatpickrInstance?.clear(false);
     // Clear inputs first
     this.requireElement<HTMLInputElement>('#hierarchyFilterInput').value = '';
     this.requireElement<HTMLInputElement>('#projectFilterInput').value = '';
@@ -158,6 +164,9 @@ export class UIService {
         if (dates && this.flatpickrInstance) {
           this.flatpickrInstance.setDate(dates, false);
         }
+      } else if (key === 'metric') {
+        this.requireElement<HTMLSelectElement>('#metricSelect').value =
+          (payload.metric as string) || 'duration';
       } else {
         const element = this.rootEl.querySelector<HTMLInputElement | HTMLSelectElement>(`#${key}`);
         if (element) {
@@ -244,7 +253,16 @@ export class UIService {
   };
 
   public destroy(): void {
+    if (this.loadDateTimeoutId !== null) {
+      window.clearTimeout(this.loadDateTimeoutId);
+      this.loadDateTimeoutId = null;
+    }
     this.flatpickrInstance?.destroy();
+    this.detailPopup.destroy();
+  }
+
+  private toUtcDateBoundary(d: Date): Date {
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   }
 
   public getFilterState(): {
@@ -266,8 +284,8 @@ export class UIService {
         ?.value.trim()
         .toLowerCase() || undefined;
     const dates = this.flatpickrInstance?.selectedDates;
-    const filterStartDate = dates && dates.length === 2 ? dates[0] : null;
-    const filterEndDate = dates && dates.length === 2 ? dates[1] : null;
+    const filterStartDate = dates && dates.length === 2 ? this.toUtcDateBoundary(dates[0]) : null;
+    const filterEndDate = dates && dates.length === 2 ? this.toUtcDateBoundary(dates[1]) : null;
     const pattern = this.rootEl.querySelector<HTMLInputElement>('#patternInput')?.value ?? '';
 
     const filters: AnalysisFilters = {
@@ -423,8 +441,12 @@ export class UIService {
     };
 
     if (this.flatpickrInstance && this.flatpickrInstance.selectedDates.length === 2) {
-      state.startDate = Utils.getISODate(this.flatpickrInstance.selectedDates[0]);
-      state.endDate = Utils.getISODate(this.flatpickrInstance.selectedDates[1]);
+      state.startDate = Utils.getISODate(
+        this.toUtcDateBoundary(this.flatpickrInstance.selectedDates[0])
+      );
+      state.endDate = Utils.getISODate(
+        this.toUtcDateBoundary(this.flatpickrInstance.selectedDates[1])
+      );
     } else {
       state.startDate = '';
       state.endDate = '';
@@ -478,7 +500,13 @@ export class UIService {
     const endDate = asString(state.endDate);
     if (startDate && endDate && this.flatpickrInstance) {
       const dateRange: [string, string] = [startDate, endDate];
-      window.setTimeout(() => this.flatpickrInstance?.setDate(dateRange, false), 0);
+      if (this.loadDateTimeoutId !== null) {
+        window.clearTimeout(this.loadDateTimeoutId);
+      }
+      this.loadDateTimeoutId = window.setTimeout(() => {
+        this.loadDateTimeoutId = null;
+        this.flatpickrInstance?.setDate(dateRange, false);
+      }, 0);
     }
     setVal('levelSelect_pie', state.levelSelect_pie);
     setVal('levelSelect', state.levelSelect);

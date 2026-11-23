@@ -21,6 +21,7 @@ import type { AgentAuditLogger } from './AgentAuditLogger';
 const COMPACT_TOOLS_SECTION = `## 3. Available Tools (Provided via OpenAI \`tools\` Parameter)
 
 - **Read Tools (Silent)**: \`get_events\`, \`get_event_by_id\`, \`get_calendar_sources\`, \`get_user_categories\`, \`get_current_time\` (only if exact seconds/ISO needed), \`browse_schedule_online\` (public \`http\`/\`https\` schedules).
+- **Chrono Analytics Tools (Silent, Rule-Based)**: \`get_chrono_overview\` (taxonomy & date range), \`analyze_time\` (exact breakdowns, trends, activity patterns, period comparisons + embedded chart), \`get_chrono_insights\` (Global Snapshot & persona insights).
 - **Staged Proposal Tools (User Approval Required)**: \`propose_create_event\`, \`propose_update_event\`, \`propose_delete_event\`, \`propose_batch_create_events\`.`;
 
 /**
@@ -154,6 +155,9 @@ Advanced categorization is currently disabled. Pass literal event titles in \`ti
 ${calendarListStr}
 
 ${categorySection}
+
+### Chrono Analytics & Inline Charts
+For time totals, category breakdowns, trends, activity patterns, or period comparisons, ALWAYS use \`analyze_time\` / \`get_chrono_insights\` (call \`get_chrono_overview\` first if you need exact hierarchy/project names) instead of summing events manually from \`get_events\`. When \`analyze_time\` returns a \`chartId\`, place \`[[chart:<chartId>]]\` on its own line in your reply exactly where the chart should appear.
 
 ### Follow-Up Suggestions
 At the very end of a final user-facing reply (never during tool-calling turns), you may optionally append 2-3 short, contextual next steps the user might want to take next inside \`<suggestions>["...", "..."]</suggestions>\` tags (under 60 characters each). Omit the tag if no follow-up is helpful.

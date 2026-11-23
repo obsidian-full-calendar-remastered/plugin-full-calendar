@@ -1546,4 +1546,97 @@ describe('AgentChatComponent', () => {
     soloChat.unload();
     PluginState.clear();
   });
+
+  it('mounts ChatAnalyticsCard inline at [[chart:id]] and falls back for unanchored charts', async () => {
+    const soloEl = document.createElement('div');
+    const session: AgentSession = {
+      id: 'session-charts',
+      title: 'Charts',
+      createdAt: 100,
+      updatedAt: 100,
+      messages: [
+        { role: 'user', content: 'Analyze' },
+        {
+          role: 'assistant',
+          content: 'Before chart\n\n[[chart:chart_1]]\n\nAfter chart',
+          charts: [
+            {
+              chartId: 'chart_1',
+              title: 'Time by hierarchy',
+              generatedAt: 100,
+              kpis: [{ label: 'Total', value: '4.0h' }],
+              spec: { chartType: 'pie', metric: 'duration', breakdownBy: 'hierarchy' }
+            },
+            {
+              chartId: 'chart_2',
+              title: 'Fallback chart',
+              generatedAt: 100,
+              kpis: [{ label: 'Events', value: '3' }],
+              spec: { chartType: 'activity', metric: 'count', patternType: 'dayOfWeek' }
+            }
+          ]
+        }
+      ],
+      proposals: []
+    };
+
+    const fakeEngine = {
+      getMessages: () => session.messages,
+      getProposals: () => session.proposals,
+      getActiveRunSnapshot: () => null,
+      isRunning: () => false,
+      prompt: jest.fn().mockResolvedValue(undefined)
+    } as unknown as AgentEngine;
+
+    const fakeBridge = {
+      getPendingProposals: () => [],
+      isProposalActionable: () => false
+    } as unknown as AgentCalendarBridge;
+
+    const chartChat = new AgentChatComponent(soloEl, {
+      app: new App(),
+      engine: fakeEngine,
+      bridge: fakeBridge
+    });
+
+    await new Promise(r => window.setTimeout(r, 10));
+
+    const cards = soloEl.querySelectorAll('.ofc-agent-analytics-card');
+    expect(cards).toHaveLength(2);
+    expect(cards[0].querySelector('.ofc-agent-analytics-title')?.textContent).toBe(
+      'Time by hierarchy'
+    );
+    expect(cards[1].querySelector('.ofc-agent-analytics-title')?.textContent).toBe(
+      'Fallback chart'
+    );
+
+    chartChat.unload();
+  });
+
+  it('generates valid fc-calendar analysis codeblocks with quoted special values', async () => {
+    const { specToCodeblock } = await import('./ChatAnalyticsCard');
+    const { resolveStrategy } = await import('../../codeblock/CodeBlockProcessor');
+    const { parseYaml } = await import('obsidian');
+
+    const codeblock = specToCodeblock({
+      chartType: 'time-series',
+      metric: 'count',
+      startDate: '2026-11-01',
+      endDate: '2026-11-23',
+      hierarchy: 'Work: Core',
+      pattern: 'meeting -lunch',
+      granularity: 'weekly',
+      timeSeriesType: 'stackedArea',
+      stackingLevel: 'project'
+    });
+
+    expect(codeblock.startsWith('```fc-calendar\nwidget: analysis\n')).toBe(true);
+    expect(codeblock).toContain('timeSeriesType: stackedArea');
+    expect(codeblock).not.toContain('\ntype:');
+    expect(codeblock).toContain('pathFilter: "Work: Core"');
+
+    const yamlBody = codeblock.replace(/^```fc-calendar\n/, '').replace(/\n```$/, '');
+    const parsed = parseYaml(yamlBody) as Record<string, unknown>;
+    expect(resolveStrategy(parsed)).toBe('analysis');
+  });
 });

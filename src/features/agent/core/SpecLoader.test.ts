@@ -114,5 +114,7 @@ describe('SpecLoader & sanitizeAgentSpec', () => {
     const enabledPrompt = await loader.buildSystemPrompt();
     expect(enabledPrompt).toContain('User Defined Categories');
     expect(enabledPrompt).toContain('never prepend `Category - `');
+    expect(enabledPrompt).toContain('### Chrono Analytics & Inline Charts');
+    expect(enabledPrompt).toContain('[[chart:<chartId>]]');
   });
 });

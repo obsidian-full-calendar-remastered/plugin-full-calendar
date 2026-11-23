@@ -17,11 +17,22 @@ import type { AgentActiveRunSnapshot, AgentEngine, AgentEngineEvent } from '../c
 import type { AgentCalendarBridge } from '../tools/AgentCalendarBridge';
 import type { AgentAuditLogger } from '../core/AgentAuditLogger';
 import { generateRandomId } from '../domain/crypto/randomId';
-import type { AgentToolStepRecord, EventProposal, ProposalStatus } from '../types';
+import type {
+  AgentChartAttachment,
+  AgentToolStepRecord,
+  EventProposal,
+  ProposalStatus
+} from '../types';
 import {
   extractFollowUpSuggestions,
   StreamingSuggestionsFilter
 } from '../domain/suggestionsParser';
+import {
+  splitContentByChartAnchors,
+  stripChartAnchors,
+  StreamingChartAnchorFilter
+} from '../domain/chartAnchorParser';
+import type { ChatAnalyticsCard } from './ChatAnalyticsCard';
 import { ProposalApprovalCard, type ProposalApproveResult } from './ProposalApprovalCard';
 import { AgentWelcomeView } from './AgentWelcomeView';
 import { AgentStepTraceView } from './AgentStepTraceView';
@@ -55,6 +66,7 @@ interface LiveRunState {
   currentContentEl: HTMLElement | null;
   currentVisibleText: string;
   filter: StreamingSuggestionsFilter;
+  chartFilter: StreamingChartAnchorFilter;
   turnCompleted: boolean;
   errorRendered: boolean;
   hadError: boolean;
@@ -82,7 +94,9 @@ export class AgentChatComponent extends Component {
   private welcomeView: AgentWelcomeView | null = null;
   private activeFollowUps: FollowUpChipsView | null = null;
   private proposalCards = new Map<string, ProposalApprovalCard>();
+  private analyticsCards: ChatAnalyticsCard[] = [];
   private scrollRafId: number | null = null;
+  private renderEpoch = 0;
   private destroyed = false;
   private isSubmitting = false;
 
@@ -125,8 +139,10 @@ export class AgentChatComponent extends Component {
       return;
     }
     this.destroyed = true;
+    this.renderEpoch++;
     this.unsubscribeEngine?.();
     this.unsubscribeEngine = null;
+    this.destroyAnalyticsCards();
     this.liveActivityBar?.destroy();
     if (!this.options.engine.subscribe) {
       this.cancelActiveRequest();
@@ -327,8 +343,17 @@ export class AgentChatComponent extends Component {
     this.bulkActionBar?.updateCount(pendingCount);
   }
 
+  private destroyAnalyticsCards(): void {
+    for (const card of this.analyticsCards) {
+      card.destroy();
+    }
+    this.analyticsCards = [];
+  }
+
   public renderMessages(): void {
+    this.renderEpoch++;
     this.proposalCards.clear();
+    this.destroyAnalyticsCards();
     this.welcomeView = null;
     this.activeFollowUps = null;
     this.liveRun?.trace.destroy();
@@ -387,12 +412,12 @@ export class AgentChatComponent extends Component {
             ? msg.suggestions
             : (parsed?.suggestions ?? []);
 
-        if (cleanText) {
+        if (cleanText || (msg.charts && msg.charts.length > 0)) {
           const assistantMsg = this.messagesContainer.createDiv({
             cls: 'ofc-agent-msg ofc-agent-msg-assistant'
           });
           const assistantContent = assistantMsg.createDiv({ cls: 'ofc-agent-msg-content' });
-          void this.renderAssistantMarkdown(assistantContent, cleanText, true);
+          void this.renderAssistantBubbleWithCharts(assistantContent, cleanText, msg.charts, true);
         }
 
         if (i === lastAssistantIdx && chips.length > 0) {
@@ -640,7 +665,71 @@ export class AgentChatComponent extends Component {
     followScroll = false
   ): Promise<void> {
     container.empty();
-    await MarkdownRenderer.render(this.options.app, markdown, container, '', this);
+    await MarkdownRenderer.render(
+      this.options.app,
+      stripChartAnchors(markdown),
+      container,
+      '',
+      this
+    );
+    if (followScroll) {
+      this.scrollToBottom();
+    }
+  }
+
+  public async renderAssistantBubbleWithCharts(
+    container: HTMLElement,
+    markdown: string,
+    charts?: AgentChartAttachment[],
+    followScroll = false
+  ): Promise<void> {
+    if (!charts || charts.length === 0) {
+      await this.renderAssistantMarkdown(container, markdown, followScroll);
+      return;
+    }
+
+    const epoch = this.renderEpoch;
+    const { ChatAnalyticsCard } = await import('./ChatAnalyticsCard');
+    if (this.destroyed || epoch !== this.renderEpoch) {
+      return;
+    }
+
+    container.empty();
+    const chartMap = new Map<string, AgentChartAttachment>();
+    for (const c of charts) {
+      chartMap.set(c.chartId, c);
+    }
+
+    const segments = splitContentByChartAnchors(markdown, new Set(chartMap.keys()));
+    const mountedIds = new Set<string>();
+
+    for (const seg of segments) {
+      if (this.destroyed || epoch !== this.renderEpoch) {
+        return;
+      }
+      if (seg.type === 'markdown') {
+        const mdEl = container.createDiv({ cls: 'ofc-agent-msg-md-segment' });
+        await MarkdownRenderer.render(this.options.app, seg.text, mdEl, '', this);
+      } else {
+        const chart = chartMap.get(seg.chartId);
+        if (chart && !mountedIds.has(chart.chartId)) {
+          mountedIds.add(chart.chartId);
+          this.analyticsCards.push(new ChatAnalyticsCard(this.options.app, container, chart));
+        }
+      }
+    }
+
+    if (this.destroyed || epoch !== this.renderEpoch) {
+      return;
+    }
+
+    // Fallback: mount any attached chart that the model did not anchor inline
+    for (const chart of charts) {
+      if (!mountedIds.has(chart.chartId)) {
+        this.analyticsCards.push(new ChatAnalyticsCard(this.options.app, container, chart));
+      }
+    }
+
     if (followScroll) {
       this.scrollToBottom();
     }
@@ -698,6 +787,7 @@ export class AgentChatComponent extends Component {
       currentContentEl: null,
       currentVisibleText: '',
       filter: new StreamingSuggestionsFilter(),
+      chartFilter: new StreamingChartAnchorFilter(),
       turnCompleted: false,
       errorRendered: false,
       hadError: false,
@@ -744,6 +834,7 @@ export class AgentChatComponent extends Component {
     run.currentContentEl = null;
     run.currentVisibleText = '';
     run.filter = new StreamingSuggestionsFilter();
+    run.chartFilter = new StreamingChartAnchorFilter();
     run.turnCompleted = false;
     const turnLabel = turn === 1 ? t('agent.sidebar.thinking') : t('agent.trace.working');
     run.trace.setPhase(turnLabel);
@@ -755,7 +846,8 @@ export class AgentChatComponent extends Component {
     if (!run || run.runId !== runId) {
       return;
     }
-    const visibleDelta = run.filter.push(delta);
+    const suggestionClean = run.filter.push(delta);
+    const visibleDelta = suggestionClean ? run.chartFilter.push(suggestionClean) : '';
     if (!visibleDelta) {
       return;
     }
@@ -774,18 +866,24 @@ export class AgentChatComponent extends Component {
     }
   }
 
-  private completeLiveTurn(runId: string, cleanContent: string, suggestions: string[]): void {
+  private completeLiveTurn(
+    runId: string,
+    cleanContent: string,
+    suggestions: string[],
+    charts?: AgentChartAttachment[]
+  ): void {
     const run = this.liveRun;
     if (!run || run.runId !== runId) {
       return;
     }
     run.turnCompleted = true;
+    run.chartFilter.finish();
     const shouldFollow = this.isNearBottom();
     const finalText = cleanContent || run.filter.finish().fullCleanText;
-    if (finalText.trim().length > 0) {
+    if (finalText.trim().length > 0 || (charts && charts.length > 0)) {
       const contentEl = this.ensureLiveAssistantBubble(run);
       run.pendingMarkdownRenders.push(
-        this.renderAssistantMarkdown(contentEl, finalText, shouldFollow)
+        this.renderAssistantBubbleWithCharts(contentEl, finalText, charts, shouldFollow)
       );
     } else if (run.currentBubbleEl && run.currentVisibleText.trim().length === 0) {
       run.currentBubbleEl.remove();
@@ -932,7 +1030,7 @@ export class AgentChatComponent extends Component {
         this.appendLiveChunk(event.runId, event.chunk);
         return;
       case 'turn-complete':
-        this.completeLiveTurn(event.runId, event.cleanContent, event.suggestions);
+        this.completeLiveTurn(event.runId, event.cleanContent, event.suggestions, event.charts);
         return;
       case 'tool-start':
         this.handleLiveToolStart(event.runId, event.info);
@@ -1065,8 +1163,8 @@ export class AgentChatComponent extends Component {
           onChunk: delta => {
             this.appendLiveChunk(legacyRunId, delta);
           },
-          onTurnComplete: (_turn, cleanContent, suggestions) => {
-            this.completeLiveTurn(legacyRunId, cleanContent, suggestions);
+          onTurnComplete: (_turn, cleanContent, suggestions, charts) => {
+            this.completeLiveTurn(legacyRunId, cleanContent, suggestions, charts);
           },
           onToolCallStart: info => {
             this.handleLiveToolStart(legacyRunId, info);

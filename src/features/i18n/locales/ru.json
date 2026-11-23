@@ -2060,7 +2060,9 @@
       "addEvent": "Добавить событие...",
       "addEventPrompt": "Добавь встречу ",
       "importUrl": "Импорт из URL...",
-      "importUrlPrompt": "Просмотри расписание по этому URL и извлеки события: "
+      "importUrlPrompt": "Просмотри расписание по этому URL и извлеки события: ",
+      "analyzeTime": "Analyze my time",
+      "analyzeTimePrompt": "Analyze how I spent my time this week with a breakdown chart and key insights."
     },
     "proposals": {
       "allDay": "Весь день",

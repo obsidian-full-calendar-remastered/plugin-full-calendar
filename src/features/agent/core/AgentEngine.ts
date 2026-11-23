@@ -15,7 +15,9 @@
 
 import { AGENT_TOOLS } from '../tools/toolDefinitions';
 import { browseScheduleOnline } from '../tools/webBrowseTool';
+import type { AgentChronoBridge } from '../tools/AgentChronoBridge';
 import type {
+  AgentChartAttachment,
   AgentToolStepRecord,
   ChatMessage,
   ChatToolCall,
@@ -42,7 +44,12 @@ export interface EngineCallbacks extends StreamCallbacks {
   onStatus?: (statusText: string) => void;
   onUserMessageRecorded?: () => void;
   onTurnStart?: (turn: number, maxTurns: number) => void;
-  onTurnComplete?: (turn: number, cleanContent: string, suggestions: string[]) => void;
+  onTurnComplete?: (
+    turn: number,
+    cleanContent: string,
+    suggestions: string[],
+    charts?: AgentChartAttachment[]
+  ) => void;
   onToolCallStart?: (info: { id: string; name: string; label: string }) => void;
   onToolCallEnd?: (step: AgentToolStepRecord) => void;
   onProposal?: (proposal: EventProposal) => void;
@@ -59,6 +66,7 @@ export interface AgentActiveRunSnapshot {
   streamingText: string;
   steps: AgentToolStepRecord[];
   inFlightTools: { id: string; name: string; label: string }[];
+  charts?: AgentChartAttachment[];
 }
 
 export type AgentEngineEvent =
@@ -72,6 +80,7 @@ export type AgentEngineEvent =
       turn: number;
       cleanContent: string;
       suggestions: string[];
+      charts?: AgentChartAttachment[];
     }
   | { type: 'tool-start'; runId: string; info: { id: string; name: string; label: string } }
   | { type: 'tool-end'; runId: string; step: AgentToolStepRecord }
@@ -133,6 +142,14 @@ function formatToolStartLabel(fnName: string, args: Record<string, unknown>): st
       const count = Array.isArray(args.events) ? args.events.length : 0;
       return `Staging batch import (${count} items)`;
     }
+    case 'get_chrono_overview':
+      return 'Loading Chrono Analyzer overview';
+    case 'analyze_time': {
+      const aType = typeof args.analysisType === 'string' ? args.analysisType : 'time';
+      return `Analyzing time (${aType})`;
+    }
+    case 'get_chrono_insights':
+      return 'Generating Chrono insights';
     default:
       return `Running ${fnName}`;
   }
@@ -164,6 +181,12 @@ function formatPreparingToolCallsStatus(toolCalls: ChatToolCall[]): string {
       return 'Preparing event inspection...';
     case 'browse_schedule_online':
       return 'Preparing web schedule fetch...';
+    case 'get_chrono_overview':
+      return 'Preparing Chrono overview...';
+    case 'analyze_time':
+      return 'Preparing time analysis...';
+    case 'get_chrono_insights':
+      return 'Preparing Chrono insights...';
     default:
       return latestName ? `Preparing ${latestName}...` : 'Preparing tool call...';
   }
@@ -194,6 +217,21 @@ function formatToolResultSummary(
     if (fnName === 'get_event_by_id') {
       return { summary: parsed?.id ? 'Loaded event' : 'Not found', ok: Boolean(parsed?.id) };
     }
+    if (fnName === 'get_chrono_overview') {
+      const count = typeof parsed?.totalRecords === 'number' ? parsed.totalRecords : 0;
+      return { summary: `${count} records indexed`, ok: true };
+    }
+    if (fnName === 'analyze_time') {
+      const chartTag = typeof parsed?.chartId === 'string' ? ' + chart' : '';
+      if (typeof parsed?.totalHours === 'number') {
+        return { summary: `${parsed.totalHours}h${chartTag}`, ok: true };
+      }
+      return { summary: `Analyzed${chartTag}`, ok: true };
+    }
+    if (fnName === 'get_chrono_insights') {
+      const count = typeof parsed?.count === 'number' ? parsed.count : 0;
+      return { summary: `${count} insight${count === 1 ? '' : 's'}`, ok: true };
+    }
   } catch {
     // Non-JSON result (e.g. browse_schedule_online text)
   }
@@ -221,6 +259,7 @@ export class AgentEngine {
   private storage: AgentStorage;
   private logger: AgentAuditLogger;
   private bridge: AgentCalendarBridge;
+  private chronoBridge: AgentChronoBridge | null = null;
   private specLoader: SpecLoader;
   private currentSession: AgentSession | null = null;
   private messages: ChatMessage[] = [];
@@ -243,6 +282,14 @@ export class AgentEngine {
     this.logger = logger;
     this.bridge = bridge;
     this.specLoader = specLoader;
+  }
+
+  private async getChronoBridge(): Promise<AgentChronoBridge> {
+    if (!this.chronoBridge) {
+      const { AgentChronoBridge } = await import('../tools/AgentChronoBridge');
+      this.chronoBridge = new AgentChronoBridge();
+    }
+    return this.chronoBridge;
   }
 
   /**
@@ -533,8 +580,14 @@ export class AgentEngine {
     toolCall: ChatToolCall,
     runId: string,
     signal: AbortSignal,
-    callbacks?: EngineCallbacks
-  ): Promise<{ result: string; proposal?: EventProposal; step: AgentToolStepRecord }> {
+    callbacks?: EngineCallbacks,
+    nextChartId = 'chart_1'
+  ): Promise<{
+    result: string;
+    proposal?: EventProposal;
+    step: AgentToolStepRecord;
+    chartAttachment?: AgentChartAttachment;
+  }> {
     const fnName = toolCall.function.name;
     const rawArgs = toolCall.function.arguments;
     const startedAt = Date.now();
@@ -597,8 +650,14 @@ export class AgentEngine {
 
     const emitFinished = (
       result: string,
-      proposal?: EventProposal
-    ): { result: string; proposal?: EventProposal; step: AgentToolStepRecord } => {
+      proposal?: EventProposal,
+      chartAttachment?: AgentChartAttachment
+    ): {
+      result: string;
+      proposal?: EventProposal;
+      step: AgentToolStepRecord;
+      chartAttachment?: AgentChartAttachment;
+    } => {
       const { summary, ok } = formatToolResultSummary(fnName, result, proposal);
       const step: AgentToolStepRecord = {
         id: toolCall.id,
@@ -609,7 +668,7 @@ export class AgentEngine {
         durationMs: Date.now() - startedAt
       };
       this.notifyToolEnd(runId, step, callbacks);
-      return { result, proposal, step };
+      return { result, proposal, step, chartAttachment };
     };
 
     try {
@@ -651,6 +710,24 @@ export class AgentEngine {
             throw new Error('Agent request was cancelled by user.');
           }
           return emitFinished(text);
+        }
+
+        case 'get_chrono_overview': {
+          const chronoBridge = await this.getChronoBridge();
+          const json = await chronoBridge.getChronoOverview();
+          return emitFinished(json);
+        }
+
+        case 'analyze_time': {
+          const chronoBridge = await this.getChronoBridge();
+          const res = await chronoBridge.analyzeTime(args, nextChartId);
+          return emitFinished(res.toolJson, undefined, res.attachment);
+        }
+
+        case 'get_chrono_insights': {
+          const chronoBridge = await this.getChronoBridge();
+          const json = await chronoBridge.getChronoInsights();
+          return emitFinished(json);
         }
 
         // ====================================================================
@@ -798,7 +875,8 @@ export class AgentEngine {
       statusText: 'Thinking...',
       streamingText: '',
       steps: [],
-      inFlightTools: []
+      inFlightTools: [],
+      charts: []
     };
 
     let outcome: 'done' | 'cancelled' | 'error' = 'done';
@@ -823,9 +901,16 @@ export class AgentEngine {
 
       let turns = 0;
       let firstProposalTurn: number | null = null;
+      let hasUnrenderedCharts = false;
+      let chartSummaryTurnUsed = false;
       const sessionToolSteps: AgentToolStepRecord[] = [];
+      const sessionCharts: AgentChartAttachment[] = [];
 
-      while (turns < MAX_TURNS || (firstProposalTurn !== null && turns === firstProposalTurn)) {
+      while (
+        turns < MAX_TURNS ||
+        (firstProposalTurn !== null && turns === firstProposalTurn) ||
+        (hasUnrenderedCharts && !chartSummaryTurnUsed)
+      ) {
         if (!isRunActive()) {
           outcome = 'cancelled';
           if (this.activeRunId === runId) {
@@ -859,7 +944,13 @@ export class AgentEngine {
 
         // 3. Call LLM with a fresh per-turn idempotency key
         const idempotencyKey = generateRandomId('turn');
-        const isForcedSummaryTurn = firstProposalTurn !== null && turns > MAX_TURNS;
+        const isForcedSummaryTurn =
+          (firstProposalTurn !== null && turns > MAX_TURNS) ||
+          (hasUnrenderedCharts &&
+            (turns > MAX_TURNS || (firstProposalTurn !== null && turns > firstProposalTurn)));
+        if (isForcedSummaryTurn && hasUnrenderedCharts) {
+          chartSummaryTurnUsed = true;
+        }
         const toolsForTurn = isForcedSummaryTurn ? [] : AGENT_TOOLS;
         if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
           this.activeRunSnapshot.statusText = 'Generating response...';
@@ -964,6 +1055,12 @@ export class AgentEngine {
         const cleanContent = parsedReply.cleanText;
         const suggestions = hasToolCalls ? [] : parsedReply.suggestions;
 
+        const attachedCharts =
+          !hasToolCalls && sessionCharts.length > 0 ? [...sessionCharts] : undefined;
+        if (attachedCharts) {
+          hasUnrenderedCharts = false;
+        }
+
         // 4. Append assistant response
         const assistantMsg: ChatMessage = {
           role: 'assistant',
@@ -973,7 +1070,8 @@ export class AgentEngine {
           ...(suggestions.length > 0 ? { suggestions } : {}),
           ...(!hasToolCalls && sessionToolSteps.length > 0
             ? { toolSteps: [...sessionToolSteps] }
-            : {})
+            : {}),
+          ...(attachedCharts ? { charts: attachedCharts } : {})
         };
         this.messages.push(assistantMsg);
         this.emit({
@@ -981,9 +1079,10 @@ export class AgentEngine {
           runId,
           turn: turns,
           cleanContent,
-          suggestions
+          suggestions,
+          ...(attachedCharts ? { charts: attachedCharts } : {})
         });
-        callbacks?.onTurnComplete?.(turns, cleanContent, suggestions);
+        callbacks?.onTurnComplete?.(turns, cleanContent, suggestions, attachedCharts);
 
         // 5. If no tools were invoked, we are done
         if (!hasToolCalls) {
@@ -1000,13 +1099,22 @@ export class AgentEngine {
             return;
           }
 
-          const { result, proposal, step } = await this.executeTool(
+          const nextChartId = `chart_${sessionCharts.length + 1}`;
+          const { result, proposal, step, chartAttachment } = await this.executeTool(
             tc,
             runId,
             runSignal,
-            callbacks
+            callbacks,
+            nextChartId
           );
           sessionToolSteps.push(step);
+          if (chartAttachment) {
+            sessionCharts.push(chartAttachment);
+            hasUnrenderedCharts = true;
+            if (this.activeRunSnapshot && this.activeRunSnapshot.runId === runId) {
+              this.activeRunSnapshot.charts = [...sessionCharts];
+            }
+          }
           if (proposal && firstProposalTurn === null) {
             firstProposalTurn = turns;
           }
@@ -1029,7 +1137,11 @@ export class AgentEngine {
         }
 
         // Allow one follow-up turn after proposals are first staged so the assistant can summarize & suggest next steps
-        if (firstProposalTurn !== null && turns > firstProposalTurn) {
+        if (
+          firstProposalTurn !== null &&
+          turns > firstProposalTurn &&
+          !(hasUnrenderedCharts && !chartSummaryTurnUsed)
+        ) {
           break;
         }
       }

@@ -2060,7 +2060,9 @@
       "addEvent": "Add event...",
       "addEventPrompt": "Add a meeting ",
       "importUrl": "Import from URL...",
-      "importUrlPrompt": "Browse the schedule at this URL and extract the events: "
+      "importUrlPrompt": "Browse the schedule at this URL and extract the events: ",
+      "analyzeTime": "Analyze my time",
+      "analyzeTimePrompt": "Analyze how I spent my time this week with a breakdown chart and key insights."
     },
     "welcome": {
       "greeting": "Hi, how can I help?",

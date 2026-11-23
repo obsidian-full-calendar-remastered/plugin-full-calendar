@@ -3,7 +3,7 @@
  * This class is the single source of truth for all analytical data.
  */
 
-import { TimeRecord } from './types';
+import { ActivityPatternData, TimeRecord, TimeSeriesData } from './types';
 import * as Utils from './utils';
 import { OFCEvent } from '../../types';
 
@@ -183,12 +183,13 @@ export class DataManager {
         const exclusionKeywords: string[] = [];
 
         // 1. Find and strip out all exclusion tokens first
-        const exclusionTokenRegex = /\s-(?:"[^"]+"|'[^']+'|\S+)/g;
+        const exclusionTokenRegex = /(?:^|\s)-(?:"[^"]+"|'[^']+'|\S+)/g;
         const exclusionMatches = patternText.match(exclusionTokenRegex);
 
         if (exclusionMatches) {
           for (const match of exclusionMatches) {
-            let keyword = match.substring(2);
+            const trimmedMatch = match.trimStart();
+            let keyword = trimmedMatch.substring(1);
             const firstChar = keyword.charAt(0);
             const lastChar = keyword.charAt(keyword.length - 1);
             if (
@@ -508,6 +509,164 @@ export class DataManager {
     }
 
     return data;
+  }
+
+  /**
+   * Prepares aggregated time-series buckets (daily/weekly/monthly) for line or stackedArea charts.
+   */
+  public prepareTimeSeriesData(
+    records: TimeRecord[],
+    options: {
+      granularity: 'daily' | 'weekly' | 'monthly';
+      chartType: 'line' | 'stackedArea';
+      stackingLevel: keyof TimeRecord;
+      metric: 'duration' | 'count';
+    }
+  ): TimeSeriesData {
+    const { granularity, chartType, stackingLevel, metric } = options;
+    const dataByPeriod = new Map<string, { total: number; categories: Record<string, number> }>();
+
+    for (const record of records) {
+      if (!record.date || isNaN(record.date.getTime())) continue;
+      const value = metric === 'count' ? 1 : record._effectiveDurationInPeriod || 0;
+      if (metric === 'duration' && value <= 0) continue;
+
+      let periodKey: string | null;
+      if (granularity === 'daily') {
+        periodKey = Utils.getISODate(record.date);
+      } else if (granularity === 'weekly') {
+        periodKey = Utils.getISODate(Utils.getWeekStartDate(record.date));
+      } else {
+        periodKey = Utils.getISODate(Utils.getMonthStartDate(record.date));
+      }
+      if (!periodKey) continue;
+
+      let periodData = dataByPeriod.get(periodKey);
+      if (!periodData) {
+        periodData = { total: 0, categories: {} };
+        dataByPeriod.set(periodKey, periodData);
+      }
+      periodData.total += value;
+
+      if (chartType === 'stackedArea') {
+        const category = this.formatBreakdownValue(record[stackingLevel], stackingLevel);
+        periodData.categories[category] = (periodData.categories[category] || 0) + value;
+      }
+    }
+
+    const periods = Array.from(dataByPeriod.keys()).sort(
+      (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    );
+    const totals = periods.map(p => Number((dataByPeriod.get(p)?.total ?? 0).toFixed(2)));
+    const categories: Record<string, number[]> = {};
+
+    if (chartType === 'stackedArea' && periods.length > 0) {
+      const allCategories = new Set<string>();
+      for (const p of periods) {
+        const cats = dataByPeriod.get(p)?.categories;
+        if (cats) {
+          Object.keys(cats).forEach(cat => allCategories.add(cat));
+        }
+      }
+      for (const category of Array.from(allCategories).sort()) {
+        categories[category] = periods.map(p =>
+          Number((dataByPeriod.get(p)?.categories[category] || 0).toFixed(2))
+        );
+      }
+    }
+
+    return {
+      periods,
+      totals,
+      categories,
+      granularity,
+      chartType,
+      stackingLevel,
+      metric
+    };
+  }
+
+  /**
+   * Prepares aggregated activity pattern data (dayOfWeek, hourOfDay, or 7x24 heatmapDOWvsHOD).
+   */
+  public prepareActivityPatternData(
+    records: TimeRecord[],
+    options: {
+      patternType: 'dayOfWeek' | 'hourOfDay' | 'heatmapDOWvsHOD';
+      metric: 'duration' | 'count';
+    }
+  ): ActivityPatternData {
+    const { patternType, metric } = options;
+    const daysOfWeekLabels = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ];
+    const hourLabels = Array.from({ length: 24 }, (_, i) => `${i}`);
+
+    if (patternType === 'dayOfWeek') {
+      const hoursByDay: number[] = Array.from({ length: 7 }, () => 0);
+      for (const record of records) {
+        if (record.date && !isNaN(record.date.getTime())) {
+          const dayIndex = record.date.getUTCDay();
+          const value = metric === 'count' ? 1 : record._effectiveDurationInPeriod || 0;
+          hoursByDay[dayIndex] += value;
+        }
+      }
+      return {
+        patternType,
+        metric,
+        labelsX: daysOfWeekLabels,
+        values1D: hoursByDay.map(h => Number(h.toFixed(2))),
+        filteredRecords: records
+      };
+    }
+
+    if (patternType === 'hourOfDay') {
+      const hoursByHour: number[] = Array.from({ length: 24 }, () => 0);
+      for (const record of records) {
+        const startTime = 'startTime' in record.metadata ? record.metadata.startTime : null;
+        const startHour = startTime ? Utils.getHourFromTimeStr(startTime) : null;
+        if (startHour !== null) {
+          const value = metric === 'count' ? 1 : record._effectiveDurationInPeriod || 0;
+          hoursByHour[startHour] += value;
+        }
+      }
+      return {
+        patternType,
+        metric,
+        labelsX: hourLabels,
+        values1D: hoursByHour.map(h => Number(h.toFixed(2))),
+        filteredRecords: records
+      };
+    }
+
+    const heatmapData: number[][] = Array.from({ length: 7 }, () =>
+      Array.from({ length: 24 }, () => 0)
+    );
+    for (const record of records) {
+      const startTime = 'startTime' in record.metadata ? record.metadata.startTime : null;
+      const startHour = startTime ? Utils.getHourFromTimeStr(startTime) : null;
+      if (startHour === null) continue;
+      if (record.date && !isNaN(record.date.getTime())) {
+        const dayIndex = record.date.getUTCDay();
+        const value = metric === 'count' ? 1 : record._effectiveDurationInPeriod || 0;
+        heatmapData[dayIndex][startHour] += value;
+      }
+    }
+
+    return {
+      patternType: 'heatmapDOWvsHOD',
+      metric,
+      labelsX: hourLabels,
+      labelsY: daysOfWeekLabels,
+      values2D: heatmapData.map(row => row.map(val => (val > 0 ? Number(val.toFixed(2)) : null))),
+      filteredRecords: records
+    };
   }
 
   /**

@@ -2060,7 +2060,9 @@
       "addEvent": "Adicionar evento...",
       "addEventPrompt": "Adicione uma reunião ",
       "importUrl": "Importar de URL...",
-      "importUrlPrompt": "Acesse a programação nesta URL e extraia os eventos: "
+      "importUrlPrompt": "Acesse a programação nesta URL e extraia os eventos: ",
+      "analyzeTime": "Analyze my time",
+      "analyzeTimePrompt": "Analyze how I spent my time this week with a breakdown chart and key insights."
     },
     "proposals": {
       "allDay": "Dia inteiro",

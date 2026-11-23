@@ -44,6 +44,49 @@ export interface PieData {
   error: boolean;
 }
 
+export interface TimeSeriesData {
+  periods: string[];
+  totals: number[];
+  categories: Record<string, number[]>;
+  granularity: 'daily' | 'weekly' | 'monthly';
+  chartType: 'line' | 'stackedArea';
+  stackingLevel: keyof TimeRecord;
+  metric: 'duration' | 'count';
+}
+
+export interface ActivityPatternData {
+  patternType: 'dayOfWeek' | 'hourOfDay' | 'heatmapDOWvsHOD';
+  metric: 'duration' | 'count';
+  labelsX: string[];
+  labelsY?: string[];
+  values1D?: number[];
+  values2D?: (number | null)[][];
+  filteredRecords: TimeRecord[];
+}
+
+export interface ChronoChartSpec {
+  chartType: 'pie' | 'sunburst' | 'time-series' | 'activity';
+  metric: 'duration' | 'count';
+  startDate?: string;
+  endDate?: string;
+  hierarchy?: string;
+  project?: string;
+  pattern?: string;
+  breakdownBy?: 'hierarchy' | 'project' | 'subproject';
+  level?: 'project' | 'subproject';
+  granularity?: 'daily' | 'weekly' | 'monthly';
+  timeSeriesType?: 'line' | 'stackedArea';
+  stackingLevel?: 'hierarchy' | 'project' | 'subproject';
+  patternType?: 'dayOfWeek' | 'hourOfDay' | 'heatmapDOWvsHOD';
+  title?: string;
+}
+
+export interface ChronoKpiPill {
+  label: string;
+  value: string;
+  tone?: 'neutral' | 'positive' | 'warning';
+}
+
 // FileMetadata is no longer needed as we now use OFCEvent directly.
 // export interface FileMetadata { ... }
 

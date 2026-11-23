@@ -1358,6 +1358,144 @@
   border: 1px solid var(--background-modifier-border);
 }
 
+/* ============================================================================
+ * INLINE CHRONO ANALYTICS CARDS
+ * ============================================================================ */
+
+.ofc-agent-analytics-card {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ofc-agent-analytics-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ofc-agent-analytics-title {
+  font-size: 0.92em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-agent-analytics-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ofc-agent-analytics-chip {
+  font-size: 0.72em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background-color: var(--background-primary);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.ofc-agent-analytics-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ofc-agent-analytics-kpi {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  font-size: 0.78em;
+}
+
+.ofc-agent-analytics-kpi-label {
+  color: var(--text-muted);
+}
+
+.ofc-agent-analytics-kpi-value {
+  font-weight: 600;
+  color: var(--text-normal);
+  font-variant-numeric: tabular-nums;
+}
+
+.ofc-agent-analytics-kpi.is-positive .ofc-agent-analytics-kpi-value {
+  color: var(--color-green);
+}
+
+.ofc-agent-analytics-kpi.is-warning .ofc-agent-analytics-kpi-value {
+  color: var(--color-orange);
+}
+
+.ofc-agent-analytics-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ofc-agent-analytics-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ofc-agent-analytics-toggle {
+  font-size: 0.74em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ofc-agent-analytics-toggle.is-active {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
+.ofc-agent-analytics-icon-btn {
+  padding: 3px;
+  color: var(--text-muted);
+}
+
+.ofc-agent-analytics-chart-host {
+  min-height: 240px;
+  width: 100%;
+  contain: layout style;
+}
+
+.ofc-agent-analytics-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  font-size: 0.84em;
+  color: var(--text-muted);
+}
+
+.ofc-agent-analytics-modal {
+  min-width: min(760px, 85vw);
+}
+
+.ofc-agent-analytics-modal-chart {
+  min-height: 460px;
+  width: 100%;
+}
+
 
 
 

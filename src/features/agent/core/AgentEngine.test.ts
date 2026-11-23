@@ -528,4 +528,179 @@ describe('AgentEngine', () => {
 
     unsub();
   });
+
+  it('attaches Chrono chart specs on analyze_time tool calls and emits them on turn-complete', async () => {
+    const { ChronoAnalysisService } =
+      await import('../../../chrono_analyser/ChronoAnalysisService');
+    const { PluginState } = await import('../../../core/PluginState');
+    const { DEFAULT_SETTINGS } = await import('../../../types/settings');
+
+    ChronoAnalysisService.resetInstance();
+    PluginState.setSettings({
+      ...DEFAULT_SETTINGS,
+      enableAdvancedCategorization: true
+    });
+    PluginState.setCache({
+      initialized: true,
+      populate: jest.fn().mockResolvedValue(undefined),
+      on: jest.fn(),
+      off: jest.fn(),
+      calendars: new Map([['local::events', { type: 'local', displayName: 'Events' }]]),
+      store: {
+        getEventsInCalendar: jest.fn().mockReturnValue([
+          {
+            id: 'ev-c1',
+            location: { path: 'events/c1.md', lineNumber: 0 },
+            event: {
+              id: 'ev-c1',
+              title: 'Coding',
+              category: 'Work',
+              type: 'single',
+              date: '2026-11-16',
+              endDate: null,
+              allDay: false,
+              startTime: '09:00',
+              endTime: '11:00'
+            }
+          }
+        ])
+      }
+    } as unknown as import('../../../core/EventCache').default);
+
+    const chronoEngine = new AgentEngine(
+      mockClient,
+      mockStorage as AgentStorage,
+      mockLogger as AgentAuditLogger,
+      mockBridge as AgentCalendarBridge,
+      mockSpecLoader as SpecLoader
+    );
+    await chronoEngine.init();
+
+    const emittedCharts: unknown[] = [];
+    const unsub = chronoEngine.subscribe(ev => {
+      if (ev.type === 'turn-complete' && ev.charts) {
+        emittedCharts.push(...ev.charts);
+      }
+    });
+
+    chatCompletionFn
+      .mockResolvedValueOnce({
+        content: null,
+        toolCalls: [
+          {
+            id: 'tc-chrono-1',
+            type: 'function',
+            function: {
+              name: 'analyze_time',
+              arguments: JSON.stringify({
+                analysisType: 'pie',
+                startDate: '2026-11-16',
+                endDate: '2026-11-16'
+              })
+            }
+          }
+        ],
+        durationMs: 10
+      })
+      .mockResolvedValueOnce({
+        content: 'Here is your breakdown:\n\n[[chart:chart_1]]',
+        toolCalls: [],
+        durationMs: 10
+      });
+
+    await chronoEngine.prompt('Show my time breakdown today');
+
+    const lastMsg = chronoEngine.getMessages().at(-1);
+    expect(lastMsg?.role).toBe('assistant');
+    expect(lastMsg?.charts).toHaveLength(1);
+    expect(lastMsg?.charts?.[0].chartId).toBe('chart_1');
+    expect(emittedCharts).toHaveLength(1);
+
+    unsub();
+    ChronoAnalysisService.resetInstance();
+  });
+
+  it('forces a final summary turn and attaches charts when analyze_time runs on Turn 1 and tools run up to MAX_TURNS', async () => {
+    const { ChronoAnalysisService } =
+      await import('../../../chrono_analyser/ChronoAnalysisService');
+    const { PluginState } = await import('../../../core/PluginState');
+    const { DEFAULT_SETTINGS } = await import('../../../types/settings');
+
+    ChronoAnalysisService.resetInstance();
+    PluginState.setSettings({
+      ...DEFAULT_SETTINGS,
+      enableAdvancedCategorization: true
+    });
+    PluginState.setCache({
+      initialized: true,
+      populate: jest.fn().mockResolvedValue(undefined),
+      on: jest.fn(),
+      off: jest.fn(),
+      calendars: new Map([['local::events', { type: 'local', displayName: 'Events' }]]),
+      store: {
+        getEventsInCalendar: jest.fn().mockReturnValue([
+          {
+            id: 'ev-c1',
+            location: { path: 'events/c1.md', lineNumber: 0 },
+            event: {
+              id: 'ev-c1',
+              title: 'Coding',
+              category: 'Work',
+              type: 'single',
+              date: '2026-11-16',
+              endDate: null,
+              allDay: false,
+              startTime: '09:00',
+              endTime: '11:00'
+            }
+          }
+        ])
+      }
+    } as unknown as import('../../../core/EventCache').default);
+
+    const chronoEngine = new AgentEngine(
+      mockClient,
+      mockStorage as AgentStorage,
+      mockLogger as AgentAuditLogger,
+      mockBridge as AgentCalendarBridge,
+      mockSpecLoader as SpecLoader
+    );
+    await chronoEngine.init();
+
+    const toolTurn = (id: string, name: string, args: Record<string, unknown>) => ({
+      content: null,
+      toolCalls: [
+        { id, type: 'function' as const, function: { name, arguments: JSON.stringify(args) } }
+      ],
+      durationMs: 10
+    });
+
+    chatCompletionFn
+      .mockResolvedValueOnce(
+        toolTurn('tc-1', 'analyze_time', {
+          analysisType: 'pie',
+          startDate: '2026-11-16',
+          endDate: '2026-11-16'
+        })
+      )
+      .mockResolvedValueOnce(toolTurn('tc-2', 'get_chrono_overview', {}))
+      .mockResolvedValueOnce(toolTurn('tc-3', 'get_chrono_overview', {}))
+      .mockResolvedValueOnce(toolTurn('tc-4', 'get_chrono_overview', {}))
+      .mockResolvedValueOnce(toolTurn('tc-5', 'get_chrono_overview', {}))
+      .mockResolvedValueOnce({
+        content: 'Final summary [[chart:chart_1]]',
+        toolCalls: [],
+        durationMs: 10
+      });
+
+    await chronoEngine.prompt('Analyze and check');
+
+    expect(chatCompletionFn).toHaveBeenCalledTimes(6);
+    const forcedCall = chatCompletionFn.mock.calls[5] as unknown[];
+    expect(forcedCall[1]).toEqual([]);
+    const lastMsg = chronoEngine.getMessages().at(-1);
+    expect(lastMsg?.charts).toHaveLength(1);
+    expect(lastMsg?.charts?.[0].chartId).toBe('chart_1');
+    ChronoAnalysisService.resetInstance();
+  });
 });

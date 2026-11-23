@@ -9,6 +9,7 @@ on:
       - 'docs/**'
       - 'src/features/i18n/locales/**'
       - 'src/features/nlp/payloads/**'
+      - 'tools/generate-plugin-docs-index.mjs'
       - 'mkdocs.yml'
 
 permissions:
@@ -27,6 +28,11 @@ jobs:
         uses: actions/setup-python@v4 # Use a more recent version of setup-python
         with:
           python-version: 3.x
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
       - name: Cache pip
         uses: actions/cache@v3
@@ -49,6 +55,12 @@ jobs:
         env:
           MKDOCS_GIT_COMMITTERS_APIKEY: ${{ secrets.GITHUB_TOKEN }}
         run: mkdocs build
+
+      - name: Generate Agent Docs Index and Copy Agent Assets
+        run: |
+          mkdir -p site/assets/agent
+          node tools/generate-plugin-docs-index.mjs --out site/assets/agent/plugin-docs-index.md
+          cp docs/architecture/api/agent-spec.md site/assets/agent/agent-spec.md
 
       - name: Generate SEO Assets and Alternates
         run: python tools/generate_seo_assets.py

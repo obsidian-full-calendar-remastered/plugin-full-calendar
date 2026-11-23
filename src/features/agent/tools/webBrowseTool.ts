@@ -122,6 +122,20 @@ function isPrivateOrLocalHost(urlStr: string): boolean {
   }
 }
 
+const BLOCKED_PLUGIN_DOCS_HOSTS = new Set([
+  'obsidian-full-calendar-remastered.github.io',
+  'fcr-cdn.plugin-fcr.workers.dev'
+]);
+
+function isBlockedPluginDocsHost(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    return BLOCKED_PLUGIN_DOCS_HOSTS.has(parsed.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Browses an online schedule URL and extracts content text.
  */
@@ -134,6 +148,10 @@ export async function browseScheduleOnline(url: string, signal?: AbortSignal): P
 
     if (isPrivateOrLocalHost(trimmed)) {
       return `Error: Access to private or internal network addresses is blocked for security: ${trimmed}`;
+    }
+
+    if (isBlockedPluginDocsHost(trimmed)) {
+      return 'Error: Use lookup_plugin_docs instead of browse_schedule_online for Full Calendar Remastered documentation.';
     }
 
     const response = await raceWithAbort(

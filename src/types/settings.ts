@@ -300,6 +300,9 @@ export interface BreakTimerSettings {
   breakDurationSecs: number;
 }
 
+export const REMOTE_AGENT_ASSET_BASE_URL = 'https://fcr-cdn.plugin-fcr.workers.dev/assets/agent';
+export const DEFAULT_AGENT_SPEC_URL = `${REMOTE_AGENT_ASSET_BASE_URL}/agent-spec.md`;
+
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
   sidebarConfig: {
     enabled: true,
@@ -431,8 +434,7 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
     endpointUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
     apiKey: '',
-    specUrl:
-      'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/architecture/api/agent-spec.md',
+    specUrl: DEFAULT_AGENT_SPEC_URL,
     maxRetries: 3,
     timeoutMs: 60000
   }

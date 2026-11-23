@@ -124,6 +124,15 @@ function formatToolStartLabel(fnName: string, args: Record<string, unknown>): st
       return 'Loading configured categories';
     case 'get_current_time':
       return 'Checking local time';
+    case 'lookup_plugin_docs': {
+      const q = typeof args.query === 'string' ? args.query.trim() : '';
+      if (q) {
+        const preview = q.length > 36 ? `${q.slice(0, 36)}…` : q;
+        return `Searching plugin docs (${preview})`;
+      }
+      const cat = typeof args.category === 'string' ? args.category.trim() : '';
+      return cat && cat !== 'all' ? `Browsing ${cat} docs` : 'Loading plugin docs index';
+    }
     case 'browse_schedule_online': {
       const url = typeof args.url === 'string' ? args.url : 'URL';
       return `Fetching schedule from ${url.slice(0, 48)}`;
@@ -179,6 +188,8 @@ function formatPreparingToolCallsStatus(toolCalls: ChatToolCall[]): string {
       return 'Preparing calendar query...';
     case 'get_event_by_id':
       return 'Preparing event inspection...';
+    case 'lookup_plugin_docs':
+      return 'Preparing plugin docs lookup...';
     case 'browse_schedule_online':
       return 'Preparing web schedule fetch...';
     case 'get_chrono_overview':
@@ -231,6 +242,16 @@ function formatToolResultSummary(
     if (fnName === 'get_chrono_insights') {
       const count = typeof parsed?.count === 'number' ? parsed.count : 0;
       return { summary: `${count} insight${count === 1 ? '' : 's'}`, ok: true };
+    }
+    if (fnName === 'lookup_plugin_docs') {
+      if (parsed?.available === false) {
+        return { summary: 'Docs index unavailable', ok: false };
+      }
+      if (Array.isArray(parsed?.results)) {
+        const count = parsed.results.length;
+        return { summary: `${count} doc${count === 1 ? '' : 's'} matched`, ok: true };
+      }
+      return { summary: 'Docs catalog loaded', ok: true };
     }
   } catch {
     // Non-JSON result (e.g. browse_schedule_online text)
@@ -710,6 +731,15 @@ export class AgentEngine {
             throw new Error('Agent request was cancelled by user.');
           }
           return emitFinished(text);
+        }
+
+        case 'lookup_plugin_docs': {
+          const { executeLookupPluginDocs } = await import('../tools/PluginDocsIndexTool');
+          const json = await executeLookupPluginDocs(this.storage, args, this.logger, signal);
+          if (signal.aborted) {
+            throw new Error('Agent request was cancelled by user.');
+          }
+          return emitFinished(json);
         }
 
         case 'get_chrono_overview': {

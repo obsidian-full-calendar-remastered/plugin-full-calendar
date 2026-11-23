@@ -64,7 +64,7 @@ This page acts as a complete, audited registry of all network communications per
 - **Endpoints:**
     - `cdn.jsdelivr.net` (for `date-holidays` script)
     - `cdn.plot.ly` (for `plotly.js` interactive charting)
-    - `fcr-cdn.plugin-fcr.workers.dev` (for UI translations, NLP locale files and ChronoAnalyzer demo data)
+    - `fcr-cdn.plugin-fcr.workers.dev` (for UI translations, NLP locale files, ChronoAnalyzer demo data, and cached Agent specification and plugin documentation index files)
 - **Purpose:** Lazy-loading external scripts and payloads to keep the main plugin installation light.
 - **Trigger:** English UI & NLP is already hardcoded, translation `.json` for other languages are downloaded when required. *Subsequently redownloaded on plugin updates*. 
 

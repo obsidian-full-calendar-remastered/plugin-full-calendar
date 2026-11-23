@@ -20,10 +20,23 @@ import type { AuditEntry, ChatMessage, AgentSession } from '../types';
 
 const AGENT_SUBDIR = 'agent';
 const SPEC_FILE = 'agent-spec.md';
+const DOCS_INDEX_FILE = 'plugin-docs-index.md';
+export const AGENT_SPEC_RELATIVE_PATH = `${AGENT_SUBDIR}/${SPEC_FILE}`;
+export const AGENT_DOCS_INDEX_RELATIVE_PATH = `${AGENT_SUBDIR}/${DOCS_INDEX_FILE}`;
 const HISTORY_FILE = 'history.json';
 const SESSIONS_FILE = 'sessions.json';
 const AUDIT_FILE = 'audit.jsonl';
 const MAX_AUDIT_LINES = 1000;
+
+export function utf8ByteLength(text: string): number {
+  if (typeof TextEncoder !== 'undefined') {
+    return new TextEncoder().encode(text).byteLength;
+  }
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.byteLength(text, 'utf8');
+  }
+  return text.length * 2;
+}
 
 interface SessionsData {
   activeSessionId: string | null;
@@ -82,6 +95,36 @@ export class AgentStorage {
     await this.ensureDir();
     try {
       const path = this.getFilePath(SPEC_FILE);
+      const exists = await this.app.vault.adapter.exists(path);
+      if (!exists) return null;
+      return await this.app.vault.adapter.read(path);
+    } catch {
+      return null;
+    }
+  }
+
+  public async hasCachedDocsIndex(): Promise<boolean> {
+    await this.ensureDir();
+    try {
+      return await this.app.vault.adapter.exists(this.getFilePath(DOCS_INDEX_FILE));
+    } catch {
+      return false;
+    }
+  }
+
+  public async saveCachedDocsIndex(content: string): Promise<void> {
+    await this.ensureDir();
+    try {
+      await this.app.vault.adapter.write(this.getFilePath(DOCS_INDEX_FILE), content);
+    } catch (err) {
+      console.error('AgentStorage: Failed to save cached docs index:', err);
+    }
+  }
+
+  public async loadCachedDocsIndex(): Promise<string | null> {
+    await this.ensureDir();
+    try {
+      const path = this.getFilePath(DOCS_INDEX_FILE);
       const exists = await this.app.vault.adapter.exists(path);
       if (!exists) return null;
       return await this.app.vault.adapter.read(path);

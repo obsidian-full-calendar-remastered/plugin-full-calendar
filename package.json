@@ -27,7 +27,7 @@
         "test-dev": "jest --watch",
         "coverage": "jest --coverage",
         "prod:release": "pnpm run prod && node -e \"const fs=require('fs');const path=require('path');const root=process.cwd();const outputDir=path.join(root,'release-artifacts');const builtDir=path.join(root,'obsidian-dev-vault','.obsidian','plugins','full-calendar-remastered');fs.rmSync(outputDir,{recursive:true,force:true});fs.mkdirSync(outputDir,{recursive:true});for(const fileName of ['main.js','styles.css']){fs.copyFileSync(path.join(builtDir,fileName),path.join(outputDir,fileName));}fs.copyFileSync(path.join(root,'manifest.json'),path.join(outputDir,'manifest.json'));\"",
-        "ra": "prettier --config .prettierrc.json --write src/**/*.ts* && pnpm run compile && eslint src -o lint_report.txt --no-color && eslint -c eslint.css.config.mjs \"src/**/*.css\" -o css_report.txt --no-color && node tools/check-and-prune-i18n.mjs && jest --ci --silent=true"
+        "ra": "prettier --config .prettierrc.json --write src/**/*.ts* && pnpm run compile && eslint src -o lint_report.txt --no-color && eslint -c eslint.css.config.mjs \"src/**/*.css\" -o css_report.txt --no-color && node tools/check-and-prune-i18n.mjs && node tools/generate-plugin-docs-index.mjs --check && jest --ci --silent=true"
     },
     "keywords": [],
     "author": {

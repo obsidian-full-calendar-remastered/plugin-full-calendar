@@ -27,12 +27,14 @@ const MAX_PATTERN_CHARS = 200;
 const MAX_LABEL_CHARS = 120;
 
 function sanitizeLabel(val: string, maxLen = MAX_LABEL_CHARS): string {
-  // eslint-disable-next-line no-control-regex -- Strip ASCII control characters from external ICS/event labels
-  return val
-    .replace(/[\r\n\t]+/g, ' ')
-    .replace(/[\x00-\x1F\x7F]/g, '')
-    .trim()
-    .slice(0, maxLen);
+  return (
+    val
+      .replace(/[\r\n\t]+/g, ' ')
+      // eslint-disable-next-line no-control-regex -- Strip ASCII control characters from external ICS/event labels
+      .replace(/[\x00-\x1F\x7F]/g, '')
+      .trim()
+      .slice(0, maxLen)
+  );
 }
 
 function asOptionalStr(val: unknown): string | undefined {

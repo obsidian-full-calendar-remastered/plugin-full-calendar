@@ -96,7 +96,7 @@ export const AGENT_TOOLS: ToolDefinition[] = [
     function: {
       name: 'browse_schedule_online',
       description:
-        'Fetches a public web page or online schedule (syllabus, sports fixture, conference timetable) via URL and returns clean, sanitized text for calendar extraction.',
+        'Fetches a user-provided external web page or online schedule (syllabus, timetable) via URL and returns clean text. Never use for plugin documentation.',
       parameters: {
         type: 'object',
         properties: {
@@ -106,6 +106,41 @@ export const AGENT_TOOLS: ToolDefinition[] = [
           }
         },
         required: ['url']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'lookup_plugin_docs',
+      description:
+        'Searches the local Full Calendar Remastered documentation index (no web access) for features, setup workflows, and official doc URLs.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description:
+              'Keywords or setup question (e.g. "daily note google calendar availability")'
+          },
+          category: {
+            type: 'string',
+            enum: [
+              'getting_started',
+              'calendars',
+              'features',
+              'chrono_analyser',
+              'embeds',
+              'events',
+              'views',
+              'settings',
+              'guides',
+              'reference',
+              'all'
+            ],
+            description: 'Optional documentation category to browse or scope search'
+          }
+        }
       }
     }
   },

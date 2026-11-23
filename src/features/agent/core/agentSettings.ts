@@ -6,17 +6,21 @@
  */
 
 import { PluginState } from '../../../core/PluginState';
-import type { AgentSettings, ManagedAgentSettings } from '../../../types/settings';
+import {
+  DEFAULT_AGENT_SPEC_URL,
+  REMOTE_AGENT_ASSET_BASE_URL,
+  type AgentSettings,
+  type ManagedAgentSettings
+} from '../../../types/settings';
 import { CredentialStore } from '../../credentials/CredentialStore';
 import type { AgentClientOptions } from './AgentClient';
+
+export { DEFAULT_AGENT_SPEC_URL, REMOTE_AGENT_ASSET_BASE_URL };
 
 export type ManagedSessionPersistencePayload = Pick<
   ManagedAgentSettings,
   'principalId' | 'activationId' | 'keyId' | 'licenseKeyMasked' | 'planTier' | 'currentPeriodEnd'
 >;
-
-export const DEFAULT_AGENT_SPEC_URL =
-  'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/architecture/api/agent-spec.md';
 
 export const AGENT_DOCS_LINKS = [
   { text: 'Full Calendar Agent guide', path: 'user/features/agent' },

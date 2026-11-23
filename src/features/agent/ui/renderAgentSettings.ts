@@ -255,8 +255,21 @@ function renderSharedDiagnosticsSection(
         async () => {
           const loader = new SpecLoader(storage, bridge, logger);
           try {
-            await loader.loadSpec(true);
-            showNotice(t('agent.settings.refreshSpecSuccess'));
+            const specRefreshed = await loader.refreshSpecFromRemote();
+            let docsRefreshed = true;
+            if (await storage.hasCachedDocsIndex()) {
+              const { fetchAndCacheDocsIndex } = await import('../tools/PluginDocsIndexTool');
+              docsRefreshed = (await fetchAndCacheDocsIndex(storage, logger)) !== null;
+            }
+            if (specRefreshed && docsRefreshed) {
+              showNotice(t('agent.settings.refreshSpecSuccess'));
+            } else {
+              showNotice(
+                t('agent.settings.refreshSpecFail', {
+                  error: 'Offline or remote endpoint unreachable'
+                })
+              );
+            }
           } catch (err) {
             showNotice(t('agent.settings.refreshSpecFail', { error: String(err) }));
           }

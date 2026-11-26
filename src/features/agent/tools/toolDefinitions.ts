@@ -401,5 +401,27 @@ export const AGENT_TOOLS: ToolDefinition[] = [
         properties: {}
       }
     }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_weather_forecast',
+      description:
+        'Fetches the weather forecast for a date range (hourly for the next 3 days, daily summary beyond that) using the user’s configured location.',
+      parameters: {
+        type: 'object',
+        properties: {
+          startDate: {
+            type: 'string',
+            description: "ISO start date YYYY-MM-DD (e.g. '2026-09-09')"
+          },
+          endDate: {
+            type: 'string',
+            description: "ISO end date YYYY-MM-DD (e.g. '2026-09-12')"
+          }
+        },
+        required: ['startDate', 'endDate']
+      }
+    }
   }
 ];

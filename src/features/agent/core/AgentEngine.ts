@@ -15,6 +15,11 @@
 
 import { AGENT_TOOLS } from '../tools/toolDefinitions';
 import { browseScheduleOnline } from '../tools/webBrowseTool';
+import {
+  attachWeatherToEvents,
+  attachWeatherToSingleEvent,
+  getAgentWeatherForecast
+} from '../tools/AgentWeatherBridge';
 import type { AgentChronoBridge } from '../tools/AgentChronoBridge';
 import type {
   AgentChartAttachment,
@@ -37,6 +42,7 @@ import type { SpecLoader } from './SpecLoader';
 import { buildContextWindowMessages } from './contextWindowBuilder';
 import { generateRandomId } from '../domain/crypto/randomId';
 import { extractFollowUpSuggestions } from '../domain/suggestionsParser';
+import { isNormalizedAgentError, type AgentErrorCode } from '../domain/AgentError';
 
 const MAX_TURNS = 5;
 
@@ -53,7 +59,7 @@ export interface EngineCallbacks extends StreamCallbacks {
   onToolCallStart?: (info: { id: string; name: string; label: string }) => void;
   onToolCallEnd?: (step: AgentToolStepRecord) => void;
   onProposal?: (proposal: EventProposal) => void;
-  onError?: (error: string) => void;
+  onError?: (error: string, errorCode?: AgentErrorCode) => void;
   onDone?: () => void;
   onSessionChanged?: (session: AgentSession) => void;
 }
@@ -107,7 +113,13 @@ export type AgentEngineEvent =
       reason: string;
     }
   | { type: 'session-changed'; sessionId: string | null }
-  | { type: 'run-end'; runId: string; outcome: 'done' | 'cancelled' | 'error'; error?: string };
+  | {
+      type: 'run-end';
+      runId: string;
+      outcome: 'done' | 'cancelled' | 'error';
+      error?: string;
+      errorCode?: AgentErrorCode;
+    };
 
 function formatToolStartLabel(fnName: string, args: Record<string, unknown>): string {
   switch (fnName) {
@@ -159,6 +171,11 @@ function formatToolStartLabel(fnName: string, args: Record<string, unknown>): st
     }
     case 'get_chrono_insights':
       return 'Generating Chrono insights';
+    case 'get_weather_forecast': {
+      const start = typeof args.startDate === 'string' ? args.startDate : '';
+      const end = typeof args.endDate === 'string' ? args.endDate : '';
+      return start && end ? `Checking weather (${start} to ${end})` : 'Checking weather forecast';
+    }
     default:
       return `Running ${fnName}`;
   }
@@ -192,6 +209,8 @@ function formatPreparingToolCallsStatus(toolCalls: ChatToolCall[]): string {
       return 'Preparing plugin docs lookup...';
     case 'browse_schedule_online':
       return 'Preparing web schedule fetch...';
+    case 'get_weather_forecast':
+      return 'Preparing weather lookup...';
     case 'get_chrono_overview':
       return 'Preparing Chrono overview...';
     case 'analyze_time':
@@ -227,6 +246,17 @@ function formatToolResultSummary(
     }
     if (fnName === 'get_event_by_id') {
       return { summary: parsed?.id ? 'Loaded event' : 'Not found', ok: Boolean(parsed?.id) };
+    }
+    if (fnName === 'get_weather_forecast') {
+      if (parsed?.available === false) {
+        return {
+          summary:
+            typeof parsed.reason === 'string' ? parsed.reason.slice(0, 60) : 'Weather unavailable',
+          ok: false
+        };
+      }
+      const days = Array.isArray(parsed?.days) ? parsed.days.length : 0;
+      return { summary: `${days} day${days === 1 ? '' : 's'} forecast`, ok: true };
     }
     if (fnName === 'get_chrono_overview') {
       const count = typeof parsed?.totalRecords === 'number' ? parsed.totalRecords : 0;
@@ -714,14 +744,26 @@ export class AgentEngine {
           const end = asString(args.endDate);
           const calId = asOptionalString(args.calendarId);
           const cat = asOptionalString(args.category);
-          const res = this.bridge.getEvents(start, end, calId, cat);
+          const rawEvents = this.bridge.getEvents(start, end, calId, cat);
+          const todayStr = this.bridge.getCurrentTime().currentDate;
+          const res = await attachWeatherToEvents(rawEvents, todayStr, signal);
           return emitFinished(JSON.stringify({ count: res.length, events: res }));
         }
 
         case 'get_event_by_id': {
           const id = asString(args.eventId);
-          const res = this.bridge.getEventById(id);
+          const rawEvent = this.bridge.getEventById(id);
+          const todayStr = this.bridge.getCurrentTime().currentDate;
+          const res = await attachWeatherToSingleEvent(rawEvent, todayStr, signal);
           return emitFinished(JSON.stringify(res || { error: 'Event not found' }));
+        }
+
+        case 'get_weather_forecast': {
+          const start = asString(args.startDate);
+          const end = asString(args.endDate);
+          const todayStr = this.bridge.getCurrentTime().currentDate;
+          const res = await getAgentWeatherForecast(start, end, todayStr, signal);
+          return emitFinished(JSON.stringify(res));
         }
 
         case 'browse_schedule_online': {
@@ -911,6 +953,7 @@ export class AgentEngine {
 
     let outcome: 'done' | 'cancelled' | 'error' = 'done';
     let runError: string | undefined;
+    let runErrorCode: AgentErrorCode | undefined;
     const isRunActive = (): boolean =>
       !runSignal.aborted &&
       this.activeRunId === runId &&
@@ -1213,9 +1256,11 @@ export class AgentEngine {
       }
       outcome = 'error';
       const msg = err instanceof Error ? err.message : String(err);
+      const code = isNormalizedAgentError(err) ? err.code : undefined;
       runError = msg;
+      runErrorCode = code;
       this.logger.error('Agent Engine failed', err as Error);
-      callbacks?.onError?.(msg);
+      callbacks?.onError?.(msg, code);
       throw err;
     } finally {
       signal?.removeEventListener('abort', onExternalAbort);
@@ -1226,7 +1271,7 @@ export class AgentEngine {
         this.activeRunSnapshot = null;
         callbacks?.onStatus?.('');
         this.emit({ type: 'status', runId, statusText: '' });
-        this.emit({ type: 'run-end', runId, outcome, error: runError });
+        this.emit({ type: 'run-end', runId, outcome, error: runError, errorCode: runErrorCode });
       }
     }
   }

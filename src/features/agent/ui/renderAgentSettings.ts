@@ -320,10 +320,10 @@ export function renderAgentSettingsContent(
 
   new Setting(containerEl)
     .setName('Provider mode')
-    .setDesc('Choose between the free trial and managed plans or bring your own key (byok).')
+    .setDesc('Choose between the free trial and managed plans or bring your own key (BYOK).')
     .addDropdown(dropdown => {
       dropdown.addOption('managed', 'Free trial and managed plans');
-      dropdown.addOption('byok', 'Bring your own key (byok)');
+      dropdown.addOption('byok', 'Bring your own key (BYOK)');
       dropdown.setValue(ensureAgentSettings().mode ?? 'managed');
       dropdown.onChange(async val => {
         ensureAgentSettings().mode = val === 'byok' ? 'byok' : 'managed';
@@ -336,6 +336,27 @@ export function renderAgentSettingsContent(
   containerEl.appendChild(modeContainerEl);
   renderSelectedMode();
   renderSharedDiagnosticsSection(containerEl, plugin, storage, logger, bridge);
+}
+
+/**
+ * Opens the Agent Settings modal directly (used by onboarding and sidebar links).
+ */
+export function openAgentSettingsModal(
+  plugin: FullCalendarPlugin,
+  storage: AgentStorage,
+  logger: AgentAuditLogger,
+  bridge: AgentCalendarBridge
+): void {
+  SettingsModal.open(
+    plugin.app,
+    {
+      title: t('agent.settings.title') || 'Agentic automations',
+      docsLinks: AGENT_DOCS_LINKS
+    },
+    contentEl => {
+      renderAgentSettingsContent(contentEl, plugin, storage, logger, bridge);
+    }
+  );
 }
 
 /**
@@ -358,16 +379,7 @@ export function renderAgentSettings(
         .setIcon('gear')
         .setTooltip('Configure agent settings')
         .onClick(() => {
-          SettingsModal.open(
-            plugin.app,
-            {
-              title: t('agent.settings.title') || 'Agentic automations',
-              docsLinks: AGENT_DOCS_LINKS
-            },
-            contentEl => {
-              renderAgentSettingsContent(contentEl, plugin, storage, logger, bridge);
-            }
-          );
+          openAgentSettingsModal(plugin, storage, logger, bridge);
         });
     });
 }

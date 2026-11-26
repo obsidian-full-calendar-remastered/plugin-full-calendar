@@ -346,14 +346,14 @@ describe('PluginDocsIndexTool', () => {
     ) as { results: Array<{ title: string }> };
     expect(remRes.results[0]?.title).toBe('Reminders and Notifications');
 
-    const shortRes = JSON.parse(
-      queryPluginDocsEntries(entries, { query: 'byok analyzer' })
-    ) as { results: Array<{ title: string }> };
+    const shortRes = JSON.parse(queryPluginDocsEntries(entries, { query: 'byok analyzer' })) as {
+      results: Array<{ title: string }>;
+    };
     expect(shortRes.results.map(r => r.title)).not.toContain('A Guide to BY');
 
-    const accentedRes = JSON.parse(
-      queryPluginDocsEntries(entries, { query: 'catégories' })
-    ) as { results: Array<{ title: string }> };
+    const accentedRes = JSON.parse(queryPluginDocsEntries(entries, { query: 'catégories' })) as {
+      results: Array<{ title: string }>;
+    };
     expect(accentedRes.results[0]?.title).toBe('Category Coloring');
   });
 

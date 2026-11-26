@@ -164,6 +164,26 @@ describe('Calendar Left Panel (Sidebar) Feature', () => {
         'agent'
       ]);
     });
+
+    it('flushes debounced save on destroy instead of forcing an unconditional saveSettings(true)', () => {
+      const store = new SidebarStateStore();
+      const originalDescriptor = Object.getOwnPropertyDescriptor(PluginState, 'flushDebouncedSave');
+      const flushMock = jest.fn().mockResolvedValue(undefined);
+      const saveMock = jest.fn().mockResolvedValue(undefined);
+      PluginState.flushDebouncedSave = flushMock;
+      PluginState.saveSettings = saveMock;
+
+      try {
+        store.destroy();
+
+        expect(flushMock).toHaveBeenCalledTimes(1);
+        expect(saveMock).not.toHaveBeenCalled();
+      } finally {
+        if (originalDescriptor) {
+          Object.defineProperty(PluginState, 'flushDebouncedSave', originalDescriptor);
+        }
+      }
+    });
   });
 
   describe('SidebarResizer', () => {

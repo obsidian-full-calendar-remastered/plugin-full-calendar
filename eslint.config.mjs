@@ -138,7 +138,7 @@ export default tseslint.config(
             'obsidianmd/ui/sentence-case': [
                 'warn',
                 {
-                    acronyms: ['RRGGBB', 'RRGGBBAA']
+                    acronyms: ['RRGGBB', 'RRGGBBAA', 'GDPR', 'ZDR', 'EU', 'BYOK', 'WTC', 'AI', 'URL', 'FCR']
                 }
             ]
         }

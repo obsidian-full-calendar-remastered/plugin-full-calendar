@@ -1499,3 +1499,178 @@
 
 
 
+
+/* ==========================================================================
+ * Plan Status Strip, 2-Card First-Run Onboarding, Error Recovery & Settings
+ * ========================================================================== */
+
+.ofc-agent-plan-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  font-size: 0.78em;
+}
+
+.ofc-agent-plan-strip.is-warning {
+  background-color: rgba(var(--color-orange-rgb, 217, 119, 6), 0.12);
+}
+
+.ofc-agent-plan-pill {
+  background: transparent;
+  border: none;
+  padding: 2px 0;
+  color: var(--text-muted);
+  font-size: inherit;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ofc-agent-plan-pill:hover {
+  color: var(--text-normal);
+  background: transparent;
+}
+
+.ofc-agent-plan-upgrade-btn {
+  padding: 2px 8px;
+  font-size: 0.92em;
+  border-radius: 4px;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ofc-agent-onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.ofc-agent-onboarding-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  text-align: left;
+}
+
+.ofc-agent-onboarding-card-featured {
+  border-color: var(--interactive-accent);
+}
+
+.ofc-agent-onboarding-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ofc-agent-onboarding-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.72em;
+  font-weight: 600;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.ofc-agent-onboarding-badge-free {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.ofc-agent-onboarding-card-title {
+  margin: 0;
+  font-size: 0.98em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-agent-onboarding-card-desc {
+  margin: 0;
+  font-size: 0.84em;
+  line-height: 1.4;
+  color: var(--text-normal);
+}
+
+.ofc-agent-onboarding-card-meta {
+  margin: 0;
+  font-size: 0.76em;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.ofc-agent-onboarding-btn {
+  margin-top: auto;
+  width: 100%;
+}
+
+.ofc-agent-onboarding-link {
+  background: transparent;
+  border: none;
+  padding: 2px 0;
+  font-size: 0.78em;
+  color: var(--text-accent);
+  cursor: pointer;
+  text-align: center;
+  box-shadow: none;
+}
+
+.ofc-agent-onboarding-license {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.ofc-agent-onboarding-license.is-hidden {
+  display: none;
+}
+
+.ofc-agent-onboarding-license input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ofc-agent-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ofc-managed-pledge {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  font-size: 0.86em;
+  line-height: 1.45;
+  color: var(--text-normal);
+}
+
+.ofc-managed-plan-estimate {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.ofc-managed-plan-cta {
+  width: 100%;
+  margin-top: 8px;
+}

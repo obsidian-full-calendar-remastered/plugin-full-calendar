@@ -62,23 +62,23 @@ class ManagedOnboardingModal extends Modal {
     const intro = contentEl.createDiv({ cls: 'ofc-managed-status-panel' });
     intro.createEl('p', {
       cls: 'ofc-managed-status-line',
-      text: 'Strictly gdpr-compliant with zero data retention (zdr)'
+      text: 'Strictly GDPR-compliant with zero data retention (ZDR)'
     });
     intro.createEl('p', {
       cls: 'ofc-managed-status-sub',
-      text: 'Requests run transiently over stateless eu inference endpoints with model training disabled. Neither your prompts nor your calendar events are ever logged or stored on any server. Chat history stays locally in your vault and every calendar edit requires your explicit approval.'
+      text: 'Requests run transiently over stateless EU inference endpoints with model training disabled. The agent reads only your cached calendar events and optional weather forecast — never your vault notes or ActivityWatch logs. Every calendar edit requires your explicit approval.'
     });
 
     const trialCredits = MANAGED_PLAN_CATALOG.trial.grantWtc.toLocaleString('en-US');
     const detailsList = contentEl.createEl('ul', { cls: 'ofc-managed-onboarding-list' });
     detailsList.createEl('li', {
-      text: `Free trial ($0): Includes ${trialCredits} lifetime credits with no signup required.`
+      text: `Free trial ($0): Includes ${trialCredits} lifetime credits (${MANAGED_PLAN_CATALOG.trial.estimatedRequestsLabel}) with no signup or credit card.`
     });
     detailsList.createEl('li', {
-      text: 'Paid plans (optional): Upgrade anytime to pro ($7/month · 10m credits · 3 devices) or power ($11/month · 24m credits · 5 devices).'
+      text: 'Paid plans (optional): Pro ($7/month · 10m credits · 3 devices) or power ($11/month · 24m credits · 5 devices). Covers your managed AI usage and directly funds FCR development.'
     });
     detailsList.createEl('li', {
-      text: 'Bring your own key (byok): Switch anytime in settings to use your own OpenAI, Anthropic, groq, ollama, or lm studio endpoint.'
+      text: 'Bring your own key (BYOK — free forever): Every single feature works free with any OpenAI-compatible endpoint (cloud or local).'
     });
 
     const activationService = this.options.activationService;
@@ -153,12 +153,16 @@ class ManagedOnboardingModal extends Modal {
       text: 'Switch to bring your own key'
     });
     byokBtn.addEventListener('click', () => {
+      byokBtn.disabled = true;
+      trialBtn.disabled = true;
       void (async () => {
-        await this.options.onSwitchToByok();
-        showNotice(
-          'Switched to bring your own key mode. Configure your API key in agent settings.'
-        );
-        this.finish(false);
+        try {
+          await this.options.onSwitchToByok();
+          this.finish(false);
+        } finally {
+          byokBtn.disabled = false;
+          trialBtn.disabled = false;
+        }
       })();
     });
 

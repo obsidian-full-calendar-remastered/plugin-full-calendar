@@ -15,7 +15,8 @@ import {
 import { REMOTE_AGENT_ASSET_BASE_URL } from '../core/agentSettings';
 import { raceWithAbort } from '../domain/abortUtils';
 
-export const DOCS_BASE_URL = 'https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/';
+export const DOCS_BASE_URL =
+  'https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/';
 export const DOCS_HOME_URL = `${DOCS_BASE_URL}user/`;
 const DOCS_INDEX_URL = `${REMOTE_AGENT_ASSET_BASE_URL}/plugin-docs-index.md`;
 export const MAX_DOCS_INDEX_BYTES = 256 * 1024;
@@ -425,7 +426,9 @@ export function queryPluginDocsEntries(
         }
       }
 
-      selectedScored.sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title));
+      selectedScored.sort(
+        (a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title)
+      );
 
       return serializeWithCap({
         mode: 'search',

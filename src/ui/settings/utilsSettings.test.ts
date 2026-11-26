@@ -390,4 +390,18 @@ describe('utilsSettings - migrateAndSanitizeSettings', () => {
     });
     expect(settingsCustom.openDailyNoteOnDateClick).toBe(true);
   });
+
+  it('does not mutate DEFAULT_SETTINGS when mutating nested defaults returned by migrateAndSanitizeSettings', () => {
+    const originalSidebarWidth = DEFAULT_SETTINGS.sidebarConfig.width;
+    const originalAgentMode = DEFAULT_SETTINGS.agent?.mode;
+
+    const { settings } = migrateAndSanitizeSettings({});
+    settings.sidebarConfig.width = 450;
+    if (settings.agent) {
+      settings.agent.mode = 'byok';
+    }
+
+    expect(DEFAULT_SETTINGS.sidebarConfig.width).toBe(originalSidebarWidth);
+    expect(DEFAULT_SETTINGS.agent?.mode).toBe(originalAgentMode);
+  });
 });

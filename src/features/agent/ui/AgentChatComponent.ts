@@ -34,13 +34,20 @@ import {
 } from '../domain/chartAnchorParser';
 import type { ChatAnalyticsCard } from './ChatAnalyticsCard';
 import { ProposalApprovalCard, type ProposalApproveResult } from './ProposalApprovalCard';
-import { AgentWelcomeView } from './AgentWelcomeView';
+import { AgentWelcomeView, type AgentWelcomeOnboardingOptions } from './AgentWelcomeView';
 import { AgentStepTraceView } from './AgentStepTraceView';
 import { AgentLiveActivityBar } from './AgentLiveActivityBar';
 import { ProposalBulkActionBar } from './ProposalBulkActionBar';
 import { FollowUpChipsView } from './FollowUpChipsView';
 import { setCssProps } from './domUtils';
 import { openAgentSidebarLeaf } from './openAgentSidebar';
+import {
+  getPricingPlanUrl,
+  MANAGED_PLAN_CATALOG,
+  type ManagedPlanTier
+} from '../infrastructure/managed/protocol/managedTypes';
+import { isNormalizedAgentError, type AgentErrorCode } from '../domain/AgentError';
+import { openExternalUrl } from '../../../utils/openExternalUrl';
 import { showNotice } from '../../../utils/showNotice';
 import { t } from '../../i18n/i18n';
 
@@ -57,6 +64,11 @@ export interface AgentChatComponentOptions {
   onOpenSidebar?: (initialPrompt?: string) => void;
   onSessionUpdated?: () => void;
   beforeSend?: () => Promise<boolean>;
+  onOpenSettings?: () => void;
+  onSwitchToByok?: () => Promise<void>;
+  isManagedMode?: () => boolean;
+  getManagedPlanTier?: () => ManagedPlanTier | null;
+  managedOnboarding?: AgentWelcomeOnboardingOptions;
 }
 
 interface LiveRunState {
@@ -368,7 +380,9 @@ export class AgentChatComponent extends Component {
       this.welcomeView = new AgentWelcomeView(this.messagesContainer, {
         compact: Boolean(this.options.compact),
         onSendPrompt: prompt => this.submitStarterPrompt(prompt),
-        onFillPrompt: prompt => this.fillStarterPrompt(prompt)
+        onFillPrompt: prompt => this.fillStarterPrompt(prompt),
+        onboarding: this.options.managedOnboarding,
+        onRefreshView: () => this.renderMessages()
       });
       this.bulkActionBar?.updateCount(0);
       this.syncRunButtons(false);
@@ -735,7 +749,31 @@ export class AgentChatComponent extends Component {
     }
   }
 
-  public renderErrorCard(container: HTMLElement, errorText: string): void {
+  private isQuotaOrEntitlementError(errorText: string, errorCode?: AgentErrorCode): boolean {
+    if (errorCode !== undefined) {
+      return (
+        errorCode === 'insufficient_credits' ||
+        errorCode === 'entitlement_inactive' ||
+        errorCode === 'license_invalid' ||
+        errorCode === 'trial_registration_blocked'
+      );
+    }
+    const lower = errorText.toLowerCase();
+    return (
+      lower.includes('credit') ||
+      lower.includes('quota') ||
+      lower.includes('trial') ||
+      lower.includes('license') ||
+      lower.includes('entitlement') ||
+      lower.includes('insufficient')
+    );
+  }
+
+  public renderErrorCard(
+    container: HTMLElement,
+    errorText: string,
+    errorCode?: AgentErrorCode
+  ): void {
     container.empty();
     container.removeClass('ofc-agent-msg-assistant');
     container.addClass('ofc-agent-msg-error');
@@ -753,6 +791,53 @@ export class AgentChatComponent extends Component {
       (errorText || '').trim() ||
       'An unexpected error occurred while communicating with the model.';
     body.setText(message);
+
+    const isManaged = this.options.isManagedMode ? this.options.isManagedMode() : false;
+    if (isManaged && this.isQuotaOrEntitlementError(message, errorCode)) {
+      const actions = container.createDiv({ cls: 'ofc-agent-error-actions' });
+      const activeTier = this.options.getManagedPlanTier?.() ?? 'trial';
+      if (activeTier !== 'power') {
+        const targetPlan = activeTier === 'pro' ? 'power' : 'pro';
+        const targetSpec = MANAGED_PLAN_CATALOG[targetPlan];
+        const upgradeBtn = actions.createEl('button', {
+          cls: 'mod-cta ofc-agent-btn',
+          text: `Upgrade to ${targetSpec.title.toLowerCase()} ($${targetPlan === 'power' ? '11' : '7'}/mo)`,
+          attr: { type: 'button' }
+        });
+        upgradeBtn.addEventListener('click', () => {
+          openExternalUrl(getPricingPlanUrl(targetPlan));
+        });
+      }
+
+      if (this.options.onOpenSettings) {
+        const keyBtn = actions.createEl('button', {
+          cls: 'ofc-agent-btn ofc-agent-btn-secondary',
+          text: 'Enter license key',
+          attr: { type: 'button' }
+        });
+        keyBtn.addEventListener('click', () => {
+          this.options.onOpenSettings?.();
+        });
+      }
+
+      if (this.options.onSwitchToByok) {
+        const byokBtn = actions.createEl('button', {
+          cls: 'ofc-agent-btn ofc-agent-btn-secondary',
+          text: 'Switch to free BYOK',
+          attr: { type: 'button' }
+        });
+        byokBtn.addEventListener('click', () => {
+          byokBtn.disabled = true;
+          void (async () => {
+            try {
+              await this.options.onSwitchToByok?.();
+            } finally {
+              byokBtn.disabled = false;
+            }
+          })();
+        });
+      }
+    }
   }
 
   private ensureLiveAssistantBubble(run: LiveRunState): HTMLElement {
@@ -954,7 +1039,7 @@ export class AgentChatComponent extends Component {
     }
   }
 
-  private renderLiveError(runId: string, errorText: string): void {
+  private renderLiveError(runId: string, errorText: string, errorCode?: AgentErrorCode): void {
     const run = this.liveRun;
     if (run && run.runId === runId) {
       run.hadError = true;
@@ -966,7 +1051,7 @@ export class AgentChatComponent extends Component {
     const errEl = this.messagesContainer.createDiv({
       cls: 'ofc-agent-msg ofc-agent-msg-error'
     });
-    this.renderErrorCard(errEl, errorText);
+    this.renderErrorCard(errEl, errorText, errorCode);
     this.scrollToBottom();
   }
 
@@ -1067,6 +1152,10 @@ export class AgentChatComponent extends Component {
         this.proposalCards.get(event.proposalId)?.refreshDisplay();
         return;
       case 'settings-changed':
+        if (this.welcomeView) {
+          this.renderMessages();
+          return;
+        }
         for (const card of this.proposalCards.values()) {
           card.refreshDisplay();
         }
@@ -1078,7 +1167,7 @@ export class AgentChatComponent extends Component {
         return;
       case 'run-end':
         if (event.outcome === 'error' && event.error) {
-          this.renderLiveError(event.runId, event.error);
+          this.renderLiveError(event.runId, event.error, event.errorCode);
           this.lastRunErrorRendered = true;
         }
         this.finishLiveRun(event.outcome, event.runId);
@@ -1124,7 +1213,8 @@ export class AgentChatComponent extends Component {
           const active = this.liveRun as LiveRunState | null;
           this.renderLiveError(
             active?.runId ?? '',
-            err instanceof Error ? err.message : String(err)
+            err instanceof Error ? err.message : String(err),
+            isNormalizedAgentError(err) ? err.code : undefined
           );
         }
       }
@@ -1178,8 +1268,8 @@ export class AgentChatComponent extends Component {
           onProposal: proposal => {
             this.handleLiveProposal(legacyRunId, proposal);
           },
-          onError: err => {
-            this.renderLiveError(legacyRunId, err);
+          onError: (err, errCode) => {
+            this.renderLiveError(legacyRunId, err, errCode);
           },
           onDone: () => {
             this.options.onSessionUpdated?.();

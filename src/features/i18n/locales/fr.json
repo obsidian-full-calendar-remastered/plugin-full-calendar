@@ -2055,14 +2055,16 @@
     "suggestions": {
       "today": "What's my schedule today?",
       "todayPrompt": "What events do I have scheduled for today?",
-      "thisWeek": "Events this week",
-      "thisWeekPrompt": "Summarize my events for the next 7 days.",
       "addEvent": "Add event...",
       "addEventPrompt": "Add a meeting ",
       "importUrl": "Import from URL...",
       "importUrlPrompt": "Browse the schedule at this URL and extract the events: ",
       "analyzeTime": "Analyze my time",
-      "analyzeTimePrompt": "Analyze how I spent my time this week with a breakdown chart and key insights."
+      "analyzeTimePrompt": "Analyze how I spent my time this week with a breakdown chart and key insights.",
+      "rescheduleAfternoon": "Something came up — reschedule my afternoon",
+      "rescheduleAfternoonPrompt": "Something came up this afternoon. Find my flexible events after 1 PM and propose moving them to open slots this week.",
+      "checkWeather": "Check weather for my upcoming plans",
+      "checkWeatherPrompt": "Check the weather forecast for my upcoming events over the next few days and flag any outdoor conflicts."
     },
     "proposals": {
       "allDay": "All Day",
@@ -2163,14 +2165,7 @@
     },
     "welcome": {
       "greeting": "Hi, how can I help?",
-      "subtitle": "Tell me what you need with your schedule, and we can get started.",
-      "addEventPrefix": "Schedule an event: ",
-      "addEventPlaceholder": "details",
-      "importUrlPrefix": "Import schedule from URL: ",
-      "importUrlPlaceholder": "url",
-      "cleanupPrefix": "Review and clean up events from ",
-      "cleanupPlaceholder": "date range",
-      "starterCleanupPrompt": "Review and clean up my event titles and categories from "
+      "subtitle": "Tell me what you need with your schedule, and we can get started."
     },
     "trace": {
       "working": "Working...",

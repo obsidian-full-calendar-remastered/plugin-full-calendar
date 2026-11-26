@@ -14,6 +14,7 @@ import { showNotice } from './utils/showNotice';
  */
 
 import { PluginState } from './core/PluginState';
+import { SettingsPersistence, deepClone } from './core/SettingsPersistence';
 import { NotificationManager } from './features/notifications/NotificationManager';
 import { FcrReminderManager } from './features/fcr_reminder/FcrReminderManager';
 import { StatusBarManager } from './features/statusbar/StatusBarManager';
@@ -25,7 +26,7 @@ import { AgentManager } from './features/agent';
 import { DEPRECATED_PROVIDERS } from './ui/settings/deprecations';
 import EventCache from './core/EventCache';
 import { manageTimezone } from './features/timezone/Timezone';
-import { Plugin, TFile, TFolder, App, EventRef } from 'obsidian';
+import { Plugin, TFile, TFolder, App, EventRef, normalizePath } from 'obsidian';
 import type { Workspace } from 'obsidian';
 import { initializeI18n, t } from './features/i18n/i18n';
 import './styles.css';
@@ -82,6 +83,7 @@ export default class FullCalendarPlugin extends Plugin {
   // Keep a snapshot of the last saved settings to detect changes reliable
   #loadedSettings: string = '';
   #localServer: import('./api/LocalServer').LocalServer | null = null;
+  #settingsPersistence!: SettingsPersistence;
 
   loadData(): Promise<unknown> {
     return Promise.reject(
@@ -109,10 +111,33 @@ export default class FullCalendarPlugin extends Plugin {
     this.#isMobile = (this.app as App & { isMobile: boolean }).isMobile;
 
     PluginState.setPlugin(this);
-    PluginState.setSettings(DEFAULT_SETTINGS);
+    PluginState.setSettings(deepClone(DEFAULT_SETTINGS));
     PluginState.setCache(new EventCache(this));
     PluginState.setProviderRegistry(new ProviderRegistry(this));
     PluginState.setInternalAPI(new InternalAPI());
+    this.#settingsPersistence = new SettingsPersistence({
+      dataJsonPath: normalizePath(
+        `${this.app.vault.configDir}/plugins/${this.manifest.id}/data.json`
+      ),
+      backupPath: normalizePath(
+        `${this.app.vault.configDir}/plugins/${this.manifest.id}/data.json.corrupt.bak`
+      ),
+      loadRawData: () => super.loadData(),
+      saveRawData: data => super.saveData(data),
+      fileExists: path => this.app.vault.adapter.exists(path),
+      readRawFile: path => this.app.vault.adapter.read(path),
+      writeRawFile: (path, content) => this.app.vault.adapter.write(path, content),
+      onCorruptData: reason => {
+        console.error(
+          '[Full Calendar] Refusing to overwrite unreadable/corrupt data.json:',
+          reason
+        );
+        showNotice(
+          'Full Calendar: data.json appears corrupted or unreadable. Saving has been paused to protect your data. Check data.json.corrupt.bak.',
+          15000
+        );
+      }
+    });
     PluginState.setSaveSettings(() => this.#saveSettings());
     PluginState.setPersistData(() => this.#persistData());
     PluginState.setLoadSettings(() => this.#loadSettings());
@@ -563,8 +588,19 @@ export default class FullCalendarPlugin extends Plugin {
    * Loads plugin settings from disk, merging them with default values.
    */
   async #loadSettings() {
-    const persisted = (await super.loadData()) as Partial<FullCalendarSettings> | null;
-    const loadedData: FullCalendarSettings = { ...DEFAULT_SETTINGS, ...(persisted ?? {}) };
+    const loadResult = await this.#settingsPersistence.load();
+    if (loadResult.status === 'corrupt') {
+      const fallbackSettings = deepClone(DEFAULT_SETTINGS);
+      PluginState.setSettings(fallbackSettings);
+      this.#loadedSettings = JSON.stringify(PluginState.getSettings());
+      PluginState.getCache().enhancer.updateSettings(PluginState.getSettings());
+      return;
+    }
+
+    const loadedData: FullCalendarSettings = {
+      ...deepClone(DEFAULT_SETTINGS),
+      ...(loadResult.data ?? {})
+    };
 
     // All migration and sanitization logic is now encapsulated in this utility function.
     const { settings: migratedSettings, needsSave } = migrateAndSanitizeSettings(loadedData);
@@ -576,7 +612,7 @@ export default class FullCalendarPlugin extends Plugin {
     // Save back to disk if any migration or sanitization occurred.
     if (needsSave) {
       showNotice(t('notices.settingsUpdated'));
-      await super.saveData(PluginState.getSettings());
+      await this.#settingsPersistence.save(PluginState.getSettings());
     }
 
     // Check if we need to show the changelog
@@ -612,6 +648,11 @@ export default class FullCalendarPlugin extends Plugin {
    * to ensure all calendars are using the new settings.
    */
   async #saveSettings() {
+    if (!this.#settingsPersistence.isLoaded || this.#settingsPersistence.isSaveBlocked) {
+      await this.#settingsPersistence.save(PluginState.getSettings());
+      return;
+    }
+
     // Deep copy of settings BEFORE any modifications.
     const oldSettings = JSON.parse(
       JSON.stringify(PluginState.getSettings())
@@ -627,7 +668,10 @@ export default class FullCalendarPlugin extends Plugin {
     // Now, assign the fully-corrected settings object in one go.
     PluginState.setSettings(migratedSettings);
 
-    await super.saveData(PluginState.getSettings());
+    const wrote = await this.#settingsPersistence.save(PluginState.getSettings());
+    if (!wrote) {
+      return;
+    }
 
     // Publish general settings update event for all subscribers
     this.app.workspace.trigger('full-calendar:settings-updated', PluginState.getSettings());
@@ -671,8 +715,10 @@ export default class FullCalendarPlugin extends Plugin {
   }
 
   async #persistData() {
-    await super.saveData(PluginState.getSettings());
-    this.#loadedSettings = JSON.stringify(PluginState.getSettings());
+    const wrote = await this.#settingsPersistence.save(PluginState.getSettings());
+    if (wrote) {
+      this.#loadedSettings = JSON.stringify(PluginState.getSettings());
+    }
   }
 
   #clearActivityWatchAutoSync(): void {

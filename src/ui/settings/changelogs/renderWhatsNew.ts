@@ -25,6 +25,18 @@ export function checkAndShowWhatsNew(plugin: FullCalendarPlugin): void {
 
   // Defer to onLayoutReady to ensure the UI is initialized before showing the modal
   plugin.app.workspace.onLayoutReady(async () => {
+    const isPluginActive = (): boolean => {
+      try {
+        return PluginState.getPlugin() === plugin;
+      } catch {
+        return false;
+      }
+    };
+
+    if (!isPluginActive()) {
+      return;
+    }
+
     if (
       PluginState.getSettings().currentVersion === null ||
       PluginState.getSettings().currentVersion !== releaseVersion
@@ -33,6 +45,10 @@ export function checkAndShowWhatsNew(plugin: FullCalendarPlugin): void {
       const { refreshRemoteAssetsForVersionUpdate } =
         await import('../../../features/remoteAssets/versionedAssetRefresh');
       await refreshRemoteAssetsForVersionUpdate(plugin.app, plugin.manifest.id);
+
+      if (!isPluginActive()) {
+        return;
+      }
 
       // Update the persisted version
       PluginState.getSettings().currentVersion = releaseVersion;

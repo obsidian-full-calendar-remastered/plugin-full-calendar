@@ -8,6 +8,7 @@
 import { type App, Setting } from 'obsidian';
 import { microcreditsToWtc } from '../../../domain/Usage';
 import { bindAsyncButtonAction } from '../../../ui/uiButtonUtils';
+import { openExternalUrl } from '../../../../../utils/openExternalUrl';
 import { showNotice } from '../../../../../utils/showNotice';
 import type { ManagedAgentSettings } from '../../../../../types/settings';
 import {
@@ -17,7 +18,8 @@ import {
   type IManagedUsageService,
   MANAGED_PLAN_CATALOG,
   type ManagedPlanSpec,
-  getBuildEnvironment
+  getBuildEnvironment,
+  getPricingPlanUrl
 } from '../protocol/managedTypes';
 import { startTrialWithVerification } from './ExternalVerificationModal';
 
@@ -47,17 +49,24 @@ export function renderManagedSettingsSection(
 ): void {
   containerEl.empty();
 
+  // 0. No-Paywall Pledge & Transparency Note
+  const pledgeEl = containerEl.createDiv({ cls: 'ofc-managed-pledge' });
+  pledgeEl.createEl('strong', { text: 'No-paywall pledge: ' });
+  pledgeEl.createSpan({
+    text: '100% of features work free with any OpenAI-compatible key (cloud or local). Subscribing covers your managed EU AI usage and directly funds Full Calendar Remastered development.'
+  });
+
   // 1. Visual Plan & Free Trial Comparison Grid
   const plansGrid = containerEl.createDiv({ cls: 'ofc-managed-plans-grid' });
   const activeTier =
     deps.usageService.getUsageSnapshot()?.planTier ?? deps.getManagedSettings().planTier;
 
   for (const plan of PLAN_CARDS) {
+    const isActivePlan = activeTier === plan.id && deps.activationService.hasActiveSession();
     const card = plansGrid.createDiv({
-      cls:
-        activeTier === plan.id
-          ? 'ofc-managed-plan-card ofc-managed-plan-card-active'
-          : 'ofc-managed-plan-card'
+      cls: isActivePlan
+        ? 'ofc-managed-plan-card ofc-managed-plan-card-active'
+        : 'ofc-managed-plan-card'
     });
 
     const header = card.createDiv({ cls: 'ofc-managed-plan-header' });
@@ -65,10 +74,26 @@ export function renderManagedSettingsSection(
     header.createSpan({ cls: 'ofc-managed-plan-price', text: plan.priceLabel });
 
     card.createDiv({ cls: 'ofc-managed-plan-allowance', text: plan.allowanceSummary });
+    card.createDiv({ cls: 'ofc-managed-plan-estimate', text: plan.estimatedRequestsLabel });
 
     const list = card.createEl('ul', { cls: 'ofc-managed-plan-features' });
     for (const item of plan.details) {
       list.createEl('li', { text: item });
+    }
+
+    if (plan.id === 'pro' || plan.id === 'power') {
+      const ctaBtn = card.createEl('button', {
+        cls: plan.id === 'pro' ? 'mod-cta ofc-managed-plan-cta' : 'ofc-managed-plan-cta',
+        text: isActivePlan ? 'Current plan' : `Upgrade to ${plan.title}`,
+        attr: { type: 'button' }
+      });
+      ctaBtn.disabled = isActivePlan;
+      if (!isActivePlan) {
+        const planId = plan.id;
+        ctaBtn.addEventListener('click', () => {
+          openExternalUrl(getPricingPlanUrl(planId));
+        });
+      }
     }
   }
 

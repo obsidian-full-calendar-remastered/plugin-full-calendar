@@ -2053,27 +2053,22 @@
       "errorTitle": "Request failed"
     },
     "suggestions": {
-      "today": "What's my schedule today?",
-      "todayPrompt": "What events do I have scheduled for today?",
-      "thisWeek": "Events this week",
-      "thisWeekPrompt": "Summarize my events for the next 7 days.",
-      "addEvent": "Add event...",
-      "addEventPrompt": "Add a meeting ",
-      "importUrl": "Import from URL...",
+      "today": "Plan my day with focus blocks",
+      "todayPrompt": "Plan my day today: protect a focus block and keep buffers around meetings.",
+      "rescheduleAfternoon": "Something came up — reschedule my afternoon",
+      "rescheduleAfternoonPrompt": "Something came up this afternoon. Find my flexible events after 1 PM and propose moving them to open slots this week.",
+      "checkWeather": "Check weather for my upcoming plans",
+      "checkWeatherPrompt": "Check the weather forecast for my upcoming events over the next few days and flag any outdoor conflicts.",
+      "addEvent": "Add an event to my calendar...",
+      "addEventPrompt": "Add an event ",
+      "importUrl": "Import events from a schedule URL...",
       "importUrlPrompt": "Browse the schedule at this URL and extract the events: ",
-      "analyzeTime": "Analyze my time",
+      "analyzeTime": "Audit how I spent my week",
       "analyzeTimePrompt": "Analyze how I spent my time this week with a breakdown chart and key insights."
     },
     "welcome": {
       "greeting": "Hi, how can I help?",
-      "subtitle": "Tell me what you need with your schedule, and we can get started.",
-      "addEventPrefix": "Schedule an event: ",
-      "addEventPlaceholder": "details",
-      "importUrlPrefix": "Import schedule from URL: ",
-      "importUrlPlaceholder": "url",
-      "cleanupPrefix": "Review and clean up events from ",
-      "cleanupPlaceholder": "date range",
-      "starterCleanupPrompt": "Review and clean up my event titles and categories from "
+      "subtitle": "Tell me what you need with your schedule, and we can get started."
     },
     "trace": {
       "working": "Working...",

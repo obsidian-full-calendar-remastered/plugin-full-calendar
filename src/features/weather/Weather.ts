@@ -81,14 +81,64 @@ export const WEATHER_MAP: Record<number, { emoji: string; i18nKey: string }> = {
   99: { emoji: '⛈️', i18nKey: 'settings.weather.conditions.thunderstormWithHeavyHail' }
 };
 
-// In-memory cache for forecasts: cacheKey -> Record<dateStr, WeatherInfo>
-const weatherCache = new Map<string, Record<string, WeatherInfo>>();
+// In-memory cache for forecasts: locationKey -> Map<dateStr, { fetchedAt, info }>
+const WEATHER_CACHE_TTL_MS = 30 * 60 * 1000;
+const weatherCache = new Map<string, Map<string, { fetchedAt: number; info: WeatherInfo }>>();
 
 /**
  * Helper to clear the weather cache (primarily for testing purposes)
  */
 export function clearWeatherCache(): void {
   weatherCache.clear();
+}
+
+/**
+ * Validates that a string is a real YYYY-MM-DD calendar date (rejects e.g. 2026-02-30).
+ */
+export function isValidIsoDate(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return false;
+  }
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
+/**
+ * Adds a signed integer number of calendar days to an ISO YYYY-MM-DD date string.
+ */
+export function addDaysToIsoDate(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * Strips hourly forecasts for dates strictly beyond `maxDaysAhead` days after `referenceDateStr`,
+ * retaining daily summaries for extended dates where hourly accuracy degrades.
+ */
+export function pruneHourlyBeyondDays(
+  forecast: Record<string, WeatherInfo>,
+  referenceDateStr: string,
+  maxDaysAhead = 3
+): Record<string, WeatherInfo> {
+  const cutoffDateStr = addDaysToIsoDate(referenceDateStr, maxDaysAhead);
+  const pruned: Record<string, WeatherInfo> = {};
+
+  for (const [dateStr, info] of Object.entries(forecast)) {
+    if (dateStr <= cutoffDateStr) {
+      pruned[dateStr] = info;
+    } else {
+      pruned[dateStr] = {
+        emoji: info.emoji,
+        desc: info.desc,
+        maxTemp: info.maxTemp,
+        minTemp: info.minTemp
+      };
+    }
+  }
+
+  return pruned;
 }
 
 /**
@@ -119,9 +169,33 @@ export async function fetchWeatherForecast(
   startDateStr: string,
   endDateStr: string
 ): Promise<Record<string, WeatherInfo> | null> {
-  const cacheKey = `${latitude.toFixed(4)},${longitude.toFixed(4)},${startDateStr},${endDateStr}`;
-  if (weatherCache.has(cacheKey)) {
-    return weatherCache.get(cacheKey) || null;
+  const locationKey = `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
+  const now = Date.now();
+  const locationCache = weatherCache.get(locationKey);
+
+  if (
+    locationCache &&
+    isValidIsoDate(startDateStr) &&
+    isValidIsoDate(endDateStr) &&
+    startDateStr <= endDateStr
+  ) {
+    const cachedSlice: Record<string, WeatherInfo> = {};
+    let allCached = true;
+    let cursor = startDateStr;
+    let guard = 0;
+    while (cursor <= endDateStr && guard < 60) {
+      const entry = locationCache.get(cursor);
+      if (!entry || now - entry.fetchedAt >= WEATHER_CACHE_TTL_MS) {
+        allCached = false;
+        break;
+      }
+      cachedSlice[cursor] = entry.info;
+      cursor = addDaysToIsoDate(cursor, 1);
+      guard++;
+    }
+    if (allCached && guard > 0) {
+      return cachedSlice;
+    }
   }
 
   try {
@@ -213,7 +287,13 @@ export async function fetchWeatherForecast(
       };
     }
 
-    weatherCache.set(cacheKey, forecast);
+    const targetCache =
+      weatherCache.get(locationKey) ?? new Map<string, { fetchedAt: number; info: WeatherInfo }>();
+    const fetchedAt = Date.now();
+    for (const [dateStr, info] of Object.entries(forecast)) {
+      targetCache.set(dateStr, { fetchedAt, info });
+    }
+    weatherCache.set(locationKey, targetCache);
     return forecast;
   } catch (e) {
     console.error('Failed to fetch weather forecast', e);

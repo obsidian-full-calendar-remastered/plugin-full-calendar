@@ -78,6 +78,6 @@ export class SidebarStateStore {
   }
 
   public destroy(): void {
-    void PluginState.saveSettings(true);
+    void PluginState.flushDebouncedSave();
   }
 }

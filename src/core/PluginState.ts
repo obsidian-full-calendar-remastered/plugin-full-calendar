@@ -94,9 +94,11 @@ export const PluginState = {
       const resolvers = [..._pendingSaveResolvers];
       _pendingSaveResolvers = [];
       _pendingSavePromise = null;
-      void promise.then(() => {
-        resolvers.forEach(resolve => resolve());
-      });
+      void promise
+        .finally(() => {
+          resolvers.forEach(resolve => resolve());
+        })
+        .catch(() => {});
       return promise;
     }
 
@@ -115,9 +117,11 @@ export const PluginState = {
       const resolvers = [..._pendingSaveResolvers];
       _pendingSaveResolvers = [];
       _pendingSavePromise = null;
-      void promise.then(() => {
-        resolvers.forEach(resolve => resolve());
-      });
+      void promise
+        .finally(() => {
+          resolvers.forEach(resolve => resolve());
+        })
+        .catch(() => {});
     }, 500);
 
     return _pendingSavePromise;

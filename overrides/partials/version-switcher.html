@@ -1,0 +1,48 @@
+{% set docs_channel = config.extra.docs_channel | default('stable') %}
+{% set stable_version = config.extra.stable_version | default('') %}
+{% set beta_version = config.extra.beta_version | default('') %}
+{% set base = base_url if base_url.endswith('/') else base_url ~ '/' %}
+{% if docs_channel == 'beta' %}
+  {% set stable_href = base ~ '../' %}
+  {% set beta_href = base %}
+{% else %}
+  {% set stable_href = base %}
+  {% set beta_href = base ~ 'beta/' %}
+{% endif %}
+<div
+  class="fc-version-switcher"
+  role="group"
+  aria-label="Documentation version"
+  data-fc-version-switcher
+  data-fc-channel="{{ docs_channel }}"
+  data-fc-base-url="{{ base_url }}"
+>
+  <a
+    href="{{ stable_href }}"
+    class="fc-version-switcher__option{% if docs_channel != 'beta' %} fc-version-switcher__option--active{% endif %}"
+    data-fc-version-switch="stable"
+    title="Stable documentation{% if stable_version %} ({{ stable_version }}){% endif %}"
+    {% if docs_channel != 'beta' %}aria-current="page"{% endif %}
+  >
+    <span class="fc-version-switcher__name">Stable</span>
+    {% if stable_version %}
+      <span class="fc-version-switcher__ver" data-fc-version-label="stable">{{ stable_version }}</span>
+    {% else %}
+      <span class="fc-version-switcher__ver" data-fc-version-label="stable" hidden></span>
+    {% endif %}
+  </a>
+  <a
+    href="{{ beta_href }}"
+    class="fc-version-switcher__option fc-version-switcher__option--beta{% if docs_channel == 'beta' %} fc-version-switcher__option--active{% endif %}"
+    data-fc-version-switch="beta"
+    title="Beta documentation{% if beta_version %} ({{ beta_version }}){% endif %}"
+    {% if docs_channel == 'beta' %}aria-current="page"{% endif %}
+  >
+    <span class="fc-version-switcher__name">Beta</span>
+    {% if beta_version %}
+      <span class="fc-version-switcher__ver" data-fc-version-label="beta">{{ beta_version }}</span>
+    {% else %}
+      <span class="fc-version-switcher__ver" data-fc-version-label="beta" hidden></span>
+    {% endif %}
+  </a>
+</div>

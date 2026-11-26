@@ -1,0 +1,62 @@
+/* Global polish for readability and comfort */
+
+:root {
+  --fc-content-max-width: 72ch;
+  --fc-nav-radius: 0.4rem;
+}
+
+.md-typeset {
+  line-height: 1.72;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  letter-spacing: -0.01em;
+}
+
+.md-typeset h1 {
+  margin-bottom: 0.7rem;
+}
+
+.md-typeset p,
+.md-typeset ul,
+.md-typeset ol,
+.md-typeset blockquote,
+.md-typeset table {
+  max-width: var(--fc-content-max-width);
+}
+
+/* Callouts should use their full container width instead of prose line-length caps. */
+.md-typeset .admonition :is(p, ul, ol, blockquote, table),
+.md-typeset details :is(p, ul, ol, blockquote, table),
+.md-typeset .admonition > .admonition-title,
+.md-typeset details > summary {
+  max-width: none;
+}
+
+.md-sidebar .md-nav__link {
+  border-radius: var(--fc-nav-radius);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.md-sidebar .md-nav__link:hover {
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+.md-sidebar .md-nav__link--active {
+  font-weight: 650;
+}
+
+.md-typeset :focus-visible,
+.md-sidebar :focus-visible {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-sidebar .md-nav__link {
+    transition: none;
+  }
+}

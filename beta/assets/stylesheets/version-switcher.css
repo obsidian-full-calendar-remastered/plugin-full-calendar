@@ -1,0 +1,119 @@
+/* Stable | Beta segmented version switcher in MkDocs Material header */
+
+.fc-version-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.15rem;
+  margin-left: 0.4rem;
+  margin-right: 0.25rem;
+  border-radius: 9999px;
+  background-color: rgba(128, 128, 128, 0.12);
+  border: 1px solid rgba(128, 128, 128, 0.24);
+  flex-shrink: 0;
+}
+
+.fc-version-switcher__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.72;
+  transition: background-color 140ms ease, color 140ms ease, opacity 140ms ease;
+  white-space: nowrap;
+}
+
+.fc-version-switcher__option:hover {
+  opacity: 1;
+  background-color: rgba(128, 128, 128, 0.14);
+}
+
+.fc-version-switcher__option--active {
+  opacity: 1;
+  font-weight: 600;
+  background-color: var(--md-accent-fg-color);
+  color: var(--md-accent-bg-color, #ffffff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.fc-version-switcher__option--active:hover {
+  background-color: var(--md-accent-fg-color);
+  color: var(--md-accent-bg-color, #ffffff);
+}
+
+.fc-version-switcher__option--beta.fc-version-switcher__option--active {
+  background-color: #d97706;
+  color: #ffffff;
+}
+
+.fc-version-switcher__option--beta.fc-version-switcher__option--active:hover {
+  background-color: #b45309;
+  color: #ffffff;
+}
+
+.fc-version-switcher__ver {
+  font-size: 0.62rem;
+  font-weight: 500;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-md-color-scheme="slate"] .fc-version-switcher {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-md-color-scheme="slate"] .fc-version-switcher__option:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Beta announcement banner */
+.fc-beta-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.fc-beta-banner__badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  background-color: #d97706;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fc-beta-banner__link {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media screen and (max-width: 600px) {
+  .fc-version-switcher__ver {
+    display: none;
+  }
+
+  .fc-version-switcher__option {
+    padding: 0.18rem 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-version-switcher__option {
+    transition: none;
+  }
+}

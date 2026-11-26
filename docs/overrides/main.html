@@ -15,6 +15,10 @@
   <meta name="twitter:description" content="{% if page.meta and page.meta.description %}{{ page.meta.description }}{% elif config.site_description %}{{ config.site_description }}{% else %}Professional calendar orchestration for Obsidian with local note-based and remote (Google Calendar, Outlook, CalDAV, ICS) providers.{% endif %}" />
   <meta name="twitter:image" content="{{ config.site_url }}assets/branding/icon-light.png" />
 
+  {% if config.extra.docs_channel == "beta" %}
+  <!-- Prevent search engines from indexing unreleased Beta documentation -->
+  <meta name="robots" content="noindex, nofollow" />
+  {% else %}
   <!-- Internationalization (hreflang) -->
   <link rel="alternate" hreflang="x-default" href="{{ page.canonical_url }}" />
   <link rel="alternate" hreflang="en" href="{{ page.canonical_url }}" />
@@ -24,6 +28,7 @@
 
   <!-- AI Snippet Control -->
   <meta name="robots" content="max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  {% endif %}
 
   <!-- Structured Data (JSON-LD) -->
   <script type="application/ld+json">
@@ -36,7 +41,7 @@
     "url": "{{ config.site_url }}",
     "description": "Professional calendar orchestration for Obsidian with local note-based and remote (Google Calendar, Outlook, CalDAV, ICS) providers.",
     "applicationSubCategory": "Calendar and Task Management",
-    "softwareVersion": "0.13.7",
+    "softwareVersion": "{{ config.extra.docs_version | default('0.13.7') }}",
     "offers": {
       "@type": "Offer",
       "price": "0.00",
@@ -49,4 +54,21 @@
     }
   }
   </script>
+{% endblock %}
+
+{% block announce %}
+  {% if config.extra.docs_channel == "beta" %}
+    {% set base = base_url if base_url.endswith('/') else base_url ~ '/' %}
+    <div class="fc-beta-banner">
+      <span class="fc-beta-banner__badge">Beta</span>
+      <span>
+        You are viewing <strong>Beta</strong> documentation{% if config.extra.docs_version %} (<code>{{ config.extra.docs_version }}</code>){% endif %} &mdash; features here may not be released yet.
+      </span>
+      <a
+        href="{{ base }}../"
+        class="fc-beta-banner__link"
+        data-fc-version-switch="stable"
+      >Switch to Stable{% if config.extra.stable_version %} ({{ config.extra.stable_version }}){% endif %}</a>
+    </div>
+  {% endif %}
 {% endblock %}

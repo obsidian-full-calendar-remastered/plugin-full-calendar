@@ -4,28 +4,48 @@ on:
   push:
     branches:
       - main
-      - feat-GCal
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
     paths:
       - 'docs/**'
-      - 'src/features/i18n/locales/**'
-      - 'src/features/nlp/payloads/**'
       - 'tools/generate-plugin-docs-index.mjs'
+      - 'tools/build_docs.py'
+      - 'tools/generate_seo_assets.py'
+      - 'tools/docs/**'
+      - 'manifest-beta.json'
+      - 'requirements.txt'
       - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      rebuild_stable:
+        description: 'Force rebuild of Stable docs in addition to Beta'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
+
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout main repository
         uses: actions/checkout@v6
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v4 # Use a more recent version of setup-python
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
 
@@ -51,38 +71,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-git-committers-
 
-      - name: Build MkDocs site
+      - name: Fetch existing gh-pages snapshot (if present)
+        run: git fetch origin gh-pages:refs/remotes/origin/gh-pages --depth=1 || true
+
+      - name: Build Stable + Beta MkDocs site
         env:
           MKDOCS_GIT_COMMITTERS_APIKEY: ${{ secrets.GITHUB_TOKEN }}
-        run: mkdocs build
-
-      - name: Generate Agent Docs Index and Copy Agent Assets
         run: |
-          mkdir -p site/assets/agent
-          node tools/generate-plugin-docs-index.mjs --out site/assets/agent/plugin-docs-index.md
-          cp docs/architecture/api/agent-spec.md site/assets/agent/agent-spec.md
-
-      - name: Generate SEO Assets and Alternates
-        run: python tools/generate_seo_assets.py
-
-      - name: Copy i18n locale JSON assets
-        run: |
-          mkdir -p site/assets/i18n
-          cp src/features/i18n/locales/*.json site/assets/i18n/
-
-      - name: Copy NLP payload JSON assets
-        run: |
-          mkdir -p site/assets/nlp
-          cp src/features/nlp/payloads/*.json site/assets/nlp/
-
-      - name: Copy static files 1
-        run: cp docs/assets/meta/google-auth-callback.html site/
-      
-      - name: Copy static files 2
-        run: cp docs/assets/meta/googlef764ec34bcd1fe4a.html site/
-
-      - name: Copy changelogs JSON
-        run: cp docs/assets/meta/changelogs.json site/
+          python tools/build_docs.py \
+            --mode auto \
+            --output-dir site \
+            --gh-pages-ref origin/gh-pages \
+            --event-name "${{ github.event_name }}" \
+            --git-ref "${{ github.ref }}" \
+            --force-stable "${{ inputs.rebuild_stable || 'false' }}"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

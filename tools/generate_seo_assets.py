@@ -1,29 +1,49 @@
+import argparse
 import os
 import shutil
-import yaml
+import sys
+from pathlib import Path
 
-def default_constructor(loader, tag_suffix, node):
-    if isinstance(node, yaml.MappingNode):
-        return loader.construct_mapping(node)
-    if isinstance(node, yaml.SequenceNode):
-        return loader.construct_sequence(node)
-    return loader.construct_scalar(node)
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
-yaml.SafeLoader.add_multi_constructor('', default_constructor)
+from tools.docs.yaml_utils import load_yaml
 
-def main():
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Generate SEO assets (Markdown alternates and LLM files).")
+    parser.add_argument("--config", default="mkdocs.yml", help="Path to mkdocs.yml (default: mkdocs.yml)")
+    parser.add_argument("--docs-dir", default="docs", help="Path to docs directory (default: docs)")
+    parser.add_argument("--site-dir", default="site", help="Path to built site directory (default: site)")
+    parser.add_argument("--site-url", default=None, help="Override site_url from mkdocs.yml")
+    return parser.parse_args()
+
+
+def generate_seo_assets(
+    config_path: str | Path = "mkdocs.yml",
+    docs_dir: str | Path = "docs",
+    site_dir: str | Path = "site",
+    site_url: str | None = None,
+) -> None:
     print("Generating SEO assets (Markdown alternates and LLM files)...")
-    
-    # 1. Read mkdocs.yml to get config options like site_url
-    with open("mkdocs.yml", "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-        
-    site_url = config.get("site_url", "https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/")
-    if not site_url.endswith("/"):
-        site_url += "/"
-        
-    site_dir = "site"
-    docs_dir = "docs"
+
+    config = load_yaml(Path(config_path))
+
+    resolved_site_url = site_url or config.get(
+        "site_url", "https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/"
+    )
+    if not resolved_site_url.endswith("/"):
+        resolved_site_url += "/"
+
+    site_dir = str(site_dir)
+    docs_dir = str(docs_dir)
+
+    if not os.path.exists(site_dir):
+        print(f"Error: Site build directory '{site_dir}' does not exist. Run 'mkdocs build' first.", file=sys.stderr)
+        raise SystemExit(1)
+
+    site_url = resolved_site_url
     
     if not os.path.exists(site_dir):
         print(f"Error: Site build directory '{site_dir}' does not exist. Run 'mkdocs build' first.")
@@ -176,5 +196,15 @@ def main():
         f.write(llms_full_content)
     print("Generated site/llms-full.txt")
     
+def main():
+    args = parse_args()
+    generate_seo_assets(
+        config_path=args.config,
+        docs_dir=args.docs_dir,
+        site_dir=args.site_dir,
+        site_url=args.site_url,
+    )
+
+
 if __name__ == "__main__":
     main()

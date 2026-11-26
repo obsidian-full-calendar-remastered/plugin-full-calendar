@@ -25,7 +25,7 @@ To set up programmatic access:
 2. Toggle **Enable REST Server** to start the local HTTP listener.
 3. Configure the **REST Server Port** (default: `8540`) if needed.
 4. Under **Personal Access Tokens (PATs)**, click **Generate Token**.
-5. Give your token a name (e.g. `PythonCLI` or `DataviewDashboard`) and select the required [Permission Scopes](#permission-scopes).
+5. Give your token a name (e.g. `PythonCLI` or `DataviewDashboard`) and select the required [Permission Scopes](#4-permission-scopes-summary).
 6. Copy the generated `ofc_pat_...` secret token. **It will only be shown once!**
 
 !!! warning "Keep Your Tokens Secret"
@@ -69,7 +69,7 @@ Use the tabs below to copy code recipes for your scripting environment (for comp
 
 === "Python"
 
-    For advanced Python automation, see [Python Blueprint](../../architecture/api/recipes-blueprints.md#4-python-cli--background-automation).
+    For advanced Python automation, see [Python Blueprint](../../architecture/api/recipes-blueprints.md#4-python-cli-background-automation).
 
     ```python
     import requests

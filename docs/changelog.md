@@ -117,10 +117,10 @@ Corresponds to
     - [Hover Preview Guide](user/events/hover_context.md)
     - [Event Linked Notes](user/features/event-linked-notes.md)
 
--   **[Startup Benchmarking & Diagnostics](user/settings/fc_config.md#interaction--ui)** ([#364](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/364))
+-   **[Startup Benchmarking & Diagnostics](user/settings/fc_config.md#interaction-ui)** ([#364](https://github.com/obsidian-full-calendar-remastered/plugin-full-calendar/pull/364))
     _Implemented zero-overhead LoadDebugProfiler with an on-demand reporting modal and integrated Blank View Diagnostic self-healing._
     - [Performance & Staged Loading Architecture](architecture/system/performance.md#load-debug-profiler-loaddebugprofiler)
-    - [Troubleshooting Guide](user/guides/troubleshooting.md#why-is-my-calendar-view-blank-or-failing-to-render)
+    - [Troubleshooting Guide](user/guides/troubleshooting.md#blank-calendar-view)
 
 ### Improvements & Fixes
 

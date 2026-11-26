@@ -1,5 +1,4 @@
 import { TFile, parseYaml, getAllTags } from 'obsidian';
-import * as React from 'react';
 import { CalendarProvider, CalendarProviderCapabilities, SyncKeyProvider } from '../Provider';
 import { OFCEvent, EventLocation, CalendarInfo, validateEvent } from '../../types';
 import { FCReactComponent, EventHandle } from '../typesProvider';

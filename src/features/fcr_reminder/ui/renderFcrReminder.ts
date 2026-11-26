@@ -22,7 +22,7 @@ export function renderFcrReminderSettingsContent(
   const manager = plugin.fcrReminderManager;
   if (!manager) {
     containerEl.createEl('p', {
-      text: 'Fcr reminder companion manager is not initialized.',
+      text: 'FCR reminder companion manager is not initialized.',
       cls: 'setting-item-description'
     });
     return;

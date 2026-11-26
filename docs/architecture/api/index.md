@@ -18,8 +18,8 @@
 |---|---|---|
 | What is the overall API architecture and system flow? | [Overview](overview.md) | [Data Flow](../system/data-flow.md) |
 | How do in-vault plugins call the JavaScript API? | [Public JS API](public-api.md) | [Recipes & Integration Blueprints](recipes-blueprints.md#1-third-party-obsidian-plugins) |
-| How do external scripts or CLI tools query/mutate via HTTP? | [REST Server Specification](rest-server.md) | [Recipes & Integration Blueprints](recipes-blueprints.md#4-cli--external-automation-python-bash) |
-| What permission scopes exist and how are tokens validated? | [Scopes & Permissions](scopes-permissions.md) | [Public JS API](public-api.md#token-authentication--validation) |
+| How do external scripts or CLI tools query/mutate via HTTP? | [REST Server Specification](rest-server.md) | [Recipes & Integration Blueprints](recipes-blueprints.md#4-python-cli-background-automation) |
+| What permission scopes exist and how are tokens validated? | [Scopes & Permissions](scopes-permissions.md) | [Public JS API](public-api.md#withtokentoken) |
 | How does `InternalAPI` translate API calls into cache & view actions? | [Internal API Engine](internal-api.md) | [EventCache Contract](../system/eventcache.md) |
 | How do I write DataviewJS, Templater, or Python recipes? | [Recipes & Integration Blueprints](recipes-blueprints.md) | [User API Feature Guide](../../user/features/api.md) |
 

@@ -66,12 +66,24 @@ To remain sustainable, I am seeking a community-wide subsidy of **$25 USD per mo
 *   **Goal Met:** I continue to provide "breakneck" updates, new integrations, and weekly community support. Expect **1-2 releases monthly**, with emphasis on community requested features.
 *   **Goal Not Met:** The project enters **Maintenance Mode** - same effort as today, but at much slower pace (attributed to manual code writing). Expect releases on a **quarterly basis** (once every three months). 
 
-<br>
+## Ways to Support FCR
 
-By donating, you aren't buying a [premium service](#the-philosophy-of-equal-access)—you are simply backing an opensource project that has made your life easier and ensuring it continues to thrive for everyone. 
+In keeping with [The Philosophy of Equal Access](#the-philosophy-of-equal-access), **100% of Full Calendar Remastered features — including the Calendar AI Agent — remain completely free with no paywalls** via Bring Your Own Key (BYOK) using any OpenAI-compatible endpoint (cloud or local).
+
+If you would like to help keep FCR's development moving at full speed, you have two transparent options:
+
+### 1. Subscribe to Managed AI (Fuel the Plugin, Keep the Tokens)
+Instead of a pure donation, you can subscribe to **Pro ($7/month)** or **Power ($11/month)** for zero-setup, strictly GDPR-compliant, Zero Data Retention (ZDR) stateless EU inference right inside Obsidian. Your subscription covers your managed AI usage and directly funds Full Calendar Remastered development — so you get convenient, pre-tuned calendar automation in return.
 
 <div style="text-align: center;">
-  <a href="https://github.com/sponsors/YouFoundJK" class="md-button md-button--primary">❤️ Contribute to the Stewardship Fund Here</a>
+  <a href="https://full-calendar-remastered.in/pricing/" class="md-button md-button--primary">⚡ View Managed AI Plans (Pro &amp; Power)</a>
+</div>
+
+### 2. Direct Donation (Stewardship Fund)
+Prefer to use BYOK or don't use the AI Agent? You can still back the project directly. By donating, you aren't buying a [premium service](#the-philosophy-of-equal-access)—you are simply backing an open-source project that has made your life easier and ensuring it continues to thrive for everyone.
+
+<div style="text-align: center;">
+  <a href="https://github.com/sponsors/YouFoundJK" class="md-button">❤️ Contribute to the Stewardship Fund</a>
 </div>
 
 <br>

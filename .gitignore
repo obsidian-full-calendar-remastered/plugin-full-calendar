@@ -42,3 +42,7 @@ release-template.md
 .envrc
 .direnv
 
+# External independent repositories (e.g., private gateway-worker)
+externals/
+
+

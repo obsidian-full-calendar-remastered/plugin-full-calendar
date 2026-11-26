@@ -55,6 +55,17 @@ During OAuth authentication (when using the default client), a temporary interme
 * Is not logged or stored
 * Is immediately discarded after use
 
+### **Managed AI Service (Strictly GDPR Compliant & Zero Data Retention)**
+
+When you use the optional **Calendar Agent** in its default **Free trial and managed plans** mode (`https://gateway.full-calendar-remastered.in`), the service operates under strict European **GDPR** data minimization and **Zero Data Retention (ZDR)** guarantees:
+
+* **Zero Prompt & Calendar Content Storage:** Prompts, assistant responses, and calendar event details sent during a generation turn are processed strictly transiently in memory and forwarded to our stateless EU-hosted AI inference endpoint (`/v1/chat/completions`) with **Zero Data Retention** active and **API model training disabled**. No prompt text, response text, or calendar event content is ever logged or persisted in our databases.
+* **Local-Only Conversation Transcripts:** Your conversation history and staged event proposals remain stored 100% locally inside your vault's plugin directory (`.obsidian/plugins/full-calendar-remastered/agent/`).
+* **Cryptographic Device Identity:** Device authentication uses a locally generated Web Crypto **ECDSA P-256** keypair stored in Obsidian's `SecretStorage`. Neither private keys nor raw license keys are stored on the server (paid license keys are indexed exclusively via a one-way `HMAC-SHA256` hash).
+* **Privacy-Safe Accounting & Abuse Signals:** To enforce Weighted Token Credit (WTC) balances and prevent automated trial farming, the gateway records only aggregate token counts (`uncached_input_tokens`, `cached_input_tokens`, `output_tokens`), microcredit ledger balances, and coarse daily IPv4 `/24` (or IPv6 `/48`) subnet counters. Raw client IP addresses are never stored.
+* **Merchant of Record (Paddle Billing):** Paid subscriptions (**Pro \$7/mo** and **Power \$11/mo**) are processed by **Paddle** as Merchant of Record, which handles payment credentials, invoicing, and EU VAT/OSS compliance directly. Full Calendar Remastered never receives or stores your credit card or banking details.
+* **Bring-Your-Own-Key (BYOK) Option:** If you switch the Calendar Agent to **Bring your own key (byok)** mode, requests are sent directly from your device to your chosen third-party or local endpoint (e.g., OpenAI, Anthropic, Groq, Ollama, LM Studio) without passing through our gateway, and that provider's respective privacy policy applies.
+
 ## OAuth Scopes
 
 For Google integrations, the plugin requests the following OAuth scopes:

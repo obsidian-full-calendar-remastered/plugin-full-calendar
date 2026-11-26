@@ -31,6 +31,7 @@
 }
 
 .ofc-agent-sidebar-view .is-hidden,
+.ofc-agent-chat-view .is-hidden,
 .ofc-agent-drawer.is-hidden,
 .ofc-agent-status-indicator.is-hidden,
 .ofc-agent-btn-stop.is-hidden,
@@ -193,78 +194,216 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid var(--interactive-accent);
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--interactive-accent);
   background-color: var(--background-secondary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ofc-proposal-type-create {
+  border-left-color: var(--interactive-accent);
+}
+
+.ofc-proposal-type-update {
+  border-left-color: #d99026;
+}
+
+.ofc-proposal-type-delete {
+  border-left-color: var(--text-error);
+}
+
+.ofc-proposal-type-batch {
+  border-left-color: #4ea832;
 }
 
 .ofc-proposal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ofc-proposal-header-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .ofc-proposal-badge {
-  font-size: 0.75em;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  padding: 2px 6px;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 2px 7px;
   border-radius: 4px;
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
+  background-color: rgba(120, 120, 220, 0.14);
+  color: var(--interactive-accent);
 }
 
-.ofc-proposal-badge-update {
-  background-color: #e6a23c;
-  color: #fff;
+.ofc-proposal-type-update .ofc-proposal-badge {
+  background-color: rgba(217, 144, 38, 0.16);
+  color: #e6a23c;
 }
 
-.ofc-proposal-badge-delete {
-  background-color: #f56c6c;
-  color: #fff;
+.ofc-proposal-type-delete .ofc-proposal-badge {
+  background-color: rgba(239, 68, 68, 0.14);
+  color: var(--text-error);
 }
 
-.ofc-proposal-badge-batch {
-  background-color: #67c23a;
-  color: #fff;
+.ofc-proposal-type-batch .ofc-proposal-badge {
+  background-color: rgba(78, 168, 50, 0.16);
+  color: #67c23a;
+}
+
+.ofc-proposal-cal {
+  font-size: 0.75em;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ofc-proposal-schedule {
+  font-size: 0.76em;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .ofc-proposal-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-size: 0.9em;
 }
 
 .ofc-proposal-title {
   font-weight: 600;
-  font-size: 1.05em;
+  font-size: 1em;
+  line-height: 1.35;
+  color: var(--text-normal);
+  overflow-wrap: anywhere;
+}
+
+.ofc-proposal-cat-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+
+.ofc-proposal-cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: var(--ofc-cat-color, var(--interactive-accent));
+}
+
+.ofc-proposal-cat-name {
+  font-weight: 600;
   color: var(--text-normal);
 }
 
-.ofc-proposal-chips {
+.ofc-proposal-cat-sep {
+  color: var(--text-faint);
+}
+
+.ofc-proposal-subcat-name {
+  color: var(--text-muted);
+}
+
+.ofc-proposal-meta-line {
+  font-size: 0.84em;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.ofc-proposal-delete-warn {
+  font-size: 0.82em;
+  color: var(--text-error);
+  background-color: rgba(239, 68, 68, 0.08);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+/* Stacked inset diff rows for UPDATE proposals */
+.ofc-proposal-diff-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
   margin-top: 2px;
 }
 
-.ofc-proposal-chip {
-  font-size: 0.8em;
-  padding: 2px 6px;
-  border-radius: 4px;
+.ofc-proposal-diff-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
   background-color: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
+}
+
+.ofc-proposal-diff-field {
+  font-size: 0.74em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
   color: var(--text-muted);
 }
 
-.ofc-proposal-chip-category {
-  font-weight: 600;
+.ofc-proposal-diff-values {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.86em;
+  line-height: 1.35;
+}
+
+.ofc-proposal-diff-old,
+.ofc-proposal-diff-new {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.ofc-proposal-diff-old {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.ofc-proposal-diff-new {
+  background-color: rgba(78, 168, 50, 0.12);
   color: var(--text-normal);
-  border-left-width: 3px;
+  font-weight: 500;
+}
+
+.ofc-proposal-diff-sign {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-family: var(--font-monospace);
+}
+
+.ofc-proposal-diff-old .ofc-proposal-diff-sign {
+  color: var(--text-error);
+}
+
+.ofc-proposal-diff-new .ofc-proposal-diff-sign {
+  color: #67c23a;
+}
+
+.ofc-proposal-diff-text {
+  min-width: 0;
+  flex: 1;
 }
 
 /* Batch item list */
@@ -293,23 +432,57 @@
   background-color: var(--background-modifier-hover);
 }
 
+.ofc-proposal-batch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ofc-proposal-batch-title {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.ofc-proposal-batch-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.86em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ofc-proposal-batch-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+}
+
 .ofc-proposal-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--background-modifier-border);
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.ofc-proposal-btn-ghost {
+  margin-right: auto;
 }
 
 .ofc-proposal-status-tag {
-  font-size: 0.8em;
+  font-size: 0.78em;
   font-weight: 600;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .ofc-proposal-status-approved {
@@ -423,10 +596,18 @@
   padding: 2px 0 6px 0;
 }
 
+.ofc-agent-chat-view-compact .ofc-agent-live-bar {
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
 .ofc-agent-chat-view-compact .ofc-agent-input-wrapper {
   padding: 4px 6px;
 }
 
+.workspace-leaf-content[data-type='full-calendar-agent-view'] .view-content,
 .ofc-agent-sidebar-view {
   display: flex;
   flex-direction: column;
@@ -488,11 +669,16 @@
 
 .ofc-agent-sidebar-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.ofc-agent-sidebar-messages > * {
+  flex-shrink: 0;
 }
 
 .ofc-agent-msg-content {
@@ -680,4 +866,811 @@
   cursor: pointer;
 }
 
+/* Managed AI Plan Cards & Status Panel */
+.ofc-managed-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
 
+.ofc-managed-plan-card {
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ofc-managed-plan-card-active {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+
+.ofc-managed-plan-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ofc-managed-plan-title {
+  font-weight: 600;
+  font-size: 0.98em;
+  color: var(--text-normal);
+}
+
+.ofc-managed-plan-price {
+  font-weight: 700;
+  font-size: 0.92em;
+  color: var(--interactive-accent);
+}
+
+.ofc-managed-plan-allowance {
+  font-size: 0.84em;
+  font-weight: 600;
+  color: var(--text-normal);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ofc-managed-plan-features {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.ofc-managed-status-panel {
+  background-color: var(--background-secondary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.ofc-managed-status-line {
+  margin: 0 0 4px 0;
+  font-size: 0.88em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-managed-status-sub {
+  margin: 0;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.ofc-managed-onboarding-list {
+  margin: 12px 0 18px 0;
+  padding-left: 18px;
+  font-size: 0.9em;
+  line-height: 1.55;
+  color: var(--text-normal);
+}
+
+.ofc-managed-onboarding-list li {
+  margin-bottom: 6px;
+}
+
+.ofc-managed-onboarding-license {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.ofc-managed-onboarding-license input {
+  flex: 1;
+}
+
+/* ==========================================================================
+   COPILOT WELCOME SCREEN, STEP TRACE, BULK BAR & FOLLOW-UP CHIPS
+   ========================================================================== */
+
+.ofc-agent-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  margin: auto 0;
+  padding: 20px 14px;
+  gap: 10px;
+}
+
+.ofc-agent-welcome-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ofc-agent-welcome-icon {
+  color: var(--interactive-accent);
+  display: inline-flex;
+  align-items: center;
+}
+
+.ofc-agent-welcome-title {
+  margin: 0;
+  font-size: 1.4em;
+  font-weight: 600;
+  color: var(--text-normal);
+  letter-spacing: -0.01em;
+}
+
+.ofc-agent-welcome-subtitle {
+  margin: 0 0 6px 0;
+  font-size: 0.9em;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.ofc-agent-welcome-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.ofc-agent-welcome-card {
+  text-align: left;
+  max-width: 100%;
+  height: auto;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: 0.88em;
+  line-height: 1.35;
+  cursor: pointer;
+  white-space: normal;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ofc-agent-welcome-card:hover {
+  background-color: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+}
+
+.ofc-agent-welcome-placeholder {
+  color: var(--text-muted);
+  font-weight: 600;
+  background-color: var(--background-primary);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px dashed var(--background-modifier-border);
+}
+
+.ofc-agent-welcome-compact {
+  padding: 4px 2px;
+  gap: 6px;
+  margin: 0;
+}
+
+.ofc-agent-welcome-compact-title {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-agent-welcome-compact-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Docked Live Activity Bar (anchored above input & Stop button) */
+.ofc-agent-live-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  font-size: 0.8em;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ofc-agent-live-bar.is-hidden {
+  display: none;
+}
+
+.ofc-agent-live-bar:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.ofc-agent-live-bar-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-normal);
+  font-weight: 500;
+}
+
+.ofc-agent-live-bar-steps {
+  font-size: 0.9em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.ofc-agent-live-bar-timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Live Process & Collapsible Step Trace */
+.ofc-agent-trace {
+  align-self: flex-start;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  font-size: 0.82em;
+  color: var(--text-muted);
+  overflow: hidden;
+}
+
+.ofc-agent-trace-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.ofc-agent-trace-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ofc-agent-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--interactive-accent);
+  flex-shrink: 0;
+  animation: ofc-agent-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ofc-agent-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+.ofc-agent-trace-status-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.ofc-agent-trace.is-done .ofc-agent-trace-status-icon {
+  color: #67c23a;
+}
+
+.ofc-agent-trace.is-error .ofc-agent-trace-status-icon {
+  color: var(--text-error);
+}
+
+.ofc-agent-trace-phase {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.ofc-agent-trace-timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.ofc-agent-trace-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px 8px 10px;
+  border-top: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+}
+
+.ofc-agent-trace-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.92em;
+  line-height: 1.35;
+}
+
+.ofc-agent-trace-step-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.ofc-agent-trace-step.is-done .ofc-agent-trace-step-icon {
+  color: #67c23a;
+}
+
+.ofc-agent-trace-step.is-error .ofc-agent-trace-step-icon {
+  color: var(--text-error);
+}
+
+.ofc-agent-trace-step-label {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-normal);
+}
+
+.ofc-agent-trace-step-meta {
+  font-size: 0.88em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Bulk Proposal Bar */
+.ofc-agent-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary-alt);
+  flex-shrink: 0;
+}
+
+.ofc-agent-bulk-count {
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-agent-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ofc-agent-bulk-btn {
+  padding: 4px 10px;
+  font-size: 0.8em;
+}
+
+/* Dynamic Follow-Up Chips */
+.ofc-agent-followups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-self: flex-start;
+  max-width: 95%;
+  margin-top: 2px;
+}
+
+.ofc-agent-followup-chip {
+  font-size: 0.8em;
+  height: auto;
+  padding: 5px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  text-align: left;
+  white-space: normal;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ofc-agent-followup-chip:hover {
+  border-color: var(--interactive-accent);
+  background-color: var(--background-modifier-hover);
+}
+
+/* In-Place Resolved / Expired / Error Proposal States */
+.ofc-proposal-card-resolved {
+  border-color: var(--background-modifier-border);
+  opacity: 0.85;
+  padding: 7px 10px;
+  gap: 0;
+}
+
+.ofc-proposal-resolved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ofc-proposal-resolved-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.ofc-proposal-card-resolved.is-approved .ofc-proposal-resolved-icon,
+.ofc-proposal-card-resolved.is-applied .ofc-proposal-resolved-icon {
+  color: #67c23a;
+}
+
+.ofc-proposal-card-resolved.is-rejected .ofc-proposal-resolved-icon {
+  color: var(--text-error);
+}
+
+.ofc-proposal-resolved-title {
+  font-size: 0.88em;
+  font-weight: 500;
+  color: var(--text-normal);
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ofc-proposal-resolved-schedule {
+  font-size: 0.76em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ofc-proposal-error {
+  font-size: 0.82em;
+  color: var(--text-error);
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.ofc-proposal-status-expired {
+  background-color: var(--background-secondary-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+}
+
+/* ============================================================================
+ * INLINE CHRONO ANALYTICS CARDS
+ * ============================================================================ */
+
+.ofc-agent-analytics-card {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ofc-agent-analytics-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ofc-agent-analytics-title {
+  font-size: 0.92em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-agent-analytics-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ofc-agent-analytics-chip {
+  font-size: 0.72em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background-color: var(--background-primary);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.ofc-agent-analytics-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ofc-agent-analytics-kpi {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  font-size: 0.78em;
+}
+
+.ofc-agent-analytics-kpi-label {
+  color: var(--text-muted);
+}
+
+.ofc-agent-analytics-kpi-value {
+  font-weight: 600;
+  color: var(--text-normal);
+  font-variant-numeric: tabular-nums;
+}
+
+.ofc-agent-analytics-kpi.is-positive .ofc-agent-analytics-kpi-value {
+  color: var(--color-green);
+}
+
+.ofc-agent-analytics-kpi.is-warning .ofc-agent-analytics-kpi-value {
+  color: var(--color-orange);
+}
+
+.ofc-agent-analytics-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ofc-agent-analytics-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ofc-agent-analytics-toggle {
+  font-size: 0.74em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ofc-agent-analytics-toggle.is-active {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
+.ofc-agent-analytics-icon-btn {
+  padding: 3px;
+  color: var(--text-muted);
+}
+
+.ofc-agent-analytics-chart-host {
+  min-height: 240px;
+  width: 100%;
+  contain: layout style;
+}
+
+.ofc-agent-analytics-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  font-size: 0.84em;
+  color: var(--text-muted);
+}
+
+.ofc-agent-analytics-modal {
+  min-width: min(760px, 85vw);
+}
+
+.ofc-agent-analytics-modal-chart {
+  min-height: 460px;
+  width: 100%;
+}
+
+
+
+
+
+/* ==========================================================================
+ * Plan Status Strip, 2-Card First-Run Onboarding, Error Recovery & Settings
+ * ========================================================================== */
+
+.ofc-agent-plan-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  font-size: 0.78em;
+}
+
+.ofc-agent-plan-strip.is-warning {
+  background-color: rgba(var(--color-orange-rgb, 217, 119, 6), 0.12);
+}
+
+.ofc-agent-plan-pill {
+  background: transparent;
+  border: none;
+  padding: 2px 0;
+  color: var(--text-muted);
+  font-size: inherit;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ofc-agent-plan-pill:hover {
+  color: var(--text-normal);
+  background: transparent;
+}
+
+.ofc-agent-plan-upgrade-btn {
+  padding: 2px 8px;
+  font-size: 0.92em;
+  border-radius: 4px;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ofc-agent-onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.ofc-agent-onboarding-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  text-align: left;
+}
+
+.ofc-agent-onboarding-card-featured {
+  border-color: var(--interactive-accent);
+}
+
+.ofc-agent-onboarding-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ofc-agent-onboarding-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.72em;
+  font-weight: 600;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.ofc-agent-onboarding-badge-free {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.ofc-agent-onboarding-card-title {
+  margin: 0;
+  font-size: 0.98em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.ofc-agent-onboarding-card-desc {
+  margin: 0;
+  font-size: 0.84em;
+  line-height: 1.4;
+  color: var(--text-normal);
+}
+
+.ofc-agent-onboarding-card-meta {
+  margin: 0;
+  font-size: 0.76em;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.ofc-agent-onboarding-btn {
+  margin-top: auto;
+  width: 100%;
+}
+
+.ofc-agent-onboarding-link {
+  background: transparent;
+  border: none;
+  padding: 2px 0;
+  font-size: 0.78em;
+  color: var(--text-accent);
+  cursor: pointer;
+  text-align: center;
+  box-shadow: none;
+}
+
+.ofc-agent-onboarding-license {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.ofc-agent-onboarding-license.is-hidden {
+  display: none;
+}
+
+.ofc-agent-onboarding-license input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ofc-agent-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ofc-managed-pledge {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  font-size: 0.86em;
+  line-height: 1.45;
+  color: var(--text-normal);
+}
+
+.ofc-managed-plan-estimate {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.ofc-managed-plan-cta {
+  width: 100%;
+  margin-top: 8px;
+}

@@ -58,6 +58,12 @@ pnpm run prod:lean
 ```
 
 
+## Calendar AI Agent (Optional)
+
+- **No-Paywall Pledge:** Every single agent feature works 100% free via **Bring Your Own Key (BYOK)** using any OpenAI-compatible endpoint (cloud or local), with zero gateway traffic.
+- **1-Click Instant Start (Managed AI):** Optionally start inside the Agent sidebar with a free lifetime trial (1,000,000 credits, no signup or credit card) via our stateless, GDPR-compliant, Zero Data Retention (ZDR) EU gateway (`https://gateway.full-calendar-remastered.in`). Optional **Pro ($7/mo)** and **Power ($11/mo)** subscriptions via Paddle cover your managed AI usage and directly fund Full Calendar Remastered development.
+- **Strict Data Scope & Privacy:** The agent only accesses your cached calendar events and optional weather forecast — it **never** reads your Obsidian vault notes or ActivityWatch logs. Every calendar write requires your explicit approval. The plugin contains zero client-side telemetry, and upgrade/licensing links appear only inside FCR's own Agent view and settings.
+
 ## Sponsors 💖
 
 > FCR is developed at a [high velocity](https://obsidian-full-calendar-remastered.github.io/plugin-full-calendar/SustainabilityEthics/#the-economic-reality-of-maintenance) using AI-augmented engineering. To keep up this pace (and avoid reverting to slow, manual coding), the project relies on a small community subsidy to cover AI tools (25 USD / month). 

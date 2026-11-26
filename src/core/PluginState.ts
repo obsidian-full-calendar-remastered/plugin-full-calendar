@@ -28,6 +28,7 @@ let _displaySettingsTab: (() => void) | null = null;
 let _showChangelog: (() => void) | null = null;
 let _showMilestones: (() => void) | null = null;
 let _isMobile: (() => boolean) | null = null;
+const _cleanups = new Set<() => void>();
 
 function syncProviderSources(): void {
   const updateSources = (
@@ -93,9 +94,11 @@ export const PluginState = {
       const resolvers = [..._pendingSaveResolvers];
       _pendingSaveResolvers = [];
       _pendingSavePromise = null;
-      void promise.then(() => {
-        resolvers.forEach(resolve => resolve());
-      });
+      void promise
+        .finally(() => {
+          resolvers.forEach(resolve => resolve());
+        })
+        .catch(() => {});
       return promise;
     }
 
@@ -114,9 +117,11 @@ export const PluginState = {
       const resolvers = [..._pendingSaveResolvers];
       _pendingSaveResolvers = [];
       _pendingSavePromise = null;
-      void promise.then(() => {
-        resolvers.forEach(resolve => resolve());
-      });
+      void promise
+        .finally(() => {
+          resolvers.forEach(resolve => resolve());
+        })
+        .catch(() => {});
     }, 500);
 
     return _pendingSavePromise;
@@ -220,5 +225,17 @@ export const PluginState = {
     _showChangelog = null;
     _showMilestones = null;
     _isMobile = null;
+    for (const cleanup of Array.from(_cleanups)) {
+      try {
+        cleanup();
+      } catch (err) {
+        console.error('[PluginState] Cleanup error:', err);
+      }
+    }
+    _cleanups.clear();
+  },
+
+  registerCleanup(fn: () => void) {
+    _cleanups.add(fn);
   }
 };

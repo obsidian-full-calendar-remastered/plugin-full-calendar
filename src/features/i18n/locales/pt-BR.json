@@ -2038,8 +2038,6 @@
   "agent": {
     "sidebar": {
       "viewTitle": "Agente de calendário",
-      "emptyTitle": "Agente de calendário pronto",
-      "emptyDesc": "Faça perguntas sobre seu calendário, encontre horários livres, rascunhe novos eventos ou importe programações da web.",
       "inputPlaceholder": "Pergunte ao agente ou automatize a agenda...",
       "stop": "Parar",
       "sendAria": "Enviar prompt",
@@ -2057,18 +2055,18 @@
     "suggestions": {
       "today": "Qual é a minha agenda de hoje?",
       "todayPrompt": "Quais eventos tenho agendados para hoje?",
-      "thisWeek": "Eventos desta semana",
-      "thisWeekPrompt": "Resuma meus eventos dos próximos 7 dias.",
       "addEvent": "Adicionar evento...",
       "addEventPrompt": "Adicione uma reunião ",
       "importUrl": "Importar de URL...",
-      "importUrlPrompt": "Acesse a programação nesta URL e extraia os eventos: "
+      "importUrlPrompt": "Acesse a programação nesta URL e extraia os eventos: ",
+      "analyzeTime": "Analyze my time",
+      "analyzeTimePrompt": "Analyze how I spent my time this week with a breakdown chart and key insights.",
+      "rescheduleAfternoon": "Something came up — reschedule my afternoon",
+      "rescheduleAfternoonPrompt": "Something came up this afternoon. Find my flexible events after 1 PM and propose moving them to open slots this week.",
+      "checkWeather": "Check weather for my upcoming plans",
+      "checkWeatherPrompt": "Check the weather forecast for my upcoming events over the next few days and flag any outdoor conflicts."
     },
     "proposals": {
-      "createTitle": "Proposta: criar evento",
-      "updateTitle": "Proposta: atualizar evento",
-      "deleteTitle": "Proposta: excluir evento",
-      "batchTitle": "Proposta: importação em lote ({{count}})",
       "allDay": "Dia inteiro",
       "approveApply": "Aprovar e aplicar",
       "approveSelected": "Aprovar selecionados ({{count}})",
@@ -2078,10 +2076,34 @@
       "applied": "Aplicada",
       "rejected": "Rejeitada",
       "editInModal": "Editar na janela",
-      "changes": "Alterações:",
       "notes": "Descrição: {{notes}}",
-      "deleteWarning": "⚠️ Isso removerá permanentemente o evento do seu calendário.",
-      "foundBatch": "Eventos encontrados para o calendário {{calendar}}: {{count}}"
+      "deleteWarning": "Isso removerá permanentemente o evento do seu calendário.",
+      "foundBatch": "Eventos encontrados para o calendário {{calendar}}: {{count}}",
+      "expired": "Expired",
+      "pendingCount": "{{count}} pending proposals",
+      "approveAll": "Approve all ({{count}})",
+      "rejectAll": "Reject all",
+      "applyingProgress": "Applying {{current}}/{{total}}...",
+      "bulkAppliedSummary": "Applied {{applied}} of {{total}} proposals.",
+      "bulkAppliedPartial": "Applied {{applied}} of {{total}} proposals ({{failed}} failed).",
+      "bulkRejectedSummary": "Rejected {{count}} pending proposals.",
+      "createBadge": "New event",
+      "updateBadge": "Update",
+      "deleteBadge": "Delete",
+      "batchBadge": "Batch import ({{count}})",
+      "recurring": "Recurring",
+      "timedEvent": "Timed",
+      "noneValue": "None",
+      "failedStatus": "Failed",
+      "fieldTitle": "Title",
+      "fieldDate": "Date",
+      "fieldStartTime": "Start time",
+      "fieldEndTime": "End time",
+      "fieldAllDay": "All day",
+      "fieldCategory": "Category",
+      "fieldSubCategory": "Subcategory",
+      "fieldDescription": "Description",
+      "categorizationDisabledNotice": "Advanced categorization is disabled; no remaining fields to update."
     },
     "audit": {
       "title": "Agente do Full Calendar: trilha de auditoria e diagnóstico",
@@ -2095,10 +2117,8 @@
       "payloadDetails": "Payload / detalhes"
     },
     "settings": {
-      "title": "Automações com agente (byok)",
-      "description": "Configure seu agente com chave própria (byok, bring-your-own-key) para automações de calendário. Funciona com qualquer endpoint de API compatível com OpenAI. Todo acesso de escrita fica estritamente condicionado à aprovação do usuário.",
-      "enableName": "Ativar barra de escrita do agente",
-      "enableDesc": "Mostra a barra de escrita de automação do agente na visualização do calendário e ativa os comandos do agente.",
+      "title": "Automações com agente",
+      "description": "Use o teste gratuito integrado e os planos gerenciados (estritamente em conformidade com o GDPR e retenção zero de dados) ou sua própria chave (byok). Todo acesso de escrita fica estritamente condicionado à aprovação do usuário.",
       "presetName": "Predefinição de endpoint da API",
       "presetDesc": "Selecione uma predefinição de provedor para preencher os padrões de endpoint e de modelo.",
       "customEndpoint": "Endpoint personalizado",
@@ -2142,6 +2162,20 @@
       "eventApplied": "Evento aplicado ao calendário com sucesso.",
       "failedToApply": "Falha ao aplicar a proposta: {{error}}",
       "proposalRejected": "Proposta de evento rejeitada."
+    },
+    "welcome": {
+      "greeting": "Hi, how can I help?",
+      "subtitle": "Tell me what you need with your schedule, and we can get started."
+    },
+    "trace": {
+      "working": "Working...",
+      "usedTools": "Completed {{count}} steps",
+      "cancelled": "Cancelled",
+      "failed": "Failed",
+      "stepsRecorded": "{{count}} steps",
+      "usedToolSingle": "Completed {{count}} step",
+      "stepRecordedSingle": "{{count}} step",
+      "jumpToProgress": "Jump to live progress"
     }
   }
 }

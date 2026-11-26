@@ -1,5 +1,7 @@
 import { App } from 'obsidian';
 // import { refreshCachedChronoDemoAsset } from '../../chrono_analyser/data/demoRemoteAsset';
+import { refreshCachedAgentSpecForVersionUpdate } from '../agent/core/SpecLoader';
+import { refreshCachedDocsIndexForVersionUpdate } from '../agent/tools/PluginDocsIndexTool';
 import { refreshCurrentI18nLocaleForVersionUpdate } from '../i18n/i18n';
 import { refreshCurrentNLPPayloadForVersionUpdate } from '../nlp/loader';
 // import { downloadMilestoneTemplate } from '../milestones/monthlyReport';
@@ -58,6 +60,14 @@ export async function refreshRemoteAssetsForVersionUpdate(
     {
       id: 'nlp-current-locale',
       refresh: () => refreshCurrentNLPPayloadForVersionUpdate(app, pluginId)
+    },
+    {
+      id: 'agent-spec',
+      refresh: () => refreshCachedAgentSpecForVersionUpdate(app, pluginId)
+    },
+    {
+      id: 'agent-plugin-docs-index',
+      refresh: () => refreshCachedDocsIndexForVersionUpdate(app, pluginId)
     }
     // {
     //   id: 'milestones-template',

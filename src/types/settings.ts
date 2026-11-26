@@ -259,8 +259,22 @@ export interface FullCalendarSettings {
   sidebarConfig: SidebarSettings;
 }
 
+export type AgentMode = 'byok' | 'managed';
+
+export interface ManagedAgentSettings {
+  gatewayUrl?: string;
+  principalId?: string;
+  activationId?: string;
+  keyId?: string;
+  licenseKeyMasked?: string;
+  planTier?: 'trial' | 'pro' | 'power';
+  currentPeriodEnd?: string;
+  onboardingAcknowledged?: boolean;
+}
+
 export interface AgentSettings {
   enabled: boolean;
+  mode?: AgentMode;
   endpointUrl: string;
   model: string;
   apiKey?: string;
@@ -268,6 +282,7 @@ export interface AgentSettings {
   specUrl: string;
   maxRetries: number;
   timeoutMs: number;
+  managed?: ManagedAgentSettings;
 }
 
 export interface SidebarSettings {
@@ -284,6 +299,9 @@ export interface BreakTimerSettings {
   idleThresholdMins: number;
   breakDurationSecs: number;
 }
+
+export const REMOTE_AGENT_ASSET_BASE_URL = 'https://fcr-cdn.plugin-fcr.workers.dev/assets/agent';
+export const DEFAULT_AGENT_SPEC_URL = `${REMOTE_AGENT_ASSET_BASE_URL}/agent-spec.md`;
 
 export const DEFAULT_SETTINGS: FullCalendarSettings = {
   sidebarConfig: {
@@ -412,11 +430,11 @@ export const DEFAULT_SETTINGS: FullCalendarSettings = {
   },
   agent: {
     enabled: true,
+    mode: 'managed',
     endpointUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
     apiKey: '',
-    specUrl:
-      'https://raw.githubusercontent.com/obsidian-full-calendar-remastered/plugin-full-calendar/main/docs/architecture/api/agent-spec.md',
+    specUrl: DEFAULT_AGENT_SPEC_URL,
     maxRetries: 3,
     timeoutMs: 60000
   }

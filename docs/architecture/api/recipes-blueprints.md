@@ -82,7 +82,7 @@ export default class MyIntegrationPlugin extends Plugin {
 
 ## 2. DataviewJS Inline Queries & Dashboards
 
-In-vault scripts use a [Personal Access Token (PAT)](scopes-permissions.md#personal-access-tokens-pats) generated in **Full Calendar Settings → API & Security**.
+In-vault scripts use a [Personal Access Token (PAT)](scopes-permissions.md#personal-access-tokens-pats-vs-plugin-tokens) generated in **Full Calendar Settings → API & Security**.
 
 === "Today's Task Summary"
 

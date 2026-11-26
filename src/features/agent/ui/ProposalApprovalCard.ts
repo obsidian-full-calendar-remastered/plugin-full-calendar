@@ -1,277 +1,561 @@
 /**
  * @file ProposalApprovalCard.ts
- * @brief Interactive UI approval card for staged calendar proposals.
- *
- * @description
- * Enforces the write-approval gate by presenting proposed event changes to the user.
- * The user can inspect details, select target calendars, toggle batch items,
- * and explicitly approve or reject before any changes touch the calendar.
- *
- * @license See LICENSE.md
+ * @brief Modern, compact approval card UI for staged calendar mutations.
  */
 
-import type {
-  EventProposal,
-  CreateEventProposal,
-  UpdateEventProposal,
-  DeleteEventProposal,
-  BatchCreateProposal
-} from '../types';
+import { setIcon } from 'obsidian';
 import { t } from '../../i18n/i18n';
+import { computeProposalApprovalHash } from '../domain/crypto/sha256';
+import type { EventProposal, ProposalStatus } from '../types';
+import { setCssProps } from './domUtils';
+import {
+  extractBatchItemDisplay,
+  extractProposalCategory,
+  extractProposalHeadingTitle,
+  extractProposalSchedule,
+  formatDiffFieldValue,
+  readProposalDisplayContext,
+  type ProposalDisplayContext
+} from './proposalFormatters';
+
+export interface ProposalApproveResult {
+  success: boolean;
+  message?: string;
+}
+
+export interface ProposalApprovalCardCallbacks {
+  onApprove: (
+    proposalId: string,
+    overrideCalendarId?: string,
+    expectedApprovalHash?: string
+  ) => Promise<ProposalApproveResult>;
+  onReject: (proposalId: string) => void;
+  onEditInModal?: (proposal: EventProposal) => void;
+  onStatusChange?: (proposalId: string, status: ProposalStatus) => void;
+  onSelectionChange?: (proposalId: string) => void;
+  actionable?: boolean;
+}
+
+function isPermanentFailureMessage(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('expired') ||
+    lower.includes('not found') ||
+    lower.includes('no longer exists') ||
+    lower.includes('changed since preview') ||
+    lower.includes('categorization is disabled')
+  );
+}
 
 export class ProposalApprovalCard {
   private containerEl: HTMLElement;
-  private cardEl: HTMLElement;
   private proposal: EventProposal;
-  private onApprove: (proposalId: string, overrideCalendarId?: string) => Promise<void>;
-  private onReject: (proposalId: string) => void;
-  private onEditInModal?: (proposal: EventProposal) => void;
+  private callbacks: ProposalApprovalCardCallbacks;
+  private rootEl: HTMLElement;
+  private isProcessing = false;
+  private errorMessage: string | null = null;
+  private actionable: boolean;
 
   constructor(
     containerEl: HTMLElement,
     proposal: EventProposal,
-    callbacks: {
-      onApprove: (proposalId: string, overrideCalendarId?: string) => Promise<void>;
-      onReject: (proposalId: string) => void;
-      onEditInModal?: (proposal: EventProposal) => void;
-    }
+    callbacks: ProposalApprovalCardCallbacks
   ) {
     this.containerEl = containerEl;
     this.proposal = proposal;
-    this.onApprove = callbacks.onApprove;
-    this.onReject = callbacks.onReject;
-    this.onEditInModal = callbacks.onEditInModal;
-    this.cardEl = this.containerEl.createDiv({ cls: 'ofc-proposal-card' });
+    this.callbacks = callbacks;
+    this.actionable = callbacks.actionable !== false;
+    this.rootEl = this.containerEl.createDiv({ cls: 'ofc-proposal-card' });
+    this.render();
+  }
+
+  public getElement(): HTMLElement {
+    return this.rootEl;
+  }
+
+  public getProposal(): EventProposal {
+    return this.proposal;
+  }
+
+  public isActionablePending(): boolean {
+    return this.proposal.status === 'PENDING' && this.actionable;
+  }
+
+  /**
+   * Re-renders card display in place without changing proposal status (e.g., on batch toggle or settings change).
+   */
+  public refreshDisplay(): void {
+    this.render();
+  }
+
+  /**
+   * Updates status and optionally error state in place without rebuilding parent scroll containers.
+   */
+  public syncStatus(
+    status: ProposalStatus = this.proposal.status,
+    errorMessage: string | null = null,
+    actionable?: boolean
+  ): void {
+    this.proposal.status = status;
+    this.errorMessage = errorMessage;
+    if (actionable !== undefined) {
+      this.actionable = actionable;
+    }
     this.render();
   }
 
   private render(): void {
-    this.cardEl.empty();
+    this.rootEl.empty();
+    this.rootEl.className = 'ofc-proposal-card';
+    this.rootEl.addClass(this.getTypeClass());
 
-    // 1. Header
-    const header = this.cardEl.createDiv({ cls: 'ofc-proposal-header' });
-    const badge = header.createSpan({ cls: 'ofc-proposal-badge' });
+    const ctx = readProposalDisplayContext();
+    const status = this.proposal.status;
 
-    if (this.proposal.type === 'CREATE') {
-      badge.setText(t('agent.proposals.createTitle'));
-    } else if (this.proposal.type === 'UPDATE') {
-      badge.addClass('ofc-proposal-badge-update');
-      badge.setText(t('agent.proposals.updateTitle'));
-    } else if (this.proposal.type === 'DELETE') {
-      badge.addClass('ofc-proposal-badge-delete');
-      badge.setText(t('agent.proposals.deleteTitle'));
-    } else if (this.proposal.type === 'BATCH_CREATE') {
-      badge.addClass('ofc-proposal-badge-batch');
-      badge.setText(t('agent.proposals.batchTitle', { count: this.proposal.items.length }));
+    if (status === 'APPLIED' || status === 'APPROVED' || status === 'REJECTED') {
+      this.renderResolvedRow(ctx, status);
+      return;
     }
 
-    // 2. Body
-    const body = this.cardEl.createDiv({ cls: 'ofc-proposal-body' });
-
-    if (this.proposal.type === 'CREATE') {
-      this.renderCreateBody(body, this.proposal);
-    } else if (this.proposal.type === 'UPDATE') {
-      this.renderUpdateBody(body, this.proposal);
-    } else if (this.proposal.type === 'DELETE') {
-      this.renderDeleteBody(body, this.proposal);
-    } else if (this.proposal.type === 'BATCH_CREATE') {
-      this.renderBatchBody(body, this.proposal);
-    }
-
-    // 3. Footer Action Buttons
-    this.renderFooter();
+    this.renderHeaderRow(ctx);
+    this.renderBodyContent(ctx);
+    this.renderFooterActions(ctx, status);
   }
 
-  private renderCreateBody(body: HTMLElement, proposal: CreateEventProposal): void {
-    body.createDiv({ cls: 'ofc-proposal-title', text: proposal.eventData.title });
+  private getTypeClass(): string {
+    switch (this.proposal.type) {
+      case 'CREATE':
+        return 'ofc-proposal-type-create';
+      case 'UPDATE':
+        return 'ofc-proposal-type-update';
+      case 'DELETE':
+        return 'ofc-proposal-type-delete';
+      case 'BATCH_CREATE':
+        return 'ofc-proposal-type-batch';
+    }
+  }
 
-    const chips = body.createDiv({ cls: 'ofc-proposal-chips' });
-    if (proposal.category) {
-      chips.createSpan({
-        cls: 'ofc-proposal-chip ofc-proposal-chip-category',
-        text: proposal.subCategory
-          ? `${proposal.category} / ${proposal.subCategory}`
-          : proposal.category
+  private getTypeBadgeLabel(): string {
+    switch (this.proposal.type) {
+      case 'CREATE':
+        return t('agent.proposals.createBadge');
+      case 'UPDATE':
+        return t('agent.proposals.updateBadge');
+      case 'DELETE':
+        return t('agent.proposals.deleteBadge');
+      case 'BATCH_CREATE':
+        return t('agent.proposals.batchBadge', { count: this.proposal.items.length });
+    }
+  }
+
+  private isCategoryOnlyUpdateDisabled(ctx: ProposalDisplayContext): boolean {
+    if (this.proposal.type !== 'UPDATE' || ctx.enableAdvancedCategorization) {
+      return false;
+    }
+    const keys = Object.keys(this.proposal.changedFields || {});
+    return keys.length > 0 && keys.every(k => k === 'category' || k === 'subCategory');
+  }
+
+  private renderResolvedRow(
+    ctx: ProposalDisplayContext,
+    status: 'APPLIED' | 'APPROVED' | 'REJECTED'
+  ): void {
+    this.rootEl.addClass('ofc-proposal-card-resolved');
+    this.rootEl.addClass(`is-${status.toLowerCase()}`);
+
+    const rowEl = this.rootEl.createDiv({ cls: 'ofc-proposal-resolved' });
+    const iconEl = rowEl.createSpan({ cls: 'ofc-proposal-resolved-icon' });
+    setIcon(iconEl, status === 'REJECTED' ? 'x-circle' : 'check-circle');
+
+    const titleText =
+      this.proposal.type === 'BATCH_CREATE'
+        ? this.getTypeBadgeLabel()
+        : extractProposalHeadingTitle(this.proposal, ctx);
+    rowEl.createSpan({ cls: 'ofc-proposal-resolved-title', text: titleText });
+
+    const scheduleText = extractProposalSchedule(
+      this.proposal,
+      ctx,
+      t('agent.proposals.allDay'),
+      t('agent.proposals.recurring'),
+      true
+    );
+    if (scheduleText) {
+      rowEl.createSpan({ cls: 'ofc-proposal-resolved-schedule', text: scheduleText });
+    }
+
+    const pillText =
+      status === 'REJECTED' ? t('agent.proposals.rejected') : t('agent.proposals.applied');
+    rowEl.createSpan({
+      cls: `ofc-proposal-status-tag ${status === 'REJECTED' ? 'ofc-proposal-status-rejected' : 'ofc-proposal-status-approved'}`,
+      text: pillText
+    });
+  }
+
+  private renderHeaderRow(ctx: ProposalDisplayContext): void {
+    const headerEl = this.rootEl.createDiv({ cls: 'ofc-proposal-header' });
+    const leftEl = headerEl.createDiv({ cls: 'ofc-proposal-header-left' });
+    leftEl.createSpan({
+      cls: 'ofc-proposal-badge',
+      text: this.getTypeBadgeLabel()
+    });
+
+    if (this.proposal.calendarName) {
+      leftEl.createSpan({
+        cls: 'ofc-proposal-cal',
+        text: this.proposal.calendarName
       });
     }
 
-    const dateStr = proposal.eventData.type === 'single' ? proposal.eventData.date : '';
-    chips.createSpan({
-      cls: 'ofc-proposal-chip',
-      text: proposal.eventData.allDay
-        ? `📅 ${dateStr} (${t('agent.proposals.allDay')})`
-        : `📅 ${dateStr} ⏰ ${proposal.eventData.startTime || ''} - ${proposal.eventData.endTime || ''}`
-    });
-
-    chips.createSpan({
-      cls: 'ofc-proposal-chip',
-      text: `📁 ${proposal.calendarName}`
-    });
-
-    if (proposal.eventData.description) {
-      body.createDiv({
-        cls: 'ofc-proposal-desc',
-        text: t('agent.proposals.notes', { notes: proposal.eventData.description })
+    const scheduleText = extractProposalSchedule(
+      this.proposal,
+      ctx,
+      t('agent.proposals.allDay'),
+      t('agent.proposals.recurring'),
+      false
+    );
+    if (scheduleText) {
+      headerEl.createSpan({
+        cls: 'ofc-proposal-schedule',
+        text: scheduleText
       });
     }
   }
 
-  private renderUpdateBody(body: HTMLElement, proposal: UpdateEventProposal): void {
-    body.createDiv({ cls: 'ofc-proposal-title', text: proposal.updatedEvent.title });
+  private renderBodyContent(ctx: ProposalDisplayContext): void {
+    const bodyEl = this.rootEl.createDiv({ cls: 'ofc-proposal-body' });
 
-    const diffContainer = body.createDiv({ cls: 'ofc-proposal-diff' });
-    diffContainer.createEl('strong', { text: t('agent.proposals.changes') });
-    const list = diffContainer.createEl('ul');
-
-    for (const [field, delta] of Object.entries(proposal.changedFields)) {
-      const item = list.createEl('li');
-      item.createSpan({ text: `${field}: ` });
-      const oldStr =
-        typeof delta.old === 'string'
-          ? delta.old
-          : delta.old !== null && delta.old !== undefined
-            ? JSON.stringify(delta.old)
-            : 'none';
-      const newStr =
-        typeof delta.new === 'string'
-          ? delta.new
-          : delta.new !== null && delta.new !== undefined
-            ? JSON.stringify(delta.new)
-            : 'none';
-      item.createEl('s', { text: oldStr, cls: 'ofc-diff-old' });
-      item.createSpan({ text: ' → ' });
-      item.createEl('strong', { text: newStr, cls: 'ofc-diff-new' });
+    if (this.proposal.type === 'BATCH_CREATE') {
+      this.renderBatchBody(bodyEl, ctx);
+      return;
     }
-  }
 
-  private renderDeleteBody(body: HTMLElement, proposal: DeleteEventProposal): void {
-    body.createDiv({ cls: 'ofc-proposal-title', text: `Delete: "${proposal.eventTitle}"` });
-    if (proposal.reason) {
-      body.createDiv({ text: `Reason: ${proposal.reason}` });
+    const headingTitle = extractProposalHeadingTitle(this.proposal, ctx);
+    bodyEl.createDiv({ cls: 'ofc-proposal-title', text: headingTitle });
+
+    const catMeta = extractProposalCategory(this.proposal, ctx);
+    if (catMeta.category) {
+      const catRow = bodyEl.createDiv({ cls: 'ofc-proposal-cat-row' });
+      const dotEl = catRow.createSpan({ cls: 'ofc-proposal-cat-dot' });
+      if (catMeta.color) {
+        setCssProps(dotEl, { '--ofc-cat-color': catMeta.color });
+      }
+      catRow.createSpan({ cls: 'ofc-proposal-cat-name', text: catMeta.category });
+      if (catMeta.subCategory) {
+        const sepEl = catRow.createSpan({ cls: 'ofc-proposal-cat-sep', text: '\u203a' });
+        sepEl.setAttribute('aria-hidden', 'true');
+        catRow.createSpan({ cls: 'ofc-proposal-subcat-name', text: catMeta.subCategory });
+      }
     }
-    body.createDiv({
-      cls: 'ofc-proposal-warning',
+
+    if (this.proposal.type === 'CREATE') {
+      if (this.proposal.eventData.location) {
+        bodyEl.createDiv({
+          cls: 'ofc-proposal-meta-line',
+          text: this.proposal.eventData.location
+        });
+      }
+      if (this.proposal.eventData.description) {
+        bodyEl.createDiv({
+          cls: 'ofc-proposal-meta-line',
+          text: t('agent.proposals.notes', { notes: this.proposal.eventData.description })
+        });
+      }
+      return;
+    }
+
+    if (this.proposal.type === 'UPDATE') {
+      this.renderUpdateDiffBox(bodyEl, ctx);
+      return;
+    }
+
+    if (this.proposal.reason) {
+      bodyEl.createDiv({ cls: 'ofc-proposal-meta-line', text: this.proposal.reason });
+    }
+    bodyEl.createDiv({
+      cls: 'ofc-proposal-delete-warn',
       text: t('agent.proposals.deleteWarning')
     });
   }
 
-  private renderBatchBody(body: HTMLElement, proposal: BatchCreateProposal): void {
-    body.createDiv({
-      cls: 'ofc-proposal-title',
+  private formatDiffFieldName(field: string): string {
+    switch (field) {
+      case 'title':
+        return t('agent.proposals.fieldTitle');
+      case 'date':
+        return t('agent.proposals.fieldDate');
+      case 'startTime':
+        return t('agent.proposals.fieldStartTime');
+      case 'endTime':
+        return t('agent.proposals.fieldEndTime');
+      case 'allDay':
+        return t('agent.proposals.fieldAllDay');
+      case 'category':
+        return t('agent.proposals.fieldCategory');
+      case 'subCategory':
+        return t('agent.proposals.fieldSubCategory');
+      case 'description':
+        return t('agent.proposals.fieldDescription');
+      default:
+        return field;
+    }
+  }
+
+  private renderUpdateDiffBox(bodyEl: HTMLElement, ctx: ProposalDisplayContext): void {
+    if (this.proposal.type !== 'UPDATE') {
+      return;
+    }
+    if (this.isCategoryOnlyUpdateDisabled(ctx)) {
+      bodyEl.createDiv({
+        cls: 'ofc-proposal-meta-line',
+        text: t('agent.proposals.categorizationDisabledNotice')
+      });
+      return;
+    }
+
+    const entries = Object.entries(this.proposal.changedFields || {}).filter(([field]) => {
+      if (!ctx.enableAdvancedCategorization && (field === 'category' || field === 'subCategory')) {
+        return false;
+      }
+      return true;
+    });
+    if (entries.length === 0) {
+      return;
+    }
+
+    const diffListEl = bodyEl.createDiv({ cls: 'ofc-proposal-diff-list' });
+    const noneLabel = t('agent.proposals.noneValue');
+    const allDayLabel = t('agent.proposals.allDay');
+    const timedLabel = t('agent.proposals.timedEvent');
+
+    for (const [field, change] of entries) {
+      const rowEl = diffListEl.createDiv({ cls: 'ofc-proposal-diff-row' });
+      rowEl.createDiv({
+        cls: 'ofc-proposal-diff-field',
+        text: this.formatDiffFieldName(field)
+      });
+
+      const stackEl = rowEl.createDiv({ cls: 'ofc-proposal-diff-values' });
+      const oldRowEl = stackEl.createDiv({ cls: 'ofc-proposal-diff-old' });
+      oldRowEl.createSpan({ cls: 'ofc-proposal-diff-sign', text: '\u2212' });
+      oldRowEl.createSpan({
+        cls: 'ofc-proposal-diff-text',
+        text: formatDiffFieldValue(field, change.old, ctx, noneLabel, allDayLabel, timedLabel)
+      });
+
+      const newRowEl = stackEl.createDiv({ cls: 'ofc-proposal-diff-new' });
+      newRowEl.createSpan({ cls: 'ofc-proposal-diff-sign', text: '+' });
+      newRowEl.createSpan({
+        cls: 'ofc-proposal-diff-text',
+        text: formatDiffFieldValue(field, change.new, ctx, noneLabel, allDayLabel, timedLabel)
+      });
+    }
+  }
+
+  private renderBatchBody(bodyEl: HTMLElement, ctx: ProposalDisplayContext): void {
+    if (this.proposal.type !== 'BATCH_CREATE') {
+      return;
+    }
+
+    bodyEl.createDiv({
+      cls: 'ofc-proposal-meta-line',
       text: t('agent.proposals.foundBatch', {
-        count: proposal.items.length,
-        calendar: proposal.calendarName
+        count: this.proposal.items.length,
+        calendar: this.proposal.calendarName
       })
     });
 
-    const batchList = body.createDiv({ cls: 'ofc-proposal-batch-list' });
+    const listEl = bodyEl.createDiv({ cls: 'ofc-proposal-batch-list' });
+    const allDayLabel = t('agent.proposals.allDay');
+    const recurringLabel = t('agent.proposals.recurring');
 
-    for (const item of proposal.items) {
-      const row = batchList.createDiv({ cls: 'ofc-proposal-batch-row' });
-      const cb = row.createEl('input', { attr: { type: 'checkbox' } });
-      cb.checked = item.selected;
-      cb.addEventListener('change', () => {
-        item.selected = cb.checked;
-        this.updateBatchApproveBtn();
-      });
+    for (const item of this.proposal.items) {
+      const itemRow = listEl.createDiv({ cls: 'ofc-proposal-batch-row' });
+      const checkbox = itemRow.createEl('input', { attr: { type: 'checkbox' } });
+      checkbox.checked = item.selected;
 
-      const dateStr = item.eventData.type === 'single' ? item.eventData.date : '';
-      const timeStr = item.eventData.allDay
-        ? t('agent.proposals.allDay')
-        : `${item.eventData.startTime || ''} - ${item.eventData.endTime || ''}`;
+      const infoEl = itemRow.createDiv({ cls: 'ofc-proposal-batch-info' });
+      const itemDisplay = extractBatchItemDisplay(item, ctx, allDayLabel, recurringLabel);
+      infoEl.createDiv({ cls: 'ofc-proposal-batch-title', text: itemDisplay.title });
 
-      row.createSpan({
-        text: `${dateStr} (${timeStr}) — ${item.cleanTitle}`,
-        cls: 'ofc-batch-item-text'
-      });
+      const subRow = infoEl.createDiv({ cls: 'ofc-proposal-batch-meta' });
+      if (itemDisplay.schedule) {
+        subRow.createSpan({ text: itemDisplay.schedule });
+      }
 
-      if (item.category) {
-        row.createSpan({
-          cls: 'ofc-proposal-chip ofc-proposal-chip-category',
-          text: item.category
+      if (itemDisplay.category) {
+        const catTag = subRow.createSpan({ cls: 'ofc-proposal-batch-cat' });
+        const dotEl = catTag.createSpan({ cls: 'ofc-proposal-cat-dot' });
+        if (itemDisplay.color) {
+          setCssProps(dotEl, { '--ofc-cat-color': itemDisplay.color });
+        }
+        catTag.createSpan({
+          text: itemDisplay.subCategory
+            ? `${itemDisplay.category} \u203a ${itemDisplay.subCategory}`
+            : itemDisplay.category
         });
       }
+
+      checkbox.addEventListener('change', () => {
+        item.selected = checkbox.checked;
+        if (this.proposal.type === 'BATCH_CREATE') {
+          this.proposal.approvalHash = computeProposalApprovalHash(this.proposal);
+        }
+        this.updateBatchApproveButtonLabel();
+        this.callbacks.onSelectionChange?.(this.proposal.id);
+      });
     }
   }
 
-  private approveBtn?: HTMLButtonElement;
-
-  private updateBatchApproveBtn(): void {
-    if (this.proposal.type === 'BATCH_CREATE' && this.approveBtn) {
-      const batch = this.proposal;
-      const count = batch.items.filter(i => i.selected).length;
-      this.approveBtn.setText(t('agent.proposals.approveSelected', { count }));
-      this.approveBtn.disabled = count === 0;
+  private renderFooterActions(ctx: ProposalDisplayContext, status: ProposalStatus): void {
+    if (this.errorMessage || status === 'FAILED') {
+      const errorBox = this.rootEl.createDiv({
+        cls: 'ofc-proposal-error',
+        text: this.errorMessage || t('agent.proposals.failedStatus')
+      });
+      errorBox.setAttribute('role', 'alert');
     }
-  }
 
-  private renderFooter(): void {
-    const footer = this.cardEl.createDiv({ cls: 'ofc-proposal-footer' });
+    const footerEl = this.rootEl.createDiv({ cls: 'ofc-proposal-footer' });
 
-    if (this.proposal.status === 'APPROVED') {
-      footer.createSpan({
-        cls: 'ofc-proposal-status-tag ofc-proposal-status-approved',
-        text: `✓ ${t('agent.proposals.applied')}`
+    if (!this.actionable && (status === 'PENDING' || status === 'FAILED')) {
+      footerEl.createSpan({
+        cls: 'ofc-proposal-status-tag ofc-proposal-status-expired',
+        text: t('agent.proposals.expired')
       });
       return;
     }
 
-    if (this.proposal.status === 'REJECTED') {
-      footer.createSpan({
-        cls: 'ofc-proposal-status-tag ofc-proposal-status-rejected',
-        text: `✕ ${t('agent.proposals.rejected')}`
+    if (this.proposal.type === 'CREATE' && this.callbacks.onEditInModal && status === 'PENDING') {
+      const editBtn = footerEl.createEl('button', {
+        cls: 'ofc-agent-btn ofc-agent-btn-secondary ofc-proposal-btn-ghost',
+        text: t('agent.proposals.editInModal')
       });
-      return;
+      editBtn.type = 'button';
+      editBtn.disabled = this.isProcessing;
+      editBtn.addEventListener('click', () => {
+        this.callbacks.onEditInModal?.(this.proposal);
+      });
     }
 
-    // Reject button
-    const rejectBtn = footer.createEl('button', {
+    const rejectBtn = footerEl.createEl('button', {
       cls: 'ofc-agent-btn ofc-agent-btn-danger',
       text: t('agent.proposals.reject')
     });
-    rejectBtn.addEventListener('click', () => {
-      this.proposal.status = 'REJECTED';
-      this.onReject(this.proposal.id);
-      this.cardEl.remove();
-    });
+    rejectBtn.type = 'button';
+    rejectBtn.disabled = this.isProcessing;
 
-    // Optional: Edit in Modal button
-    if (this.proposal.type === 'CREATE' && this.onEditInModal) {
-      const editBtn = footer.createEl('button', {
-        cls: 'ofc-agent-btn',
-        text: t('agent.proposals.editInModal')
-      });
-      editBtn.addEventListener('click', () => {
-        this.onEditInModal?.(this.proposal);
-      });
-    }
-
-    // Approve button
-    this.approveBtn = footer.createEl('button', {
+    const approveLabel = this.getApproveLabel(status);
+    const approveBtn = footerEl.createEl('button', {
       cls: 'ofc-agent-btn ofc-agent-btn-primary',
-      text:
-        this.proposal.type === 'BATCH_CREATE'
-          ? t('agent.proposals.approveSelected', { count: this.proposal.items.length })
-          : t('agent.proposals.approveApply')
+      text: approveLabel
+    });
+    approveBtn.type = 'button';
+    approveBtn.disabled =
+      this.isProcessing || this.isBatchEmptySelection() || this.isCategoryOnlyUpdateDisabled(ctx);
+
+    rejectBtn.addEventListener('click', () => {
+      this.handleReject(rejectBtn, approveBtn);
     });
 
-    this.approveBtn.addEventListener('click', () => {
-      void (async () => {
-        if (this.approveBtn) {
-          this.approveBtn.disabled = true;
-          this.approveBtn.setText(t('agent.proposals.applying'));
-        }
-        try {
-          await this.onApprove(this.proposal.id);
-          this.proposal.status = 'APPROVED';
-          this.cardEl.remove();
-        } catch {
-          if (this.approveBtn) {
-            this.approveBtn.disabled = false;
-            this.approveBtn.setText(t('agent.proposals.retryApply'));
-          }
-        }
-      })();
+    approveBtn.addEventListener('click', () => {
+      void this.handleApprove(rejectBtn, approveBtn);
     });
+  }
+
+  private getApproveLabel(status: ProposalStatus): string {
+    if (status === 'FAILED' || Boolean(this.errorMessage)) {
+      return t('agent.proposals.retryApply');
+    }
+    if (this.proposal.type === 'BATCH_CREATE') {
+      const selectedCount = this.proposal.items.filter(i => i.selected).length;
+      return t('agent.proposals.approveSelected', { count: selectedCount });
+    }
+    return t('agent.proposals.approveApply');
+  }
+
+  private isBatchEmptySelection(): boolean {
+    if (this.proposal.type !== 'BATCH_CREATE') {
+      return false;
+    }
+    return this.proposal.items.every(i => !i.selected);
+  }
+
+  private updateBatchApproveButtonLabel(): void {
+    const primaryBtn = this.rootEl.querySelector<HTMLButtonElement>('.ofc-agent-btn-primary');
+    if (!primaryBtn || this.proposal.type !== 'BATCH_CREATE') {
+      return;
+    }
+    const isRetry = this.proposal.status === 'FAILED' || Boolean(this.errorMessage);
+    const selectedCount = this.proposal.items.filter(i => i.selected).length;
+    if (!isRetry) {
+      primaryBtn.setText(t('agent.proposals.approveSelected', { count: selectedCount }));
+    }
+    primaryBtn.disabled = this.isProcessing || selectedCount === 0;
+  }
+
+  private handleReject(rejectBtn: HTMLButtonElement, approveBtn: HTMLButtonElement): void {
+    if (this.isProcessing) {
+      return;
+    }
+    this.isProcessing = true;
+    rejectBtn.disabled = true;
+    approveBtn.disabled = true;
+
+    try {
+      this.callbacks.onReject(this.proposal.id);
+      this.proposal.status = 'REJECTED';
+      this.errorMessage = null;
+      this.isProcessing = false;
+      this.callbacks.onStatusChange?.(this.proposal.id, 'REJECTED');
+      this.render();
+    } catch (err) {
+      this.errorMessage = err instanceof Error ? err.message : String(err);
+      this.isProcessing = false;
+      this.render();
+    }
+  }
+
+  private async handleApprove(
+    rejectBtn: HTMLButtonElement,
+    approveBtn: HTMLButtonElement
+  ): Promise<void> {
+    if (this.isProcessing) {
+      return;
+    }
+    this.isProcessing = true;
+    rejectBtn.disabled = true;
+    approveBtn.disabled = true;
+    approveBtn.setText(t('agent.proposals.applying'));
+
+    try {
+      const result = await this.callbacks.onApprove(
+        this.proposal.id,
+        undefined,
+        this.proposal.approvalHash
+      );
+      this.isProcessing = false;
+      if (result.success) {
+        this.proposal.status = 'APPROVED';
+        this.errorMessage = null;
+        this.callbacks.onStatusChange?.(this.proposal.id, 'APPROVED');
+        this.render();
+      } else {
+        const msg = result.message || t('agent.proposals.failedStatus');
+        this.proposal.status = 'FAILED';
+        this.errorMessage = msg;
+        if (isPermanentFailureMessage(msg)) {
+          this.actionable = false;
+        }
+        this.callbacks.onStatusChange?.(this.proposal.id, 'FAILED');
+        this.render();
+      }
+    } catch (err) {
+      this.isProcessing = false;
+      this.proposal.status = 'FAILED';
+      this.errorMessage = err instanceof Error ? err.message : String(err);
+      this.callbacks.onStatusChange?.(this.proposal.id, 'FAILED');
+      this.render();
+    }
   }
 }

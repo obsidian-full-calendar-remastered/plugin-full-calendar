@@ -72,12 +72,14 @@ extra_javascript:
     - assets/javascripts/theme-logo.js
     - assets/javascripts/analytics-events.js
     - assets/javascripts/showcase-modal.js
+    - assets/javascripts/version-switcher.js
 
 extra_css:
       - assets/stylesheets/site-polish.css
       - assets/stylesheets/showcase.css
       - assets/stylesheets/nav-section-links.css
       - assets/stylesheets/custom-footer.css
+      - assets/stylesheets/version-switcher.css
 
 plugins:
     - search
@@ -172,7 +174,7 @@ nav:
                 - Live Preview Decorators: user/features/live-preview.md
                 - Developer API & CLI: user/features/api.md
                 - Share Availability: user/features/availability.md
-                - Calendar Agent (BYOK): user/features/agent.md
+                - Calendar Agent (Managed AI & BYOK): user/features/agent.md
           - Embedded Calendars:
                   - user/embeds/index.md
                   - Deep Dive Specs: user/embeds/deep_dive.md

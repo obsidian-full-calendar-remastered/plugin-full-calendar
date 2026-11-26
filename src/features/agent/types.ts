@@ -6,6 +6,7 @@
  */
 
 import type { OFCEvent } from '../../types';
+import type { ChronoChartSpec, ChronoKpiPill } from '../../chrono_analyser/data/types';
 
 // ============================================================================
 // CHAT & LLM PROTOCOL TYPES (OpenAI Compatible)
@@ -33,6 +34,29 @@ export interface ChatToolCall {
   function: ToolCallFunction;
 }
 
+export interface AgentToolStepRecord {
+  id: string;
+  name: string;
+  label: string;
+  summary: string;
+  ok: boolean;
+  durationMs: number;
+}
+
+export interface AgentChartAttachment {
+  chartId: string;
+  spec: ChronoChartSpec;
+  title: string;
+  kpis: ChronoKpiPill[];
+  generatedAt: number;
+  totalSnapshot?: number;
+  comparisonSummary?: {
+    baseLabel: string;
+    compareLabel: string;
+    deltaText: string;
+  };
+}
+
 export interface ChatMessage {
   id?: string;
   role: ChatRole;
@@ -41,6 +65,9 @@ export interface ChatMessage {
   tool_call_id?: string;
   tool_calls?: ChatToolCall[];
   timestamp?: number;
+  suggestions?: string[];
+  toolSteps?: AgentToolStepRecord[];
+  charts?: AgentChartAttachment[];
 }
 
 export interface ToolParameterProperty {
@@ -103,11 +130,18 @@ export interface ChatCompletionChunk {
 export type ProposalType = 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH_CREATE';
 export type ProposalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'FAILED';
 
+export type RecurrenceMutationScope = 'single' | 'this_and_future' | 'entire_series';
+
 export interface BaseProposal {
   id: string;
   type: ProposalType;
   status: ProposalStatus;
   createdAt: number;
+  expiresAt?: number;
+  approvalHash?: string;
+  mutationIdempotencyKey?: string;
+  sourceSnapshotHash?: string;
+  recurrenceScope?: RecurrenceMutationScope;
   calendarId: string;
   calendarName: string;
 }
@@ -132,6 +166,14 @@ export interface DeleteEventProposal extends BaseProposal {
   type: 'DELETE';
   eventId: string;
   eventTitle: string;
+  eventDate?: string;
+  eventEndDate?: string;
+  eventAllDay?: boolean;
+  eventStartTime?: string;
+  eventEndTime?: string;
+  eventRecurring?: boolean;
+  eventCategory?: string;
+  eventSubCategory?: string;
   reason?: string;
 }
 

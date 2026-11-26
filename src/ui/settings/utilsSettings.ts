@@ -8,6 +8,7 @@ import { showNotice } from '../../utils/showNotice';
 import { FullCalendarSettings, GoogleAccount, DEFAULT_SETTINGS } from '../../types/settings';
 import { CalendarInfo, generateCalendarId } from '../../types/calendar_settings';
 import { t } from '../../features/i18n/i18n';
+import { deepClone } from '../../core/SettingsPersistence';
 
 interface ObsidianSecretStorage {
   getSecret(key: string): string;
@@ -49,20 +50,20 @@ function mergeWithDefaults(
 ): FullCalendarSettings & { calendarSources: (CalendarInfo | GoogleSourceWithAuth)[] } & {
   googleAuth?: LegacyGoogleAuth;
 } {
-  const result: Record<string, unknown> = { ...defaults };
+  const result: Record<string, unknown> = deepClone(defaults) as unknown as Record<string, unknown>;
   const rawRecord = raw as Record<string, unknown>;
 
   for (const [key, defaultVal] of Object.entries(defaults)) {
     const rawVal = rawRecord[key];
     if (rawVal === undefined || rawVal === null) {
-      result[key] = defaultVal;
+      result[key] = deepClone(defaultVal);
     } else if (
       typeof defaultVal === 'object' &&
       defaultVal !== null &&
       !Array.isArray(defaultVal)
     ) {
       result[key] = {
-        ...(defaultVal as Record<string, unknown>),
+        ...(deepClone(defaultVal) as Record<string, unknown>),
         ...(typeof rawVal === 'object' && rawVal !== null && !Array.isArray(rawVal) ? rawVal : {})
       };
     } else {

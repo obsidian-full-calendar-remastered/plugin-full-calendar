@@ -1662,7 +1662,8 @@
       "copyModalCloseButton": "Закрыть",
       "waitingModalTitle": "Ожидание аутентификации",
       "waitingModalDesc": "Obsidian ждёт завершения аутентификации в браузере. После завершения это окно закроется автоматически.",
-      "waitingModalCancel": "Отмена"
+      "waitingModalCancel": "Отмена",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Аккаунты Google",
     "description": "Управляйте аккаунтами Google, аутентификацией и пользовательскими учётными данными Google Cloud.",
@@ -1697,7 +1698,8 @@
       "addCalendars": "Добавить {{count}} календарь",
       "addCalendarsPlural": "Добавить {{count}} календарей",
       "selectTaskLists": "Выбрать списки задач",
-      "addTaskList": "Добавить список задач Google"
+      "addTaskList": "Добавить список задач Google",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "Подключить аккаунт Google"
@@ -1729,7 +1731,8 @@
       "success": "Аккаунт Outlook успешно подключён!",
       "failed": "Не удалось подключить аккаунт Outlook. Подробности в консоли разработчика.",
       "callbackSuccess": "Аутентификация успешна! Вернитесь в Obsidian.",
-      "callbackFailed": "Аутентификация не удалась. Проверьте консоль Obsidian и попробуйте снова."
+      "callbackFailed": "Аутентификация не удалась. Проверьте консоль Obsidian и попробуйте снова.",
+      "emailMismatch": "Account mismatch: expected {{expected}}, but authenticated as {{received}}."
     },
     "title": "Аккаунты Outlook",
     "description": "Управляйте аккаунтами Microsoft Outlook и пользовательскими учётными данными OAuth.",
@@ -1766,7 +1769,8 @@
       "connectAccount": "Подключить аккаунт Outlook",
       "backToAccounts": "Назад к аккаунтам",
       "addCalendars": "Добавить {{count}} календарь",
-      "addCalendarsPlural": "Добавить {{count}} календарей"
+      "addCalendarsPlural": "Добавить {{count}} календарей",
+      "reconnect": "Reconnect"
     },
     "selectAccount": {
       "title": "Подключить аккаунт Outlook"
@@ -2034,8 +2038,6 @@
   "agent": {
     "sidebar": {
       "viewTitle": "Агент календаря",
-      "emptyTitle": "Агент календаря готов",
-      "emptyDesc": "Задавайте вопросы о календаре, находите свободные слоты, черновики новых событий или импортируйте расписания из интернета.",
       "inputPlaceholder": "Спросите агента или автоматизируйте расписание...",
       "stop": "Стоп",
       "sendAria": "Отправить запрос",
@@ -2053,18 +2055,18 @@
     "suggestions": {
       "today": "Какое у меня расписание сегодня?",
       "todayPrompt": "Какие события у меня запланированы на сегодня?",
-      "thisWeek": "События на этой неделе",
-      "thisWeekPrompt": "Суммируй мои события на следующие 7 дней.",
       "addEvent": "Добавить событие...",
       "addEventPrompt": "Добавь встречу ",
       "importUrl": "Импорт из URL...",
-      "importUrlPrompt": "Просмотри расписание по этому URL и извлеки события: "
+      "importUrlPrompt": "Просмотри расписание по этому URL и извлеки события: ",
+      "analyzeTime": "Analyze my time",
+      "analyzeTimePrompt": "Analyze how I spent my time this week with a breakdown chart and key insights.",
+      "rescheduleAfternoon": "Something came up — reschedule my afternoon",
+      "rescheduleAfternoonPrompt": "Something came up this afternoon. Find my flexible events after 1 PM and propose moving them to open slots this week.",
+      "checkWeather": "Check weather for my upcoming plans",
+      "checkWeatherPrompt": "Check the weather forecast for my upcoming events over the next few days and flag any outdoor conflicts."
     },
     "proposals": {
-      "createTitle": "Предложение: создать событие",
-      "updateTitle": "Предложение: обновить событие",
-      "deleteTitle": "Предложение: удалить событие",
-      "batchTitle": "Предложение: массовый импорт ({{count}})",
       "allDay": "Весь день",
       "approveApply": "Одобрить и применить",
       "approveSelected": "Одобрить выбранные ({{count}})",
@@ -2074,10 +2076,34 @@
       "applied": "Применено",
       "rejected": "Отклонено",
       "editInModal": "Редактировать в модальном окне",
-      "changes": "Изменения:",
       "notes": "Примечания: {{notes}}",
-      "deleteWarning": "⚠️ Это безвозвратно удалит событие из вашего календаря.",
-      "foundBatch": "Найдено {{count}} событий для календаря: {{calendar}}"
+      "deleteWarning": "Это безвозвратно удалит событие из вашего календаря.",
+      "foundBatch": "Найдено {{count}} событий для календаря: {{calendar}}",
+      "expired": "Expired",
+      "pendingCount": "{{count}} pending proposals",
+      "approveAll": "Approve all ({{count}})",
+      "rejectAll": "Reject all",
+      "applyingProgress": "Applying {{current}}/{{total}}...",
+      "bulkAppliedSummary": "Applied {{applied}} of {{total}} proposals.",
+      "bulkAppliedPartial": "Applied {{applied}} of {{total}} proposals ({{failed}} failed).",
+      "bulkRejectedSummary": "Rejected {{count}} pending proposals.",
+      "createBadge": "New event",
+      "updateBadge": "Update",
+      "deleteBadge": "Delete",
+      "batchBadge": "Batch import ({{count}})",
+      "recurring": "Recurring",
+      "timedEvent": "Timed",
+      "noneValue": "None",
+      "failedStatus": "Failed",
+      "fieldTitle": "Title",
+      "fieldDate": "Date",
+      "fieldStartTime": "Start time",
+      "fieldEndTime": "End time",
+      "fieldAllDay": "All day",
+      "fieldCategory": "Category",
+      "fieldSubCategory": "Subcategory",
+      "fieldDescription": "Description",
+      "categorizationDisabledNotice": "Advanced categorization is disabled; no remaining fields to update."
     },
     "audit": {
       "title": "Агент Full Calendar: журнал аудита и диагностика",
@@ -2091,10 +2117,8 @@
       "payloadDetails": "Полезная нагрузка / детали"
     },
     "settings": {
-      "title": "Агентные автоматизации (byok)",
-      "description": "Настройте агента с собственным ключом (byok) для автоматизации календаря. Работает с любой совместимой с OpenAI конечной точкой API. Любой доступ на запись строго контролируется одобрением пользователя.",
-      "enableName": "Включить панель записи агента",
-      "enableDesc": "Показывать панель автоматизации записи агента в представлении календаря и включить команды агента.",
+      "title": "Агентные автоматизации",
+      "description": "Используйте встроенный бесплатный пробный период и управляемые тарифы (строгое соответствие GDPR и нулевое хранение данных) или собственный ключ (byok). Любой доступ на запись строго контролируется одобрением пользователя.",
       "presetName": "Предустановка конечной точки API",
       "presetDesc": "Выберите предустановку провайдера, чтобы заполнить стандартные значения конечной точки и модели.",
       "customEndpoint": "Пользовательская конечная точка",
@@ -2125,7 +2149,10 @@
       "diagnosticsDesc": "Просмотрите структурированный журнал аудита всех взаимодействий агента или очистите сохранённую историю чата.",
       "viewAuditTrailBtn": "Просмотреть журнал аудита",
       "clearHistoryBtn": "Очистить историю",
-      "historyClearedNotice": "История чата агента очищена."
+      "historyClearedNotice": "История чата агента очищена.",
+      "temperatureName": "Model temperature",
+      "temperatureDesc": "Sampling temperature (e.g. 0.2). Leave empty to use provider default (recommended for Claude, o1/o3, and reasoning models).",
+      "temperaturePlaceholder": "Provider default (recommended)"
     },
     "writeBar": {
       "openAgentPanel": "Открыть полную панель агента календаря",
@@ -2135,6 +2162,20 @@
       "eventApplied": "Событие успешно применено к календарю.",
       "failedToApply": "Не удалось применить предложение: {{error}}",
       "proposalRejected": "Предложение события отклонено."
+    },
+    "welcome": {
+      "greeting": "Hi, how can I help?",
+      "subtitle": "Tell me what you need with your schedule, and we can get started."
+    },
+    "trace": {
+      "working": "Working...",
+      "usedTools": "Completed {{count}} steps",
+      "cancelled": "Cancelled",
+      "failed": "Failed",
+      "stepsRecorded": "{{count}} steps",
+      "usedToolSingle": "Completed {{count}} step",
+      "stepRecordedSingle": "{{count}} step",
+      "jumpToProgress": "Jump to live progress"
     }
   }
 }

@@ -14,7 +14,7 @@ const fcPlugin = app.plugins.plugins['full-calendar'];
 const publicApi = fcPlugin?.api; // Instance of PublicAPI
 ```
 
-Third-party plugins obtain access programmatically using `requestAccess()`. In-vault scripts (DataviewJS / Templater) obtain access by passing a generated [Personal Access Token (PAT)](scopes-permissions.md#personal-access-tokens-pats) directly to `withToken()`.
+Third-party plugins obtain access programmatically using `requestAccess()`. In-vault scripts (DataviewJS / Templater) obtain access by passing a generated [Personal Access Token (PAT)](scopes-permissions.md#personal-access-tokens-pats-vs-plugin-tokens) directly to `withToken()`.
 
 ---
 
@@ -37,7 +37,7 @@ public requestAccess(
 * **Parameters**:
   * `pluginId` (`string`): Unique identifier of the calling plugin (e.g. `'my-dashboard-plugin'`).
   * `reason` (`string`): Human-readable explanation displayed in the authorization modal.
-  * `requestedScopes` (`ApiScope[]`, optional): Array of required permission scopes. Defaults to `['events:read']` via [`normalizeApiScopes`](scopes-permissions.md#scope-normalization).
+  * `requestedScopes` (`ApiScope[]`, optional): Array of required permission scopes. Defaults to `['events:read']` via [`normalizeApiScopes`](scopes-permissions.md#scope-normalization-normalizeapiscopes).
 * **Returns**: `Promise<string | null>` - Resolves to a generated UUID token string if approved by the user, or `null` if rejected or cancelled.
 * **Storage Side-Effect**: Saves a new record in `FullCalendarSettings.apiTokens[token]` containing `pluginId`, `reason`, `requestedScopes`, `grantedScopes`, and `grantedAt`.
 

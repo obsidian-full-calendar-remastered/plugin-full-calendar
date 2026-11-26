@@ -84,9 +84,10 @@ The Cockpit is built on a modular widget system. Every module is wrapped in a co
 
 ### 4. Calendar Agent Module (`AgentHudModule`)
 
-* **Unobtrusive Docked Assistant:** Keeps natural language scheduling prompts, command suggestions, and event proposals encapsulated cleanly within an accordion card in the Cockpit instead of floating over or shrinking the main calendar grid.
-* **Folded by Default:** Starts collapsed to preserve vertical space, unfolding smoothly whenever you want to query your schedule, draft multi-event blocks, or review proposed calendar changes.
-* **Integrated Safety & Proposals:** Quick messages, suggestion pills, proposal confirmation cards, and a one-click launcher to open the full-fledged Right Sidebar Agent Panel for deeper conversations and full audit logs.
+* **Unobtrusive Docked Assistant:** Keeps natural language scheduling prompts, starter pills, and event proposals encapsulated cleanly within an accordion card in the Cockpit instead of floating over or shrinking the main calendar grid.
+* **Real-Time Sync with Right Sidebar:** Shares one synchronized conversation engine with the Right Sidebar Agent Leaf. Prompts, streamed tokens, the docked live activity strip, Stop cancellations, session switches, batch checklist checkboxes, and proposal decisions mirror instantaneously between both panels.
+* **Collapsible Accordion Section:** Expanded by default (`collapsedModules.agent = false`, `defaultCollapsed = false`), and can be folded cleanly whenever you want more vertical room for Mini Month, Up Next, or Task Backlog.
+* **Integrated Safety & Interactive UI:** Features compact Copilot-style welcome starters, dynamic follow-up suggestion chips, a docked live progress bar above the composer, in-place proposal confirmation cards (including sticky bulk approval when multiple proposals are staged), and a one-click **Open Panel** launcher for full-width conversations and audit logs.
 * **Respects Master Toggle:** Automatically disables itself if the Calendar Agent is switched off in plugin settings.
 
 ---
@@ -131,7 +132,7 @@ Settings for the Cockpit are managed in `FullCalendarSettings.sidebarConfig`:
 | `sidebarConfig.enabled` | `boolean` | `true` | Enables or disables the left panel globally across calendar views. |
 | `sidebarConfig.width` | `number` | `290` | Persistent width in pixels (clamped between 200px and 520px). |
 | `sidebarConfig.isCollapsed` | `boolean` | `false` | Tracks whether the entire left panel is currently folded into the expand tab. |
-| `sidebarConfig.collapsedModules` | `Record<string, boolean>` | `{'agent': true}` | Remembers accordion open/close state for each module individually. |
+| `sidebarConfig.collapsedModules` | `Record<string, boolean>` | `{'mini-month': false, 'up-next': false, 'task-backlog': false, 'agent': false}` | Remembers accordion open/close state for each module individually. |
 | `sidebarConfig.moduleOrder` | `string[]` | `['mini-month', 'up-next', 'task-backlog', 'agent']` | Defines the vertical rendering order of the module cards. |
 
 ---

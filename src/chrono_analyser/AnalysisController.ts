@@ -4,8 +4,8 @@ import { App } from 'obsidian';
 import FullCalendarPlugin from '../main';
 import * as Plotter from './ui/plotter';
 import { DataManager } from './data/DataManager';
-import { UIService, ChartType } from './ui/UIService';
-import { DataService } from './data/DataService';
+import { UIService, ChartType, FilterPayload } from './ui/UIService';
+import { ChronoAnalysisService } from './ChronoAnalysisService';
 import { DemoDataService } from './data/DemoDataService';
 import { TimeRecord } from './data/types';
 import { InsightsEngine } from './data/InsightsEngine';
@@ -15,7 +15,6 @@ import { ensurePlotlyLoaded } from './ui/plotly-custom';
 
 export class AnalysisController {
   public uiService: UIService;
-  public dataService: DataService;
   public demoDataService: DemoDataService;
   public dataManager: DataManager;
   public insightsEngine: InsightsEngine;
@@ -24,14 +23,18 @@ export class AnalysisController {
   private activeChartType: ChartType | null = null;
   private isChartRendered = false;
   private liveDataInitialized = false;
+  private liveServiceUnsubscribe: (() => void) | null = null;
   private demoModeActive = false;
   private demoModeDisabledForSession = false;
+  private forceLiveDataOnInit = false;
 
   private activePieBreakdown: string | null = null;
   private activeSunburstLevel: string | null = null;
   private activeTimeSeriesGranularity: string | null = null;
   private activeTimeSeriesType: string | null = null;
   private activeActivityPattern: string | null = null;
+  private pendingFilterPayload: FilterPayload | null = null;
+  private hasDataReady = false;
 
   constructor(
     private app: App,
@@ -56,12 +59,6 @@ export class AnalysisController {
       }
     );
 
-    this.dataService = new DataService(
-      PluginState.getCache(),
-      this.dataManager,
-      PluginState.getSettings(),
-      () => this.handleDataReady()
-    );
     this.demoDataService = new DemoDataService(app, this.dataManager);
   }
 
@@ -133,15 +130,21 @@ export class AnalysisController {
   }
 
   private shouldOpenDemoMode(): boolean {
+    if (this.forceLiveDataOnInit || this.demoModeDisabledForSession) {
+      return false;
+    }
     // Only show demo mode if user has not configured insights
     return !DemoDataService.hasConfiguredInsights(PluginState.getSettings().chrono_analyser_config);
   }
 
   private async initializeDemoData(): Promise<void> {
     if (this.liveDataInitialized) {
-      this.dataService.destroy();
+      this.liveServiceUnsubscribe?.();
+      this.liveServiceUnsubscribe = null;
       this.liveDataInitialized = false;
     }
+    this.dataManager = new DataManager();
+    this.demoDataService = new DemoDataService(this.app, this.dataManager);
 
     const demoResult = await this.demoDataService.loadDemoData();
     this.demoModeActive = true;
@@ -161,26 +164,29 @@ export class AnalysisController {
 
     if (!PluginState.getCache().initialized) {
       showNotice(t('notices.chronoAnalyserInitializing'), 2000);
-      await PluginState.getCache().populate();
     }
 
+    const service = ChronoAnalysisService.getInstance();
+    this.dataManager = service.dataManager;
+    await service.ensureInitialized();
+
     if (!this.liveDataInitialized) {
-      this.dataService.initialize();
+      this.liveServiceUnsubscribe = service.subscribe(() => this.handleDataReady());
       this.liveDataInitialized = true;
-    } else {
-      this.handleDataReady();
     }
+    this.handleDataReady();
   }
 
   public destroy(): void {
+    Plotter.destroyChart(this.rootEl);
     this.uiService.destroy();
     if (this.liveDataInitialized) {
-      this.dataService.destroy();
+      this.liveServiceUnsubscribe?.();
+      this.liveServiceUnsubscribe = null;
       this.liveDataInitialized = false;
     }
   }
 
-  // disableDemoForSession is no longer used for demo toggle, but keep for completeness if needed elsewhere
   private async disableDemoForSession(): Promise<void> {
     this.demoModeDisabledForSession = true;
     this.demoModeActive = false;
@@ -189,13 +195,36 @@ export class AnalysisController {
     await this.initializeLiveData();
   }
 
+  public applyFilterPayload(payload: FilterPayload, options?: { forceLiveData?: boolean }): void {
+    if (options?.forceLiveData) {
+      this.forceLiveDataOnInit = true;
+    }
+    if (this.demoModeActive && options?.forceLiveData) {
+      this.pendingFilterPayload = payload;
+      void this.disableDemoForSession();
+      return;
+    }
+    if (!this.hasDataReady) {
+      this.pendingFilterPayload = payload;
+      return;
+    }
+    this.uiService.setControlPanelState(payload);
+  }
+
   private handleDataReady(): void {
+    this.hasDataReady = true;
     this.activeChartType = null;
     this.isChartRendered = false;
     this.uiService.populateFilterDataSources(
       () => this.dataManager.getKnownHierarchies(),
       () => this.dataManager.getKnownProjects()
     );
+    if (this.pendingFilterPayload) {
+      const payload = this.pendingFilterPayload;
+      this.pendingFilterPayload = null;
+      this.uiService.setControlPanelState(payload);
+      return;
+    }
     this.updateAnalysis();
   }
 
@@ -230,9 +259,11 @@ export class AnalysisController {
       }
     }
 
-    // REFACTOR: Tell DataManager to expand events for time-based charts
+    // REFACTOR: Tell DataManager to expand events for time-based charts or count metric
     const expandRecurring =
-      chartSpecificFilters.chart === 'time-series' || chartSpecificFilters.chart === 'activity';
+      chartSpecificFilters.chart === 'time-series' ||
+      chartSpecificFilters.chart === 'activity' ||
+      metric === 'count';
     const { records, totalHours, fileCount } = this.dataManager.getAnalyzedData(
       filters,
       null, // breakdown is handled by the chart strategy if needed
@@ -370,19 +401,42 @@ export class AnalysisController {
         );
         break;
       }
-      case 'time-series':
-        Plotter.renderTimeSeriesChart(this.rootEl, records, useReact, isNewChartType, metric);
+      case 'time-series': {
+        const stackingLevel = (chartSpecificFilters.stackingLevel ||
+          'hierarchy') as keyof TimeRecord;
+        const timeSeriesData = this.dataManager.prepareTimeSeriesData(records, {
+          granularity: chartSpecificFilters.granularity,
+          chartType: chartSpecificFilters.type,
+          stackingLevel,
+          metric
+        });
+        Plotter.renderTimeSeriesChart(this.rootEl, records, useReact, isNewChartType, metric, {
+          granularity: chartSpecificFilters.granularity,
+          timeSeriesType: chartSpecificFilters.type,
+          stackingLevel,
+          timeSeriesData
+        });
         break;
-      case 'activity':
+      }
+      case 'activity': {
+        const activityData = this.dataManager.prepareActivityPatternData(records, {
+          patternType: chartSpecificFilters.patternType,
+          metric
+        });
         Plotter.renderActivityPatternChart(
           this.rootEl,
           records,
           this.uiService.showDetailPopup,
           useReact,
           isNewChartType,
-          metric
+          metric,
+          {
+            patternType: chartSpecificFilters.patternType,
+            activityData
+          }
         );
         break;
+      }
       default:
         Plotter.renderChartMessage(this.rootEl, `Unknown chart type: ${newChartType}`);
         this.isChartRendered = false;

@@ -15,6 +15,7 @@ import type { AgentEngine } from '../core/AgentEngine';
 import type { AgentAuditLogger } from '../core/AgentAuditLogger';
 import type { AgentCalendarBridge } from '../tools/AgentCalendarBridge';
 import { AgentChatComponent } from './AgentChatComponent';
+import type { ManagedPlanTier } from '../infrastructure/managed/protocol/managedTypes';
 
 export class AgentWriteBar {
   private containerEl: HTMLElement;
@@ -28,7 +29,12 @@ export class AgentWriteBar {
     bridge: AgentCalendarBridge,
     onEventMutated?: () => void,
     onOpenSidebar?: (initialPrompt?: string) => void,
-    parentComponent?: Component
+    parentComponent?: Component,
+    beforeSend?: () => Promise<boolean>,
+    onOpenSettings?: () => void,
+    onSwitchToByok?: () => Promise<void>,
+    isManagedMode?: () => boolean,
+    getManagedPlanTier?: () => ManagedPlanTier | null
   ) {
     this.containerEl = containerEl;
     this.chatComponent = new AgentChatComponent(this.containerEl, {
@@ -41,7 +47,12 @@ export class AgentWriteBar {
       showClearBtn: true,
       showOpenPanelBtn: true,
       onEventMutated,
-      onOpenSidebar
+      onOpenSidebar,
+      beforeSend,
+      onOpenSettings,
+      onSwitchToByok,
+      isManagedMode,
+      getManagedPlanTier
     });
   }
 

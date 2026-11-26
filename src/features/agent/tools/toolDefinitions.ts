@@ -96,7 +96,7 @@ export const AGENT_TOOLS: ToolDefinition[] = [
     function: {
       name: 'browse_schedule_online',
       description:
-        'Fetches a public web page or online schedule (syllabus, sports fixture, conference timetable) via URL and returns clean, sanitized text for calendar extraction.',
+        'Fetches a user-provided external web page or online schedule (syllabus, timetable) via URL and returns clean text. Never use for plugin documentation.',
       parameters: {
         type: 'object',
         properties: {
@@ -106,6 +106,41 @@ export const AGENT_TOOLS: ToolDefinition[] = [
           }
         },
         required: ['url']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'lookup_plugin_docs',
+      description:
+        'Searches the local Full Calendar Remastered documentation index (no web access) for features, setup workflows, and official doc URLs.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description:
+              'Keywords or setup question (e.g. "daily note google calendar availability")'
+          },
+          category: {
+            type: 'string',
+            enum: [
+              'getting_started',
+              'calendars',
+              'features',
+              'chrono_analyser',
+              'embeds',
+              'events',
+              'views',
+              'settings',
+              'guides',
+              'reference',
+              'all'
+            ],
+            description: 'Optional documentation category to browse or scope search'
+          }
+        }
       }
     }
   },
@@ -271,6 +306,121 @@ export const AGENT_TOOLS: ToolDefinition[] = [
           }
         },
         required: ['calendarId', 'events']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_chrono_overview',
+      description:
+        'Returns Chrono Analyzer taxonomy: hierarchies, projects, categorization mode, logged date range, and Insight Groups.',
+      parameters: {
+        type: 'object',
+        properties: {}
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'analyze_time',
+      description:
+        'Runs Chrono Analyzer for exact totals, breakdowns, trends, activity patterns, or period comparisons, and embeds an interactive chart.',
+      parameters: {
+        type: 'object',
+        properties: {
+          analysisType: {
+            type: 'string',
+            enum: ['pie', 'sunburst', 'time-series', 'activity', 'compare'],
+            description: 'Chart or comparison type'
+          },
+          metric: {
+            type: 'string',
+            enum: ['duration', 'count'],
+            description: 'Measure hours (duration) or event count'
+          },
+          startDate: { type: 'string', description: 'Start date YYYY-MM-DD' },
+          endDate: { type: 'string', description: 'End date YYYY-MM-DD' },
+          compareStartDate: { type: 'string', description: 'Comparison period start YYYY-MM-DD' },
+          compareEndDate: { type: 'string', description: 'Comparison period end YYYY-MM-DD' },
+          hierarchy: { type: 'string', description: 'Filter by hierarchy/category' },
+          project: { type: 'string', description: 'Filter by project/subcategory' },
+          pattern: {
+            type: 'string',
+            description: 'Project/subcategory keyword filter (supports -exclude)'
+          },
+          breakdownBy: {
+            type: 'string',
+            enum: ['hierarchy', 'project', 'subproject'],
+            description: 'Pie breakdown field'
+          },
+          level: {
+            type: 'string',
+            enum: ['project', 'subproject'],
+            description: 'Sunburst depth'
+          },
+          granularity: {
+            type: 'string',
+            enum: ['daily', 'weekly', 'monthly'],
+            description: 'Time-series bucket'
+          },
+          timeSeriesType: {
+            type: 'string',
+            enum: ['line', 'stackedArea'],
+            description: 'Time-series style'
+          },
+          stackingLevel: {
+            type: 'string',
+            enum: ['hierarchy', 'project', 'subproject'],
+            description: 'Stack field for stackedArea'
+          },
+          patternType: {
+            type: 'string',
+            enum: ['dayOfWeek', 'hourOfDay', 'heatmapDOWvsHOD'],
+            description: 'Activity pattern view'
+          },
+          title: { type: 'string', description: 'Short chart title' },
+          embedChart: {
+            type: 'boolean',
+            description: 'Embed interactive chart in chat (default true)'
+          }
+        },
+        required: ['analysisType']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_chrono_insights',
+      description:
+        'Generates Chrono Analyzer insights (Global Snapshot, group distribution, and Productivity/Wellness persona insights).',
+      parameters: {
+        type: 'object',
+        properties: {}
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_weather_forecast',
+      description:
+        'Fetches the weather forecast for a date range (hourly for the next 3 days, daily summary beyond that) using the user’s configured location.',
+      parameters: {
+        type: 'object',
+        properties: {
+          startDate: {
+            type: 'string',
+            description: "ISO start date YYYY-MM-DD (e.g. '2026-09-09')"
+          },
+          endDate: {
+            type: 'string',
+            description: "ISO end date YYYY-MM-DD (e.g. '2026-09-12')"
+          }
+        },
+        required: ['startDate', 'endDate']
       }
     }
   }

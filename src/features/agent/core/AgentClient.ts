@@ -17,6 +17,23 @@
 import { requestUrl } from 'obsidian';
 import type { ChatMessage, ToolDefinition, ChatToolCall } from '../types';
 import type { AgentAuditLogger } from './AgentAuditLogger';
+import type {
+  ChatCompletionRequestConfig,
+  CompletionResult,
+  ConnectionTestResult,
+  IAgentClient,
+  StreamCallbacks
+} from '../domain/contracts/IAgentClient';
+import { AGENT_ABORT_ERROR_MESSAGE, raceWithAbort } from '../domain/abortUtils';
+import { parseRetryAfterHeaderMs, sanitizeChatMessages } from '../domain/httpUtils';
+import { type ParsedSseResult, SseChunkParser } from '../domain/sseParser';
+
+export type {
+  StreamCallbacks,
+  CompletionResult,
+  ChatCompletionRequestConfig,
+  ConnectionTestResult
+};
 
 export class AgentApiError extends Error {
   public status: number;
@@ -45,20 +62,7 @@ export interface AgentClientOptions {
   timeoutMs?: number;
 }
 
-export interface StreamCallbacks {
-  onChunk?: (contentDelta: string) => void;
-  onToolCallDelta?: (toolCalls: ChatToolCall[]) => void;
-  onRetry?: (attempt: number, maxRetries: number, delayMs: number, reason: string) => void;
-}
-
-export interface CompletionResult {
-  content: string;
-  toolCalls: ChatToolCall[];
-  durationMs: number;
-  tokenUsage?: { prompt: number; completion: number; total: number };
-}
-
-export class AgentClient {
+export class AgentClient implements IAgentClient {
   private options: AgentClientOptions;
   private logger?: AgentAuditLogger;
 
@@ -105,17 +109,8 @@ export class AgentClient {
       const rec = headers as Record<string, string>;
       header = rec['retry-after'] || rec['Retry-After'] || null;
     }
-    if (!header) return null;
-    const seconds = parseInt(header, 10);
-    if (!isNaN(seconds) && seconds >= 0) {
-      return seconds * 1000;
-    }
-    const date = Date.parse(header);
-    if (!isNaN(date)) {
-      const diff = date - Date.now();
-      return diff > 0 ? diff : null;
-    }
-    return null;
+    const parsed = parseRetryAfterHeaderMs(header);
+    return parsed !== undefined ? parsed : null;
   }
 
   private calculateBackoff(attempt: number, retryAfterMs: number | null): number {
@@ -161,20 +156,12 @@ export class AgentClient {
   private buildPayload(
     messages: ChatMessage[],
     tools: ToolDefinition[],
-    maxTokens?: number
+    maxTokens?: number,
+    stream?: boolean
   ): Record<string, unknown> {
     const payload: Record<string, unknown> = {
       model: this.options.model,
-      messages: messages.map(m => {
-        const base: Record<string, unknown> = {
-          role: m.role,
-          content: m.content
-        };
-        if (m.name) base.name = m.name;
-        if (m.tool_call_id) base.tool_call_id = m.tool_call_id;
-        if (m.tool_calls) base.tool_calls = m.tool_calls;
-        return base;
-      })
+      messages: sanitizeChatMessages(messages)
     };
 
     if (typeof this.options.temperature === 'number') {
@@ -188,34 +175,30 @@ export class AgentClient {
     if (maxTokens) {
       payload.max_tokens = maxTokens;
     }
+    if (stream === true) {
+      payload.stream = true;
+    }
     return payload;
   }
 
-  private extractErrorMessage(status: number, text?: string, json?: unknown): string {
-    if (json && typeof json === 'object') {
-      const obj = json as Record<string, unknown>;
-      if (obj.error && typeof obj.error === 'object') {
-        const errObj = obj.error as Record<string, unknown>;
-        if (errObj.message && typeof errObj.message === 'string') {
-          return errObj.message;
-        }
-      }
-      if (obj.message && typeof obj.message === 'string') {
-        return obj.message;
-      }
+  private extractMessageFromObject(obj: unknown): string | null {
+    if (!obj || typeof obj !== 'object') return null;
+    const record = obj as Record<string, unknown>;
+    if (record.error && typeof record.error === 'object') {
+      const errObj = record.error as Record<string, unknown>;
+      if (typeof errObj.message === 'string') return errObj.message;
     }
+    return typeof record.message === 'string' ? record.message : null;
+  }
+
+  private extractErrorMessage(status: number, text?: string, json?: unknown): string {
+    const fromJson = this.extractMessageFromObject(json);
+    if (fromJson) return fromJson;
+
     if (text && text.trim().length > 0) {
       try {
-        const parsed = JSON.parse(text) as Record<string, unknown>;
-        if (parsed.error && typeof parsed.error === 'object') {
-          const errObj = parsed.error as Record<string, unknown>;
-          if (errObj.message && typeof errObj.message === 'string') {
-            return errObj.message;
-          }
-        }
-        if (parsed.message && typeof parsed.message === 'string') {
-          return parsed.message;
-        }
+        const fromParsed = this.extractMessageFromObject(JSON.parse(text));
+        if (fromParsed) return fromParsed;
       } catch {
         // Not JSON text
       }
@@ -229,6 +212,25 @@ export class AgentClient {
     return /temperature.*deprecated|deprecated.*temperature|unsupported.*temperature|temperature.*not supported|invalid.*temperature/i.test(
       message
     );
+  }
+
+  private tryHealTemperatureRejection(
+    status: number,
+    text: string | undefined,
+    json: unknown,
+    payload: Record<string, unknown>,
+    contextLabel: string
+  ): boolean {
+    if (status !== 400 || !('temperature' in payload)) return false;
+    const errorDetail = this.extractErrorMessage(status, text, json);
+    if (!this.isTemperatureRejection(status, errorDetail)) return false;
+    this.logger?.warn(
+      `Endpoint rejected temperature parameter. Retrying ${contextLabel} without temperature...`,
+      { model: this.options.model }
+    );
+    delete payload.temperature;
+    delete this.options.temperature;
+    return true;
   }
 
   private handleHttpError(
@@ -261,25 +263,117 @@ export class AgentClient {
     );
   }
 
+  private async readSseStream(
+    body: ReadableStream<Uint8Array>,
+    callbacks?: StreamCallbacks,
+    signal?: AbortSignal
+  ): Promise<ParsedSseResult> {
+    const reader = body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    const parser = new SseChunkParser({ callbacks });
+
+    try {
+      while (true) {
+        if (signal?.aborted) {
+          throw new Error('Agent request was cancelled by user.');
+        }
+
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        if (value && value.byteLength > 0) {
+          parser.feed(decoder.decode(value, { stream: true }));
+        }
+      }
+
+      const tail = decoder.decode();
+      if (tail) {
+        parser.feed(tail);
+      }
+      parser.flush();
+      return parser.getResult();
+    } catch (err) {
+      await reader.cancel().catch(() => undefined);
+      throw err;
+    }
+  }
+
+  private parseBufferedSse(text: string, callbacks?: StreamCallbacks): ParsedSseResult {
+    const parser = new SseChunkParser({ callbacks });
+    parser.feed(text);
+    parser.flush();
+    return parser.getResult();
+  }
+
   private async executeHttp(
     url: string,
     headers: Record<string, string>,
     payload: Record<string, unknown>,
-    signal?: AbortSignal
-  ): Promise<{ status: number; text: string; json?: unknown; headers?: Record<string, string> }> {
+    options: {
+      signal?: AbortSignal;
+      callbacks?: StreamCallbacks;
+      hasEmitted?: () => boolean;
+    } = {}
+  ): Promise<{
+    status: number;
+    text: string;
+    json?: unknown;
+    headers?: Record<string, string>;
+    streamResult?: ParsedSseResult;
+  }> {
+    const { signal, callbacks, hasEmitted } = options;
+
     if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
       try {
+        const fetchHeaders =
+          payload.stream === true
+            ? { ...headers, Accept: 'text/event-stream, application/json' }
+            : headers;
         const response = await window.fetch(url, {
           method: 'POST',
-          headers,
+          headers: fetchHeaders,
           body: JSON.stringify(payload),
           signal
         });
         if (response) {
+          const respHeaders: Record<string, string> = {};
+          if (response.headers && typeof response.headers.forEach === 'function') {
+            response.headers.forEach((val, key) => {
+              respHeaders[key.toLowerCase()] = val;
+              respHeaders[key] = val;
+            });
+          }
+          const headerContentType =
+            typeof response.headers?.get === 'function'
+              ? response.headers.get('content-type') || ''
+              : respHeaders['content-type'] || '';
+          const contentType = headerContentType.toLowerCase();
+          const status =
+            typeof response.status === 'number' ? response.status : response.ok ? 200 : 500;
+
+          if (
+            status === 200 &&
+            response.body &&
+            typeof response.body.getReader === 'function' &&
+            contentType.includes('text/event-stream')
+          ) {
+            const streamResult = await this.readSseStream(response.body, callbacks, signal);
+            return { status, text: '', headers: respHeaders, streamResult };
+          }
+
           let text = '';
           let json: unknown = null;
           if (typeof response.text === 'function') {
             text = await response.text().catch(() => '');
+            if (
+              status === 200 &&
+              text &&
+              (contentType.includes('text/event-stream') || text.trimStart().startsWith('data:'))
+            ) {
+              const streamResult = this.parseBufferedSse(text, callbacks);
+              return { status, text, headers: respHeaders, streamResult };
+            }
             if (text) {
               try {
                 json = JSON.parse(text);
@@ -295,35 +389,45 @@ export class AgentClient {
               /* ignore json parse failure */
             }
           }
-          const respHeaders: Record<string, string> = {};
-          if (response.headers && typeof response.headers.forEach === 'function') {
-            response.headers.forEach((val, key) => {
-              respHeaders[key.toLowerCase()] = val;
-              respHeaders[key] = val;
-            });
-          }
-          const status =
-            typeof response.status === 'number' ? response.status : response.ok ? 200 : 500;
+
           return { status, text, json, headers: respHeaders };
         }
       } catch (err) {
-        if (signal?.aborted) throw err;
+        if (signal?.aborted || hasEmitted?.()) {
+          throw err;
+        }
+        if (!(err instanceof TypeError)) {
+          throw err;
+        }
         this.logger?.warn('Fetch encountered CORS or network error, falling back to requestUrl', {
           url
         });
       }
     }
 
-    const res = await requestUrl({
-      url,
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-      throw: false
-    });
+    const fallbackPayload = payload.stream === true ? { ...payload, stream: false } : payload;
+    const res = await raceWithAbort(
+      requestUrl({
+        url,
+        method: 'POST',
+        headers,
+        body: JSON.stringify(fallbackPayload),
+        throw: false
+      }),
+      signal
+    );
+    if (signal?.aborted) {
+      throw new Error(AGENT_ABORT_ERROR_MESSAGE);
+    }
+    const status = res?.status ?? 200;
+    const text = res?.text ?? '';
+    if (status === 200 && text.trimStart().startsWith('data:')) {
+      const streamResult = this.parseBufferedSse(text, callbacks);
+      return { status, text, headers: res?.headers ?? {}, streamResult };
+    }
     return {
-      status: res?.status ?? 200,
-      text: res?.text ?? '',
+      status,
+      text,
       json: res?.json ?? null,
       headers: res?.headers ?? {}
     };
@@ -347,25 +451,17 @@ export class AgentClient {
       });
 
       // Auto-healing fallback: if 400 specifically rejects temperature, retry once without it
-      if (res && res.status === 400 && 'temperature' in payload) {
-        const text = res?.text ?? '';
-        const json: unknown = res?.json;
-        const errorDetail = this.extractErrorMessage(res.status, text, json);
-        if (this.isTemperatureRejection(res.status, errorDetail)) {
-          this.logger?.warn(
-            'Endpoint rejected temperature parameter. Retrying test ping without temperature...',
-            { model: this.options.model }
-          );
-          delete payload.temperature;
-          delete this.options.temperature;
-          res = await requestUrl({
-            url,
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload),
-            throw: false
-          });
-        }
+      if (
+        res &&
+        this.tryHealTemperatureRejection(res.status, res.text, res.json, payload, 'test ping')
+      ) {
+        res = await requestUrl({
+          url,
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          throw: false
+        });
       }
 
       if (res && res.status === 200) {
@@ -396,35 +492,64 @@ export class AgentClient {
   public async chatCompletion(
     messages: ChatMessage[],
     tools: ToolDefinition[],
-    config: {
-      stream?: boolean;
-      maxTokens?: number;
-      signal?: AbortSignal;
-      callbacks?: StreamCallbacks;
-    } = {}
+    config: ChatCompletionRequestConfig = {}
   ): Promise<CompletionResult> {
     const url = this.normalizeUrl(this.options.endpointUrl);
     const maxRetries = this.options.maxRetries ?? 3;
-    const payload = this.buildPayload(messages, tools, config.maxTokens);
+    const payload = this.buildPayload(messages, tools, config.maxTokens, config.stream === true);
     const headers = this.buildHeaders();
     const startTime = Date.now();
     let attempt = 0;
 
     while (attempt <= maxRetries) {
       if (config.signal?.aborted) {
-        throw new Error('Agent request was cancelled by user.');
+        throw new Error(AGENT_ABORT_ERROR_MESSAGE);
       }
 
+      let hasEmittedChunk = false;
+      const wrappedCallbacks: StreamCallbacks = {
+        onChunk: delta => {
+          hasEmittedChunk = true;
+          config.callbacks?.onChunk?.(delta);
+        },
+        onReasoningDelta: delta => {
+          hasEmittedChunk = true;
+          config.callbacks?.onReasoningDelta?.(delta);
+        },
+        onToolCallDelta: toolCalls => {
+          hasEmittedChunk = true;
+          config.callbacks?.onToolCallDelta?.(toolCalls);
+        },
+        onRetry: config.callbacks?.onRetry
+      };
+
       try {
-        const res = await this.executeHttp(url, headers, payload, config.signal);
+        const res = await this.executeHttp(url, headers, payload, {
+          signal: config.signal,
+          callbacks: wrappedCallbacks,
+          hasEmitted: () => hasEmittedChunk
+        });
 
         // 1. Success (200)
         if (res.status === 200) {
+          if (config.signal?.aborted) {
+            throw new Error(AGENT_ABORT_ERROR_MESSAGE);
+          }
+          const durationMs = Date.now() - startTime;
+          if (res.streamResult) {
+            return {
+              content: res.streamResult.content,
+              toolCalls: res.streamResult.toolCalls,
+              durationMs,
+              finishReason: res.streamResult.finishReason,
+              ...(res.streamResult.tokenUsage ? { tokenUsage: res.streamResult.tokenUsage } : {})
+            };
+          }
+
           const json = (res.json ?? (res.text ? JSON.parse(res.text) : {})) as Record<
             string,
             unknown
           >;
-          const durationMs = Date.now() - startTime;
           const result = this.parseStandardResponse(json, durationMs);
           if (config.callbacks?.onChunk && result.content) {
             config.callbacks.onChunk(result.content);
@@ -455,24 +580,23 @@ export class AgentClient {
         }
 
         // 3. Auto-healing fallback: if 400 specifically rejects temperature, retry once without it
-        if (res.status === 400 && 'temperature' in payload) {
-          const errorDetail = this.extractErrorMessage(res.status, res.text, res.json);
-          if (this.isTemperatureRejection(res.status, errorDetail)) {
-            this.logger?.warn(
-              'Endpoint rejected temperature parameter. Retrying chat completion without temperature...',
-              { model: this.options.model }
-            );
-            delete payload.temperature;
-            delete this.options.temperature;
-            continue;
-          }
+        if (
+          this.tryHealTemperatureRejection(
+            res.status,
+            res.text,
+            res.json,
+            payload,
+            'chat completion'
+          )
+        ) {
+          continue;
         }
 
         // 4. Non-retryable error
         const errorDetail = this.extractErrorMessage(res.status, res.text, res.json);
         this.handleHttpError(res.status, url, res.text, errorDetail);
       } catch (err) {
-        if (config.signal?.aborted || err instanceof AgentApiError) {
+        if (config.signal?.aborted || err instanceof AgentApiError || hasEmittedChunk) {
           throw err;
         }
 

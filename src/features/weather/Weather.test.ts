@@ -7,6 +7,8 @@
 import {
   fetchWeatherForecast,
   clearWeatherCache,
+  isValidIsoDate,
+  pruneHourlyBeyondDays,
   WEATHER_MAP,
   formatTemp,
   formatTempRange
@@ -193,6 +195,80 @@ describe('Weather Service Feature', () => {
     it('formats Fahrenheit temperature ranges correctly', () => {
       expect(formatTempRange(12.0, 22.5, 'F')).toBe('54-73°F');
       expect(formatTempRange(-5.0, 5.0, 'F')).toBe('23-41°F');
+    });
+  });
+
+  describe('pruneHourlyBeyondDays', () => {
+    it('retains hourly forecasts through +3 days and strips them from +4 days onward', () => {
+      const sampleHourly = [
+        {
+          time: '09:00',
+          temp: 16,
+          apparentTemp: 15,
+          humidity: 60,
+          precipProb: 10,
+          windSpeed: 8,
+          emoji: '☀️',
+          desc: 'Clear sky'
+        }
+      ];
+      const forecast = {
+        '2026-06-01': {
+          emoji: '☀️',
+          desc: 'Clear sky',
+          maxTemp: 22,
+          minTemp: 12,
+          hourly: sampleHourly
+        },
+        '2026-06-04': {
+          emoji: '⛅',
+          desc: 'Partly cloudy',
+          maxTemp: 20,
+          minTemp: 11,
+          hourly: sampleHourly
+        },
+        '2026-06-05': { emoji: '🌧️', desc: 'Rain', maxTemp: 17, minTemp: 10, hourly: sampleHourly }
+      };
+
+      const result = pruneHourlyBeyondDays(forecast, '2026-06-01', 3);
+      expect(result['2026-06-01'].hourly).toHaveLength(1);
+      expect(result['2026-06-04'].hourly).toHaveLength(1);
+      expect(result['2026-06-05'].hourly).toBeUndefined();
+      expect(result['2026-06-05'].maxTemp).toBe(17);
+      expect(result['2026-06-05'].desc).toBe('Rain');
+    });
+  });
+
+  describe('isValidIsoDate and overlapping cache hits', () => {
+    it('rejects impossible calendar dates', () => {
+      expect(isValidIsoDate('2026-02-28')).toBe(true);
+      expect(isValidIsoDate('2026-02-30')).toBe(false);
+      expect(isValidIsoDate('2026-13-01')).toBe(false);
+      expect(isValidIsoDate('2026-6-1')).toBe(false);
+    });
+
+    it('serves overlapping sub-range requests from per-location date cache without re-fetching', async () => {
+      mockRequestUrl.mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        arrayBuffer: new ArrayBuffer(0),
+        text: '',
+        json: {
+          daily: {
+            time: ['2026-05-29', '2026-05-30'],
+            weather_code: [0, 3],
+            temperature_2m_max: [22.5, 18.2],
+            temperature_2m_min: [12.0, 11.5]
+          }
+        }
+      });
+
+      const full = await fetchWeatherForecast(50.08, 14.43, '2026-05-29', '2026-05-30');
+      const sub = await fetchWeatherForecast(50.08, 14.43, '2026-05-30', '2026-05-30');
+
+      expect(full?.['2026-05-30']).toEqual(sub?.['2026-05-30']);
+      expect(Object.keys(sub ?? {})).toEqual(['2026-05-30']);
+      expect(mockRequestUrl).toHaveBeenCalledTimes(1);
     });
   });
 });

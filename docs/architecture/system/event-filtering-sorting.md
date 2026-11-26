@@ -11,7 +11,7 @@ Historically, different modules computed matching, sorting, and filtering using 
 
 In the [Layer Model](overview.md#layer-model-at-a-glance), the engine sits in the **Core Layer**, serving as a stateless utility for both state orchestration and presentation layers:
 
-* **Presentation Layer**: Used by [ViewSearchHandler](interop.md) and [CodeBlockProcessor](../../user/features/embedded_calendars.md) to shape the rendered DOM elements without duplicating business logic.
+* **Presentation Layer**: Used by [ViewSearchHandler](interop.md) and [CodeBlockProcessor](../../user/embeds/index.md) to shape the rendered DOM elements without duplicating business logic.
 * **Core Layer Orchestration**: Used by [EventCache](eventcache.md) and [TimeEngine](core-systems.md) to calculate occurrences and filters before broadcasting state changes.
 
 ```mermaid
@@ -91,7 +91,7 @@ To maintain 100% backward compatibility, the text search component supports thre
 |---|---|---|---|
 | **`default`** | [Main Calendar Search](interop.md) | `title`, `category`, `subCategory`, `description`, `filePath` | **Substring match** for all words; for tokens $\ge 4$ characters, checks if any haystack word has an **edit-distance $\le 1$** (fuzzy keyword matching). |
 | **`backlog`** | [Unscheduled Tasks Backlog](../calendars/tasks-integration.md) | `title`, `subtitle` (filePath:line), `calendarName`, and base file name | **Substring match** or **fuzzy character-subsequence match** (characters in correct order) on any of the haystack components. |
-| **`embedded`** | [Embedded Codeblocks](../../user/features/embedded_calendars.md) (`tagFilter`) | `title`, `description`, `category`, `subCategory` | Case-insensitive **substring match** check. |
+| **`embedded`** | [Embedded Codeblocks](../../user/embeds/deep_dive.md) (`tagFilter`) | `title`, `description`, `category`, `subCategory` | Case-insensitive **substring match** check. |
 
 ---
 

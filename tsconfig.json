@@ -35,6 +35,7 @@
 		"coverage",
 		"web",
 		"obsidian-dev-vault",
+		"externals",
 		"**/*.min.js"
 	]
 }

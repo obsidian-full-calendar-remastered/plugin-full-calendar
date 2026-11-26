@@ -9,7 +9,6 @@
  * @license See LICENSE.md
  */
 
-import * as React from 'react';
 import { useState } from 'react';
 import { AutocompleteInput } from '../../../ui/components/forms/AutocompleteInput';
 import { getNextColor } from '../../../ui/components/colors';

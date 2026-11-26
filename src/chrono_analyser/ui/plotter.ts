@@ -8,12 +8,29 @@ import {
   TimeRecord,
   SunburstData,
   PieData,
+  TimeSeriesData,
+  ActivityPatternData,
   PLOTLY_BASE_LAYOUT,
   PLOTLY_LIGHT_THEME,
   PLOTLY_DARK_THEME,
   ProcessingError
 } from '../data/types';
 import * as Utils from '../data/utils';
+import { DataManager } from '../data/DataManager';
+import { PluginState } from '../../core/PluginState';
+
+export interface PlotterRenderOptions {
+  variant?: 'full' | 'compact';
+  title?: string;
+  breakdownLabel?: string;
+  granularity?: 'daily' | 'weekly' | 'monthly';
+  timeSeriesType?: 'line' | 'stackedArea';
+  stackingLevel?: keyof TimeRecord;
+  patternType?: 'dayOfWeek' | 'hourOfDay' | 'heatmapDOWvsHOD';
+  height?: number;
+  timeSeriesData?: TimeSeriesData;
+  activityData?: ActivityPatternData;
+}
 
 interface DetailPopupContextBase {
   [key: string]: unknown;
@@ -87,23 +104,6 @@ function safeCreateDiv(element: HTMLElement, options?: CreateOptions): HTMLDivEl
   return safeCreateEl(element, 'div', options) as HTMLDivElement;
 }
 
-function formatCategoryValue(value: TimeRecord[keyof TimeRecord], label: string): string {
-  if (value === undefined || value === null || value === '') {
-    return `(No ${label})`;
-  }
-
-  if (typeof value === 'object') {
-    try {
-      return JSON.stringify(value);
-    } catch (error) {
-      console.error('[ChronoAnalyzer] Failed to stringify category value:', error);
-      return `(No ${label})`;
-    }
-  }
-
-  return String(value);
-}
-
 function setupPlotlyEvents(
   element: HTMLElement,
   eventType: string,
@@ -117,51 +117,123 @@ function setupPlotlyEvents(
   maybe.on?.(eventType, handler);
 }
 
-function debounce<A extends unknown[]>(fn: (...args: A) => void, delay: number) {
-  let timeout: number | null = null;
-  return (...args: A): void => {
-    if (timeout !== null) {
-      window.clearTimeout(timeout);
+const pendingResizeElements = new Set<HTMLElement>();
+let resizeFlushTimer: number | null = null;
+
+function scheduleChartResize(element: HTMLElement): void {
+  pendingResizeElements.add(element);
+  if (resizeFlushTimer !== null) {
+    window.clearTimeout(resizeFlushTimer);
+  }
+  resizeFlushTimer = window.setTimeout(() => {
+    resizeFlushTimer = null;
+    const elements = Array.from(pendingResizeElements);
+    pendingResizeElements.clear();
+    if (!window.Plotly) return;
+    for (const el of elements) {
+      if (el.isConnected && el.offsetParent !== null) {
+        Plotly.Plots.resize(el);
+      }
     }
-    timeout = window.setTimeout(() => fn(...args), delay);
-  };
+  }, 100);
 }
 
-const debouncedResize = debounce((element: HTMLElement) => {
-  Plotly.Plots.resize(element);
-}, 100);
+const chartResizeObserver =
+  typeof ResizeObserver !== 'undefined'
+    ? new ResizeObserver(entries => {
+        for (const entry of entries) {
+          const element = entry.target as HTMLElement;
+          if (element.offsetParent !== null) {
+            scheduleChartResize(element);
+          }
+        }
+      })
+    : null;
 
-const chartResizeObserver = new ResizeObserver(entries => {
-  for (const entry of entries) {
-    const element = entry.target as HTMLElement;
-    if (element.offsetParent !== null) {
-      debouncedResize(element);
-    }
+const observedCharts = new Set<HTMLElement>();
+let plotterCleanupRegistered = false;
+
+export function cleanupPlotterObservers(): void {
+  if (resizeFlushTimer !== null) {
+    window.clearTimeout(resizeFlushTimer);
+    resizeFlushTimer = null;
   }
-});
-
-let currentlyObservedChart: HTMLElement | null = null;
+  pendingResizeElements.clear();
+  for (const el of observedCharts) {
+    chartResizeObserver?.unobserve(el);
+  }
+  observedCharts.clear();
+  plotterCleanupRegistered = false;
+}
 
 function manageChartResizeObserver(element: HTMLElement) {
-  if (currentlyObservedChart) {
-    chartResizeObserver.unobserve(currentlyObservedChart);
+  if (!plotterCleanupRegistered) {
+    plotterCleanupRegistered = true;
+    PluginState.registerCleanup(() => cleanupPlotterObservers());
   }
-  chartResizeObserver.observe(element);
-  currentlyObservedChart = element;
+  if (chartResizeObserver && !observedCharts.has(element)) {
+    chartResizeObserver.observe(element);
+    observedCharts.add(element);
+  }
+}
+
+export function destroyChart(rootEl: HTMLElement): void {
+  const candidates = [
+    rootEl.querySelector<HTMLElement>('.js-plotly-plot'),
+    rootEl.querySelector<HTMLElement>('.sunburst-chart-div'),
+    rootEl.querySelector<HTMLElement>('#mainChart')
+  ];
+  for (const el of candidates) {
+    if (!el) continue;
+    pendingResizeElements.delete(el);
+    if (observedCharts.has(el)) {
+      chartResizeObserver?.unobserve(el);
+      observedCharts.delete(el);
+    }
+    if (window.Plotly) {
+      try {
+        Plotly.purge(el);
+      } catch {
+        // Ignore purge errors on detached elements
+      }
+    }
+  }
 }
 
 export function renderChartMessage(rootEl: HTMLElement, message: string) {
   const mainChartEl = rootEl.querySelector<HTMLElement>('#mainChart');
   if (!mainChartEl) return;
 
-  if (currentlyObservedChart) {
-    chartResizeObserver.unobserve(currentlyObservedChart);
-    currentlyObservedChart = null;
-  }
-  Plotly.purge(mainChartEl);
+  destroyChart(rootEl);
 
   safeEmpty(mainChartEl);
   safeCreateEl(mainChartEl, 'p', { cls: 'chart-message', text: message });
+}
+
+function resolveThemeColors(ownerDocument: Document): {
+  textColor: string;
+  borderColor: string;
+  bgColor: string;
+} {
+  const isDarkMode = ownerDocument.body.classList.contains('theme-dark');
+  const fallbackText = isDarkMode ? '#dcddde' : '#2e3338';
+  const fallbackBorder = isDarkMode ? '#3a3a3a' : '#d4d4d4';
+  const fallbackBg = isDarkMode ? '#1e1e1e' : '#ffffff';
+
+  try {
+    const view = ownerDocument.defaultView;
+    if (!view || typeof view.getComputedStyle !== 'function') {
+      return { textColor: fallbackText, borderColor: fallbackBorder, bgColor: fallbackBg };
+    }
+    const styles = view.getComputedStyle(ownerDocument.body);
+    return {
+      textColor: styles.getPropertyValue('--text-normal').trim() || fallbackText,
+      borderColor: styles.getPropertyValue('--background-modifier-border').trim() || fallbackBorder,
+      bgColor: styles.getPropertyValue('--background-primary').trim() || fallbackBg
+    };
+  } catch {
+    return { textColor: fallbackText, borderColor: fallbackBorder, bgColor: fallbackBg };
+  }
 }
 
 function getThemedLayout(
@@ -170,20 +242,78 @@ function getThemedLayout(
 ): Partial<Plotly.Layout> {
   const isDarkMode = ownerDocument.body.classList.contains('theme-dark');
   const theme = isDarkMode ? PLOTLY_DARK_THEME : PLOTLY_LIGHT_THEME;
-  return { ...PLOTLY_BASE_LAYOUT, ...theme, ...chartLayout };
+  const { textColor, borderColor } = resolveThemeColors(ownerDocument);
+  return {
+    ...PLOTLY_BASE_LAYOUT,
+    ...theme,
+    font: {
+      ...PLOTLY_BASE_LAYOUT.font,
+      ...theme.font,
+      color: textColor
+    },
+    xaxis: {
+      ...theme.xaxis,
+      gridcolor: borderColor,
+      linecolor: borderColor,
+      ...chartLayout.xaxis
+    },
+    yaxis: {
+      ...theme.yaxis,
+      gridcolor: borderColor,
+      linecolor: borderColor,
+      ...chartLayout.yaxis
+    },
+    legend: {
+      ...theme.legend,
+      bordercolor: borderColor,
+      ...chartLayout.legend
+    },
+    ...chartLayout,
+    ...(chartLayout.xaxis
+      ? {
+          xaxis: {
+            ...theme.xaxis,
+            gridcolor: borderColor,
+            linecolor: borderColor,
+            ...chartLayout.xaxis
+          }
+        }
+      : {}),
+    ...(chartLayout.yaxis
+      ? {
+          yaxis: {
+            ...theme.yaxis,
+            gridcolor: borderColor,
+            linecolor: borderColor,
+            ...chartLayout.yaxis
+          }
+        }
+      : {})
+  };
 }
 
 function plotChart(
   mainChartEl: HTMLElement,
   data: Plotly.Data[],
   layout: Partial<Plotly.Layout>,
-  useReact: boolean
+  useReact: boolean,
+  options?: PlotterRenderOptions
 ) {
-  const finalLayout = getThemedLayout(layout, mainChartEl.ownerDocument);
+  const isCompact = options?.variant === 'compact';
+  const heightOverride = options?.height ?? (isCompact ? 260 : undefined);
+  const mergedLayout: Partial<Plotly.Layout> = {
+    ...layout,
+    ...(heightOverride ? { height: heightOverride } : {})
+  };
+  const finalLayout = getThemedLayout(mergedLayout, mainChartEl.ownerDocument);
+  const config: Partial<Plotly.Config> = isCompact
+    ? { responsive: true, displayModeBar: false }
+    : { responsive: true };
+
   if (useReact) {
-    void Plotly.react(mainChartEl, data, finalLayout, { responsive: true });
+    void Plotly.react(mainChartEl, data, finalLayout, config);
   } else {
-    void Plotly.newPlot(mainChartEl, data, finalLayout, { responsive: true });
+    void Plotly.newPlot(mainChartEl, data, finalLayout, config);
   }
   manageChartResizeObserver(mainChartEl);
 }
@@ -194,41 +324,49 @@ export function renderPieChartDisplay(
   showDetailPopup: ShowDetailPopupFn,
   useReact: boolean,
   isNewChartType: boolean,
-  metric: 'duration' | 'count'
+  metric: 'duration' | 'count',
+  options?: PlotterRenderOptions
 ) {
   const mainChartEl = rootEl.querySelector<HTMLElement>('#mainChart');
   if (!mainChartEl) return;
 
   if (isNewChartType) {
-    Plotly.purge(mainChartEl);
+    destroyChart(rootEl);
     safeEmpty(mainChartEl);
   }
 
+  const isCompact = options?.variant === 'compact';
+  const { bgColor } = resolveThemeColors(mainChartEl.ownerDocument);
   const levelSelect = rootEl.querySelector<HTMLSelectElement>('#levelSelect_pie');
-  const chartTitleText = levelSelect
-    ? levelSelect.selectedOptions[0].text.split('(')[0].trim()
-    : 'Category';
+  const chartTitleText =
+    options?.breakdownLabel ||
+    (levelSelect ? levelSelect.selectedOptions[0].text.split('(')[0].trim() : 'Category');
   const data: Plotly.Data[] = [
     {
       type: 'pie',
       labels: Array.from(pieData.hours.keys()),
       values: Array.from(pieData.hours.values()),
-      textinfo: 'label+percent',
-      textposition: 'outside',
+      textinfo: isCompact ? 'percent' : 'label+percent',
+      textposition: isCompact ? 'inside' : 'outside',
       hoverinfo: 'label+value+percent',
-      marker: { line: { color: 'white', width: 2 } }
+      marker: { line: { color: bgColor, width: 2 } }
     }
   ];
 
   const layout: Partial<Plotly.Layout> = {
-    title: {
-      text: `${metric === 'count' ? 'Event Count' : 'Time'} Distribution by ${chartTitleText}`
-    },
+    title: options?.title
+      ? { text: options.title }
+      : isCompact
+        ? undefined
+        : {
+            text: `${metric === 'count' ? 'Event Count' : 'Time'} Distribution by ${chartTitleText}`
+          },
     showlegend: true,
-    margin: { l: 40, r: 40, t: 60, b: 80 }
+    ...(isCompact ? { legend: { orientation: 'h', y: -0.15 } } : {}),
+    margin: isCompact ? { l: 12, r: 12, t: 16, b: 44 } : { l: 40, r: 40, t: 60, b: 80 }
   };
 
-  plotChart(mainChartEl, data, layout, useReact);
+  plotChart(mainChartEl, data, layout, useReact, options);
 
   // Set up event handling with proper typing
   setupPlotlyEvents(mainChartEl, 'plotly_click', (eventData: unknown) => {
@@ -240,6 +378,7 @@ export function renderPieChartDisplay(
     if (recordsForCategory) {
       showDetailPopup(categoryName, recordsForCategory, {
         type: 'pie',
+        metric,
         value: typeof point.value === 'number' ? point.value : Number(point.value) || null
       });
     }
@@ -252,13 +391,14 @@ export function renderSunburstChartDisplay(
   showDetailPopup: ShowDetailPopupFn,
   useReact: boolean,
   isNewChartType: boolean,
-  metric: 'duration' | 'count'
+  metric: 'duration' | 'count',
+  options?: PlotterRenderOptions
 ) {
   const mainContainerEl = rootEl.querySelector<HTMLElement>('#mainChart');
   if (!mainContainerEl) return;
 
   if (isNewChartType) {
-    Plotly.purge(mainContainerEl);
+    destroyChart(rootEl);
     safeEmpty(mainContainerEl);
     const wrapper = safeCreateDiv(mainContainerEl, { cls: 'sunburst-wrapper' });
     safeCreateDiv(wrapper, { cls: 'sunburst-chart-div' });
@@ -272,6 +412,7 @@ export function renderSunburstChartDisplay(
   const legendEl = mainContainerEl.querySelector<HTMLElement>('.custom-legend');
   if (!chartEl || !legendEl) return;
 
+  const isCompact = options?.variant === 'compact';
   const data: Plotly.Data[] = [
     {
       type: 'sunburst',
@@ -286,12 +427,16 @@ export function renderSunburstChartDisplay(
   ];
 
   const layout: Partial<Plotly.Layout> = {
-    title: { text: metric === 'count' ? 'Event Count Breakdown' : 'Time Breakdown' },
-    margin: { l: 0, r: 0, b: 0, t: 40 },
+    title: options?.title
+      ? { text: options.title }
+      : isCompact
+        ? undefined
+        : { text: metric === 'count' ? 'Event Count Breakdown' : 'Time Breakdown' },
+    margin: isCompact ? { l: 8, r: 8, b: 8, t: 16 } : { l: 0, r: 0, b: 0, t: 40 },
     showlegend: false
   };
 
-  plotChart(chartEl, data, layout, useReact);
+  plotChart(chartEl, data, layout, useReact, options);
   if (legendEl) {
     safeEmpty(legendEl);
   }
@@ -304,6 +449,7 @@ export function renderSunburstChartDisplay(
     if (recordsForPoint) {
       showDetailPopup(String(point.label), recordsForPoint, {
         type: 'sunburst',
+        metric,
         value: typeof point.value === 'number' ? point.value : Number(point.value) || null
       });
     }
@@ -315,12 +461,13 @@ export function renderTimeSeriesChart(
   filteredRecords: TimeRecord[],
   useReact: boolean,
   isNewChartType: boolean,
-  metric: 'duration' | 'count'
+  metric: 'duration' | 'count',
+  options?: PlotterRenderOptions
 ) {
   const mainChartEl = rootEl.querySelector<HTMLElement>('#mainChart');
   if (!mainChartEl) return;
   if (isNewChartType) {
-    Plotly.purge(mainChartEl);
+    destroyChart(rootEl);
     safeEmpty(mainChartEl);
   }
 
@@ -329,94 +476,72 @@ export function renderTimeSeriesChart(
     return;
   }
 
-  const granularity = rootEl.querySelector<HTMLSelectElement>(
-    '#timeSeriesGranularitySelect'
-  )?.value;
-  const chartType = rootEl.querySelector<HTMLSelectElement>('#timeSeriesTypeSelect')?.value;
-  const stackingLevel = rootEl.querySelector<HTMLSelectElement>('#timeSeriesStackingLevelSelect')
-    ?.value as keyof TimeRecord;
+  const granularity = (options?.granularity ||
+    rootEl.querySelector<HTMLSelectElement>('#timeSeriesGranularitySelect')?.value) as
+    'daily' | 'weekly' | 'monthly' | undefined;
+  const chartType = (options?.timeSeriesType ||
+    rootEl.querySelector<HTMLSelectElement>('#timeSeriesTypeSelect')?.value) as
+    'line' | 'stackedArea' | undefined;
+  const stackingLevel = (options?.stackingLevel ||
+    rootEl.querySelector<HTMLSelectElement>('#timeSeriesStackingLevelSelect')?.value) as
+    keyof TimeRecord | undefined;
   if (!granularity || !chartType || !stackingLevel) return;
 
-  const dataByPeriod = new Map<string, { total: number; categories: { [key: string]: number } }>();
+  const tsData =
+    options?.timeSeriesData ??
+    new DataManager().prepareTimeSeriesData(filteredRecords, {
+      granularity,
+      chartType,
+      stackingLevel,
+      metric
+    });
 
-  // REFACTORED: Simple, unified loop. All records are now dated instances.
-  filteredRecords.forEach(record => {
-    if (!record.date || isNaN(record.date.getTime())) return;
-    const value = metric === 'count' ? 1 : record._effectiveDurationInPeriod || 0;
-    if (metric === 'duration' && value <= 0) return;
-
-    let periodKey: string | null;
-    if (granularity === 'daily') periodKey = Utils.getISODate(record.date);
-    else if (granularity === 'weekly') {
-      periodKey = Utils.getISODate(Utils.getWeekStartDate(record.date));
-    } else periodKey = Utils.getISODate(Utils.getMonthStartDate(record.date));
-
-    if (!periodKey) return;
-
-    if (!dataByPeriod.has(periodKey)) dataByPeriod.set(periodKey, { total: 0, categories: {} });
-    const periodData = dataByPeriod.get(periodKey);
-    if (!periodData) return;
-    periodData.total += value;
-
-    if (chartType === 'stackedArea') {
-      const category = formatCategoryValue(record[stackingLevel], stackingLevel);
-      periodData.categories[category] = (periodData.categories[category] || 0) + value;
-    }
-  });
-
-  const sortedPeriods = Array.from(dataByPeriod.keys()).sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime()
-  );
-  const traces: Partial<Plotly.PlotData>[] = [];
-
-  if (sortedPeriods.length === 0) {
+  if (tsData.periods.length === 0) {
     renderChartMessage(rootEl, 'No data points to plot for Time-Series.');
     return;
   }
 
+  const traces: Partial<Plotly.PlotData>[] = [];
   if (chartType === 'line') {
     traces.push({
-      x: sortedPeriods,
-      y: sortedPeriods.map(p => Number((dataByPeriod.get(p)?.total ?? 0).toFixed(2))),
+      x: tsData.periods,
+      y: tsData.totals,
       type: 'scatter',
       mode: 'lines+markers',
       name: metric === 'count' ? 'Total Events' : 'Total Hours'
     });
   } else {
-    const allCategories = new Set<string>();
-    sortedPeriods.forEach(p =>
-      Object.keys(dataByPeriod.get(p)?.categories ?? {}).forEach(cat => allCategories.add(cat))
-    );
-
-    Array.from(allCategories)
-      .sort()
-      .forEach(category => {
-        traces.push({
-          x: sortedPeriods,
-          y: sortedPeriods.map(p =>
-            Number((dataByPeriod.get(p)?.categories[category] || 0).toFixed(2))
-          ),
-          type: 'scatter',
-          mode: 'lines',
-          stackgroup: 'one',
-          name: category,
-          hoverinfo: 'x+y+name'
-        });
+    for (const [category, values] of Object.entries(tsData.categories)) {
+      traces.push({
+        x: tsData.periods,
+        y: values,
+        type: 'scatter',
+        mode: 'lines',
+        stackgroup: 'one',
+        name: category,
+        hoverinfo: 'x+y+name'
       });
+    }
   }
 
+  const isCompact = options?.variant === 'compact';
   const layout: Partial<Plotly.Layout> = {
-    title: {
-      text: `${metric === 'count' ? 'Event Count' : 'Time Spent'} (${granularity}) - ${
-        chartType === 'line' ? 'Overall Trend' : `Stacked by ${stackingLevel}`
-      }`
-    },
-    xaxis: { title: { text: 'Period' }, type: 'date' },
+    title: options?.title
+      ? { text: options.title }
+      : isCompact
+        ? undefined
+        : {
+            text: `${metric === 'count' ? 'Event Count' : 'Time Spent'} (${granularity}) - ${
+              chartType === 'line' ? 'Overall Trend' : `Stacked by ${String(stackingLevel)}`
+            }`
+          },
+    xaxis: { title: isCompact ? undefined : { text: 'Period' }, type: 'date' },
     yaxis: { title: { text: metric === 'count' ? 'Count' : 'Hours' } },
-    margin: { t: 50, b: 80, l: 60, r: 30 },
+    margin: isCompact ? { t: 16, b: 44, l: 40, r: 16 } : { t: 50, b: 80, l: 60, r: 30 },
+    ...(isCompact ? { legend: { orientation: 'h', y: -0.25 } } : {}),
     hovermode: 'x unified'
   };
-  plotChart(mainChartEl, traces, layout, useReact);
+  plotChart(mainChartEl, traces, layout, useReact, options);
 }
 
 export function renderActivityPatternChart(
@@ -425,12 +550,13 @@ export function renderActivityPatternChart(
   showDetailPopup: ShowDetailPopupFn,
   useReact: boolean,
   isNewChartType: boolean,
-  metric: 'duration' | 'count'
+  metric: 'duration' | 'count',
+  options?: PlotterRenderOptions
 ) {
   const mainChartEl = rootEl.querySelector<HTMLElement>('#mainChart');
   if (!mainChartEl) return;
   if (isNewChartType) {
-    Plotly.purge(mainChartEl);
+    destroyChart(rootEl);
     safeEmpty(mainChartEl);
   }
 
@@ -440,10 +566,25 @@ export function renderActivityPatternChart(
   }
 
   const patternTypeEl = rootEl.querySelector<HTMLSelectElement>('#activityPatternTypeSelect');
-  if (!patternTypeEl) return;
-  const patternType = patternTypeEl.value;
-  const analysisTypeName = patternTypeEl.selectedOptions[0]?.text || 'Activity Pattern';
+  const patternType = (options?.patternType || patternTypeEl?.value) as
+    'dayOfWeek' | 'hourOfDay' | 'heatmapDOWvsHOD' | undefined;
+  if (!patternType) return;
+  const analysisTypeName =
+    patternTypeEl?.selectedOptions[0]?.text ||
+    (patternType === 'dayOfWeek'
+      ? 'Day of Week'
+      : patternType === 'hourOfDay'
+        ? 'Hour of Day'
+        : 'Activity Heatmap');
 
+  const actData =
+    options?.activityData ??
+    new DataManager().prepareActivityPatternData(filteredRecords, {
+      patternType,
+      metric
+    });
+
+  const isCompact = options?.variant === 'compact';
   let data: Partial<Plotly.PlotData>[] = [];
   let layout: Partial<Plotly.Layout> = {};
   let plotType: 'bar' | 'heatmap' = 'bar';
@@ -456,73 +597,53 @@ export function renderActivityPatternChart(
     'Friday',
     'Saturday'
   ];
-  const hourLabels = Array.from({ length: 24 }, (_, i) => `${i}`);
-  const activityLayoutMargin = { t: 50, b: 60, l: 70, r: 30 };
+  const activityLayoutMargin = isCompact
+    ? { t: 16, b: 44, l: 44, r: 16 }
+    : { t: 50, b: 60, l: 70, r: 30 };
 
   if (patternType === 'dayOfWeek') {
-    const hoursByDay: number[] = Array.from({ length: 7 }, () => 0);
-    // REFACTORED: Simple, unified loop.
-    filteredRecords.forEach(record => {
-      if (record.date && !isNaN(record.date.getTime())) {
-        const dayIndex = record.date.getUTCDay();
-        const value = metric === 'count' ? 1 : record._effectiveDurationInPeriod || 0;
-        hoursByDay[dayIndex] += value;
-      }
-    });
-    data = [{ x: daysOfWeekLabels, y: hoursByDay.map(h => Number(h.toFixed(2))), type: 'bar' }];
+    data = [{ x: actData.labelsX, y: actData.values1D || [], type: 'bar' }];
     layout = {
-      title: { text: `Total ${metric === 'count' ? 'Events' : 'Hours'} by Day of Week` },
+      title: options?.title
+        ? { text: options.title }
+        : isCompact
+          ? undefined
+          : { text: `Total ${metric === 'count' ? 'Events' : 'Hours'} by Day of Week` },
       yaxis: { title: { text: metric === 'count' ? 'Count' : 'Hours' } },
       margin: activityLayoutMargin
     };
   } else if (patternType === 'hourOfDay') {
-    const hoursByHour: number[] = Array.from({ length: 24 }, () => 0);
-    // REFACTORED: Simple, unified loop.
-    filteredRecords.forEach(record => {
-      const startTime = 'startTime' in record.metadata ? record.metadata.startTime : null;
-      const startHour = startTime ? Utils.getHourFromTimeStr(startTime) : null;
-      if (startHour !== null) {
-        const value = metric === 'count' ? 1 : record._effectiveDurationInPeriod || 0;
-        hoursByHour[startHour] += value;
-      }
-    });
-    data = [{ x: hourLabels, y: hoursByHour.map(h => Number(h.toFixed(2))), type: 'bar' }];
+    data = [{ x: actData.labelsX, y: actData.values1D || [], type: 'bar' }];
     layout = {
-      title: { text: `Total ${metric === 'count' ? 'Events' : 'Hours'} by Task Start Hour` },
-      xaxis: { title: { text: 'Hour of Day (0-23)' } },
+      title: options?.title
+        ? { text: options.title }
+        : isCompact
+          ? undefined
+          : { text: `Total ${metric === 'count' ? 'Events' : 'Hours'} by Task Start Hour` },
+      xaxis: { title: isCompact ? undefined : { text: 'Hour of Day (0-23)' } },
       yaxis: { title: { text: metric === 'count' ? 'Count' : 'Hours' } },
       margin: activityLayoutMargin
     };
   } else if (patternType === 'heatmapDOWvsHOD') {
     plotType = 'heatmap';
-    const heatmapData: number[][] = Array.from({ length: 7 }, () =>
-      Array.from({ length: 24 }, () => 0)
-    );
-    // REFACTORED: Simple, unified loop.
-    filteredRecords.forEach(record => {
-      const startTime = 'startTime' in record.metadata ? record.metadata.startTime : null;
-      const startHour = startTime ? Utils.getHourFromTimeStr(startTime) : null;
-      if (startHour === null) return;
-      if (record.date && !isNaN(record.date.getTime())) {
-        const dayIndex = record.date.getUTCDay();
-        const value = metric === 'count' ? 1 : record._effectiveDurationInPeriod || 0;
-        heatmapData[dayIndex][startHour] += value;
-      }
-    });
     data = [
       {
-        z: heatmapData.map(row => row.map(val => (val > 0 ? Number(val.toFixed(2)) : null))),
-        x: hourLabels,
-        y: daysOfWeekLabels,
+        z: actData.values2D || [],
+        x: actData.labelsX,
+        y: actData.labelsY || daysOfWeekLabels,
         type: 'heatmap',
         colorscale: 'Viridis',
         hoverongaps: false
       }
     ];
     layout = {
-      title: { text: 'Activity Heatmap (Day vs Task Start Hour)' },
-      xaxis: { title: { text: 'Hour of Day (0-23)' } },
-      margin: activityLayoutMargin
+      title: options?.title
+        ? { text: options.title }
+        : isCompact
+          ? undefined
+          : { text: 'Activity Heatmap (Day vs Task Start Hour)' },
+      xaxis: { title: isCompact ? undefined : { text: 'Hour of Day (0-23)' } },
+      margin: isCompact ? { t: 16, b: 40, l: 64, r: 16 } : activityLayoutMargin
     };
   }
 
@@ -550,7 +671,7 @@ export function renderActivityPatternChart(
     renderChartMessage(rootEl, `No data to plot for ${analysisTypeName}.`);
     return;
   }
-  plotChart(mainChartEl, data, layout, useReact);
+  plotChart(mainChartEl, data, layout, useReact, options);
 
   setupPlotlyEvents(mainChartEl, 'plotly_click', (eventData: unknown) => {
     const points = (eventData as PlotlyEvent)?.points;
@@ -609,7 +730,7 @@ export function renderActivityPatternChart(
     }
 
     if (recordsForPopup.length > 0) {
-      showDetailPopup(categoryNameForPopup, recordsForPopup, { value: clickedValue });
+      showDetailPopup(categoryNameForPopup, recordsForPopup, { metric, value: clickedValue });
     }
   });
 }

@@ -617,7 +617,8 @@ describe('Settings Integrations Section - Common SettingsModal & DRY Principles'
 
       renderAgentSettingsContent(modalContent, mockPlugin, storage, logger, bridge);
 
-      expect(modalContent.querySelector('.checkbox-container')).not.toBeNull();
+      expect(modalContent.querySelector('select')).not.toBeNull();
+      expect(modalContent.querySelectorAll('.ofc-managed-plan-card').length).toBe(3);
       expect(modalContent.querySelectorAll('input').length).toBeGreaterThan(0);
     });
   });
